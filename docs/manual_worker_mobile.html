@@ -3,126 +3,167 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>TAC製造部 生産管理システム - スマホ操作マニュアル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【作業者用】在庫管理システム 操作マニュアル</title>
     <style>
+        :root {
+            --primary-color: #0B2D48;
+            /* TAC Navy */
+            --accent-color: #8CC63F;
+            /* TAC Green */
+            --text-color: #333;
+            --bg-color: #f4f6f9;
+        }
+
         body {
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
             line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+        }
+
+        .container {
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        header {
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+            text-align: center;
         }
 
         h1 {
-            text-align: center;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-size: 24px;
+            margin: 0;
+            padding-top: 20px;
         }
 
         h2 {
-            border-bottom: 2px solid #eee;
-            padding-bottom: 5px;
-            margin-top: 30px;
-            color: #007bff;
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 18px;
+            margin-top: 40px;
         }
 
         h3 {
-            margin-top: 20px;
+            color: var(--primary-color);
+            border-left: 5px solid var(--accent-color);
+            padding-left: 10px;
+            margin-top: 30px;
+            font-size: 16px;
+        }
+
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 20px;
+        }
+
+        .step-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 35px;
+            height: 35px;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            line-height: 35px;
+            border-radius: 50%;
             font-weight: bold;
         }
 
         .qr-section {
             text-align: center;
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 1px solid #ddd;
-        }
-
-        .qr-section img {
-            width: 250px;
-            height: 250px;
-            margin-bottom: 10px;
-        }
-
-        .url-text {
-            font-size: 1.2em;
-            font-weight: bold;
-            word-break: break-all;
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .step-box {
+            margin: 40px 0;
+            padding: 20px;
             background: #fff;
-            border-left: 5px solid #007bff;
-            padding: 15px;
-            margin: 15px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #ddd;
         }
 
-        .step-num {
+        .qr-img {
+            width: 200px;
+            height: 200px;
+        }
+
+        .note {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        .icon-btn {
             display: inline-block;
-            background: #007bff;
-            color: #fff;
-            width: 24px;
-            height: 24px;
+            background: #eee;
+            border: 1px solid #ccc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            vertical-align: middle;
+        }
+
+        .screen-mock {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fafafa;
+            margin: 10px 0;
             text-align: center;
-            border-radius: 50%;
-            margin-right: 10px;
-            line-height: 24px;
         }
 
-        .android-icon {
-            color: #3DDC84;
-        }
-
-        .ios-icon {
-            color: #A2AAAD;
-        }
-
-        .faq-item {
-            background: #fdfdfd;
+        .screen-mock img {
+            max-width: 100%;
             border: 1px solid #eee;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
         }
 
-        .question {
+        /* アイコンフォント代用 */
+        .icon {
             font-weight: bold;
-            color: #d9534f;
-            margin-bottom: 5px;
-        }
-
-        .answer {
-            color: #333;
         }
 
         @media print {
             body {
-                font-size: 12pt;
+                background: white;
             }
 
-            a {
-                text-decoration: none;
-                color: #000;
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
             }
 
-            .qr-section {
-                border: 2px solid #000;
+            .no-print {
+                display: none;
             }
 
             h2 {
-                border-bottom: 1px solid #000;
-                color: #000;
+                -webkit-print-color-adjust: exact;
             }
 
-            h1 {
-                border-bottom: 2px solid #000;
+            .page-break {
+                page-break-before: always;
             }
         }
     </style>
@@ -130,120 +171,89 @@
 
 <body>
 
-    <h1>📱 TAC製造部 生産管理システム<br>スマホ操作マニュアル</h1>
+    <div class="container">
+        <header>
+            <h1>TAC製造部 生産管理システム<br>【作業者用】操作マニュアル</h1>
+            <p>発行日: 2026年2月3日</p>
+        </header>
 
-    <div class="qr-section">
-        <h3>📲 このQRコードをスキャン！</h3>
-        <img src="./qrcode_system_high_res.png" alt="System QR Code">
-        <p><strong>システムURL:</strong><br>
-            <a href="https://tacfurniture2026-bit.github.io/tac-production/"
-                class="url-text">https://tacfurniture2026-bit.github.io/tac-production/</a>
-        </p>
-    </div>
-
-    <h2>📱 アプリとしてホーム画面に追加する方法</h2>
-    <p>QRコードをスキャンしてサイトを開いたら、以下の手順でアプリとして追加すると便利です。</p>
-
-    <div class="step-box">
-        <h3>🍎 iPhone (iOS) の場合</h3>
-        <p><span class="step-num">1</span><strong>Safari</strong> でサイトを開く（上のQRコードをスキャン）</p>
-        <p><span class="step-num">2</span>画面下部の <strong>「共有」ボタン</strong> (□から↑が出ているアイコン) をタップ</p>
-        <p><span class="step-num">3</span>メニューを少し下にスクロールして <strong>「ホーム画面に追加」</strong> をタップ</p>
-        <p><span class="step-num">4</span>右上の <strong>「追加」</strong> をタップ</p>
-        <p>✅ ホーム画面にアイコンが追加されます！</p>
-    </div>
-
-    <div class="step-box">
-        <h3>🤖 Android の場合</h3>
-        <p><span class="step-num">1</span><strong>Chrome</strong> でサイトを開く（上のQRコードをスキャン）</p>
-        <p><span class="step-num">2</span>右上の <strong>「︙」メニュー</strong> をタップ</p>
-        <p><span class="step-num">3</span><strong>「ホーム画面に追加」</strong> または <strong>「アプリをインストール」</strong> をタップ</p>
-        <p><span class="step-num">4</span>確認画面で <strong>「追加」</strong> をタップ</p>
-        <p>✅ ホーム画面にアイコンが追加されます！</p>
-    </div>
-
-    <div style="page-break-before: always;"></div>
-
-    <h2>🔐 ログイン方法</h2>
-    <ol>
-        <li>追加したアプリアイコンをタップして開く</li>
-        <li>ユーザー名・パスワードを入力
-            <ul>
-                <li>管理者: <code>admin</code> / <code>admin123</code></li>
-                <li>作業者: <code>worker</code> / <code>worker123</code></li>
-            </ul>
-        </li>
-        <li><strong>「ログイン」</strong> をタップ</li>
-    </ol>
-
-    <h2>📦 棚卸スキャンの使い方</h2>
-    <div class="step-box">
-        <h3>基本の流れ</h3>
-        <p><span class="step-num">1</span>画面下部の <strong>「棚卸」</strong> アイコンをタップ</p>
-        <p><span class="step-num">2</span><strong>「📷 カメラ起動」</strong> をタップ（初回は「許可」を選択）</p>
-        <p><span class="step-num">3</span>商品の <strong>QRコード</strong> をカメラで映す</p>
-        <p><span class="step-num">4</span>商品情報が表示されたら、<strong>実棚数量</strong> を入力</p>
-        <p><span class="step-num">5</span><strong>「登録」</strong> をタップ</p>
-        <p>✅ 登録完了後、自動でカメラが再起動します（連続スキャン可能）</p>
-    </div>
-    <div class="step-box">
-        <h3>手動入力（QRがない場合）</h3>
-        <p><span class="step-num">1</span>「手動入力」ボタンをタップ</p>
-        <p><span class="step-num">2</span>資材IDを直接入力</p>
-        <p><span class="step-num">3</span>数量を入力して「登録」</p>
-    </div>
-
-    <h2>🔍 在庫検索の使い方</h2>
-    <ol>
-        <li>画面下部の <strong>「検索」</strong> アイコンをタップ</li>
-        <li>品名やIDの一部を入力して検索</li>
-        <li>現在の在庫数・金額リストが表示されます</li>
-    </ol>
-
-    <h2>↕️ 在庫増減（入庫・出庫）の使い方</h2>
-    <ol>
-        <li>画面下部の <strong>「在庫増減」</strong> アイコンをタップ</li>
-        <li>資材IDを入力</li>
-        <li><strong>「入庫」</strong> または <strong>「出庫」</strong> を選択</li>
-        <li>数量を入力（メモがあれば記入）</li>
-        <li><strong>「登録」</strong> をタップ</li>
-    </ol>
-
-    <div style="page-break-before: always;"></div>
-
-    <h2>❓ よくある質問 (FAQ)</h2>
-
-    <div class="faq-item">
-        <div class="question">Q. カメラが起動しません</div>
-        <div class="answer">
-            A. ブラウザのカメラ許可設定を確認してください。<br>
-            <strong>iPhone:</strong> 設定 → Safari → カメラ → 「許可」<br>
-            <strong>Android:</strong> 設定 → アプリ → Chrome → 権限 → カメラ → 「許可」
+        <div class="qr-section">
+            <h3>📲 システムへのアクセス</h3>
+            <p>スマホのカメラで以下のQRコードを読み取ってください。</p>
+            <img src="qrcode_system_official.png" class="qr-img" alt="System QR Code">
+            <p><strong>https://tacfurniture2026-bit.github.io/tac-production/</strong></p>
         </div>
-    </div>
 
-    <div class="faq-item">
-        <div class="question">Q. QRコードが読み取れません</div>
-        <div class="answer">
-            A. 以下を試してください：
-            <ul>
-                <li>明るい場所で撮影する</li>
-                <li>QRコードを画面中央に合わせる</li>
-                <li>カメラを近づけすぎず、少し離してみる</li>
-            </ul>
+        <h2>1. アプリのインストール（ホーム画面への追加）</h2>
+        <p>ブラウザでシステムを開いた後、ホーム画面に追加することでアプリのように利用できます。</p>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <h3>🍎 iPhone (Safari) の場合</h3>
+                <ol class="step-list">
+                    <li>画面下部の <span class="icon-btn">共有ボタン（□↑）</span> をタップします。</li>
+                    <li>メニューを下にスクロールし、<span class="icon-btn">＋ ホーム画面に追加</span> をタップします。</li>
+                    <li>画面右上の <span class="icon-btn">追加</span> をタップします。</li>
+                </ol>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <h3>🤖 Android (Chrome) の場合</h3>
+                <ol class="step-list">
+                    <li>画面右上の <span class="icon-btn">メニュー（︙）</span> をタップします。</li>
+                    <li><span class="icon-btn">ホーム画面に追加</span> または <span class="icon-btn">アプリをインストール</span> をタップします。
+                    </li>
+                    <li>確認画面で <span class="icon-btn">追加</span> をタップします。</li>
+                </ol>
+            </div>
         </div>
-    </div>
 
-    <div class="faq-item">
-        <div class="question">Q. データが保存されません</div>
-        <div class="answer">
-            A. インターネット接続を確認してください（Wi-Fiまたはモバイルデータ通信）。
+        <div class="page-break"></div>
+
+        <h2>2. ログイン方法</h2>
+        <ol class="step-list">
+            <li>ホーム画面に追加されたアプリアイコンをタップして起動します。</li>
+            <li>以下のID・パスワードを入力し、「ログイン」ボタンをタップします。
+                <div class="note">
+                    <strong>ユーザー名:</strong> worker<br>
+                    <strong>パスワード:</strong> worker123
+                </div>
+            </li>
+        </ol>
+
+        <h2>3. 在庫管理（棚卸・検索・入出庫）</h2>
+        <p>画面下部のナビゲーション、または「その他」メニューから各機能を利用できます。</p>
+
+        <h3>📷 棚卸スキャン（QR読取）</h3>
+        <ol class="step-list">
+            <li>メニューの <span class="icon-btn">▦ 棚卸</span> をタップします。</li>
+            <li><span class="icon-btn">📷 カメラ起動</span> をタップします。（初回のみカメラの許可を求められます。「許可」を選択してください）</li>
+            <li>商品のQRコードをスキャンします。</li>
+            <li>商品情報が表示されたら、<strong>実棚数量</strong>を入力し、<span class="icon-btn">登録</span> をタップします。</li>
+        </ol>
+
+        <h3>🔍 在庫検索</h3>
+        <ol class="step-list">
+            <li>メニューの <span class="icon-btn">◎ 検索</span> をタップします。</li>
+            <li>検索ボックスに商品コードや品名の一部を入力します。</li>
+            <li>該当する在庫情報（現在庫数・棚卸日など）が一覧表示されます。</li>
+        </ol>
+
+        <h3>↕️ 入庫・出庫登録</h3>
+        <ol class="step-list">
+            <li>メニューの <span class="icon-btn">その他</span> > <span class="icon-btn">↕ 在庫増減</span> をタップします。</li>
+            <li>対象の商品コードを入力（または検索から選択）します。</li>
+            <li>「入庫」または「出庫」を選択し、数量を入力して登録します。</li>
+        </ol>
+
+        <h2>4. 困ったときは</h2>
+        <div class="note">
+            <strong>Q. カメラが起動しない</strong><br>
+            A. スマホの設定画面で、ブラウザ（Safari/Chrome）の「カメラ」権限が許可されているか確認してください。
+            <br><br>
+            <strong>Q. 動作がおかしい・画面が白い</strong><br>
+            A. 一度アプリを終了（タスクキル）して再起動するか、スマホ自体を再起動してください。それでも直らない場合は、アプリを削除して再度QRコードから追加し直してください。
         </div>
-    </div>
 
-    <div style="margin-top: 50px; text-align: center; border-top: 1px solid #ddd; padding-top: 20px;">
-        <p>お困りの際は、管理者にお問い合わせください。</p>
-        <p style="font-size: 0.8em; color: #777;">TAC Furniture Production Management System 2026</p>
     </div>
 
 </body>

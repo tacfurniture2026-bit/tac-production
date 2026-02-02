@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理者用】在庫管理システム 操作マニュアル</title>
+    <style>
+        :root {
+            --primary-color: #0B2D48;
+            /* TAC Navy */
+            --secondary-color: #1a3f5c;
+            --accent-color: #f7941d;
+            /* TAC Orange */
+            --text-color: #333;
+            --bg-color: #f4f6f9;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--primary-color);
+            color: white;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            margin-left: 290px;
+            /* Sidebar width + padding */
+            padding: 40px;
+            max-width: 900px;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .sidebar h1 {
+            font-size: 18px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .nav-link {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 8px 0;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: white;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 30px;
+            font-size: 18px;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 15px;
+        }
+
+        .step-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            line-height: 28px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .screenshot {
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            background: #eee;
+            border: 1px solid #ccc;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        @media print {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin: 0;
+                padding: 20px;
+            }
+
+            h2 {
+                page-break-before: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h1>TAC生産管理システム<br>管理者マニュアル</h1>
+        <nav>
+            <a href="#login" class="nav-link">1. ログイン</a>
+            <a href="#dashboard" class="nav-link">2. ダッシュボード</a>
+            <a href="#product" class="nav-link">3. 商品マスタ管理</a>
+            <a href="#inventory" class="nav-link">4. 在庫管理・棚卸</a>
+            <a href="#closing" class="nav-link">5. 月次締め処理</a>
+            <a href="#report" class="nav-link">6. レポート出力</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div style="text-align: right; color: #666; font-size: 0.9em; margin-bottom: 20px;">
+            システムURL: <strong>https://tacfurniture2026-bit.github.io/tac-production/</strong>
+        </div>
+
+        <h2 id="login">1. ログイン</h2>
+        <p>Webブラウザ（Chrome推奨）でシステムURLにアクセスし、管理者アカウントでログインします。</p>
+        <ul>
+            <li><strong>User:</strong> admin</li>
+            <li><strong>Pass:</strong> admin123</li>
+        </ul>
+
+        <h2 id="dashboard">2. ダッシュボード</h2>
+        <p>ログイン直後に表示される画面です。生産状況の概要、アラート、直近の指示書などが確認できます。</p>
+        <div style="background: #eef; padding: 15px; border-radius: 5px;">
+            <strong>💡 ヒント:</strong> サイドバーメニューから各機能へアクセスします。サイドバー下部のアイコンでログアウトできます。
+        </div>
+
+        <h2 id="product">3. 商品マスタ管理</h2>
+        <p>在庫管理の基礎となる商品（資材・部材）情報を登録・編集します。</p>
+
+        <h3>新規登録・編集</h3>
+        <ol class="step-list">
+            <li>メニューの <span class="btn">商品マスタ</span> をクリックします。</li>
+            <li><span class="btn btn-primary">＋ 新規登録</span> ボタンをクリックします。</li>
+            <li>資材ID、品名、分類、単価を入力し、<span class="btn btn-primary">保存</span> します。</li>
+        </ol>
+
+        <h3>CSV機能（一括登録・バックアップ）</h3>
+        <ul>
+            <li><strong>CSV取込:</strong> Excel/スプレッドシート等で編集したデータを一括で取り込みます。<br>フォーマット: <code>ID,品名,分類,単価,単位,不動品フラグ</code>
+            </li>
+            <li><strong>CSV出力:</strong> 現在の全商品データをCSVファイルとしてダウンロードします。</li>
+        </ul>
+
+        <h2 id="inventory">4. 在庫管理・棚卸</h2>
+
+        <h3>在庫状況の確認</h3>
+        <p>メニューの <span class="btn">在庫検索</span> から、現在の理論在庫数、棚卸日、在庫金額を確認できます。</p>
+
+        <h3>棚卸データの反映</h3>
+        <p>作業者がスマホアプリで行った棚卸データはリアルタイムに反映されます。管理画面からも修正可能です。</p>
+
+        <h2 id="closing">5. 月次締め処理</h2>
+        <p>月末に在庫金額を確定させる処理です。</p>
+
+        <h3>手順</h3>
+        <ol class="step-list">
+            <li>メニューの <span class="btn">月次締め</span> をクリックします。</li>
+            <li>対象年月を選択し、<span class="btn">📊 集計確認</span> をクリックします。</li>
+            <li>サマリーカードを確認します。
+                <ul>
+                    <li><strong>在庫総額</strong></li>
+                    <li><strong>通常在庫</strong> vs <strong>不動品在庫</strong></li>
+                    <li><strong>TAC全社口銭込金額</strong> (x1.01)</li>
+                </ul>
+            </li>
+            <li>内容に問題がなければ、<span class="btn btn-primary">🚀 月次締め実行</span> をクリックしてデータを確定します。</li>
+        </ol>
+
+        <h2 id="report">6. レポート出力</h2>
+        <p>生産実績と在庫評価を統合した月次報告書を作成します。</p>
+        <p>メニューの <span class="btn">月次報告</span> から表示し、ブラウザの印刷機能（PDF保存）で出力してください。</p>
+
+    </div>
+
+</body>
+
+</html>
