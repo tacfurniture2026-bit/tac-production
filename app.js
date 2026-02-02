@@ -1,0 +1,3107 @@
+// ========================================
+// 生産管理システム - メインアプリケーション
+// ========================================
+
+// 初期化
+DB.init();
+
+// ========================================
+// グローバル変数
+// ========================================
+
+let currentUser = null;
+let expandedOrders = new Set();
+let ganttFilter = 'all';
+
+// ========================================
+// ユーティリティ
+// ========================================
+
+function $(selector) {
+  return document.querySelector(selector);
+}
+
+function $$(selector) {
+  return document.querySelectorAll(selector);
+}
+
+function toast(message, type = 'success') {
+  const container = $('#toast-container');
+  const toastEl = document.createElement('div');
+  toastEl.className = `toast toast-${type}`;
+  toastEl.textContent = message;
+  container.appendChild(toastEl);
+
+  setTimeout(() => {
+    toastEl.remove();
+  }, 3000);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function calculateProgress(order) {
+  if (!order.items || order.items.length === 0) return 0;
+
+  let totalProcesses = 0;
+  let completedProcesses = 0;
+
+  order.items.forEach(item => {
+    totalProcesses += item.processes.length;
+    completedProcesses += (item.completed || []).length;
+  });
+
+  return totalProcesses > 0 ? Math.round((completedProcesses / totalProcesses) * 100) : 0;
+}
+
+// ========================================
+// 認証
+// ========================================
+
+function login(username, password) {
+  const users = DB.get(DB.KEYS.USERS);
+  const user = users.find(u => u.username === username && u.password === password);
+
+  if (user) {
+    currentUser = user;
+    DB.save(DB.KEYS.CURRENT_USER, user);
+    return true;
+  }
+  return false;
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem(DB.KEYS.CURRENT_USER);
+  showLoginScreen();
+}
+
+function checkAuth() {
+  const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    showMainScreen();
+  } else {
+    showLoginScreen();
+  }
+}
+
+// ========================================
+// 画面切り替え
+// ========================================
+
+function showLoginScreen() {
+  $('#login-screen').classList.add('active');
+  $('#main-screen').classList.remove('active');
+}
+
+function showMainScreen() {
+  $('#login-screen').classList.remove('active');
+  $('#main-screen').classList.add('active');
+
+  // ユーザー情報を表示
+  $('#current-user-name').textContent = currentUser.displayName;
+  $('#current-user-role').textContent = currentUser.role === 'admin' ? '管理者' : '作業者';
+
+  // 管理者メニューの表示/非表示
+  $$('.admin-only').forEach(el => {
+    el.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+  });
+
+  // モバイルナビの初期化
+  initMobileNav();
+
+  // ロール別の初期画面
+  if (currentUser.role === 'admin') {
+    navigateTo('dashboard');
+  } else {
+    // 作業者はQR進捗登録画面を初期表示
+    navigateTo('qr');
+  }
+}
+
+function navigateTo(pageName) {
+  // ページ切り替え
+  $$('.page').forEach(p => p.classList.remove('active'));
+  $(`#page-${pageName}`).classList.add('active');
+
+  // ナビゲーション更新
+  $$('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = $(`.nav-item[data-page="${pageName}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  // モバイルナビ更新
+  $$('.mobile-nav-btn').forEach(n => n.classList.remove('active'));
+  const mobileBtn = $(`.mobile-nav-btn[data-page="${pageName}"]`);
+  if (mobileBtn) mobileBtn.classList.add('active');
+
+  // ページ初期化
+  switch (pageName) {
+    case 'dashboard':
+      renderDashboard();
+      break;
+    case 'gantt':
+      renderGantt();
+      break;
+    case 'qr':
+      renderQrPage();
+      break;
+    case 'defects':
+      renderDefects();
+      break;
+    case 'orders':
+      renderOrders();
+      break;
+    case 'bom':
+      renderBom();
+      break;
+    case 'rates':
+      renderRates();
+      break;
+    case 'users':
+      renderUsers();
+      break;
+    case 'report':
+      renderReport();
+      break;
+    // 在庫管理
+    case 'inv-scan':
+      renderInvScanPage();
+      break;
+    case 'inv-search':
+      renderInvSearchPage();
+      break;
+    case 'inv-products':
+      renderInvProductsPage();
+      break;
+    case 'inv-adjust':
+      renderInvAdjustPage();
+      break;
+    case 'inv-monthly':
+      renderInvMonthlyPage();
+      break;
+  }
+}
+
+// ========================================
+// ダッシュボード
+// ========================================
+
+function renderDashboard() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const defects = DB.get(DB.KEYS.DEFECTS);
+
+  // 統計
+  const total = orders.length;
+  const complete = orders.filter(o => calculateProgress(o) === 100).length;
+  const inProgress = orders.filter(o => {
+    const p = calculateProgress(o);
+    return p > 0 && p < 100;
+  }).length;
+
+  $('#stat-total').textContent = total;
+  $('#stat-progress').textContent = inProgress;
+  $('#stat-complete').textContent = complete;
+  $('#stat-defects').textContent = defects.length;
+
+  // 緊急案件
+  const urgentContainer = $('#urgent-orders');
+  const urgentOrders = orders.filter(o => {
+    if (!o.dueDate) return false;
+    const days = Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+    return days <= 3 && calculateProgress(o) < 100;
+  });
+
+  if (urgentOrders.length === 0) {
+    urgentContainer.innerHTML = '<p class="text-muted">緊急案件はありません</p>';
+  } else {
+    urgentContainer.innerHTML = urgentOrders.slice(0, 5).map(o => {
+      const days = Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+      return `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+          <div>
+            <div style="font-weight: 500;">${o.projectName}</div>
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName} × ${o.quantity}</div>
+          </div>
+          <div style="color: ${days <= 1 ? 'var(--color-danger)' : 'var(--color-warning)'}; font-weight: 600;">
+            ${days <= 0 ? '今日' : `あと${days}日`}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 最近の指示書
+  const recentContainer = $('#recent-orders');
+  if (orders.length === 0) {
+    recentContainer.innerHTML = '<p class="text-muted">指示書がありません</p>';
+  } else {
+    recentContainer.innerHTML = orders.slice(0, 5).map(o => {
+      const progress = calculateProgress(o);
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+          <div>
+            <div style="font-weight: 500;">${o.projectName}</div>
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName}</div>
+          </div>
+          <div class="progress-cell">
+            <span class="progress-text">${progress}%</span>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" style="width: ${progress}%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ========================================
+// ガントチャート（工程管理）- Monorevo風
+// ========================================
+
+function renderGantt() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const boms = DB.get(DB.KEYS.BOM);
+
+  // フィルタリング
+  let filtered = orders;
+  if (ganttFilter === 'progress') {
+    filtered = orders.filter(o => {
+      const p = calculateProgress(o);
+      return p > 0 && p < 100;
+    });
+  } else if (ganttFilter === 'complete') {
+    filtered = orders.filter(o => calculateProgress(o) === 100);
+  } else if (ganttFilter === 'pending') {
+    filtered = orders.filter(o => calculateProgress(o) === 0);
+  }
+
+  // 全工程リストを取得（ユニーク）
+  const allProcesses = STANDARD_PROCESSES;
+
+  // 工程ヘッダーを描画
+  const processHeader = $('#gantt-process-header');
+  processHeader.innerHTML = allProcesses.map(p =>
+    `<div class="process-header-cell">${p}</div>`
+  ).join('');
+
+  const leftBody = $('#gantt-left-body');
+  const rightBody = $('#gantt-right-body');
+
+  if (filtered.length === 0) {
+    leftBody.innerHTML = `<div class="gantt-data-row" style="justify-content: center; color: var(--color-text-muted); padding: 2rem;">データがありません</div>`;
+    rightBody.innerHTML = '';
+    return;
+  }
+
+  let leftHtml = '';
+  let rightHtml = '';
+
+  filtered.forEach(order => {
+    const progress = calculateProgress(order);
+    const isExpanded = expandedOrders.has(order.id);
+    const daysUntilDue = order.dueDate ? Math.ceil((new Date(order.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+    // 進捗バッジのクラス
+    const progressClass = progress >= 80 ? 'high' : progress >= 30 ? 'medium' : 'low';
+
+    // 納期クラス
+    const dueClass = daysUntilDue !== null && daysUntilDue <= 1 ? 'due-danger' : daysUntilDue !== null && daysUntilDue <= 3 ? 'due-warning' : '';
+
+    // 親行 - 左側
+    leftHtml += `
+            <div class="gantt-data-row gantt-row-parent" data-order-id="${order.id}">
+                <div class="gantt-cell gantt-cell-expand">
+                    <button class="expand-btn" onclick="toggleExpand(${order.id})">${isExpanded ? '▼' : '▶'}</button>
+                </div>
+                <div class="gantt-cell gantt-cell-project">${order.projectName}</div>
+                <div class="gantt-cell gantt-cell-product">${order.productName}</div>
+                <div class="gantt-cell gantt-cell-qty">${order.quantity}</div>
+                <div class="gantt-cell gantt-cell-date">${formatDate(order.startDate)}</div>
+                <div class="gantt-cell gantt-cell-date ${dueClass}">${formatDate(order.dueDate)}</div>
+            </div>
+        `;
+
+    // 親行 - 右側（進捗サマリー）
+    rightHtml += `
+            <div class="gantt-process-row gantt-row-parent" data-order-id="${order.id}">
+                <div style="display: flex; align-items: center; padding: 0.5rem 1rem; width: 100%;">
+                    <span class="progress-badge ${progressClass}">${progress}%</span>
+                    <div style="margin-left: 1rem; flex: 1;">
+                        <div style="height: 8px; background: var(--color-bg-secondary); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress}%; background: linear-gradient(90deg, #8CC63F 0%, #7AB832 100%); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    // 子行
+    if (isExpanded && order.items) {
+      order.items.forEach(item => {
+        const itemProgress = item.processes.length > 0
+          ? Math.round(((item.completed || []).length / item.processes.length) * 100)
+          : 0;
+
+        // 子行 - 左側
+        leftHtml += `
+                    <div class="gantt-data-row gantt-row-child" data-item-id="${item.id}">
+                        <div class="gantt-cell gantt-cell-expand"></div>
+                        <div class="gantt-cell gantt-cell-project"></div>
+                        <div class="gantt-cell gantt-cell-product">
+                            <span class="child-indicator">┗</span>${item.bomName}
+                        </div>
+                        <div class="gantt-cell gantt-cell-qty"></div>
+                        <div class="gantt-cell gantt-cell-date"></div>
+                        <div class="gantt-cell gantt-cell-date"></div>
+                    </div>
+                `;
+
+        // 子行 - 右側（工程バー）
+        rightHtml += `
+                    <div class="gantt-process-row gantt-row-child" data-item-id="${item.id}">
+                        ${allProcesses.map(process => {
+          const hasProcess = item.processes.includes(process);
+          const isComplete = (item.completed || []).includes(process);
+
+          if (!hasProcess) {
+            return `<div class="process-cell"><div style="width: 70px;"></div></div>`;
+          }
+
+          const barClass = isComplete ? 'complete' : 'pending';
+          const barText = isComplete ? '完了' : '待機';
+
+          return `
+                                <div class="process-cell">
+                                    <div class="process-bar ${barClass}">${barText}</div>
+                                </div>
+                            `;
+        }).join('')}
+                    </div>
+                `;
+      });
+    }
+  });
+
+  leftBody.innerHTML = leftHtml;
+  rightBody.innerHTML = rightHtml;
+}
+
+function toggleExpand(orderId) {
+  if (expandedOrders.has(orderId)) {
+    expandedOrders.delete(orderId);
+  } else {
+    expandedOrders.add(orderId);
+  }
+  renderGantt();
+}
+
+function expandAll() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  expandedOrders = new Set(orders.map(o => o.id));
+  renderGantt();
+}
+
+function collapseAll() {
+  expandedOrders = new Set();
+  renderGantt();
+}
+
+// ========================================
+// QR読取（進捗登録）
+// ========================================
+
+// QRスキャナーインスタンス
+let qrScanner = null;
+
+function renderQrPage() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const history = DB.get(DB.KEYS.PROGRESS_HISTORY);
+
+  // 指示書セレクト
+  const orderSelect = $('#qr-order');
+  orderSelect.innerHTML = '<option value="">選択してください</option>' +
+    orders.map(o => `<option value="${o.id}">${o.projectName} - ${o.productName}</option>`).join('');
+
+  // 履歴表示
+  const historyContainer = $('#qr-history');
+  if (history.length === 0) {
+    historyContainer.innerHTML = '<p class="text-muted">履歴がありません</p>';
+  } else {
+    historyContainer.innerHTML = history.slice(0, 10).map(h => `
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+        <div>
+          <div style="font-weight: 500;">${h.processName}</div>
+          <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${h.bomName}</div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted);">${h.time}</div>
+      </div>
+    `).join('');
+  }
+
+  // スキャナーボタンのイベント
+  const startBtn = $('#start-scan-btn');
+  const stopBtn = $('#stop-scan-btn');
+
+  if (startBtn) {
+    startBtn.onclick = startQrScanner;
+  }
+  if (stopBtn) {
+    stopBtn.onclick = stopQrScanner;
+  }
+
+  // スマホの場合は自動でカメラ起動
+  if (isMobileDevice()) {
+    setTimeout(() => {
+      startQrScanner();
+    }, 500);
+  }
+}
+
+// スマホ判定
+function isMobileDevice() {
+  return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function startQrScanner() {
+  const videoEl = $('#qr-video');
+  const placeholder = $('#qr-scanner-placeholder');
+  const startBtn = $('#start-scan-btn');
+  const stopBtn = $('#stop-scan-btn');
+  const resultDiv = $('#qr-scan-result');
+
+  // プレースホルダーを非表示、ビデオを表示
+  if (placeholder) placeholder.style.display = 'none';
+  if (videoEl) videoEl.style.display = 'block';
+  if (startBtn) startBtn.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'inline-block';
+  if (resultDiv) resultDiv.style.display = 'none';
+
+  // html5-qrcodeが読み込まれているか確認
+  if (typeof Html5Qrcode === 'undefined') {
+    toast('QRスキャナーが読み込めません。ページを再読み込みしてください。', 'error');
+    return;
+  }
+
+  // スキャナーを初期化
+  qrScanner = new Html5Qrcode('qr-scanner-preview');
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    aspectRatio: 1
+  };
+
+  qrScanner.start(
+    { facingMode: 'environment' }, // 背面カメラを優先
+    config,
+    onQrCodeScanned,
+    (error) => {
+      // エラーは頻繁に発生するのでログしない
+    }
+  ).catch(err => {
+    console.error('カメラ起動エラー:', err);
+    toast('カメラを起動できません。カメラの権限を許可してください。', 'error');
+    stopQrScanner();
+  });
+}
+
+function stopQrScanner() {
+  const videoEl = $('#qr-video');
+  const placeholder = $('#qr-scanner-placeholder');
+  const startBtn = $('#start-scan-btn');
+  const stopBtn = $('#stop-scan-btn');
+
+  if (qrScanner) {
+    qrScanner.stop().then(() => {
+      qrScanner.clear();
+      qrScanner = null;
+    }).catch(err => console.log(err));
+  }
+
+  // UIを元に戻す
+  if (placeholder) placeholder.style.display = 'block';
+  if (videoEl) videoEl.style.display = 'none';
+  if (startBtn) startBtn.style.display = 'inline-block';
+  if (stopBtn) stopBtn.style.display = 'none';
+}
+
+function onQrCodeScanned(decodedText) {
+  // スキャン成功時の処理
+  stopQrScanner();
+
+  const resultDiv = $('#qr-scan-result');
+  const dataDiv = $('#qr-scan-data');
+
+  if (resultDiv) resultDiv.style.display = 'block';
+
+  // QRコードのフォーマットをパース
+  // 期待フォーマット: "現場名|品名|部材コード" または "現場名,品名,部材コード"
+  const parts = decodedText.split(/[|,\t]/);
+
+  if (parts.length >= 3) {
+    const projectName = parts[0].trim();
+    const productName = parts[1].trim();
+    const bomName = parts[2].trim();
+
+    if (dataDiv) {
+      dataDiv.innerHTML = `
+        <div><strong>現場名:</strong> ${projectName}</div>
+        <div><strong>品名:</strong> ${productName}</div>
+        <div><strong>部材:</strong> ${bomName}</div>
+      `;
+    }
+
+    // 自動選択を試みる
+    selectFromQrData(projectName, productName, bomName);
+  } else {
+    // シンプルなフォーマットの場合
+    if (dataDiv) {
+      dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+    }
+    toast('QRコードを読み取りましたが、フォーマットが一致しません', 'warning');
+  }
+
+  // 成功音（バイブレーション）
+  if (navigator.vibrate) {
+    navigator.vibrate(100);
+  }
+  toast('QRコードを読み取りました', 'success');
+}
+
+function selectFromQrData(projectName, productName, bomName) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+
+  // 現場名と品名で指示書を検索
+  const order = orders.find(o =>
+    o.projectName.includes(projectName) && o.productName.includes(productName)
+  );
+
+  if (!order) {
+    toast(`指示書が見つかりません: ${projectName} - ${productName}`, 'warning');
+    return;
+  }
+
+  // 指示書を選択
+  const orderSelect = $('#qr-order');
+  orderSelect.value = order.id;
+  updateQrItemSelect();
+
+  // 部材を検索して選択
+  setTimeout(() => {
+    const item = order.items?.find(i =>
+      i.bomName.includes(bomName) || i.partCode?.includes(bomName)
+    );
+
+    if (item) {
+      const itemSelect = $('#qr-item');
+      itemSelect.value = item.id;
+      updateQrProcessSelect();
+      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
+    } else {
+      toast(`部材が見つかりません: ${bomName}`, 'warning');
+    }
+  }, 100);
+}
+
+function updateQrItemSelect() {
+  const orderId = parseInt($('#qr-order').value);
+  const itemSelect = $('#qr-item');
+  const processSelect = $('#qr-process');
+
+  if (!orderId) {
+    itemSelect.innerHTML = '<option value="">先に指示書を選択</option>';
+    itemSelect.disabled = true;
+    processSelect.innerHTML = '<option value="">先に部材を選択</option>';
+    processSelect.disabled = true;
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+
+  if (order && order.items) {
+    itemSelect.innerHTML = '<option value="">選択してください</option>' +
+      order.items.map(i => `<option value="${i.id}">${i.bomName} (${i.partCode})</option>`).join('');
+    itemSelect.disabled = false;
+  }
+}
+
+function updateQrProcessSelect() {
+  const orderId = parseInt($('#qr-order').value);
+  const itemId = parseInt($('#qr-item').value);
+  const processSelect = $('#qr-process');
+
+  if (!orderId || !itemId) {
+    processSelect.innerHTML = '<option value="">先に部材を選択</option>';
+    processSelect.disabled = true;
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+  const item = order?.items?.find(i => i.id === itemId);
+
+  if (item) {
+    const uncompletedProcesses = item.processes.filter(p => !(item.completed || []).includes(p));
+    processSelect.innerHTML = '<option value="">選択してください</option>' +
+      uncompletedProcesses.map(p => `<option value="${p}">${p}</option>`).join('');
+    processSelect.disabled = false;
+  }
+}
+
+function registerProgress(orderId, itemId, processName) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) return false;
+
+  const item = order.items.find(i => i.id === itemId);
+  if (!item) return false;
+
+  if (!item.completed) item.completed = [];
+  if (!item.completed.includes(processName)) {
+    item.completed.push(processName);
+  }
+
+  DB.save(DB.KEYS.ORDERS, orders);
+
+  // 履歴追加
+  const history = DB.get(DB.KEYS.PROGRESS_HISTORY);
+  history.unshift({
+    orderId,
+    itemId,
+    bomName: item.bomName,
+    processName,
+    worker: currentUser.displayName,
+    time: new Date().toLocaleTimeString('ja-JP')
+  });
+  DB.save(DB.KEYS.PROGRESS_HISTORY, history.slice(0, 100));
+
+  return true;
+}
+
+// ========================================
+// 不良品管理
+// ========================================
+
+function renderDefects() {
+  const defects = DB.get(DB.KEYS.DEFECTS);
+  const tbody = $('#defects-body');
+
+  if (defects.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">不良品の記録がありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = defects.map(d => `
+    <tr>
+      <td>${d.projectName}</td>
+      <td>${d.productName}</td>
+      <td>${d.bomName}</td>
+      <td>${d.processName}</td>
+      <td class="text-danger font-semibold">${d.count}</td>
+      <td>${d.reason || '-'}</td>
+      <td>${d.reporter}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteDefect(${d.id})">削除</button></td>
+    </tr>
+  `).join('');
+}
+
+function deleteDefect(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+
+  const defects = DB.get(DB.KEYS.DEFECTS);
+  const filtered = defects.filter(d => d.id !== id);
+  DB.save(DB.KEYS.DEFECTS, filtered);
+
+  toast('削除しました', 'success');
+  renderDefects();
+}
+
+// ========================================
+// 生産指示書
+// ========================================
+
+function renderOrders() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const tbody = $('#orders-body');
+
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">指示書がありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const progress = calculateProgress(o);
+    return `
+      <tr>
+        <td>${o.orderNo || '-'}</td>
+        <td>${o.projectName}</td>
+        <td>${o.productName}</td>
+        <td>${o.quantity}</td>
+        <td>${o.startDate || '-'}</td>
+        <td>${o.dueDate || '-'}</td>
+        <td>
+          <div class="progress-cell">
+            <span class="progress-text">${progress}%</span>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" style="width: ${progress}%;"></div>
+            </div>
+          </div>
+        </td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function deleteOrder(id) {
+  if (!confirm('この指示書を削除しますか？')) return;
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const filtered = orders.filter(o => o.id !== id);
+  DB.save(DB.KEYS.ORDERS, filtered);
+
+  toast('指示書を削除しました', 'success');
+  renderOrders();
+}
+
+// ========================================
+// BOM管理
+// ========================================
+
+function renderBom() {
+  const boms = DB.get(DB.KEYS.BOM);
+  const container = $('#bom-list');
+
+  if (boms.length === 0) {
+    container.innerHTML = '<div class="card p-4 text-center text-muted">BOMが登録されていません</div>';
+    return;
+  }
+
+  // 製品別にグループ化
+  const grouped = boms.reduce((acc, bom) => {
+    if (!acc[bom.productName]) acc[bom.productName] = [];
+    acc[bom.productName].push(bom);
+    return acc;
+  }, {});
+
+  container.innerHTML = Object.entries(grouped).map(([productName, items]) => `
+    <div class="card" style="margin-bottom: 1rem;">
+      <div class="card-header">
+        <h3>${productName}</h3>
+        <span class="badge badge-info">${items.length}件</span>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>BOM名</th>
+              <th>部材CD</th>
+              <th>工程数</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(b => `
+              <tr>
+                <td>${b.bomName}</td>
+                <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px;">${b.partCode}</code></td>
+                <td>${b.processes?.length || 0}工程</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteBom(${b.id})">削除</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteBom(id) {
+  if (!confirm('このBOMを削除しますか？')) return;
+
+  const boms = DB.get(DB.KEYS.BOM);
+  const filtered = boms.filter(b => b.id !== id);
+  DB.save(DB.KEYS.BOM, filtered);
+
+  toast('BOMを削除しました', 'success');
+  renderBom();
+}
+
+// ========================================
+// 賃率管理
+// ========================================
+
+function renderRates() {
+  const rates = DB.get(DB.KEYS.RATES);
+  const tbody = $('#rates-body');
+
+  if (rates.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rates.map(r => `
+    <tr>
+      <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px;">${r.rateCode}</code></td>
+      <td>${r.department}</td>
+      <td>${r.section}</td>
+      <td>${r.subsection || '-'}</td>
+      <td class="text-right">${r.monthlyRate?.toLocaleString() || 0}</td>
+      <td class="text-right">${r.dailyRate?.toLocaleString() || 0}</td>
+      <td class="text-right">${r.hourlyRate?.toLocaleString() || 0}</td>
+      <td class="text-right">${r.minuteRate?.toFixed(1) || 0}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})">削除</button></td>
+    </tr>
+  `).join('');
+}
+
+function deleteRate(id) {
+  if (!confirm('この賃率を削除しますか？')) return;
+
+  const rates = DB.get(DB.KEYS.RATES);
+  const filtered = rates.filter(r => r.id !== id);
+  DB.save(DB.KEYS.RATES, filtered);
+
+  toast('賃率を削除しました', 'success');
+  renderRates();
+}
+
+// ========================================
+// ユーザー管理
+// ========================================
+
+function renderUsers() {
+  const users = DB.get(DB.KEYS.USERS);
+  const tbody = $('#users-body');
+
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px;">${u.username}</code></td>
+      <td>${u.displayName}</td>
+      <td><span class="badge ${u.role === 'admin' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? '管理者' : '作業者'}</span></td>
+      <td>${u.department || '-'}</td>
+      <td>
+        ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">削除</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function deleteUser(id) {
+  if (!confirm('このユーザーを削除しますか？')) return;
+
+  const users = DB.get(DB.KEYS.USERS);
+  const filtered = users.filter(u => u.id !== id);
+  DB.save(DB.KEYS.USERS, filtered);
+
+  toast('ユーザーを削除しました', 'success');
+  renderUsers();
+}
+
+// ========================================
+// モーダル
+// ========================================
+
+function showModal(title, bodyHtml, footerHtml) {
+  $('#modal-title').textContent = title;
+  $('#modal-body').innerHTML = bodyHtml;
+  $('#modal-footer').innerHTML = footerHtml;
+  $('#modal-overlay').classList.remove('hidden');
+}
+
+function hideModal() {
+  $('#modal-overlay').classList.add('hidden');
+}
+
+// ========================================
+// 各種モーダル表示
+// ========================================
+
+function showAddOrderModal() {
+  const boms = DB.get(DB.KEYS.BOM);
+  const products = [...new Set(boms.map(b => b.productName))].sort();
+
+  // 備考欄のデフォルトラベル
+  const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
+
+  // 備考欄のHTML生成
+  const notesFields = [];
+  for (let i = 1; i <= 10; i++) {
+    notesFields.push(`
+      <div class="form-group" style="margin-bottom: 0.5rem;">
+        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+          <input type="text" id="order-note-label-${i}" class="form-input" value="${defaultNoteLabels[i - 1]}" placeholder="ラベル" style="font-size: 0.75rem;">
+          <input type="text" id="order-note-value-${i}" class="form-input" placeholder="内容を入力" style="font-size: 0.75rem;">
+        </div>
+      </div>
+    `);
+  }
+
+  const body = `
+    <div class="form-group">
+      <label>特注No.</label>
+      <input type="text" id="order-no" class="form-input" placeholder="例: TK-2026-001">
+    </div>
+    <div class="form-group">
+      <label>物件名 *</label>
+      <input type="text" id="order-project" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label>品名 * <small style="color: var(--color-text-muted);">（入力で候補を絞込）</small></label>
+      <input type="text" id="order-product" class="form-input" list="product-list" placeholder="品名を入力..." autocomplete="off" required>
+      <datalist id="product-list">
+        ${products.map(p => `<option value="${p}">`).join('')}
+      </datalist>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>数量</label>
+        <input type="number" id="order-qty" class="form-input" value="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>色</label>
+        <input type="text" id="order-color" class="form-input">
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>着工日</label>
+        <input type="date" id="order-start" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>納期</label>
+        <input type="date" id="order-due" class="form-input">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top: 1rem;">
+      <label style="margin-bottom: 0.5rem;">備考欄（ラベルはカスタマイズ可能）</label>
+      <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--color-bg-primary); border-radius: var(--radius-sm);">
+        ${notesFields.join('')}
+      </div>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="createOrder()">作成</button>
+  `;
+
+  showModal('新規生産指示書', body, footer);
+}
+
+function createOrder() {
+  const orderNo = $('#order-no').value;
+  const projectName = $('#order-project').value;
+  const productName = $('#order-product').value;
+  const quantity = parseInt($('#order-qty').value) || 1;
+  const color = $('#order-color').value;
+  const startDate = $('#order-start').value;
+  const dueDate = $('#order-due').value;
+
+  if (!projectName || !productName) {
+    toast('物件名と品名は必須です', 'warning');
+    return;
+  }
+
+  // 備考欄を取得
+  const notes = [];
+  for (let i = 1; i <= 10; i++) {
+    const labelEl = $(`#order-note-label-${i}`);
+    const valueEl = $(`#order-note-value-${i}`);
+    if (labelEl && valueEl) {
+      notes.push({
+        label: labelEl.value || `備考${i}`,
+        value: valueEl.value || ''
+      });
+    }
+  }
+
+  // BOMから部材を取得
+  const boms = DB.get(DB.KEYS.BOM);
+  const productBoms = boms.filter(b => b.productName === productName);
+
+  const items = productBoms.map((bom, idx) => ({
+    id: idx + 1,
+    bomName: bom.bomName,
+    partCode: bom.partCode,
+    processes: bom.processes || [],
+    completed: []
+  }));
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  orders.push({
+    id: DB.nextId(DB.KEYS.ORDERS),
+    orderNo,
+    projectName,
+    productName,
+    quantity,
+    color,
+    startDate,
+    dueDate,
+    notes,
+    items
+  });
+  DB.save(DB.KEYS.ORDERS, orders);
+
+  toast('生産指示書を作成しました', 'success');
+  hideModal();
+  renderOrders();
+}
+
+function showAddDefectModal() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+
+  const body = `
+    <div class="form-group">
+      <label>指示書 *</label>
+      <select id="defect-order" class="form-input" onchange="updateDefectItemSelect()" required>
+        <option value="">選択してください</option>
+        ${orders.map(o => `<option value="${o.id}">${o.projectName} - ${o.productName}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>部材 *</label>
+      <select id="defect-item" class="form-input" disabled required>
+        <option value="">先に指示書を選択</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>工程 *</label>
+      <input type="text" id="defect-process" class="form-input" placeholder="例: フラッシュ" required>
+    </div>
+    <div class="form-group">
+      <label>不良数</label>
+      <input type="number" id="defect-count" class="form-input" value="1" min="1">
+    </div>
+    <div class="form-group">
+      <label>理由</label>
+      <textarea id="defect-reason" class="form-input" rows="2" placeholder="キズ、寸法不良など"></textarea>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="createDefect()">登録</button>
+  `;
+
+  showModal('不良品登録', body, footer);
+}
+
+function updateDefectItemSelect() {
+  const orderId = parseInt($('#defect-order').value);
+  const itemSelect = $('#defect-item');
+
+  if (!orderId) {
+    itemSelect.innerHTML = '<option value="">先に指示書を選択</option>';
+    itemSelect.disabled = true;
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+
+  if (order && order.items) {
+    itemSelect.innerHTML = '<option value="">選択してください</option>' +
+      order.items.map(i => `<option value="${i.id}" data-bom="${i.bomName}">${i.bomName}</option>`).join('');
+    itemSelect.disabled = false;
+  }
+}
+
+function createDefect() {
+  const orderId = parseInt($('#defect-order').value);
+  const itemId = parseInt($('#defect-item').value);
+  const processName = $('#defect-process').value;
+  const count = parseInt($('#defect-count').value) || 1;
+  const reason = $('#defect-reason').value;
+
+  if (!orderId || !itemId || !processName) {
+    toast('必須項目を入力してください', 'warning');
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+  const item = order?.items?.find(i => i.id === itemId);
+
+  const defects = DB.get(DB.KEYS.DEFECTS);
+  defects.push({
+    id: DB.nextId(DB.KEYS.DEFECTS),
+    orderId,
+    itemId,
+    projectName: order.projectName,
+    productName: order.productName,
+    bomName: item.bomName,
+    processName,
+    count,
+    reason,
+    reporter: currentUser.displayName,
+    reportedAt: new Date().toISOString()
+  });
+  DB.save(DB.KEYS.DEFECTS, defects);
+
+  toast('不良品を登録しました', 'success');
+  hideModal();
+  renderDefects();
+}
+
+function showAddBomModal() {
+  const body = `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>カテゴリ</label>
+        <input type="text" id="bom-category" class="form-input" placeholder="例: PAO">
+      </div>
+      <div class="form-group">
+        <label>製品名 *</label>
+        <input type="text" id="bom-product" class="form-input" required>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>BOM名 *</label>
+        <input type="text" id="bom-name" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>部材CD *</label>
+        <input type="text" id="bom-code" class="form-input" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>工程（カンマ区切り）</label>
+      <input type="text" id="bom-processes" class="form-input" placeholder="例: 芯材カット,面材カット,芯組,フラッシュ">
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="createBom()">作成</button>
+  `;
+
+  showModal('新規BOM作成', body, footer);
+}
+
+function createBom() {
+  const category = $('#bom-category').value;
+  const productName = $('#bom-product').value;
+  const bomName = $('#bom-name').value;
+  const partCode = $('#bom-code').value;
+  const processesStr = $('#bom-processes').value;
+
+  if (!productName || !bomName || !partCode) {
+    toast('製品名、BOM名、部材CDは必須です', 'warning');
+    return;
+  }
+
+  const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
+
+  const boms = DB.get(DB.KEYS.BOM);
+  boms.push({
+    id: DB.nextId(DB.KEYS.BOM),
+    category,
+    productName,
+    bomName,
+    partCode,
+    processes
+  });
+  DB.save(DB.KEYS.BOM, boms);
+
+  toast('BOMを作成しました', 'success');
+  hideModal();
+  renderBom();
+}
+
+function showImportBomModal() {
+  const body = `
+    <p style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
+      スプレッドシートからコピー&ペーストでBOMをインポートできます。<br>
+      形式: 大分類 [TAB] 品名 [TAB] BOM [TAB] 部材CD [TAB] 芯材カット [TAB] 面材カット [TAB] 芯組 [TAB] ...<br>
+      <small>※工程時間は「5分」形式で入力。ヘッダー行も含めてコピーしてください。</small>
+    </p>
+    <textarea id="import-bom-data" class="form-input" rows="10" placeholder="スプレッドシートからコピーしたデータを貼り付けてください..."></textarea>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="importBom()">インポート</button>
+  `;
+
+  showModal('BOM一括インポート', body, footer);
+}
+
+// 工程名リスト（スプレッドシートの列順）
+const PROCESS_COLUMNS = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包', 'フロア加工', 'アクリルBOX作成', '扉面材くり抜き'];
+
+function parseTime(timeStr) {
+  // "5分" -> 5 (数値)
+  if (!timeStr) return 0;
+  const match = timeStr.match(/(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+function importBom() {
+  const data = $('#import-bom-data').value.trim();
+  if (!data) {
+    toast('データを入力してください', 'warning');
+    return;
+  }
+
+  const lines = data.split('\n');
+  const existingBoms = DB.get(DB.KEYS.BOM);
+
+  // 新しいBOMリストを作成
+  const newBoms = [];
+  const duplicates = [];
+
+  lines.forEach((line, lineIndex) => {
+    const cols = line.split('\t');
+
+    // ヘッダー行をスキップ（最初の4列で判定）
+    if (cols.length < 5) return;
+    if (cols[0] === '' && cols[1] === '大分類') return; // ヘッダー行
+    if (cols[4] === '芯材カット' || cols[4] === '部材CD') return; // ヘッダー行
+    if (!cols[2] || !cols[3]) return; // BOM名・部材CDが空
+
+    // データ列のオフセットを検出（空列がある場合）
+    let offset = 0;
+    if (cols[0] === '') offset = 1;
+
+    const category = cols[offset] || '';
+    const productName = cols[offset + 1] || '';
+    const bomName = cols[offset + 2] || '';
+    const partCode = cols[offset + 3] || '';
+
+    if (!bomName || !partCode) return;
+
+    // 重複チェック（BOM名と部材CDで判断）
+    const existingIndex = existingBoms.findIndex(b =>
+      b.bomName === bomName && b.partCode === partCode
+    );
+
+    if (existingIndex >= 0) {
+      duplicates.push(bomName);
+    }
+
+    // 工程と時間を解析
+    const processes = [];
+    const processTimes = {};
+
+    for (let i = 0; i < PROCESS_COLUMNS.length; i++) {
+      const colIndex = offset + 4 + i;
+      if (colIndex < cols.length && cols[colIndex]) {
+        const time = parseTime(cols[colIndex]);
+        if (time > 0) {
+          processes.push(PROCESS_COLUMNS[i]);
+          processTimes[PROCESS_COLUMNS[i]] = time;
+        }
+      }
+    }
+
+    newBoms.push({
+      id: DB.nextId(DB.KEYS.BOM),
+      category: category,
+      productName: productName,
+      bomName: bomName,
+      partCode: partCode,
+      processes: processes,
+      processTimes: processTimes
+    });
+  });
+
+  if (newBoms.length === 0) {
+    toast('インポートできるデータがありません', 'warning');
+    return;
+  }
+
+  // 重複がある場合は確認
+  if (duplicates.length > 0) {
+    const uniqueDuplicates = [...new Set(duplicates)];
+    const confirmMsg = `以下のBOMが既に存在します。上書きしますか？\n\n${uniqueDuplicates.slice(0, 5).join('\n')}${uniqueDuplicates.length > 5 ? `\n...他${uniqueDuplicates.length - 5}件` : ''}`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    // 重複を削除
+    const filteredBoms = existingBoms.filter(b => {
+      return !newBoms.some(n => n.bomName === b.bomName && n.partCode === b.partCode);
+    });
+
+    // 新しいBOMを追加
+    DB.save(DB.KEYS.BOM, [...filteredBoms, ...newBoms]);
+    toast(`${newBoms.length}件のBOMをインポート（${duplicates.length}件上書き）`, 'success');
+  } else {
+    // 重複なし：単純追加
+    DB.save(DB.KEYS.BOM, [...existingBoms, ...newBoms]);
+    toast(`${newBoms.length}件のBOMをインポートしました`, 'success');
+  }
+
+  hideModal();
+  renderBom();
+}
+
+function showAddRateModal() {
+  const body = `
+    <div class="form-group">
+      <label>判定CD *</label>
+      <input type="text" id="rate-code" class="form-input" required>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>部 *</label>
+        <input type="text" id="rate-dept" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>課 *</label>
+        <input type="text" id="rate-section" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>係</label>
+        <input type="text" id="rate-subsection" class="form-input">
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>月額(円)</label>
+        <input type="number" id="rate-monthly" class="form-input" value="0">
+      </div>
+      <div class="form-group">
+        <label>日額(円)</label>
+        <input type="number" id="rate-daily" class="form-input" value="0">
+      </div>
+      <div class="form-group">
+        <label>時給(円)</label>
+        <input type="number" id="rate-hourly" class="form-input" value="0">
+      </div>
+      <div class="form-group">
+        <label>分給(円)</label>
+        <input type="number" id="rate-minute" class="form-input" step="0.1" value="0">
+      </div>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="createRate()">作成</button>
+  `;
+
+  showModal('新規賃率作成', body, footer);
+}
+
+function createRate() {
+  const rateCode = $('#rate-code').value;
+  const department = $('#rate-dept').value;
+  const section = $('#rate-section').value;
+  const subsection = $('#rate-subsection').value;
+  const monthlyRate = parseInt($('#rate-monthly').value) || 0;
+  const dailyRate = parseInt($('#rate-daily').value) || 0;
+  const hourlyRate = parseInt($('#rate-hourly').value) || 0;
+  const minuteRate = parseFloat($('#rate-minute').value) || 0;
+
+  if (!rateCode || !department || !section) {
+    toast('判定CD、部、課は必須です', 'warning');
+    return;
+  }
+
+  const rates = DB.get(DB.KEYS.RATES);
+  rates.push({
+    id: DB.nextId(DB.KEYS.RATES),
+    rateCode,
+    department,
+    section,
+    subsection,
+    monthlyRate,
+    dailyRate,
+    hourlyRate,
+    minuteRate
+  });
+  DB.save(DB.KEYS.RATES, rates);
+
+  toast('賃率を作成しました', 'success');
+  hideModal();
+  renderRates();
+}
+
+function showAddUserModal() {
+  const body = `
+    <div class="form-group">
+      <label>ユーザー名 *</label>
+      <input type="text" id="user-username" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label>パスワード *</label>
+      <input type="password" id="user-password" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label>表示名 *</label>
+      <input type="text" id="user-display" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label>権限</label>
+      <select id="user-role" class="form-input">
+        <option value="worker">作業者</option>
+        <option value="admin">管理者</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>部門</label>
+      <input type="text" id="user-dept" class="form-input">
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="createUser()">作成</button>
+  `;
+
+  showModal('新規ユーザー作成', body, footer);
+}
+
+function createUser() {
+  const username = $('#user-username').value;
+  const password = $('#user-password').value;
+  const displayName = $('#user-display').value;
+  const role = $('#user-role').value;
+  const department = $('#user-dept').value;
+
+  if (!username || !password || !displayName) {
+    toast('ユーザー名、パスワード、表示名は必須です', 'warning');
+    return;
+  }
+
+  const users = DB.get(DB.KEYS.USERS);
+
+  if (users.some(u => u.username === username)) {
+    toast('このユーザー名は既に使用されています', 'error');
+    return;
+  }
+
+  users.push({
+    id: DB.nextId(DB.KEYS.USERS),
+    username,
+    password,
+    displayName,
+    role,
+    department
+  });
+  DB.save(DB.KEYS.USERS, users);
+
+  toast('ユーザーを作成しました', 'success');
+  hideModal();
+  renderUsers();
+}
+
+// ========================================
+// イベントリスナー
+// ========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 認証チェック
+  checkAuth();
+
+  // ログインフォーム
+  $('#login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = $('#login-username').value;
+    const password = $('#login-password').value;
+
+    if (login(username, password)) {
+      showMainScreen();
+      toast('ログインしました', 'success');
+    } else {
+      toast('ユーザー名またはパスワードが正しくありません', 'error');
+    }
+  });
+
+  // ログアウト
+  $('#logout-btn').addEventListener('click', logout);
+
+  // ナビゲーション
+  $$('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = item.dataset.page;
+      if (page) navigateTo(page);
+    });
+  });
+
+  // ガントチャートフィルター
+  $$('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ganttFilter = btn.dataset.filter;
+      renderGantt();
+    });
+  });
+
+  // ガントチャート展開/折りたたみ
+  $('#expand-all').addEventListener('click', expandAll);
+  $('#collapse-all').addEventListener('click', collapseAll);
+
+  // QRページ
+  $('#qr-order').addEventListener('change', updateQrItemSelect);
+  $('#qr-item').addEventListener('change', updateQrProcessSelect);
+
+  $('#qr-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const orderId = parseInt($('#qr-order').value);
+    const itemId = parseInt($('#qr-item').value);
+    const processName = $('#qr-process').value;
+
+    if (!orderId || !itemId || !processName) {
+      toast('すべての項目を選択してください', 'warning');
+      return;
+    }
+
+    if (registerProgress(orderId, itemId, processName)) {
+      toast('進捗を登録しました', 'success');
+      renderQrPage();
+      $('#qr-order').value = '';
+      $('#qr-item').value = '';
+      $('#qr-item').disabled = true;
+      $('#qr-process').value = '';
+      $('#qr-process').disabled = true;
+    }
+  });
+
+  // モーダル
+  $('#modal-close').addEventListener('click', hideModal);
+  $('#modal-overlay').addEventListener('click', (e) => {
+    if (e.target === $('#modal-overlay')) hideModal();
+  });
+
+  // 各種追加ボタン
+  $('#add-order-btn').addEventListener('click', showAddOrderModal);
+  $('#add-defect-btn').addEventListener('click', showAddDefectModal);
+  $('#add-bom-btn').addEventListener('click', showAddBomModal);
+  $('#import-bom-btn').addEventListener('click', showImportBomModal);
+  $('#add-rate-btn').addEventListener('click', showAddRateModal);
+  $('#add-user-btn').addEventListener('click', showAddUserModal);
+
+  // 月次報告
+  $('#filter-report-btn').addEventListener('click', renderReport);
+  $('#generate-report-btn').addEventListener('click', printReport);
+});
+
+// ========================================
+// 月次報告
+// ========================================
+
+function renderReport() {
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const rates = DB.get(DB.KEYS.RATES);
+  const boms = DB.get(DB.KEYS.BOM);
+
+  // 完了案件をフィルタ
+  let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
+
+  // 日付フィルタ
+  if (startDate) {
+    filteredOrders = filteredOrders.filter(o => o.dueDate >= startDate);
+  }
+  if (endDate) {
+    filteredOrders = filteredOrders.filter(o => o.dueDate <= endDate);
+  }
+
+  // 統計計算
+  let totalQuantity = 0;
+  let totalCost = 0;
+  let totalTime = 0;
+  let departmentCosts = { '基材係': 0, '加工係': 0, '梱包仕上係': 0 };
+  let departmentTimes = { '基材係': 0, '加工係': 0, '梱包仕上係': 0 };
+
+  // 賃率マップ
+  const rateMap = {};
+  rates.forEach(r => {
+    rateMap[r.department] = parseFloat(r.rate) || 0;
+  });
+
+  // 工程→部門マッピング
+  const processToDept = {
+    '芯材カット': '基材係',
+    '面材カット': '基材係',
+    '芯組': '基材係',
+    'フラッシュ': '基材係',
+    'ランニングソー': '加工係',
+    'エッヂバンダー': '加工係',
+    'TOYO': '加工係',
+    'HOMAG': '加工係',
+    '仕上・梱包': '梱包仕上係',
+    'フロア加工': '加工係',
+    'アクリルBOX作成': '基材係',
+    '扉面材くり抜き': '加工係'
+  };
+
+  const detailRows = filteredOrders.map(order => {
+    totalQuantity += order.quantity;
+
+    // 製品のBOMから工程時間を計算
+    const productBoms = boms.filter(b => b.productName === order.productName);
+
+    let orderTime = 0;
+    let orderCost = 0;
+    let orderDeptTimes = { '基材係': 0, '加工係': 0, '梱包仕上係': 0 };
+    let orderDeptCosts = { '基材係': 0, '加工係': 0, '梱包仕上係': 0 };
+
+    productBoms.forEach(bom => {
+      if (bom.processTimes) {
+        Object.entries(bom.processTimes).forEach(([process, time]) => {
+          const dept = processToDept[process] || '加工係';
+          const deptRate = rateMap[dept] || 50; // デフォルト賃率50円/分
+          const totalTimeForProcess = time * order.quantity;
+          const costForProcess = totalTimeForProcess * deptRate;
+
+          orderTime += totalTimeForProcess;
+          orderCost += costForProcess;
+          orderDeptTimes[dept] = (orderDeptTimes[dept] || 0) + totalTimeForProcess;
+          orderDeptCosts[dept] = (orderDeptCosts[dept] || 0) + costForProcess;
+        });
+      }
+    });
+
+    // フォールバック：BOMに時間データがない場合
+    if (orderTime === 0) {
+      orderTime = 60 * order.quantity;
+      orderCost = 25000 * order.quantity;
+      orderDeptCosts = { '基材係': orderCost * 0.4, '加工係': orderCost * 0.45, '梱包仕上係': orderCost * 0.15 };
+    }
+
+    totalCost += orderCost;
+    totalTime += orderTime;
+
+    Object.keys(departmentCosts).forEach(dept => {
+      departmentCosts[dept] += orderDeptCosts[dept] || 0;
+      departmentTimes[dept] += orderDeptTimes[dept] || 0;
+    });
+
+    return `
+      <tr>
+        <td>${order.projectName}</td>
+        <td>${order.productName}</td>
+        <td>${formatDate(order.dueDate)}</td>
+        <td>${order.quantity}</td>
+        <td>${Math.round(orderCost).toLocaleString()}</td>
+        <td>${orderTime.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const dateRangeText = startDate && endDate
+    ? `${formatDate(startDate)} ～ ${formatDate(endDate)}`
+    : '全期間';
+
+  const now = new Date();
+  const createdAt = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  // ========================================
+  // 在庫データの取得と計算
+  // ========================================
+  const invProducts = DB.get(DB.KEYS.INV_PRODUCTS);
+  const invLogs = DB.get(DB.KEYS.INV_LOGS);
+  const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
+
+  // 在庫計算（カテゴリ別）
+  const categoryStocks = {};
+  let totalInvAmount = 0;
+  let totalFixedAmount = 0;
+  let totalNormalAmount = 0;
+
+  invProducts.forEach(product => {
+    const stock = getCurrentStock(product.id, invLogs);
+    const amount = stock * product.price;
+
+    // カテゴリ別集計
+    const catName = INV_CATEGORIES[product.category] || product.category;
+    if (!categoryStocks[catName]) {
+      categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
+    }
+
+    if (product.isFixed) {
+      categoryStocks[catName].fixed += amount;
+      totalFixedAmount += amount;
+    } else {
+      categoryStocks[catName].normal += amount;
+      totalNormalAmount += amount;
+    }
+    categoryStocks[catName].total += amount;
+    totalInvAmount += amount;
+  });
+
+  // 月別在庫推移データ（過去6ヶ月）
+  const monthlyTrend = [];
+  const currentMonth = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const targetDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
+    const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+    const monthData = invMonthly.find(m => m.month === monthKey);
+    monthlyTrend.push({
+      month: monthKey,
+      label: `${targetDate.getMonth() + 1}月`,
+      total: monthData?.total || 0,
+      fixedTotal: monthData?.fixedTotal || 0
+    });
+  }
+
+  // 分類別グラフHTML生成
+  const categoryRows = Object.entries(categoryStocks)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([cat, data]) => {
+      const barWidth = totalInvAmount > 0 ? Math.round((data.total / totalInvAmount) * 100) : 0;
+      return `
+        <div style="margin-bottom: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span style="font-size: 0.875rem;">${cat}</span>
+            <span style="font-size: 0.875rem; font-weight: 500;">¥${data.total.toLocaleString()}</span>
+          </div>
+          <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem;">
+            <span>通常: ¥${data.normal.toLocaleString()}</span>
+            <span>不動品: ¥${data.fixed.toLocaleString()}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  // 月別推移グラフ
+  const maxTrendValue = Math.max(...monthlyTrend.map(m => m.total), 1);
+  const trendBars = monthlyTrend.map(m => {
+    const barHeight = Math.round((m.total / maxTrendValue) * 100);
+    const fixedHeight = m.total > 0 ? Math.round((m.fixedTotal / m.total) * barHeight) : 0;
+    return `
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+        <div style="flex: 1; width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+          <div style="background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light)); width: 100%; height: ${barHeight}%; border-radius: 4px 4px 0 0; position: relative;">
+            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: var(--color-warning); opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
+          </div>
+        </div>
+        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--color-text-muted);">${m.label}</div>
+        <div style="font-size: 0.625rem; color: var(--color-text-muted);">${m.total > 0 ? `¥${Math.round(m.total / 10000)}万` : '-'}</div>
+      </div>
+    `;
+  }).join('');
+
+  const html = `
+    <div class="report-print" id="report-print-area">
+      <div class="report-title">★月次・製造原価報告書 (${dateRangeText})</div>
+      <div class="report-meta">作成日時: ${createdAt}</div>
+      
+      <div class="report-section">
+        <h3>■月次総括サマリ</h3>
+        <div class="report-summary">
+          <div class="summary-item">
+            <span class="summary-label">総出荷台数</span>
+            <span class="summary-value">${totalQuantity} 台</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">加工費総額</span>
+            <span class="summary-value">${totalCost.toLocaleString()} 円</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">総生産時間</span>
+            <span class="summary-value">${totalTime.toLocaleString()} 分</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 在庫金額セクション -->
+      <div class="report-section" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem;">■在庫金額サマリ</h3>
+        <div class="report-summary" style="margin-bottom: 1.5rem;">
+          <div class="summary-item">
+            <span class="summary-label">在庫金額合計</span>
+            <span class="summary-value" style="color: var(--color-primary);">¥${totalInvAmount.toLocaleString()}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">通常在庫</span>
+            <span class="summary-value" style="color: var(--color-success);">¥${totalNormalAmount.toLocaleString()}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">不動品在庫</span>
+            <span class="summary-value" style="color: var(--color-warning);">¥${totalFixedAmount.toLocaleString()}</span>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <!-- 分類別グラフ -->
+          <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📊 分類別在庫金額</h4>
+            ${categoryRows || '<p class="text-muted">在庫データがありません</p>'}
+          </div>
+          
+          <!-- 月別推移グラフ -->
+          <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📈 月別在庫推移（過去6ヶ月）</h4>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md);">
+              ${trendBars}
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem;">
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-primary); border-radius: 2px;"></span> 通常</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-warning); border-radius: 2px;"></span> 不動品</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="report-section">
+        <h3>■詳細データ一覧</h3>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>物件名</th>
+              <th>製品名</th>
+              <th>納期</th>
+              <th>台数</th>
+              <th>加工費合計</th>
+              <th>時間(分)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${detailRows || '<tr><td colspan="6" class="text-center text-muted">完了案件がありません</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="report-section">
+        <h3>■部門別集計</h3>
+        <div class="report-departments">
+          ${Object.entries(departmentCosts).map(([dept, cost]) => `
+            <div class="dept-item">
+              <span class="dept-name">${dept}</span>
+              <span class="dept-cost">${Math.round(cost).toLocaleString()} 円</span>
+              <span class="dept-time" style="font-size: 0.75rem; color: var(--color-text-muted);">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  $('#report-content').innerHTML = html;
+}
+
+function printReport() {
+  const reportArea = $('#report-print-area');
+  if (!reportArea) {
+    toast('先に集計を実行してください', 'warning');
+    return;
+  }
+
+  // 印刷用ウィンドウで開く
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>月次報告書</title>
+      <style>
+        body { font-family: 'Noto Sans JP', sans-serif; padding: 2rem; color: #1F2937; }
+        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .report-meta { color: #6B7280; margin-bottom: 2rem; }
+        .report-section { margin-bottom: 2rem; }
+        .report-section h3 { font-size: 1rem; margin-bottom: 1rem; color: #1F2937; }
+        .report-summary { display: flex; gap: 2rem; margin-bottom: 1rem; }
+        .summary-item { display: flex; flex-direction: column; }
+        .summary-label { font-size: 0.875rem; color: #6B7280; }
+        .summary-value { font-size: 1.25rem; font-weight: bold; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .report-table th, .report-table td { border: 1px solid #D1D5DB; padding: 0.5rem; text-align: left; }
+        .report-table th { background: #F3F4F6; font-weight: 600; }
+        .report-departments { display: flex; gap: 2rem; }
+        .dept-item { display: flex; flex-direction: column; }
+        .dept-name { font-size: 0.875rem; color: #6B7280; }
+        .dept-cost { font-size: 1rem; font-weight: bold; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      ${reportArea.innerHTML}
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+}
+
+// ========================================
+// モバイルナビゲーション
+// ========================================
+
+function initMobileNav() {
+  const mobileNav = $('#mobile-nav');
+  const mobileNavWorker = $('#mobile-nav-worker');
+  const mobileNavAdmin = $('#mobile-nav-admin');
+  const moreMenu = $('#more-menu');
+
+  if (!mobileNav) return;
+
+  // モバイルナビを表示
+  mobileNav.classList.remove('hidden');
+
+  // ロールに応じたナビを表示
+  if (currentUser.role === 'admin') {
+    mobileNavWorker.classList.add('hidden');
+    mobileNavAdmin.classList.remove('hidden');
+  } else {
+    mobileNavWorker.classList.remove('hidden');
+    mobileNavAdmin.classList.add('hidden');
+  }
+
+  // ボトムナビのクリックイベント
+  $$('.mobile-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = btn.dataset.page;
+
+      if (page === 'more') {
+        // その他メニューを表示
+        showMoreMenu();
+      } else {
+        navigateTo(page);
+      }
+    });
+  });
+
+  // その他メニューの項目クリック
+  $$('.more-menu-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      hideMoreMenu();
+      navigateTo(page);
+    });
+  });
+
+  // その他メニューを閉じる
+  const moreMenuClose = $('.more-menu-close');
+  if (moreMenuClose) {
+    moreMenuClose.addEventListener('click', hideMoreMenu);
+  }
+
+  const moreMenuOverlay = $('.more-menu-overlay');
+  if (moreMenuOverlay) {
+    moreMenuOverlay.addEventListener('click', hideMoreMenu);
+  }
+
+  // モバイルログアウトボタン
+  const mobileLogoutBtn = $('#mobile-logout-btn');
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener('click', () => {
+      hideMoreMenu();
+      logout();
+    });
+  }
+}
+
+function showMoreMenu() {
+  const moreMenu = $('#more-menu');
+  if (moreMenu) {
+    moreMenu.classList.remove('hidden');
+  }
+}
+
+function hideMoreMenu() {
+  const moreMenu = $('#more-menu');
+  if (moreMenu) {
+    moreMenu.classList.add('hidden');
+  }
+}
+
+// ========================================
+// 在庫管理
+// ========================================
+
+// 資材分類
+const INV_CATEGORIES = {
+  '01': '基材',
+  '02': '面材',
+  '03': 'シート',
+  '04': '小口テープ',
+  '05': '金具',
+  '06': 'ダンボール',
+  '07': '接着剤',
+  '08': '仕入備品',
+  '09': 'PAO資材',
+  '10': '製品在庫',
+  '11': '工場部材',
+  '15': '外注在庫',
+  '16': '仕掛品'
+};
+
+// 在庫スキャナー用
+let invQrScanner = null;
+
+// 現在庫数を取得（ログから集計）
+function getCurrentStock(productId) {
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  let stock = 0;
+  logs.forEach(log => {
+    if (log.productId === productId) {
+      if (log.type === 'count') {
+        stock = log.quantity; // 棚卸の場合は上書き
+      } else if (log.type === 'in') {
+        stock += log.quantity;
+      } else if (log.type === 'out') {
+        stock -= log.quantity;
+      }
+    }
+  });
+  return stock;
+}
+
+// ========================================
+// 棚卸スキャン画面
+// ========================================
+
+function renderInvScanPage() {
+  // イベント設定
+  const startBtn = $('#inv-start-scan-btn');
+  const stopBtn = $('#inv-stop-scan-btn');
+  const productIdInput = $('#inv-scan-product-id');
+  const form = $('#inv-scan-form');
+
+  if (startBtn) startBtn.onclick = startInvScanner;
+  if (stopBtn) stopBtn.onclick = stopInvScanner;
+
+  // 資材ID入力時に商品情報を表示
+  if (productIdInput) {
+    productIdInput.oninput = () => {
+      const id = productIdInput.value.trim();
+      displayProductInfo(id);
+    };
+  }
+
+  // フォーム送信
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      submitInventoryCount();
+    };
+  }
+
+  // 本日の棚卸履歴を表示
+  renderTodayInvLogs();
+
+  // スマホの場合は自動でカメラ起動
+  if (isMobileDevice()) {
+    setTimeout(() => startInvScanner(), 500);
+  }
+}
+
+function displayProductInfo(productId) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const product = products.find(p => p.id === productId);
+  const infoDiv = $('#inv-product-info');
+
+  if (product) {
+    const stock = getCurrentStock(productId);
+    $('#inv-product-name').textContent = product.name;
+    $('#inv-current-stock').textContent = stock;
+    $('#inv-product-price').textContent = product.price.toLocaleString();
+    infoDiv.style.display = 'block';
+  } else {
+    infoDiv.style.display = 'none';
+  }
+}
+
+function startInvScanner() {
+  const placeholder = $('#inv-scanner-placeholder');
+  const videoEl = $('#inv-qr-video');
+  const startBtn = $('#inv-start-scan-btn');
+  const stopBtn = $('#inv-stop-scan-btn');
+  const resultDiv = $('#inv-scan-result');
+
+  if (placeholder) placeholder.style.display = 'none';
+  if (videoEl) videoEl.style.display = 'block';
+  if (startBtn) startBtn.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'inline-block';
+  if (resultDiv) resultDiv.style.display = 'none';
+
+  if (typeof Html5Qrcode === 'undefined') {
+    toast('QRスキャナーが読み込めません', 'error');
+    return;
+  }
+
+  invQrScanner = new Html5Qrcode('inv-scanner-preview');
+
+  invQrScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    onInvQrScanned,
+    () => { }
+  ).catch(err => {
+    console.error('カメラ起動エラー:', err);
+    toast('カメラを起動できません', 'error');
+    stopInvScanner();
+  });
+}
+
+function stopInvScanner() {
+  const placeholder = $('#inv-scanner-placeholder');
+  const videoEl = $('#inv-qr-video');
+  const startBtn = $('#inv-start-scan-btn');
+  const stopBtn = $('#inv-stop-scan-btn');
+
+  if (invQrScanner) {
+    invQrScanner.stop().then(() => {
+      invQrScanner.clear();
+      invQrScanner = null;
+    }).catch(err => console.log(err));
+  }
+
+  if (placeholder) placeholder.style.display = 'block';
+  if (videoEl) videoEl.style.display = 'none';
+  if (startBtn) startBtn.style.display = 'inline-block';
+  if (stopBtn) stopBtn.style.display = 'none';
+}
+
+function onInvQrScanned(decodedText) {
+  stopInvScanner();
+
+  const resultDiv = $('#inv-scan-result');
+  const dataDiv = $('#inv-scan-data');
+  const productIdInput = $('#inv-scan-product-id');
+
+  // 資材IDをセット
+  productIdInput.value = decodedText.trim();
+  displayProductInfo(decodedText.trim());
+
+  if (resultDiv) resultDiv.style.display = 'block';
+  if (dataDiv) dataDiv.innerHTML = `<div>読取ID: ${decodedText}</div>`;
+
+  if (navigator.vibrate) navigator.vibrate(100);
+  toast('QRコードを読み取りました', 'success');
+
+  // 数量入力欄にフォーカス
+  setTimeout(() => $('#inv-scan-quantity')?.focus(), 100);
+}
+
+function submitInventoryCount() {
+  const productId = $('#inv-scan-product-id').value.trim();
+  const quantity = parseInt($('#inv-scan-quantity').value) || 0;
+
+  if (!productId) {
+    toast('資材IDを入力してください', 'error');
+    return;
+  }
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const product = products.find(p => p.id === productId);
+
+  if (!product) {
+    toast('商品が見つかりません', 'error');
+    return;
+  }
+
+  // 棚卸ログに追加
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  logs.push({
+    id: Date.now(),
+    productId: productId,
+    quantity: quantity,
+    type: 'count',
+    worker: currentUser.displayName,
+    note: '',
+    timestamp: new Date().toISOString()
+  });
+  DB.save(DB.KEYS.INV_LOGS, logs);
+
+  toast(`${product.name}の棚卸を登録しました（${quantity}個）`, 'success');
+
+  // フォームリセット
+  $('#inv-scan-product-id').value = '';
+  $('#inv-scan-quantity').value = '';
+  $('#inv-product-info').style.display = 'none';
+  $('#inv-scan-result').style.display = 'none';
+
+  // 履歴更新
+  renderTodayInvLogs();
+
+  // 連続スキャンモード（スマホ）
+  if (isMobileDevice()) {
+    setTimeout(() => startInvScanner(), 500);
+  }
+}
+
+function renderTodayInvLogs() {
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const today = new Date().toISOString().split('T')[0];
+
+  const todayLogs = logs.filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 10);
+  const container = $('#inv-today-logs');
+
+  if (todayLogs.length === 0) {
+    container.innerHTML = '<p class="text-muted">本日の履歴がありません</p>';
+    return;
+  }
+
+  container.innerHTML = todayLogs.map(log => {
+    const product = products.find(p => p.id === log.productId);
+    const typeLabel = log.type === 'count' ? '棚卸' : log.type === 'in' ? '入庫' : '出庫';
+    const time = new Date(log.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+        <div>
+          <div style="font-weight: 500;">${product?.name || log.productId}</div>
+          <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${typeLabel}: ${log.quantity}個</div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted);">${time}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========================================
+// 在庫検索画面
+// ========================================
+
+function renderInvSearchPage() {
+  const searchBtn = $('#inv-search-btn');
+  const keywordInput = $('#inv-search-keyword');
+
+  if (searchBtn) searchBtn.onclick = executeInvSearch;
+  if (keywordInput) {
+    keywordInput.onkeypress = (e) => {
+      if (e.key === 'Enter') executeInvSearch();
+    };
+    // 初期表示で全件表示
+    executeInvSearch();
+  }
+}
+
+function executeInvSearch() {
+  const keyword = ($('#inv-search-keyword')?.value || '').toLowerCase().trim();
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const tbody = $('#inv-search-results');
+
+  let filtered = products;
+  if (keyword) {
+    filtered = products.filter(p =>
+      p.id.toLowerCase().includes(keyword) ||
+      p.name.toLowerCase().includes(keyword) ||
+      (INV_CATEGORIES[p.category] || '').toLowerCase().includes(keyword)
+    );
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    const stock = getCurrentStock(p.id);
+    const amount = stock * p.price;
+    return `
+      <tr>
+        <td>${p.id}</td>
+        <td>${INV_CATEGORIES[p.category] || p.category}</td>
+        <td>${p.name}</td>
+        <td>${stock}</td>
+        <td>¥${p.price.toLocaleString()}</td>
+        <td>¥${amount.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('') || '<tr><td colspan="6" class="text-muted text-center">該当なし</td></tr>';
+}
+
+// ========================================
+// 商品マスタ画面
+// ========================================
+
+function renderInvProductsPage() {
+  // カテゴリフィルタ初期化
+  const categoryFilter = $('#inv-products-category-filter');
+  categoryFilter.innerHTML = '<option value="">全分類</option>' +
+    Object.entries(INV_CATEGORIES).map(([code, name]) =>
+      `<option value="${code}">${code}: ${name}</option>`
+    ).join('');
+
+  // イベント設定
+  categoryFilter.onchange = renderInvProductsTable;
+  $('#inv-products-search').oninput = renderInvProductsTable;
+  $('#inv-products-fixed-only').onchange = renderInvProductsTable;
+  $('#add-inv-product-btn').onclick = showAddInvProductModal;
+
+  // CSV取り込み・エクスポート
+  $('#import-inv-csv-btn').onclick = showCsvImportArea;
+  $('#export-inv-csv-btn').onclick = exportInvProductsCsv;
+  $('#execute-csv-import-btn').onclick = executeInvCsvImport;
+  $('#cancel-csv-import-btn').onclick = hideCsvImportArea;
+  $('#csv-file-input').onchange = previewCsvFile;
+
+  // テーブル描画
+  renderInvProductsTable();
+}
+
+function renderInvProductsTable() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const categoryFilter = $('#inv-products-category-filter').value;
+  const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
+  const fixedOnly = $('#inv-products-fixed-only').checked;
+
+  let filtered = products.filter(p => {
+    if (categoryFilter && p.category !== categoryFilter) return false;
+    if (fixedOnly && !p.isFixed) return false;
+    if (searchKeyword && !p.id.toLowerCase().includes(searchKeyword) && !p.name.toLowerCase().includes(searchKeyword)) return false;
+    return true;
+  });
+
+  const tbody = $('#inv-products-body');
+  tbody.innerHTML = filtered.map(p => `
+    <tr style="${p.isFixed ? 'background: #fff3cd;' : ''}">
+      <td>${p.id}</td>
+      <td>${INV_CATEGORIES[p.category] || p.category}</td>
+      <td>${p.name}</td>
+      <td>¥${p.price.toLocaleString()}</td>
+      <td>${p.isFixed ? '✓' : ''}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${p.id}')">編集</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${p.id}')">削除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showAddInvProductModal() {
+  $('#modal-title').textContent = '商品登録';
+  $('#modal-body').innerHTML = `
+    <form id="inv-product-form">
+      <div class="form-group">
+        <label>分類</label>
+        <select id="inv-prod-category" class="form-input" required>
+          ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
+    `<option value="${code}">${code}: ${name}</option>`
+  ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>品名</label>
+        <input type="text" id="inv-prod-name" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>単価</label>
+        <input type="number" id="inv-prod-price" class="form-input" min="0" required>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="inv-prod-fixed"> 不動品</label>
+      </div>
+    </form>
+  `;
+  $('#modal-footer').innerHTML = `
+    <button class="btn btn-secondary" id="modal-cancel">キャンセル</button>
+    <button class="btn btn-primary" id="modal-save">登録</button>
+  `;
+  $('#modal-overlay').classList.remove('hidden');
+
+  $('#modal-cancel').onclick = closeModal;
+  $('#modal-close').onclick = closeModal;
+  $('#modal-save').onclick = saveNewInvProduct;
+}
+
+function saveNewInvProduct() {
+  const category = $('#inv-prod-category').value;
+  const name = $('#inv-prod-name').value.trim();
+  const price = parseInt($('#inv-prod-price').value) || 0;
+  const isFixed = $('#inv-prod-fixed').checked;
+
+  if (!name) {
+    toast('品名を入力してください', 'error');
+    return;
+  }
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+
+  // ID自動採番
+  const prefix = 'N' + category;
+  const existingIds = products.filter(p => p.id.startsWith(prefix)).map(p => parseInt(p.id.substring(3)) || 0);
+  const nextNum = Math.max(0, ...existingIds) + 1;
+  const newId = prefix + String(nextNum).padStart(12, '0');
+
+  products.push({
+    id: newId,
+    name: name,
+    category: category,
+    price: price,
+    isFixed: isFixed
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+  toast(`${name}を登録しました（${newId}）`, 'success');
+  closeModal();
+  renderInvProductsTable();
+}
+
+function editInvProduct(id) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const product = products.find(p => p.id === id);
+  if (!product) return;
+
+  $('#modal-title').textContent = '商品編集';
+  $('#modal-body').innerHTML = `
+    <form id="inv-product-form">
+      <div class="form-group">
+        <label>資材ID</label>
+        <input type="text" class="form-input" value="${product.id}" disabled>
+      </div>
+      <div class="form-group">
+        <label>分類</label>
+        <select id="inv-prod-category" class="form-input" required>
+          ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
+    `<option value="${code}" ${product.category === code ? 'selected' : ''}>${code}: ${name}</option>`
+  ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>品名</label>
+        <input type="text" id="inv-prod-name" class="form-input" value="${product.name}" required>
+      </div>
+      <div class="form-group">
+        <label>単価</label>
+        <input type="number" id="inv-prod-price" class="form-input" value="${product.price}" min="0" required>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="inv-prod-fixed" ${product.isFixed ? 'checked' : ''}> 不動品</label>
+      </div>
+    </form>
+  `;
+  $('#modal-footer').innerHTML = `
+    <button class="btn btn-secondary" id="modal-cancel">キャンセル</button>
+    <button class="btn btn-primary" id="modal-save">更新</button>
+  `;
+  $('#modal-overlay').classList.remove('hidden');
+
+  $('#modal-cancel').onclick = closeModal;
+  $('#modal-close').onclick = closeModal;
+  $('#modal-save').onclick = () => updateInvProduct(id);
+}
+
+function updateInvProduct(id) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const idx = products.findIndex(p => p.id === id);
+  if (idx === -1) return;
+
+  products[idx].category = $('#inv-prod-category').value;
+  products[idx].name = $('#inv-prod-name').value.trim();
+  products[idx].price = parseInt($('#inv-prod-price').value) || 0;
+  products[idx].isFixed = $('#inv-prod-fixed').checked;
+
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast('更新しました', 'success');
+  closeModal();
+  renderInvProductsTable();
+}
+
+function deleteInvProduct(id) {
+  if (!confirm('この商品を削除しますか？')) return;
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const filtered = products.filter(p => p.id !== id);
+  DB.save(DB.KEYS.INV_PRODUCTS, filtered);
+  toast('削除しました', 'success');
+  renderInvProductsTable();
+}
+
+// ========================================
+// 在庫増減画面
+// ========================================
+
+function renderInvAdjustPage() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const productSelect = $('#inv-adjust-product');
+
+  productSelect.innerHTML = '<option value="">選択してください</option>' +
+    products.map(p => `<option value="${p.id}">${p.id}: ${p.name}</option>`).join('');
+
+  const form = $('#inv-adjust-form');
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      submitInvAdjust();
+    };
+  }
+
+  renderInvAdjustLogs();
+}
+
+function submitInvAdjust() {
+  const type = $('#inv-adjust-type').value;
+  const productId = $('#inv-adjust-product').value;
+  const quantity = parseInt($('#inv-adjust-quantity').value) || 0;
+  const note = $('#inv-adjust-note').value.trim();
+
+  if (!productId || quantity <= 0) {
+    toast('商品と数量を入力してください', 'error');
+    return;
+  }
+
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  logs.push({
+    id: Date.now(),
+    productId: productId,
+    quantity: quantity,
+    type: type,
+    worker: currentUser.displayName,
+    note: note,
+    timestamp: new Date().toISOString()
+  });
+  DB.save(DB.KEYS.INV_LOGS, logs);
+
+  const typeLabel = type === 'in' ? '入庫' : '出庫';
+  toast(`${typeLabel}を登録しました`, 'success');
+
+  $('#inv-adjust-product').value = '';
+  $('#inv-adjust-quantity').value = '';
+  $('#inv-adjust-note').value = '';
+
+  renderInvAdjustLogs();
+}
+
+function renderInvAdjustLogs() {
+  const logs = DB.get(DB.KEYS.INV_LOGS).filter(l => l.type !== 'count').reverse().slice(0, 20);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const container = $('#inv-adjust-logs');
+
+  if (logs.length === 0) {
+    container.innerHTML = '<p class="text-muted">履歴がありません</p>';
+    return;
+  }
+
+  container.innerHTML = logs.map(log => {
+    const product = products.find(p => p.id === log.productId);
+    const typeLabel = log.type === 'in' ? '➕入庫' : '➖出庫';
+    const date = new Date(log.timestamp).toLocaleDateString('ja-JP');
+    return `
+      <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+        <div>
+          <div style="font-weight: 500;">${product?.name || log.productId}</div>
+          <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${typeLabel}: ${log.quantity}個 ${log.note ? `(${log.note})` : ''}</div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--color-text-muted);">${date}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========================================
+// 月次締め画面
+// ========================================
+
+function renderInvMonthlyPage() {
+  // 当月をデフォルト設定
+  const monthInput = $('#inv-closing-month');
+  if (monthInput && !monthInput.value) {
+    monthInput.value = new Date().toISOString().substring(0, 7);
+  }
+
+  $('#view-inv-monthly-btn').onclick = viewInvMonthlySummary;
+  $('#run-inv-closing-btn').onclick = runInvMonthlyClosing;
+}
+
+function viewInvMonthlySummary() {
+  const month = $('#inv-closing-month').value;
+  if (!month) {
+    toast('年月を選択してください', 'error');
+    return;
+  }
+
+  const result = calculateInvMonthly(month);
+  displayInvMonthlyResult(result);
+}
+
+function calculateInvMonthly(month) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+
+  // 前月データを取得
+  const prevDate = new Date(month + '-01');
+  prevDate.setMonth(prevDate.getMonth() - 1);
+  const prevMonth = prevDate.toISOString().substring(0, 7);
+  const prevData = monthly.find(m => m.month === prevMonth);
+
+  // 当月のログをフィルタ
+  const monthLogs = logs.filter(l => l.timestamp.startsWith(month));
+
+  // 商品ごとの在庫計算
+  const items = [];
+  const summary = {};
+
+  products.forEach(p => {
+    // 前月在庫
+    let prevQty = 0;
+    if (prevData) {
+      const prevItem = prevData.items.find(i => i.productId === p.id);
+      if (prevItem) prevQty = prevItem.currQty;
+    }
+
+    // 当月在庫（ログから計算）
+    let currQty = prevQty;
+    const productLogs = monthLogs.filter(l => l.productId === p.id);
+    productLogs.forEach(log => {
+      if (log.type === 'count') {
+        currQty = log.quantity;
+      } else if (log.type === 'in') {
+        currQty += log.quantity;
+      } else if (log.type === 'out') {
+        currQty -= log.quantity;
+      }
+    });
+
+    // 不動品の場合、ログがなければ前月在庫を引き継ぐ
+    if (p.isFixed && productLogs.length === 0) {
+      currQty = prevQty;
+    }
+
+    const diff = currQty - prevQty;
+    const amount = currQty * p.price;
+
+    items.push({
+      productId: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      prevQty: prevQty,
+      currQty: currQty,
+      diff: diff,
+      amount: amount,
+      isFixed: p.isFixed
+    });
+
+    // 分類別集計
+    const catKey = p.isFixed ? 'fixed' : p.category;
+    if (!summary[catKey]) {
+      summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+    }
+    summary[catKey].amount += amount;
+    summary[catKey].diff += diff * p.price;
+  });
+
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
+
+  return { month, items, summary, total };
+}
+
+function displayInvMonthlyResult(result) {
+  const container = $('#inv-monthly-result');
+
+  // 分類別集計表
+  let summaryRows = '';
+  let summaryTotal = 0, summaryDiff = 0;
+  let normalTotal = 0, fixedTotal = 0;
+
+  // カテゴリデータを収集
+  const categoryData = [];
+
+  // カテゴリ順に表示
+  Object.keys(INV_CATEGORIES).forEach(code => {
+    if (result.summary[code]) {
+      const s = result.summary[code];
+      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+      summaryTotal += s.amount;
+      summaryDiff += s.diff;
+      normalTotal += s.amount;
+      categoryData.push({ name: s.name, amount: s.amount, isFixed: false });
+    }
+  });
+
+  // 不動品
+  if (result.summary['fixed']) {
+    const s = result.summary['fixed'];
+    summaryRows += `<tr style="background: #fff3cd;"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+    summaryTotal += s.amount;
+    summaryDiff += s.diff;
+    fixedTotal = s.amount;
+    categoryData.push({ name: '不動品', amount: s.amount, isFixed: true });
+  }
+
+  const tacTotal = Math.round(summaryTotal * 1.01);
+
+  // 分類別グラフバー生成
+  const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
+  const categoryBars = sortedCategories.map(cat => {
+    const barWidth = summaryTotal > 0 ? Math.round((cat.amount / summaryTotal) * 100) : 0;
+    const bgColor = cat.isFixed ? '#ffc107' : 'var(--color-primary)';
+    return `
+      <div style="margin-bottom: 0.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
+          <span>${cat.name}</span>
+          <span style="font-weight: 500;">¥${cat.amount.toLocaleString()} (${barWidth}%)</span>
+        </div>
+        <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 16px; overflow: hidden;">
+          <div style="background: ${bgColor}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // ドーナツ風サマリー
+  const normalPercent = summaryTotal > 0 ? Math.round((normalTotal / summaryTotal) * 100) : 0;
+  const fixedPercent = summaryTotal > 0 ? Math.round((fixedTotal / summaryTotal) * 100) : 0;
+
+  container.innerHTML = `
+    <!-- サマリーカード -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+      <div class="card" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: white; padding: 1.25rem;">
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
+      </div>
+      <div class="card" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 1.25rem;">
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">✓ 通常在庫</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${normalTotal.toLocaleString()}</div>
+        <div style="font-size: 0.75rem; opacity: 0.8;">${normalPercent}%</div>
+      </div>
+      <div class="card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 1.25rem;">
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">⚠ 不動品在庫</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${fixedTotal.toLocaleString()}</div>
+        <div style="font-size: 0.75rem; opacity: 0.8;">${fixedPercent}%</div>
+      </div>
+      <div class="card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; padding: 1.25rem;">
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">💰 TAC口銭込</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${tacTotal.toLocaleString()}</div>
+        <div style="font-size: 0.75rem; opacity: 0.8;">×1.01</div>
+      </div>
+    </div>
+
+    <!-- グラフとテーブル -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+      <!-- 分類別グラフ -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📊 分類別構成比</h3>
+        </div>
+        <div class="card-body">
+          ${categoryBars || '<p class="text-muted">データがありません</p>'}
+        </div>
+      </div>
+      
+      <!-- 分類別集計表 -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 ${result.month} 分類別集計表</h3>
+        </div>
+        <div class="card-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>資材分類</th>
+                <th style="text-align: right;">当月在庫金額</th>
+                <th style="text-align: right;">前月比</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${summaryRows}
+              <tr style="font-weight: bold; background: var(--color-bg-secondary);">
+                <td>合計</td>
+                <td style="text-align: right;">¥${summaryTotal.toLocaleString()}</td>
+                <td style="text-align: right; color: ${summaryDiff >= 0 ? 'green' : 'red'};">${summaryDiff >= 0 ? '+' : ''}¥${summaryDiff.toLocaleString()}</td>
+              </tr>
+              <tr style="font-weight: bold; background: #fff2cc;">
+                <td>1.01（TAC口銭1%）</td>
+                <td style="text-align: right;">¥${tacTotal.toLocaleString()}</td>
+                <td style="text-align: right;">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品別明細 -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📋 商品別明細</h3>
+      </div>
+      <div class="card-body">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>資材ID</th>
+                <th>品名</th>
+                <th>単価</th>
+                <th>前月在庫</th>
+                <th>当月在庫</th>
+                <th>差分</th>
+                <th>在庫金額</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${result.items.map(i => `
+                <tr style="${i.isFixed ? 'background: #fff3cd;' : ''}">
+                  <td>${i.productId}</td>
+                  <td>${i.name}</td>
+                  <td>¥${i.price.toLocaleString()}</td>
+                  <td>${i.prevQty}</td>
+                  <td>${i.currQty}</td>
+                  <td style="color: ${i.diff >= 0 ? 'green' : 'red'};">${i.diff >= 0 ? '+' : ''}${i.diff}</td>
+                  <td>¥${i.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function runInvMonthlyClosing() {
+  const month = $('#inv-closing-month').value;
+  if (!month) {
+    toast('年月を選択してください', 'error');
+    return;
+  }
+
+  if (!confirm(`${month}の月次締めを実行しますか？`)) return;
+
+  const result = calculateInvMonthly(month);
+
+  // 月次データを保存
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const existingIdx = monthly.findIndex(m => m.month === month);
+
+  const monthlyData = {
+    month: month,
+    items: result.items,
+    summary: result.summary,
+    total: result.total,
+    fixedTotal: result.summary['fixed']?.amount || 0,
+    closedAt: new Date().toISOString()
+  };
+
+  if (existingIdx >= 0) {
+    monthly[existingIdx] = monthlyData;
+  } else {
+    monthly.push(monthlyData);
+  }
+  DB.save(DB.KEYS.INV_MONTHLY, monthly);
+
+  toast(`${month}の月次締めを完了しました`, 'success');
+  displayInvMonthlyResult(result);
+}
+
+// ========================================
+// CSV取り込み・エクスポート
+// ========================================
+
+// CSV取り込みエリア表示
+function showCsvImportArea() {
+  $('#csv-import-area').style.display = 'block';
+  $('#csv-file-input').value = '';
+  $('#csv-import-preview').innerHTML = '';
+}
+
+// CSV取り込みエリア非表示
+function hideCsvImportArea() {
+  $('#csv-import-area').style.display = 'none';
+  $('#csv-file-input').value = '';
+  $('#csv-import-preview').innerHTML = '';
+}
+
+// CSVファイルプレビュー
+function previewCsvFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const text = evt.target.result;
+    const rows = parseCsv(text);
+
+    if (rows.length < 2) {
+      $('#csv-import-preview').innerHTML = '<p class="text-muted">データがありません</p>';
+      return;
+    }
+
+    // ヘッダー確認（2行目以降のデータをプレビュー）
+    const dataRows = rows.slice(1).filter(row => row[2]); // ID(C列)があるもの
+    const preview = dataRows.slice(0, 5).map(row => {
+      const id = row[2] || '';    // C列: ID
+      const cat = row[3] || '';   // D列: 資材分類
+      const name = row[4] || '';  // E列: 品名
+      const price = row[11] || ''; // L列: 単価
+      const isFixed = row[1] === 'TRUE' || row[1] === '1';
+      return `<tr><td>${id}</td><td>${cat}</td><td>${name}</td><td>${price}</td><td>${isFixed ? '✓' : ''}</td></tr>`;
+    }).join('');
+
+    $('#csv-import-preview').innerHTML = `
+      <p style="margin-bottom: 0.5rem;"><strong>${dataRows.length}件</strong>のデータを取り込みます（最初の5件をプレビュー）</p>
+      <table class="table" style="font-size: 0.875rem;">
+        <thead><tr><th>ID</th><th>資材分類</th><th>品名</th><th>単価</th><th>不動</th></tr></thead>
+        <tbody>${preview}</tbody>
+      </table>
+    `;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// CSV解析
+function parseCsv(text) {
+  const rows = [];
+  let currentRow = [];
+  let inQuotes = false;
+  let currentCell = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && nextChar === '"') {
+        currentCell += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        currentCell += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        currentRow.push(currentCell.trim());
+        currentCell = '';
+      } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+        currentRow.push(currentCell.trim());
+        rows.push(currentRow);
+        currentRow = [];
+        currentCell = '';
+        if (char === '\r') i++;
+      } else if (char !== '\r') {
+        currentCell += char;
+      }
+    }
+  }
+  if (currentCell || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    rows.push(currentRow);
+  }
+  return rows;
+}
+
+// CSV取り込み実行
+function executeInvCsvImport() {
+  const file = $('#csv-file-input').files[0];
+  if (!file) {
+    toast('ファイルを選択してください', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const text = evt.target.result;
+    const rows = parseCsv(text);
+
+    if (rows.length < 2) {
+      toast('データがありません', 'error');
+      return;
+    }
+
+    const products = DB.get(DB.KEYS.INV_PRODUCTS);
+    const dataRows = rows.slice(1).filter(row => row[2]); // ID(C列)があるもの
+
+    let addCount = 0, updateCount = 0;
+
+    dataRows.forEach(row => {
+      const id = (row[2] || '').trim();         // C列: ID
+      const categoryName = (row[3] || '').trim(); // D列: 資材分類名
+      const name = (row[4] || '').trim();        // E列: 品名
+      const colorOther = (row[5] || '').trim();  // F列: 色/他
+      const material = (row[6] || '').trim();    // G列: 構成
+      const width = parseFloat(row[7]) || 0;     // H列: 巾
+      const length = parseFloat(row[8]) || 0;    // I列: 長さ
+      const maker = (row[9] || '').trim();       // J列: メーカー
+      const supplier = (row[10] || '').trim();   // K列: 仕入先
+      const price = parseInt((row[11] || '0').replace(/[^\d.-]/g, '')) || 0; // L列: 単価
+      const isFixed = row[1] === 'TRUE' || row[1] === '1' || row[1] === 'true';
+
+      if (!id || !name) return;
+
+      // 分類名からコードを逆引き
+      let categoryCode = '';
+      for (const [code, catName] of Object.entries(INV_CATEGORIES)) {
+        if (categoryName.includes(catName) || catName.includes(categoryName)) {
+          categoryCode = code;
+          break;
+        }
+      }
+      // 見つからない場合はIDから抽出
+      if (!categoryCode && id.startsWith('N')) {
+        categoryCode = id.substring(1, 3);
+      }
+
+      const existingIdx = products.findIndex(p => p.id === id);
+
+      const productData = {
+        id: id,
+        name: name,
+        category: categoryCode,
+        price: price,
+        isFixed: isFixed,
+        colorOther: colorOther,
+        material: material,
+        width: width,
+        length: length,
+        maker: maker,
+        supplier: supplier
+      };
+
+      if (existingIdx >= 0) {
+        products[existingIdx] = { ...products[existingIdx], ...productData };
+        updateCount++;
+      } else {
+        products.push(productData);
+        addCount++;
+      }
+    });
+
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    toast(`取り込み完了: 新規${addCount}件、更新${updateCount}件`, 'success');
+    hideCsvImportArea();
+    renderInvProductsTable();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// CSVエクスポート
+function exportInvProductsCsv() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+
+  // ヘッダー（スプレッドシートと同じ形式）
+  const header = ['印刷', '不動', 'ID', '資材分類', '品名', '色/他', '構成', '巾', '長さ', 'メーカー', '仕入先', '単価'];
+
+  const rows = products.map(p => [
+    '',                                    // 印刷（空白）
+    p.isFixed ? 'TRUE' : 'FALSE',         // 不動
+    p.id,                                  // ID
+    INV_CATEGORIES[p.category] || p.category, // 資材分類名
+    p.name,                                // 品名
+    p.colorOther || '',                    // 色/他
+    p.material || '',                      // 構成
+    p.width || '',                         // 巾
+    p.length || '',                        // 長さ
+    p.maker || '',                         // メーカー
+    p.supplier || '',                      // 仕入先
+    p.price                                // 単価
+  ]);
+
+  const csvContent = [header, ...rows].map(row =>
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
+  // BOM付きUTF-8でダウンロード
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `商品マスタ_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  toast('CSVをダウンロードしました', 'success');
+}
