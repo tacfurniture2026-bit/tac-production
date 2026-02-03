@@ -808,6 +808,7 @@ function renderOrders() {
           </div>
         </td>
         <td>
+          <button class="btn btn-sm btn-icon" onclick="editOrder(${o.id})" title="編集" style="margin-right: 4px;">✎</button>
           <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
           <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
         </td>
@@ -1165,7 +1166,12 @@ function createOrder() {
 
   // BOMから部材を取得
   const boms = DB.get(DB.KEYS.BOM);
-  const productBoms = boms.filter(b => b.productName === productName);
+  // 品名が完全一致しなくても、どちらかが含んでいればOKとする（PAOBABY対策）
+  const productBoms = boms.filter(b =>
+    b.productName === productName ||
+    b.productName.includes(productName) ||
+    productName.includes(b.productName)
+  );
 
   const items = productBoms.map((bom, idx) => ({
     id: idx + 1,
@@ -1191,6 +1197,301 @@ function createOrder() {
   DB.save(DB.KEYS.ORDERS, orders);
 
   toast('生産指示書を作成しました', 'success');
+  hideModal();
+  renderOrders();
+}
+
+function editOrder(id) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === id);
+  if (!order) return;
+
+  const boms = DB.get(DB.KEYS.BOM);
+  const products = [...new Set(boms.map(b => b.productName))].sort();
+
+  // 備考欄のHTML生成
+  const notesFields = [];
+  const currentNotes = order.notes || [];
+
+  // デフォルトラベルまたは既存ラベル
+  const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
+
+  for (let i = 1; i <= 10; i++) {
+    const note = currentNotes[i - 1] || { label: defaultNoteLabels[i - 1], value: '' };
+    notesFields.push(`
+      <div class="form-group" style="margin-bottom: 0.5rem;">
+        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+          <input type="text" id="edit-note-label-${i}" class="form-input" value="${note.label || ''}" placeholder="ラベル" style="font-size: 0.75rem;">
+          <input type="text" id="edit-note-value-${i}" class="form-input" value="${note.value || ''}" placeholder="内容を入力" style="font-size: 0.75rem;">
+        </div>
+      </div>
+    `);
+  }
+
+  const body = `
+    <div class="form-group">
+      <label>特注No.</label>
+      <input type="text" id="edit-order-no" class="form-input" value="${order.orderNo || ''}">
+    </div>
+    <div class="form-group">
+      <label>物件名 *</label>
+      <input type="text" id="edit-order-project" class="form-input" value="${order.projectName}" required>
+    </div>
+    <div class="form-group">
+      <label>品名 * <small style="color: var(--color-text-muted);">（変更するとBOMが再設定されます）</small></label>
+      <input type="text" id="edit-order-product" class="form-input" list="product-list" value="${order.productName}" required>
+      <datalist id="product-list">
+        ${products.map(p => `<option value="${p}">`).join('')}
+      </datalist>
+    </div>
+    <div class="form-group">
+      <label>数量 *</label>
+      <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>着工日</label>
+        <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
+      </div>
+      <div class="form-group">
+        <label>納期</label>
+        <input type="date" id="edit-order-due" class="form-input" value="${order.dueDate || ''}">
+      </div>
+    </div>
+    
+    <details>
+      <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.875rem; padding: 0.5rem 0;">備考欄（クリックで展開）</summary>
+      <div style="padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">
+        ${notesFields.join('')}
+      </div>
+    </details>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="updateOrder(${order.id})">更新</button>
+  `;
+
+  showModal('指示書を編集', body, footer);
+}
+
+function updateOrder(id) {
+  const orderNo = $('#edit-order-no').value;
+  const projectName = $('#edit-order-project').value;
+  const productName = $('#edit-order-product').value;
+  const quantity = parseInt($('#edit-order-quantity').value);
+  const startDate = $('#edit-order-start').value;
+  const dueDate = $('#edit-order-due').value;
+
+  if (!projectName || !productName || !quantity) {
+    toast('必須項目を入力してください', 'warning');
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const index = orders.findIndex(o => o.id === id);
+  if (index === -1) return;
+
+  const order = orders[index];
+  const oldProductName = order.productName;
+
+  // 備考の取得
+  const notes = [];
+  for (let i = 1; i <= 10; i++) {
+    const label = $(`#edit-note-label-${i}`).value;
+    const value = $(`#edit-note-value-${i}`).value;
+    if (label || value) {
+      notes.push({ label, value });
+    } else {
+      notes.push({ label: '', value: '' }); // インデックス維持のため空でも入れる
+    }
+  }
+
+  // 更新
+  order.orderNo = orderNo;
+  order.projectName = projectName;
+  order.quantity = quantity;
+  order.startDate = startDate;
+  order.dueDate = dueDate;
+  order.notes = notes;
+
+  // 品名の変更があればBOMを再取得
+  if (oldProductName !== productName) {
+    const boms = DB.get(DB.KEYS.BOM);
+    // 品名が完全一致しなくても、どちらかが含んでいればOKとする（PAOBABY対策）
+    const productBoms = boms.filter(b =>
+      b.productName === productName ||
+      b.productName.includes(productName) ||
+      productName.includes(b.productName)
+    );
+
+    if (productBoms.length > 0) {
+      if (confirm('品名が変更されました。工程情報（進捗）をリセットしてBOMを再展開しますか？')) {
+        order.productName = productName;
+        order.items = productBoms.map((bom, idx) => ({
+          id: idx + 1,
+          bomName: bom.bomName,
+          partCode: bom.partCode,
+          processes: bom.processes || [],
+          completed: []
+        }));
+        toast('品名変更に伴い工程情報を更新しました', 'info');
+      } else {
+        order.productName = productName;
+      }
+    } else {
+      order.productName = productName;
+      toast('新しい品名に対するBOMが見つかりません。工程情報は更新されませんでした。', 'warning');
+    }
+  }
+
+  DB.save(DB.KEYS.ORDERS, orders);
+  toast('指示書を更新しました', 'success');
+  hideModal();
+  renderOrders();
+}
+
+function editOrder(id) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === id);
+  if (!order) return;
+
+  const boms = DB.get(DB.KEYS.BOM);
+  const products = [...new Set(boms.map(b => b.productName))].sort();
+
+  // 備考欄のHTML生成
+  const notesFields = [];
+  const currentNotes = order.notes || [];
+
+  // デフォルトラベルまたは既存ラベル
+  const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
+
+  for (let i = 1; i <= 10; i++) {
+    const note = currentNotes[i - 1] || { label: defaultNoteLabels[i - 1], value: '' };
+    notesFields.push(`
+      <div class="form-group" style="margin-bottom: 0.5rem;">
+        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+          <input type="text" id="edit-note-label-${i}" class="form-input" value="${note.label || ''}" placeholder="ラベル" style="font-size: 0.75rem;">
+          <input type="text" id="edit-note-value-${i}" class="form-input" value="${note.value || ''}" placeholder="内容を入力" style="font-size: 0.75rem;">
+        </div>
+      </div>
+    `);
+  }
+
+  const body = `
+    <div class="form-group">
+      <label>特注No.</label>
+      <input type="text" id="edit-order-no" class="form-input" value="${order.orderNo || ''}">
+    </div>
+    <div class="form-group">
+      <label>物件名 *</label>
+      <input type="text" id="edit-order-project" class="form-input" value="${order.projectName}" required>
+    </div>
+    <div class="form-group">
+      <label>品名 * <small style="color: var(--color-text-muted);">（変更するとBOMが再設定されます）</small></label>
+      <input type="text" id="edit-order-product" class="form-input" list="product-list" value="${order.productName}" required>
+      <datalist id="product-list">
+        ${products.map(p => `<option value="${p}">`).join('')}
+      </datalist>
+    </div>
+    <div class="form-group">
+      <label>数量 *</label>
+      <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>着工日</label>
+        <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
+      </div>
+      <div class="form-group">
+        <label>納期</label>
+        <input type="date" id="edit-order-due" class="form-input" value="${order.dueDate || ''}">
+      </div>
+    </div>
+    
+    <details>
+      <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.875rem; padding: 0.5rem 0;">備考欄（クリックで展開）</summary>
+      <div style="padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">
+        ${notesFields.join('')}
+      </div>
+    </details>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="updateOrder(${order.id})">更新</button>
+  `;
+
+  showModal('指示書を編集', body, footer);
+}
+
+function updateOrder(id) {
+  const orderNo = $('#edit-order-no').value;
+  const projectName = $('#edit-order-project').value;
+  const productName = $('#edit-order-product').value;
+  const quantity = parseInt($('#edit-order-quantity').value);
+  const startDate = $('#edit-order-start').value;
+  const dueDate = $('#edit-order-due').value;
+
+  if (!projectName || !productName || !quantity) {
+    toast('必須項目を入力してください', 'warning');
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const index = orders.findIndex(o => o.id === id);
+  if (index === -1) return;
+
+  const order = orders[index];
+  const oldProductName = order.productName;
+
+  // 備考の取得
+  const notes = [];
+  for (let i = 1; i <= 10; i++) {
+    const label = $(`#edit-note-label-${i}`).value;
+    const value = $(`#edit-note-value-${i}`).value;
+    if (label || value) {
+      notes.push({ label, value });
+    } else {
+      notes.push({ label: '', value: '' }); // インデックス維持のため空でも入れる
+    }
+  }
+
+  // 更新
+  order.orderNo = orderNo;
+  order.projectName = projectName;
+  order.quantity = quantity;
+  order.startDate = startDate;
+  order.dueDate = dueDate;
+  order.notes = notes;
+
+  // 品名の変更があればBOMを再取得
+  if (oldProductName !== productName) {
+    const boms = DB.get(DB.KEYS.BOM);
+    const productBoms = boms.filter(b => b.productName === productName);
+
+    if (productBoms.length > 0) {
+      if (confirm('品名が変更されました。工程情報（進捗）をリセットしてBOMを再展開しますか？')) {
+        order.productName = productName;
+        order.items = productBoms.map((bom, idx) => ({
+          id: idx + 1,
+          bomName: bom.bomName,
+          partCode: bom.partCode,
+          processes: bom.processes || [],
+          completed: []
+        }));
+        toast('品名変更に伴い工程情報を更新しました', 'info');
+      } else {
+        order.productName = productName;
+      }
+    } else {
+      order.productName = productName;
+      toast('新しい品名に対するBOMが見つかりません。工程情報は更新されませんでした。', 'warning');
+    }
+  }
+
+  DB.save(DB.KEYS.ORDERS, orders);
+  toast('指示書を更新しました', 'success');
   hideModal();
   renderOrders();
 }
@@ -1600,43 +1901,64 @@ function importRates() {
   const existingRates = DB.get(DB.KEYS.RATES);
   const newRates = [];
   let skipCount = 0;
+  let errorDetails = [];
 
-  lines.forEach(line => {
+  console.log(`Starting import of ${lines.length} lines...`);
+
+  lines.forEach((line, index) => {
+    // 空行はスキップ
+    if (!line.trim()) return;
+
+    // タブ区切り以外（例えばExcelからのコピペでスペース変換されてしまった場合など）も考慮したいが、
+    // 基本はタブ区切りを想定。
     const cols = line.split('\t');
 
-    // 列数チェック（最低でも分給までは欲しいので10列）
-    if (cols.length < 10) return;
-
-    // ヘッダー判定（月額などが数値でない場合）
-    // G列(index 6)が数値かどうかで判定
-    const gColVal = cols[6].replace(/,/g, '').trim();
-    if (isNaN(parseInt(gColVal)) && gColVal !== '0') {
+    // 列数チェック緩和: 最低限 コード(2), 部門(3), 月給(6) くらいがあれば許可
+    if (cols.length < 7) {
+      console.warn(`Line ${index + 1} skipped: Not enough columns (${cols.length})`, line);
       skipCount++;
       return;
     }
 
-    // データマッピング (A=0, B=1, ... G=6)
-    const rateCode = cols[2].trim(); // C列
-    const department = cols[3].trim(); // D列
-    const section = cols[4].trim(); // E列
-    const subsection = (cols[5] || '').trim(); // F列
+    // ヘッダー判定（C列が空、または "コード" などの文字列）
+    const col2 = (cols[2] || '').trim();
+    if (col2 === 'コード' || col2 === '職種・役職CD' || !col2) {
+      console.log(`Line ${index + 1} skipped: Header or empty code`);
+      skipCount++;
+      return;
+    }
 
     // 数値パース（カンマ除去）
     const parseVal = (val) => {
       if (!val) return 0;
-      const num = parseFloat(val.replace(/,/g, ''));
+      // 円マークやカンマを除去
+      const numStr = val.toString().replace(/[¥,]/g, '').trim();
+      const num = parseFloat(numStr);
       return isNaN(num) ? 0 : num;
     };
 
-    const monthlyRate = parseVal(cols[6]); // G列
-    const dailyRate = parseVal(cols[7]); // H列
-    const hourlyRate = parseVal(cols[8]); // I列
-    const minuteRate = parseVal(cols[9]); // J列
+    // データマッピング (A=0, Start from C=2)
+    // C=Code, D=Dept, E=Section, F=SubSection
+    // G=Monthly, H=Daily, I=Hourly, J=Minute
 
-    if (!rateCode || !department) return;
+    const rateCode = col2;
+    const department = (cols[3] || '').trim();
+    const section = (cols[4] || '').trim();
+    const subsection = (cols[5] || '').trim();
+
+    const monthlyRate = parseVal(cols[6]);
+    const dailyRate = parseVal(cols[7]);
+    const hourlyRate = parseVal(cols[8]);
+    const minuteRate = parseVal(cols[9]); // J列がなくても0になる
+
+    if (!rateCode || !department) {
+      console.warn(`Line ${index + 1} skipped: Missing code or dept`);
+      skipCount++;
+      return;
+    }
 
     newRates.push({
-      id: DB.nextId(DB.KEYS.RATES) + newRates.length, // ID衝突回避のため簡易加算
+      // IDは後で採番
       rateCode,
       department,
       section,
@@ -1649,21 +1971,37 @@ function importRates() {
   });
 
   if (newRates.length === 0) {
-    toast('インポートできるデータがありませんでした', 'warning');
+    console.error('No valid rates parsed');
+    toast('インポートできるデータがありませんでした。\n形式を確認してください（タブ区切り）', 'warning');
     return;
   }
 
-  // インポートデータに含まれるコードの既存データを削除（上書き）
-  const codesToUpdate = new Set(newRates.map(r => r.rateCode));
-  const filteredExisting = existingRates.filter(r => !codesToUpdate.has(r.rateCode));
+  // 既存データとマージ
+  let addedCount = 0;
+  let updatedCount = 0;
 
-  // 結合して保存
-  const finalRates = [...filteredExisting, ...newRates];
-  DB.save(DB.KEYS.RATES, finalRates);
+  newRates.forEach(rate => {
+    const index = existingRates.findIndex(r => r.rateCode === rate.rateCode);
+    if (index !== -1) {
+      // 更新
+      rate.id = existingRates[index].id;
+      existingRates[index] = rate;
+      updatedCount++;
+    } else {
+      // 新規
+      rate.id = DB.nextId(DB.KEYS.RATES) + addedCount;
+      existingRates.push(rate);
+      addedCount++;
+    }
+  });
 
-  toast(`${newRates.length}件の賃率をインポートしました`, 'success');
-  hideModal();
+  DB.save(DB.KEYS.RATES, existingRates);
   renderRates();
+  hideModal();
+
+  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件 (スキップ ${skipCount}行)`;
+  console.log(msg);
+  toast(msg, 'success');
 }
 
 function showAddUserModal() {
@@ -1821,7 +2159,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#add-bom-btn').addEventListener('click', showAddBomModal);
   $('#import-bom-btn').addEventListener('click', showImportBomModal);
   $('#add-rate-btn').addEventListener('click', showAddRateModal);
-  $('#import-rate-btn').addEventListener('click', showImportRateModal);
+  $('#import-rates-btn').addEventListener('click', showImportRateModal);
   $('#add-user-btn').addEventListener('click', showAddUserModal);
 
   // 月次報告

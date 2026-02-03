@@ -23,7 +23,26 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
+    <script src="app.js?v=20240204"></script>
+    <script>
+        // サービスワーカー登録（PWA用）
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                // 更新があれば強制的にスキップ待機
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // 新しいバージョンあり
+                            console.log('New content is available; please refresh.');
+                        }
+                    };
+                };
+            });
+        }
+    </script>
 
     <!-- QRスキャナー -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -139,7 +158,7 @@
                 <!-- ダッシュボード -->
                 <div id="page-dashboard" class="page active">
                     <div class="page-header">
-                        <h1>ダッシュボード</h1>
+                        <h1>📊 ダッシュボード</h1>
                         <p>生産状況の概要</p>
                     </div>
                     <div class="stats-grid">
@@ -366,7 +385,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>生産指示書</h1>
+                                <h1>📋 生産指示書</h1>
                                 <p>生産指示書の作成・管理</p>
                             </div>
                             <button class="btn btn-primary" id="add-order-btn">+ 新規作成</button>
@@ -411,7 +430,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>BOM管理</h1>
+                                <h1>🏗 BOM管理</h1>
                                 <p>部品表（Bill of Materials）の管理</p>
                             </div>
                             <div class="btn-group">
@@ -428,7 +447,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>賃率管理</h1>
+                                <h1>💰 賃率管理</h1>
                                 <p>部門別労務費率の管理</p>
                             </div>
                             <div class="btn-group">
@@ -464,7 +483,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>ユーザー管理</h1>
+                                <h1>👥 ユーザー管理</h1>
                                 <p>システムユーザーの管理</p>
                             </div>
                             <button class="btn btn-primary" id="add-user-btn">+ 新規作成</button>
@@ -493,7 +512,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>月次報告</h1>
+                                <h1>📉 月次報告</h1>
                                 <p>月次・製造原価報告書の作成</p>
                             </div>
                             <button class="btn btn-primary" id="generate-report-btn">PDF出力</button>
@@ -609,7 +628,7 @@
                 <!-- 在庫検索 -->
                 <div id="page-inv-search" class="page">
                     <div class="page-header">
-                        <h1>在庫検索</h1>
+                        <h1>📦 在庫検索</h1>
                         <p>商品を検索して在庫状況を確認</p>
                     </div>
                     <div class="card" style="margin-bottom: 1.5rem;">
@@ -647,7 +666,7 @@
                     <div class="page-header">
                         <div class="flex justify-between items-center">
                             <div>
-                                <h1>商品マスタ</h1>
+                                <h1>📦 商品マスタ</h1>
                                 <p>商品の登録・編集・削除</p>
                             </div>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -925,7 +944,12 @@
     </div>
 
     <script src="data.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=20240204-2"></script>
+    <!-- バージョン表示 -->
+    <div
+        style="position: fixed; bottom: 5px; left: 5px; font-size: 10px; color: rgba(0,0,0,0.3); z-index: 9999; pointer-events: none;">
+        v1.1 (2024-02-04-2)
+    </div>
 </body>
 
 </html>
