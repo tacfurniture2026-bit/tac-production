@@ -50,6 +50,9 @@ function calculateProgress(order) {
   let completedProcesses = 0;
 
   order.items.forEach(item => {
+    // プロセス未定義のアイテムをスキップ
+    if (!item || !item.processes) return;
+
     totalProcesses += item.processes.length;
     completedProcesses += (item.completed || []).length;
   });
@@ -347,7 +350,7 @@ function renderGantt() {
     // 子行
     if (isExpanded && order.items) {
       order.items.forEach(item => {
-        const itemProgress = item.processes.length > 0
+        const itemProgress = (item.processes && item.processes.length > 0)
           ? Math.round(((item.completed || []).length / item.processes.length) * 100)
           : 0;
 
