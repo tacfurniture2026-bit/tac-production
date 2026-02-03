@@ -220,7 +220,10 @@ const DB = {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).set(data)
                 .then(() => console.log(`💾 ${fbKey} 保存完了`))
-                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
+                .catch(err => {
+                    console.error(`❌ ${fbKey} 保存エラー:`, err);
+                    toast(`保存に失敗しました: ${err.message || '不明なエラー'}`, 'error', 5000);
+                });
             this._cache[key] = data;
         } else {
             // ローカルストレージ
