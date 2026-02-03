@@ -139,6 +139,10 @@ function navigateTo(pageName) {
   if (mobileBtn) mobileBtn.classList.add('active');
 
   // ページ初期化
+  // カメラ停止（タブ切り替え時にリセット）
+  stopQrScanner();
+  stopInvScanner();
+
   switch (pageName) {
     case 'dashboard':
       renderDashboard();
@@ -454,12 +458,14 @@ function renderQrPage() {
     stopBtn.onclick = stopQrScanner;
   }
 
-  // スマホの場合は自動でカメラ起動
+  // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
+  /*
   if (isMobileDevice()) {
     setTimeout(() => {
       startQrScanner();
     }, 500);
   }
+  */
 }
 
 // スマホ判定
@@ -473,6 +479,15 @@ function startQrScanner() {
   const startBtn = $('#start-scan-btn');
   const stopBtn = $('#stop-scan-btn');
   const resultDiv = $('#qr-scan-result');
+
+  // 二重起動防止
+  if (qrScanner) {
+    console.log('QR Scanner is already running');
+    return;
+  }
+
+  // 競合する他のスキャナーを停止
+  stopInvScanner();
 
   // プレースホルダーを非表示、ビデオを表示
   if (placeholder) placeholder.style.display = 'none';
@@ -2091,10 +2106,12 @@ function renderInvScanPage() {
   // 本日の棚卸履歴を表示
   renderTodayInvLogs();
 
-  // スマホの場合は自動でカメラ起動
+  // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
+  /*
   if (isMobileDevice()) {
     setTimeout(() => startInvScanner(), 500);
   }
+  */
 }
 
 function displayProductInfo(productId) {
@@ -2118,6 +2135,15 @@ function startInvScanner() {
   const videoEl = $('#inv-qr-video');
   const startBtn = $('#inv-start-scan-btn');
   const stopBtn = $('#inv-stop-scan-btn');
+
+  // 二重起動防止
+  if (invQrScanner) {
+    console.log('Inventory Scanner is already running');
+    return;
+  }
+
+  // 競合する他のスキャナーを停止
+  stopQrScanner();
   const resultDiv = $('#inv-scan-result');
 
   if (placeholder) placeholder.style.display = 'none';
