@@ -43,6 +43,11 @@ const DB = {
     initLocalStorage() {
         console.log('📦 ローカルストレージモードで起動');
 
+        // ユーザーに通知（Firebaseが設定されていないことへの注意喚起）
+        setTimeout(() => {
+            toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
+        }, 2000);
+
         // ユーザー
         if (!localStorage.getItem(this.KEYS.USERS)) {
             this.save(this.KEYS.USERS, [
@@ -147,6 +152,18 @@ const DB = {
     // Firebase初期化
     initFirebase() {
         console.log('🔥 Firebaseモードで起動');
+
+        // 接続状態監視
+        firebaseDB.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true) {
+                console.log('✅ Firebase接続完了');
+                toast('☁️ サーバーに接続しました（共有有効）', 'success');
+            } else {
+                console.warn('⚠️ Firebase未接続');
+                // 切断時（または初期接続失敗時）
+                // toast('⚠️ サーバー接続が切れています', 'warning');
+            }
+        });
 
         // 各データタイプにリスナーを設定
         const dataKeys = [

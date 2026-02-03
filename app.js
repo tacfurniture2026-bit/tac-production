@@ -357,7 +357,7 @@ function renderGantt() {
                         <div class="gantt-cell gantt-cell-expand"></div>
                         <div class="gantt-cell gantt-cell-project"></div>
                         <div class="gantt-cell gantt-cell-product">
-                            <span class="child-indicator">┗</span>${item.bomName}
+                            <span class="child-indicator">┗</span>${item.bomName || item.partCode || '<span style="color:var(--color-text-muted)">(名称なし)</span>'}
                         </div>
                         <div class="gantt-cell gantt-cell-qty"></div>
                         <div class="gantt-cell gantt-cell-date"></div>
