@@ -323,7 +323,9 @@ function renderGantt() {
     leftHtml += `
             <div class="gantt-data-row gantt-row-parent" data-order-id="${order.id}">
                 <div class="gantt-cell gantt-cell-expand">
-                    <button class="expand-btn" onclick="toggleExpand(${order.id})">${isExpanded ? '▼' : '▶'}</button>
+                    ${(order.items && order.items.length > 0)
+        ? `<button class="expand-btn" onclick="toggleExpand(${order.id})">${isExpanded ? '▼' : '▶'}</button>`
+        : '<span style="color:var(--color-text-muted); font-size:0.8rem;">・</span>'}
                 </div>
                 <div class="gantt-cell gantt-cell-project">${order.projectName}</div>
                 <div class="gantt-cell gantt-cell-product">${order.productName}</div>
