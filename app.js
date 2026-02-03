@@ -1443,6 +1443,104 @@ function createRate() {
   renderRates();
 }
 
+function showImportRateModal() {
+  const body = `
+    <div style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
+      <p>スプレッドシートからコピー&ペーストで賃率をインポートできます。</p>
+      <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: 4px;">
+        <strong>形式（11列）:</strong><br>
+        [A列:名称] [ID] [C列:判定CD] [部] [課] [係] [G列:月給] [日給] [時給] [分給] [秒給]
+      </div>
+      <small>※ヘッダー行（3行目）も含めて、A列〜J列（またはK列）をまとめてコピーしてください。</small>
+    </div>
+    <textarea id="import-rate-data" class="form-input" rows="10" placeholder="ここに貼り付けてください..."></textarea>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="importRates()">インポート</button>
+  `;
+
+  showModal('賃率一括インポート', body, footer);
+}
+
+function importRates() {
+  const data = $('#import-rate-data').value.trim();
+  if (!data) {
+    toast('データを入力してください', 'warning');
+    return;
+  }
+
+  const lines = data.split('\n');
+  const existingRates = DB.get(DB.KEYS.RATES);
+  const newRates = [];
+  let skipCount = 0;
+
+  lines.forEach(line => {
+    const cols = line.split('\t');
+
+    // 列数チェック（最低でも分給までは欲しいので10列）
+    if (cols.length < 10) return;
+
+    // ヘッダー判定（月額などが数値でない場合）
+    // G列(index 6)が数値かどうかで判定
+    const gColVal = cols[6].replace(/,/g, '').trim();
+    if (isNaN(parseInt(gColVal)) && gColVal !== '0') {
+      skipCount++;
+      return;
+    }
+
+    // データマッピング (A=0, B=1, ... G=6)
+    const rateCode = cols[2].trim(); // C列
+    const department = cols[3].trim(); // D列
+    const section = cols[4].trim(); // E列
+    const subsection = (cols[5] || '').trim(); // F列
+
+    // 数値パース（カンマ除去）
+    const parseVal = (val) => {
+      if (!val) return 0;
+      const num = parseFloat(val.replace(/,/g, ''));
+      return isNaN(num) ? 0 : num;
+    };
+
+    const monthlyRate = parseVal(cols[6]); // G列
+    const dailyRate = parseVal(cols[7]); // H列
+    const hourlyRate = parseVal(cols[8]); // I列
+    const minuteRate = parseVal(cols[9]); // J列
+
+    if (!rateCode || !department) return;
+
+    newRates.push({
+      id: DB.nextId(DB.KEYS.RATES) + newRates.length, // ID衝突回避のため簡易加算
+      rateCode,
+      department,
+      section,
+      subsection,
+      monthlyRate,
+      dailyRate,
+      hourlyRate,
+      minuteRate
+    });
+  });
+
+  if (newRates.length === 0) {
+    toast('インポートできるデータがありませんでした', 'warning');
+    return;
+  }
+
+  // インポートデータに含まれるコードの既存データを削除（上書き）
+  const codesToUpdate = new Set(newRates.map(r => r.rateCode));
+  const filteredExisting = existingRates.filter(r => !codesToUpdate.has(r.rateCode));
+
+  // 結合して保存
+  const finalRates = [...filteredExisting, ...newRates];
+  DB.save(DB.KEYS.RATES, finalRates);
+
+  toast(`${newRates.length}件の賃率をインポートしました`, 'success');
+  hideModal();
+  renderRates();
+}
+
 function showAddUserModal() {
   const body = `
     <div class="form-group">
@@ -1598,6 +1696,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#add-bom-btn').addEventListener('click', showAddBomModal);
   $('#import-bom-btn').addEventListener('click', showImportBomModal);
   $('#add-rate-btn').addEventListener('click', showAddRateModal);
+  $('#import-rate-btn').addEventListener('click', showImportRateModal);
   $('#add-user-btn').addEventListener('click', showAddUserModal);
 
   // 月次報告
