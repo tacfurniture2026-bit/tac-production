@@ -747,19 +747,52 @@ function deleteDefect(id) {
 // 生産指示書
 // ========================================
 
+let showCompletedOrders = false;
+
+function toggleShowCompleted() {
+  showCompletedOrders = $('#show-completed-check').checked;
+  renderOrders();
+}
+
 function renderOrders() {
-  const orders = DB.get(DB.KEYS.ORDERS);
+  const allOrders = DB.get(DB.KEYS.ORDERS);
+  // フィルタリング: 完了分を表示するかどうか
+  const orders = allOrders.filter(o => {
+    if (showCompletedOrders) return true;
+    return calculateProgress(o) < 100;
+  });
+
   const tbody = $('#orders-body');
 
+  // チェックボックスの状態を反映させるため、描画前にツールバーのチェック状態も同期
+  const completedCheck = $('#show-completed-check');
+  if (completedCheck) completedCheck.checked = showCompletedOrders;
+
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">指示書がありません</td></tr>';
+    if (allOrders.length > 0 && !showCompletedOrders) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">進行中の指示書はありません（完了分: ' + (allOrders.length - orders.length) + '件）</td></tr>';
+    } else {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">指示書がありません</td></tr>';
+    }
     return;
   }
 
+  // テーブルヘッダーの修正も必要だが、JSで書き換えるか、HTMLで修正するか。
+  // ここではHTMLのヘッダー修正もコードで行う（またはHTMLファイルを編集する）
+  // 既存のHTMLヘッダーは8列。チェックボックス列を追加して9列にする必要がある。
+  // ここではtbodyのみ生成。ヘッダーの修正はindex.htmlで行うこととする。
+
   tbody.innerHTML = orders.map(o => {
     const progress = calculateProgress(o);
+    // 進捗100%ならスタイルを変える
+    const isCompleted = progress === 100;
+    const rowClass = isCompleted ? 'background: var(--color-bg-secondary); opacity: 0.8;' : '';
+
     return `
-      <tr>
+      <tr style="${rowClass}">
+        <td class="text-center">
+          <input type="checkbox" class="order-checkbox" value="${o.id}">
+        </td>
         <td>${o.orderNo || '-'}</td>
         <td>${o.projectName}</td>
         <td>${o.productName}</td>
@@ -770,14 +803,101 @@ function renderOrders() {
           <div class="progress-cell">
             <span class="progress-text">${progress}%</span>
             <div class="progress-bar">
-              <div class="progress-bar-fill" style="width: ${progress}%;"></div>
+              <div class="progress-bar-fill" style="width: ${progress}%; background: ${isCompleted ? 'var(--color-success)' : 'var(--color-primary)'};"></div>
             </div>
           </div>
         </td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button></td>
+        <td>
+          <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
+        </td>
       </tr>
     `;
   }).join('');
+}
+
+// 個別複製
+function copyOrder(id) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const target = orders.find(o => o.id === id);
+  if (!target) return;
+
+  if (!confirm(`「${target.projectName}」を複製しますか？`)) return;
+
+  const newOrder = JSON.parse(JSON.stringify(target));
+  newOrder.id = DB.nextId(DB.KEYS.ORDERS);
+  newOrder.orderNo = (newOrder.orderNo || '') + '-copy';
+  newOrder.projectName = newOrder.projectName + ' (コピー)';
+  newOrder.startDate = formatDate(new Date()); // 今日を開始日に
+
+  // 完了状態をリセット
+  if (newOrder.items) {
+    newOrder.items.forEach(item => {
+      item.completed = [];
+    });
+  }
+
+  orders.push(newOrder);
+  DB.save(DB.KEYS.ORDERS, orders);
+  toast('指示書を複製しました', 'success');
+  renderOrders();
+}
+
+// 一括複製
+function copySelectedOrders() {
+  const checkboxes = document.querySelectorAll('.order-checkbox:checked');
+  if (checkboxes.length === 0) {
+    toast('複製する指示書を選択してください', 'warning');
+    return;
+  }
+
+  if (!confirm(`選択した${checkboxes.length}件を複製しますか？`)) return;
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const newOrders = [];
+
+  checkboxes.forEach(cb => {
+    const id = parseInt(cb.value);
+    const target = orders.find(o => o.id === id);
+    if (target) {
+      const newOrder = JSON.parse(JSON.stringify(target));
+      newOrder.id = DB.nextId(DB.KEYS.ORDERS) + newOrders.length;
+      newOrder.orderNo = (newOrder.orderNo || '') + '-cp';
+      newOrder.projectName = newOrder.projectName + ' (コピー)';
+      newOrder.startDate = formatDate(new Date());
+
+      if (newOrder.items) {
+        newOrder.items.forEach(item => {
+          item.completed = [];
+        });
+      }
+      newOrders.push(newOrder);
+    }
+  });
+
+  const updatedOrders = [...orders, ...newOrders];
+  DB.save(DB.KEYS.ORDERS, updatedOrders);
+  toast(`${newOrders.length}件複製しました`, 'success');
+  renderOrders();
+}
+
+// 一括削除
+function deleteSelectedOrders() {
+  const checkboxes = document.querySelectorAll('.order-checkbox:checked');
+  if (checkboxes.length === 0) {
+    toast('削除する指示書を選択してください', 'warning');
+    return;
+  }
+
+  if (!confirm(`選択した${checkboxes.length}件を削除しますか？\nこの操作は取り消せません。\n（完了済みのデータも含めて削除されます）`)) return;
+
+  const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const filtered = orders.filter(o => !idsToDelete.includes(o.id));
+
+  DB.save(DB.KEYS.ORDERS, filtered);
+  toast(`${idsToDelete.length}件削除しました`, 'success');
+  renderOrders();
 }
 
 function deleteOrder(id) {

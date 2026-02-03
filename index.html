@@ -372,11 +372,24 @@
                             <button class="btn btn-primary" id="add-order-btn">+ 新規作成</button>
                         </div>
                     </div>
+                    <!-- ツールバー -->
+                    <div class="toolbar"
+                        style="margin-bottom: 1rem; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-sm btn-secondary" onclick="copySelectedOrders()">❏ 選択を複製</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSelectedOrders()">🗑 選択を削除</button>
+                        </div>
+                        <label style="display: flex; align-items: center; font-size: 0.875rem; cursor: pointer;">
+                            <input type="checkbox" id="show-completed-check" onchange="toggleShowCompleted()"
+                                style="margin-right: 0.5rem;"> 完了分も表示
+                        </label>
+                    </div>
                     <div class="card">
                         <div class="table-container">
                             <table class="table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px; text-align: center;">選択</th>
                                         <th>特注No.</th>
                                         <th>物件名</th>
                                         <th>品名</th>
