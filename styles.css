@@ -1569,6 +1569,62 @@ textarea.form-input {
 
 .dept-cost {
     font-size: 1.25rem;
-    font-weight: 600;
     color: var(--color-text-primary);
+}
+
+/* ========================================
+   小画面デバイス対応 (iPhone mini/SE 等)
+   ======================================== */
+@media (max-width: 380px) {
+
+    /* ログイン画面の調整 */
+    .login-header h1 {
+        font-size: 1.2rem;
+        /* フォントサイズを縮小 */
+        white-space: nowrap;
+        /* 変な位置での折り返しを防止 */
+    }
+
+    .login-card {
+        padding: 1.5rem 1rem;
+        /* パディングを減らして領域確保 */
+        margin: 0 10px;
+    }
+
+    .form-input {
+        padding: 0.6rem;
+        /* 入力欄の高さを少し調整 */
+        font-size: 1rem;
+        /* 文字サイズは16px以上でないとiOSでズームされるため維持 */
+    }
+
+    /* その他メニューの調整 */
+    .more-menu-items {
+        grid-template-columns: repeat(2, 1fr) !important;
+        /* 3列から2列に変更 */
+        gap: 10px;
+    }
+
+    .more-menu-item {
+        padding: 12px 6px;
+    }
+
+    .more-menu-icon {
+        font-size: 24px;
+        margin-bottom: 4px;
+    }
+
+    .more-menu-item span:last-child {
+        font-size: 11px;
+    }
+
+    /* モバイルナビゲーションの調整 */
+    .mobile-nav-btn {
+        min-width: unset;
+        padding: 8px 4px;
+    }
+
+    .mobile-nav-label {
+        font-size: 10px;
+    }
 }
