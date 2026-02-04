@@ -1867,6 +1867,8 @@ body.dark-mode {
     position: sticky;
     top: 0;
     z-index: 10;
+    white-space: nowrap;
+    /* Prevent wrapping */
 }
 
 /* Order Group Header */
@@ -1892,26 +1894,18 @@ body.dark-mode {
 .matrix-cell.status-todo {
     background: var(--color-bg-card);
     color: var(--color-text-muted);
-    /* Muted text */
     position: relative;
 }
 
-.matrix-cell.status-todo::after {
-    content: "未";
-    display: block;
-}
+/* ::after removed to prevent double text */
 
 .matrix-cell.status-done {
     background: #22c55e;
-    /* Green-500 */
     color: white;
     border-color: #16a34a;
 }
 
-.matrix-cell.status-done::after {
-    content: "完了";
-    display: block;
-}
+/* ::after removed to prevent double text */
 
 .matrix-cell.status-disabled {
     background: repeating-linear-gradient(45deg,
@@ -1928,6 +1922,11 @@ body.dark-mode {
     text-align: left !important;
     font-weight: 500;
     min-width: 200px;
+    max-width: 400px;
+    white-space: nowrap;
+    /* Prevent wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
     position: sticky;
     left: 0;
     background: var(--color-bg-card);
