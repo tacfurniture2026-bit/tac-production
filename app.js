@@ -329,14 +329,18 @@ function renderGantt() {
     if (daysUntilDue !== null && daysUntilDue <= 1) dueStyle = 'color: #ef4444; font-weight: bold;';
     else if (daysUntilDue !== null && daysUntilDue <= 3) dueStyle = 'color: #f59e0b;';
 
+    const isExpanded = expandedOrders.has(order.id);
+    const expandIcon = isExpanded ? '▼' : '▶';
+
     html += `
       <tr>
         <td colspan="${allProcesses.length + 1}" class="matrix-group-header">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
+            <div>
+              <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
-              ${order.projectName} / ${order.productName} (数量: ${order.quantity})
-            </span>
+              <span style="font-weight:600;">${order.projectName}</span> / ${order.productName} (数量: ${order.quantity})
+            </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
               納期: ${formatDate(order.dueDate)}
             </span>
@@ -345,8 +349,8 @@ function renderGantt() {
       </tr>
     `;
 
-    // アイテム（部材）行
-    if (order.items && order.items.length > 0) {
+    // アイテム（部材）行 - 展開時のみ表示
+    if (isExpanded && order.items && order.items.length > 0) {
       order.items.forEach((item, itemIdx) => {
         // データ整合性
         if (!item) return;
@@ -356,8 +360,8 @@ function renderGantt() {
         html += `
            <tr>
              <td class="col-part-name">
-               <span style="color: #64748b; margin-right: 4px;">┗</span>
-               ${item.bomName || item.partCode || '<span style="color:#94a3b8">(名称なし)</span>'}
+               <span style="color: #64748b; margin-right: 4px; margin-left: 1rem;">┗</span>
+               ${item.bomName || item.partCode || '<span style="color:var(--color-text-muted)">(名称なし)</span>'}
              </td>
          `;
 
@@ -373,6 +377,7 @@ function renderGantt() {
             html += `
                <td class="matrix-cell ${statusClass}"
                    onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')">
+                   ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
              `;
           }
@@ -380,8 +385,9 @@ function renderGantt() {
 
         html += `</tr>`;
       });
-    } else {
-      html += `<tr><td colspan="${allProcesses.length + 1}" style="text-align:center; color:#94a3b8; padding: 1rem;">部材データなし</td></tr>`;
+    } else if (isExpanded) {
+      // 展開しているがアイテムがない場合
+      html += `<tr><td colspan="${allProcesses.length + 1}" style="text-align:center; color:var(--color-text-muted); padding: 1rem;">部材データなし</td></tr>`;
     }
   });
 
@@ -394,9 +400,36 @@ function renderGantt() {
   pageBody.innerHTML = html;
 }
 
-function toggleExpand(event, orderId) { }
-function expandAll() { }
-function collapseAll() { }
+function toggleExpand(event, orderId) {
+  if (event) event.stopPropagation();
+  // IDの数値・文字列ゆらぎ対策
+  if (expandedOrders.has(orderId)) {
+    expandedOrders.delete(orderId);
+    expandedOrders.delete(String(orderId));
+    expandedOrders.delete(Number(orderId));
+  } else {
+    expandedOrders.add(orderId);
+    expandedOrders.add(String(orderId));
+    expandedOrders.add(Number(orderId));
+  }
+  renderGantt();
+}
+
+function expandAll() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  expandedOrders = new Set();
+  orders.forEach(o => {
+    expandedOrders.add(o.id);
+    expandedOrders.add(String(o.id));
+    expandedOrders.add(Number(o.id));
+  });
+  renderGantt();
+}
+
+function collapseAll() {
+  expandedOrders = new Set();
+  renderGantt();
+}
 
 // ========================================
 // QR読取（進捗登録）

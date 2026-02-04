@@ -667,7 +667,8 @@ textarea.form-input {
 }
 
 .btn-secondary {
-    background: white;
+    background: var(--color-bg-card);
+    /* was white */
     color: var(--color-text-primary);
     border: 1px solid var(--color-border);
 }
@@ -1833,34 +1834,36 @@ body.dark-mode {
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
+
 /* =========================================
    Process Matrix Table (New Design)
    ========================================= */
 .matrix-container {
     overflow-x: auto;
-    background: #fff;
+    background: var(--color-bg-card);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .matrix-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1200px; /* Ensure horizontal scroll on small screens */
+    min-width: 1200px;
+    /* Ensure horizontal scroll on small screens */
 }
 
 .matrix-table th,
 .matrix-table td {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-border);
     padding: 8px;
     text-align: center;
     vertical-align: middle;
 }
 
 .matrix-table th {
-    background: #f8fafc;
+    background: var(--color-bg-tertiary);
     font-weight: 600;
-    color: #475569;
+    color: var(--color-text-secondary);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1868,11 +1871,12 @@ body.dark-mode {
 
 /* Order Group Header */
 .matrix-group-header {
-    background: #f1f5f9;
+    background: var(--color-bg-tertiary);
     text-align: left;
     padding: 12px;
     font-weight: bold;
-    border-top: 2px solid #cbd5e1;
+    border-top: 2px solid var(--color-border-light);
+    color: var(--color-text-primary);
 }
 
 /* Status Cells */
@@ -1886,33 +1890,35 @@ body.dark-mode {
 }
 
 .matrix-cell.status-todo {
-    background: #fff;
-    color: #94a3b8; /* Muted text */
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    /* Muted text */
     position: relative;
 }
+
 .matrix-cell.status-todo::after {
     content: "未";
     display: block;
 }
 
 .matrix-cell.status-done {
-    background: #22c55e; /* Green-500 */
+    background: #22c55e;
+    /* Green-500 */
     color: white;
     border-color: #16a34a;
 }
+
 .matrix-cell.status-done::after {
     content: "完了";
     display: block;
 }
 
 .matrix-cell.status-disabled {
-    background: repeating-linear-gradient(
-        45deg,
-        #f1f5f9,
-        #f1f5f9 10px,
-        #e2e8f0 10px,
-        #e2e8f0 20px
-    );
+    background: repeating-linear-gradient(45deg,
+            var(--color-bg-tertiary),
+            var(--color-bg-tertiary) 10px,
+            var(--color-border) 10px,
+            var(--color-border) 20px);
     cursor: default;
     color: transparent;
 }
@@ -1924,7 +1930,8 @@ body.dark-mode {
     min-width: 200px;
     position: sticky;
     left: 0;
-    background: #fff; /* Keep it on top of scrolling content */
+    background: var(--color-bg-card);
+    /* Keep it on top of scrolling content */
     z-index: 5;
-    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
