@@ -1193,10 +1193,21 @@ function createOrder() {
   const productBoms = boms.filter(b => String(b.productName || '') === productName);
 
   if (productBoms.length === 0) {
-    const debugMsg = `デバッグ情報:\n選択した品名: "${productName}"\n(長さ: ${productName.length})\n\nBOMデータ内の検索に失敗しました。\n登録されている品名数: ${boms.length}\n(データの型不一致などが考えられます)`;
-    // alert(debugMsg); // ユーザーにはトーストで警告
-    toast(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成されます。`, 'warning');
+    // デバッグ情報を強化
+    const allProducts = [...new Set(boms.map(b => b.productName))];
+    const similarProducts = allProducts.filter(p => p.includes(productName) || productName.includes(p));
+
+    const debugMsg = `デバッグ情報:\n` +
+      `選択した品名: "${productName}" (型: ${typeof productName})\n` +
+      `詳細 (char codes): ${Array.from(productName).map(c => c.charCodeAt(0)).join(',')}\n` +
+      `\nBOMデータ内の検索結果: 0件\n` +
+      `全BOM件数: ${boms.length}\n` +
+      `似ている品名: ${similarProducts.join(', ') || 'なし'}\n` +
+      `\n※この画面のスクリーンショットを管理者に送ってください。`;
+
+    alert(`警告: BOMが見つかりません。\n\n${debugMsg}`);
     console.error(debugMsg, boms);
+    toast(`警告: 「${productName}」のBOMが見つかりません。`, 'warning');
   } else {
     toast(`${productBoms.length}件の部材を展開しました`, 'success');
   }
@@ -1692,6 +1703,40 @@ function deleteAllBoms() {
   DB.save(DB.KEYS.BOM, []);
   toast('全てのBOMデータを削除しました', 'success');
   renderBom();
+  renderBom();
+}
+
+function deleteSelectedBoms() {
+  const checkboxes = document.querySelectorAll('.bom-check:checked');
+  if (checkboxes.length === 0) {
+    toast('削除するBOMを選択してください', 'warning');
+    return;
+  }
+  if (!confirm(`${checkboxes.length}件のBOMを削除しますか？`)) return;
+
+  const idsToDelete = Array.from(checkboxes).map(cb => parseInt(cb.value));
+  const boms = DB.get(DB.KEYS.BOM);
+  const newBoms = boms.filter(b => !idsToDelete.includes(b.id));
+
+  DB.save(DB.KEYS.BOM, newBoms);
+  toast(`${checkboxes.length}件のBOMを削除しました`, 'success');
+  renderBom();
+  updateBomDeleteBtn();
+}
+
+function toggleBomChecks(headerCheck, modelName) {
+  const checks = document.querySelectorAll(`.bom-check[data-model="${modelName}"]`);
+  checks.forEach(c => c.checked = headerCheck.checked);
+  updateBomDeleteBtn();
+}
+
+function updateBomDeleteBtn() {
+  const checked = document.querySelectorAll('.bom-check:checked');
+  const btn = $('#delete-selected-bom-btn');
+  if (btn) {
+    btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+    btn.textContent = `選択削除 (${checked.length})`;
+  }
 }
 
 function showImportBomModal() {
