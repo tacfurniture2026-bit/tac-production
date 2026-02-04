@@ -955,6 +955,7 @@ function renderBom() {
         <table class="table">
           <thead>
             <tr>
+              <th style="width: 40px;"><input type="checkbox" onchange="toggleBomChecks(this, '${productName}')"></th>
               <th>BOM名</th>
               <th>部材CD</th>
               <th>工程数</th>
@@ -964,6 +965,7 @@ function renderBom() {
           <tbody>
             ${items.map(b => `
               <tr>
+                <td><input type="checkbox" class="bom-check" value="${b.id}" data-model="${productName}" onchange="updateBomDeleteBtn()"></td>
                 <td>${b.bomName}</td>
                 <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px;">${b.partCode}</code></td>
                 <td>${b.processes?.length || 0}工程</td>
@@ -2202,10 +2204,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 各種追加ボタン
   $('#add-order-btn').addEventListener('click', showAddOrderModal);
   $('#add-defect-btn').addEventListener('click', showAddDefectModal);
-  $('#add-defect-btn').addEventListener('click', showAddDefectModal);
   $('#add-bom-btn').addEventListener('click', showAddBomModal);
+
   const deleteBomBtn = $('#delete-all-bom-btn');
   if (deleteBomBtn) deleteBomBtn.addEventListener('click', deleteAllBoms);
+
+  const deleteSelBtn = $('#delete-selected-bom-btn');
+  if (deleteSelBtn) deleteSelBtn.addEventListener('click', deleteSelectedBoms);
+
   $('#import-bom-btn').addEventListener('click', showImportBomModal);
   $('#add-rate-btn').addEventListener('click', showAddRateModal);
   $('#import-rates-btn').addEventListener('click', showImportRateModal);
