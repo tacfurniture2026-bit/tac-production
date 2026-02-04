@@ -117,8 +117,11 @@ function showMainScreen() {
   // モバイルナビの初期化
   initMobileNav();
 
-  // ロール別の初期画面
-  if (currentUser.role === 'admin') {
+  // ロール別の初期画面（前回開いていたページがあれば復元）
+  const lastPage = localStorage.getItem('lastPage');
+  if (lastPage) {
+    navigateTo(lastPage);
+  } else if (currentUser.role === 'admin') {
     navigateTo('dashboard');
   } else {
     // 作業者はQR進捗登録画面を初期表示
@@ -127,6 +130,9 @@ function showMainScreen() {
 }
 
 function navigateTo(pageName) {
+  // ページ状態を保存
+  localStorage.setItem('lastPage', pageName);
+
   // ページ切り替え
   $$('.page').forEach(p => p.classList.remove('active'));
   $(`#page-${pageName}`).classList.add('active');
