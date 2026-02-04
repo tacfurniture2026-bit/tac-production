@@ -3,9 +3,10 @@
    ======================================== */
 
 :root {
-    /* カラー - Monorevo風ライトテーマ */
+    /* ライトモード（デフォルト） */
     --color-bg-primary: #F4F7F9;
     --color-bg-secondary: #FFFFFF;
+    --color-bg-tertiary: #F3F4F6;
     --color-bg-card: #FFFFFF;
     --color-bg-hover: #E8ECF0;
     --color-border: #D1D5DB;
@@ -14,8 +15,9 @@
     --color-text-primary: #1F2937;
     --color-text-secondary: #4B5563;
     --color-text-muted: #9CA3AF;
+    --color-text-inverse: #FFFFFF;
 
-    /* ネイビー系アクセント（Monorevo風） */
+    /* アクセント */
     --color-accent-primary: #0B2D48;
     --color-accent-secondary: #1a3f5c;
     --color-accent-gradient: linear-gradient(135deg, #0B2D48 0%, #1a3f5c 100%);
@@ -25,8 +27,15 @@
     --color-danger: #EF4444;
     --color-info: #3B82F6;
 
+    /* アイコンフィルタ（黒系） */
+    --icon-filter: grayscale(100%) brightness(0.2);
+
     /* タイポグラフィ */
-    --font-sans: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Inter',
+        'Noto Sans JP',
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
 
     /* スペース・サイズ */
     --radius-sm: 6px;
@@ -296,7 +305,8 @@ body {
     flex-shrink: 0;
     width: 28px;
     text-align: center;
-    filter: grayscale(100%) brightness(2);
+    /* サイドバーアイコンは常に白、またはフィルタ制御 */
+    filter: grayscale(100%) brightness(10);
 }
 
 .nav-item span:not(.nav-icon) {
@@ -798,9 +808,110 @@ textarea.form-input {
     background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
+}
+
+/* === アイコン統一 === */
+/* ヘッダー等のアイコンを強制モノクロ化 */
+.page-header h1 span.icon,
+.page-header h1 i {
+    filter: var(--icon-filter);
+    margin-right: 0.5rem;
+    display: inline-block;
+}
+
+/* === iPhone風トグルスイッチ === */
+.theme-switch-wrapper {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+}
+
+.theme-label {
+    margin-right: 10px;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 30px;
+    position: relative;
+    width: 56px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    background-color: #fff;
+    bottom: 3px;
+    content: "";
+    height: 24px;
+    left: 3px;
+    position: absolute;
+    transition: .4s;
+    width: 24px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked+.slider {
+    background-color: #0B2D48;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+.slider .icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    line-height: 1;
+}
+
+.slider .sun {
+    left: 7px;
+    color: #f39c12;
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.slider .moon {
+    right: 7px;
+    color: #f1c40f;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+input:checked+.slider .sun {
+    opacity: 0;
+}
+
+input:checked+.slider .moon {
+    opacity: 1;
+}
+
+justify-content: center;
+z-index: 1000;
+padding: 1rem;
 }
 
 .modal-overlay.hidden {
@@ -1514,6 +1625,32 @@ textarea.form-input {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+}
+
+/* ダークモード定義（再配置） */
+body.dark-mode {
+    --color-bg-primary: #111827;
+    --color-bg-secondary: #1F2937;
+    --color-bg-tertiary: #374151;
+    --color-bg-card: #1F2937;
+    --color-bg-hover: #374151;
+    --color-border: #374151;
+    --color-border-light: #4B5563;
+
+    --color-text-primary: #F9FAFB;
+    --color-text-secondary: #D1D5DB;
+    --color-text-muted: #9CA3AF;
+    --color-text-inverse: #1F2937;
+
+    --color-accent-primary: #3B82F6;
+    --color-accent-secondary: #60A5FA;
+    --color-accent-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+    /* アイコンフィルタ（白化） */
+    --icon-filter: grayscale(100%) brightness(10);
+
+    /* サイドバーの背景もダークモード時は少し変える */
+    --color-accent-gradient: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
 }
 
 .summary-label {

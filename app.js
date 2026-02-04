@@ -1181,8 +1181,8 @@ function createOrder() {
     completed: []
   }));
 
-  const orders = DB.get(DB.KEYS.ORDERS);
-  orders.push({
+  // atomic add
+  DB.add(DB.KEYS.ORDERS, {
     id: DB.nextId(DB.KEYS.ORDERS),
     orderNo,
     projectName,
@@ -1194,7 +1194,6 @@ function createOrder() {
     notes,
     items
   });
-  DB.save(DB.KEYS.ORDERS, orders);
 
   toast('生産指示書を作成しました', 'success');
   hideModal();
@@ -1490,7 +1489,8 @@ function updateOrder(id) {
     }
   }
 
-  DB.save(DB.KEYS.ORDERS, orders);
+  // atomic update
+  DB.update(DB.KEYS.ORDERS, id, order);
   toast('指示書を更新しました', 'success');
   hideModal();
   renderOrders();
@@ -1571,8 +1571,8 @@ function createDefect() {
   const order = orders.find(o => o.id === orderId);
   const item = order?.items?.find(i => i.id === itemId);
 
-  const defects = DB.get(DB.KEYS.DEFECTS);
-  defects.push({
+  // atomic add
+  DB.add(DB.KEYS.DEFECTS, {
     id: DB.nextId(DB.KEYS.DEFECTS),
     orderId,
     itemId,
@@ -1585,7 +1585,6 @@ function createDefect() {
     reporter: currentUser.displayName,
     reportedAt: new Date().toISOString()
   });
-  DB.save(DB.KEYS.DEFECTS, defects);
 
   toast('不良品を登録しました', 'success');
   hideModal();

@@ -213,21 +213,73 @@ const DB = {
         }
     },
 
-    // 保存
+    // 保存（全置換 - 初期化時など限定）
     save(key, data) {
-        // Firebase使用時
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).set(data)
                 .then(() => console.log(`💾 ${fbKey} 保存完了`))
-                .catch(err => {
-                    console.error(`❌ ${fbKey} 保存エラー:`, err);
-                    toast(`保存に失敗しました: ${err.message || '不明なエラー'}`, 'error', 5000);
-                });
+                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
             this._cache[key] = data;
         } else {
-            // ローカルストレージ
             localStorage.setItem(key, JSON.stringify(data));
+            if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+        }
+    },
+
+    // 追加（競合回避：トランザクション使用）
+    add(key, newItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (currentData === null) return [newItem];
+                if (Array.isArray(currentData)) {
+                    if (newItem.id && currentData.some(d => d.id === newItem.id)) return; // ID重複防止
+                    currentData.push(newItem);
+                    return currentData;
+                }
+                return currentData;
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Add failed:', error);
+                    toast('追加に失敗しました', 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            data.push(newItem);
+            this.save(key, data);
+        }
+    },
+
+    // 更新（競合回避：トランザクション使用）
+    update(key, id, updatedItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (!currentData) return;
+                if (Array.isArray(currentData)) {
+                    const index = currentData.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        currentData[index] = updatedItem;
+                    }
+                    return currentData;
+                }
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Update failed:', error);
+                    toast('更新に失敗しました: ' + error.message, 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            const index = data.findIndex(item => item.id === id);
+            if (index !== -1) {
+                data[index] = updatedItem;
+                this.save(key, data);
+            }
         }
     },
 

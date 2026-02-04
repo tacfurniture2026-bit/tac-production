@@ -50,7 +50,20 @@
 </head>
 
 <body>
-    <div id="app">
+    <!-- テーマ切替スイッチ -->
+    <div class=\"theme-switch-wrapper\">
+        <label class=\"theme-switch\" for=\"checkbox\">
+            <input type=\"checkbox\" id=\"checkbox\" />
+            <div class=\"slider\">
+                <i class=\"fas fa-sun icon sun\"></i>
+                <i class=\"fas fa-moon icon moon\"></i>
+            </div>
+        </label>
+        <span class=\"theme-label\" style=\"margin-left:8px; font-size:0.7rem;
+            color:var(--color-text-tertiary);\">Mode</span>
+    </div>
+
+    <div id=\"app\">
         <!-- ログイン画面 -->
         <div id="login-screen" class="screen active">
             <div class="login-container">
