@@ -1678,6 +1678,17 @@ function createBom() {
 
   toast('BOMを作成しました', 'success');
   hideModal();
+  toast('BOMを作成しました', 'success');
+  hideModal();
+  renderBom();
+}
+
+function deleteAllBoms() {
+  if (!confirm('【警告】全てのBOMデータを削除しますか？\nこの操作は元に戻せません。')) return;
+  if (!confirm('本当に全てのBOMを削除してよろしいですか？（最終確認）')) return;
+
+  DB.save(DB.KEYS.BOM, []);
+  toast('全てのBOMデータを削除しました', 'success');
   renderBom();
 }
 
@@ -2191,7 +2202,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 各種追加ボタン
   $('#add-order-btn').addEventListener('click', showAddOrderModal);
   $('#add-defect-btn').addEventListener('click', showAddDefectModal);
+  $('#add-defect-btn').addEventListener('click', showAddDefectModal);
   $('#add-bom-btn').addEventListener('click', showAddBomModal);
+  const deleteBomBtn = $('#delete-all-bom-btn');
+  if (deleteBomBtn) deleteBomBtn.addEventListener('click', deleteAllBoms);
   $('#import-bom-btn').addEventListener('click', showImportBomModal);
   $('#add-rate-btn').addEventListener('click', showAddRateModal);
   $('#import-rates-btn').addEventListener('click', showImportRateModal);
