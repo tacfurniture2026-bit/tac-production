@@ -19,7 +19,26 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20240205_01">
+    <link rel="stylesheet" href="styles.css?v=20240205_02">
+    <style>
+        /* 緊急パッチ: CSSキャッシュ対策 */
+        .matrix-cell.status-todo::after,
+        .matrix-cell.status-done::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .matrix-table th,
+        .col-part-name {
+            white-space: nowrap !important;
+        }
+
+        .col-part-name {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
