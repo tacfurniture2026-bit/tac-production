@@ -302,6 +302,25 @@ function renderGantt() {
     `<div class="process-header-cell">${p}</div>`
   ).join('');
 
+  // デバッグ用表示エリア（なければ作る）
+  let debugArea = $('#debug-gantt-info');
+  if (!debugArea) {
+    const container = $('#page-gantt .card-body');
+    if (container) {
+      debugArea = document.createElement('div');
+      debugArea.id = 'debug-gantt-info';
+      debugArea.style.padding = '10px';
+      debugArea.style.marginBottom = '10px';
+      debugArea.style.background = '#f8f9fa';
+      debugArea.style.border = '1px solid #ddd';
+      debugArea.style.fontSize = '12px';
+      debugArea.style.fontFamily = 'monospace';
+      debugArea.style.whiteSpace = 'pre-wrap';
+      debugArea.style.display = 'none'; // デフォルト非表示
+      container.insertBefore(debugArea, container.firstChild);
+    }
+  }
+
   const leftBody = $('#gantt-left-body');
   const rightBody = $('#gantt-right-body');
 
@@ -417,7 +436,7 @@ function renderGantt() {
           }
         });
       }
-    });
+    }); // End of filtered.forEach
 
   leftBody.innerHTML = leftHtml;
   rightBody.innerHTML = rightHtml;
@@ -436,6 +455,19 @@ function toggleExpand(event, orderId) {
     expandedOrders.add(String(orderId));
     expandedOrders.add(Number(orderId));
   }
+
+  // デバッグ表示
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const target = orders.find(o => o.id == orderId);
+  const debugArea = $('#debug-gantt-info');
+  if (debugArea && target) {
+    debugArea.style.display = 'block';
+    debugArea.textContent = `[Debug] Order ID: ${orderId}\n` +
+      `Product: ${target.productName}\n` +
+      `Items Count: ${target.items ? target.items.length : 'undefined'}\n` +
+      `Items Sample: ${JSON.stringify(target.items ? target.items.slice(0, 3) : [], null, 2)}`;
+  }
+
   renderGantt();
 }
 
