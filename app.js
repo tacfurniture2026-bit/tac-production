@@ -1107,11 +1107,11 @@ function showAddOrderModal() {
         <input type="text" id="order-project" class="form-input" required>
       </div>
       <div class="form-group">
-        <label>品名 * <small style="color: var(--color-text-muted);">（入力で候補を絞込）</small></label>
-        <input type="text" id="order-product" class="form-input" list="product-list" placeholder="品名を入力..." autocomplete="off" required>
-        <datalist id="product-list">
-          ${products.map(p => `<option value="${p}">`).join('')}
-        </datalist>
+        <label>品名 *</label>
+        <select id="order-product" class="form-input" required>
+          <option value="">品名を選択してください</option>
+          ${products.map(p => `<option value="${p}">${p}</option>`).join('')}
+        </select>
       </div>
       <div class="form-grid">
         <div class="form-group">
@@ -1260,16 +1260,16 @@ function editOrder(id) {
     </div>
     <div class="form-group">
       <label>品名 * <small style="color: var(--color-text-muted);">（変更するとBOMが再設定されます）</small></label>
-      <input type="text" id="edit-order-product" class="form-input" list="product-list" value="${order.productName}" required>
-      <datalist id="product-list">
-        ${products.map(p => `<option value="${p}">`).join('')}
-      </datalist>
+      <select id="edit-order-product" class="form-input" required>
+        <option value="">品名を選択してください</option>
+        ${products.map(p => `<option value="${p}" ${p === order.productName ? 'selected' : ''}>${p}</option>`).join('')}
+      </select>
     </div>
     <div class="form-group">
       <label>数量 *</label>
       <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-grid">
       <div class="form-group">
         <label>着工日</label>
         <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
