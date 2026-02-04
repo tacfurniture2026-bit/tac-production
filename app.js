@@ -296,161 +296,107 @@ function renderGantt() {
   // 全工程リストを取得（ユニーク）
   const allProcesses = STANDARD_PROCESSES;
 
-  // 工程ヘッダーを描画
-  const processHeader = $('#gantt-process-header');
-  processHeader.innerHTML = allProcesses.map(p =>
-    `<div class="process-header-cell">${p}</div>`
-  ).join('');
-
-  const leftBody = $('#gantt-left-body');
-  const rightBody = $('#gantt-right-body');
-
-  if (filtered.length === 0) {
-    leftBody.innerHTML = `<div class="gantt-data-row" style="justify-content: center; color: var(--color-text-muted); padding: 2rem;">データがありません</div>`;
-    rightBody.innerHTML = '';
+  // マトリクス表示のメインコンテナ
+  // index.htmlには .card-body がないので .gantt-container-mono をターゲットにする
+  const pageBody = document.querySelector('.gantt-container-mono');
+  if (!pageBody) {
+    console.error('Target container .gantt-container-mono not found');
     return;
   }
 
-  let leftHtml = '';
-  let rightHtml = '';
-
-  filtered.forEach(order => {
-    const progress = calculateProgress(order);
-    const isExpanded = expandedOrders.has(order.id);
-    const daysUntilDue = order.dueDate ? Math.ceil((new Date(order.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-
-    // 進捗バッジのクラス
-    const progressClass = progress >= 80 ? 'high' : progress >= 30 ? 'medium' : 'low';
-
-    // 納期クラス
-    const dueClass = daysUntilDue !== null && daysUntilDue <= 1 ? 'due-danger' : daysUntilDue !== null && daysUntilDue <= 3 ? 'due-warning' : '';
-
-    // 親行 - 左側
-    leftHtml += `
-            <div class="gantt-data-row gantt-row-parent" data-order-id="${order.id}">
-                <div class="gantt-cell gantt-cell-expand">
-                    ${(order.items && order.items.length > 0)
-        ? `<button class="expand-btn" onclick="toggleExpand(event, ${order.id})">${isExpanded ? '▼' : '▶'}</button>`
-        : '<span style="color:var(--color-text-muted); font-size:0.8rem;">・</span>'}
-                </div>
-                <div class="gantt-cell gantt-cell-project">${order.projectName}</div>
-                <div class="gantt-cell gantt-cell-product">${order.productName}</div>
-                <div class="gantt-cell gantt-cell-qty">${order.quantity}</div>
-                <div class="gantt-cell gantt-cell-date">${formatDate(order.startDate)}</div>
-                <div class="gantt-cell gantt-cell-date ${dueClass}">${formatDate(order.dueDate)}</div>
-            </div>
-        `;
-
-    // 親行 - 右側（進捗サマリー）
-    rightHtml += `
-            <div class="gantt-process-row gantt-row-parent" data-order-id="${order.id}">
-                <div style="display: flex; align-items: center; padding: 0.5rem 1rem; width: 100%;">
-                    <span class="progress-badge ${progressClass}">${progress}%</span>
-                    <div style="margin-left: 1rem; flex: 1;">
-                        <div style="height: 8px; background: var(--color-bg-secondary); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: ${progress}%; background: linear-gradient(90deg, #8CC63F 0%, #7AB832 100%); border-radius: 4px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-    // 子行
-    if (isExpanded && order.items) {
-      // 子行
-      // Debug: 展開状態と項目数の確認
-      // console.log(`Order ${order.id}: Expanded=${isExpanded}, Items=${order.items ? order.items.length : 0}`, order.items);
-
-      if (isExpanded && order.items && order.items.length > 0) {
-        order.items.forEach((item, itemIdx) => {
-          try {
-            if (!item) return;
-
-            const uniqueItemId = `${order.id}-${item.id || itemIdx}`;
-
-            const itemProgress = (item.processes && item.processes.length > 0)
-              ? Math.round(((item.completed || []).length / item.processes.length) * 100)
-              : 0;
-
-            // 子行 - 左側
-            leftHtml += `
-                    <div class="gantt-data-row gantt-row-child" data-unique-item-id="${uniqueItemId}">
-                        <div class="gantt-cell gantt-cell-expand"></div>
-                        <div class="gantt-cell gantt-cell-project"></div>
-                        <div class="gantt-cell gantt-cell-product">
-                            <span class="child-indicator">┗</span>${item.bomName || item.partCode || '<span style="color:var(--color-text-muted)">(名称なし)</span>'}
-                        </div>
-                        <div class="gantt-cell gantt-cell-qty"></div>
-                        <div class="gantt-cell gantt-cell-date"></div>
-                        <div class="gantt-cell gantt-cell-date"></div>
-                    </div>
-                `;
-
-            // 子行 - 右側（工程バー）
-            rightHtml += `
-                    <div class="gantt-process-row gantt-row-child" data-unique-item-id="${uniqueItemId}">
-                        ${allProcesses.map(process => {
-              const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
-              const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
-
-              if (!hasProcess) {
-                return `<div class="gantt-process-cell disabled"></div>`;
-              }
-
-              // 工程進捗状態
-              let statusClass = isComplete ? 'status-done' : 'status-todo';
-              let statusIcon = isComplete ? 'check_circle' : 'radio_button_unchecked';
-
-              return `
-                <div class="gantt-process-cell ${statusClass}" 
-                     onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')"
-                     title="${process}: ${isComplete ? '完了' : '未完了'}">
-                     <span class="material-icons" style="font-size: 16px;">${statusIcon}</span>
-                </div>
-            `;
-            }).join('')}
-                    </div>
-                `;
-          } catch (err) {
-            console.error('Render error item:', err);
-            leftHtml += `<div class="gantt-data-row gantt-row-child"><div class="gantt-cell" colspan="6" style="color:red">描画エラー</div></div>`;
-          }
-        });
-      }
-    }
-  }); // End of filtered.forEach
-
-  leftBody.innerHTML = leftHtml;
-  rightBody.innerHTML = rightHtml;
-}
-
-function toggleExpand(event, orderId) {
-  if (event) event.stopPropagation();
-  // IDの型不一致（数値 vs 文字列）対策
-  // Setには両方の型で入れておくことで、renderGantt側の比較（== または ===）での取りこぼしを防ぐ
-  if (expandedOrders.has(orderId)) {
-    expandedOrders.delete(orderId);
-    expandedOrders.delete(String(orderId));
-    expandedOrders.delete(Number(orderId));
-  } else {
-    expandedOrders.add(orderId);
-    expandedOrders.add(String(orderId));
-    expandedOrders.add(Number(orderId));
+  if (filtered.length === 0) {
+    pageBody.innerHTML = `<div class="text-center text-muted p-4">データがありません</div>`;
+    return;
   }
 
-  renderGantt();
+  // HTML生成開始
+  let html = `
+    <div class="matrix-container">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th class="col-part-name">部材名</th>
+            ${allProcesses.map(p => `<th>${p}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  filtered.forEach(order => {
+    // オーダーヘッダー行
+    const daysUntilDue = order.dueDate ? Math.ceil((new Date(order.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+    let dueStyle = '';
+    if (daysUntilDue !== null && daysUntilDue <= 1) dueStyle = 'color: #ef4444; font-weight: bold;';
+    else if (daysUntilDue !== null && daysUntilDue <= 3) dueStyle = 'color: #f59e0b;';
+
+    html += `
+      <tr>
+        <td colspan="${allProcesses.length + 1}" class="matrix-group-header">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>
+              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
+              ${order.projectName} / ${order.productName} (数量: ${order.quantity})
+            </span>
+            <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
+              納期: ${formatDate(order.dueDate)}
+            </span>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    // アイテム（部材）行
+    if (order.items && order.items.length > 0) {
+      order.items.forEach((item, itemIdx) => {
+        // データ整合性
+        if (!item) return;
+        // ID重複対策
+        const uniqueItemId = `${order.id}-${item.id || itemIdx}`;
+
+        html += `
+           <tr>
+             <td class="col-part-name">
+               <span style="color: #64748b; margin-right: 4px;">┗</span>
+               ${item.bomName || item.partCode || '<span style="color:#94a3b8">(名称なし)</span>'}
+             </td>
+         `;
+
+        // 各工程セル
+        allProcesses.forEach(process => {
+          const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
+          const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
+
+          if (!hasProcess) {
+            html += `<td class="matrix-cell status-disabled"></td>`;
+          } else {
+            const statusClass = isComplete ? 'status-done' : 'status-todo';
+            html += `
+               <td class="matrix-cell ${statusClass}"
+                   onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')">
+               </td>
+             `;
+          }
+        });
+
+        html += `</tr>`;
+      });
+    } else {
+      html += `<tr><td colspan="${allProcesses.length + 1}" style="text-align:center; color:#94a3b8; padding: 1rem;">部材データなし</td></tr>`;
+    }
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  pageBody.innerHTML = html;
 }
 
-function expandAll() {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  expandedOrders = new Set(orders.map(o => o.id));
-  renderGantt();
-}
-
-function collapseAll() {
-  expandedOrders = new Set();
-  renderGantt();
-}
+function toggleExpand(event, orderId) { }
+function expandAll() { }
+function collapseAll() { }
 
 // ========================================
 // QR読取（進捗登録）
