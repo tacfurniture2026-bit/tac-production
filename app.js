@@ -436,7 +436,8 @@ function renderGantt() {
           }
         });
       }
-    }); // End of filtered.forEach
+    }
+  }); // End of filtered.forEach
 
   leftBody.innerHTML = leftHtml;
   rightBody.innerHTML = rightHtml;
