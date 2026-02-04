@@ -1833,3 +1833,98 @@ body.dark-mode {
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
+/* =========================================
+   Process Matrix Table (New Design)
+   ========================================= */
+.matrix-container {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px; /* Ensure horizontal scroll on small screens */
+}
+
+.matrix-table th,
+.matrix-table td {
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.matrix-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Order Group Header */
+.matrix-group-header {
+    background: #f1f5f9;
+    text-align: left;
+    padding: 12px;
+    font-weight: bold;
+    border-top: 2px solid #cbd5e1;
+}
+
+/* Status Cells */
+.matrix-cell {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    user-select: none;
+    height: 40px;
+}
+
+.matrix-cell.status-todo {
+    background: #fff;
+    color: #94a3b8; /* Muted text */
+    position: relative;
+}
+.matrix-cell.status-todo::after {
+    content: "未";
+    display: block;
+}
+
+.matrix-cell.status-done {
+    background: #22c55e; /* Green-500 */
+    color: white;
+    border-color: #16a34a;
+}
+.matrix-cell.status-done::after {
+    content: "完了";
+    display: block;
+}
+
+.matrix-cell.status-disabled {
+    background: repeating-linear-gradient(
+        45deg,
+        #f1f5f9,
+        #f1f5f9 10px,
+        #e2e8f0 10px,
+        #e2e8f0 20px
+    );
+    cursor: default;
+    color: transparent;
+}
+
+/* Part Name Column */
+.col-part-name {
+    text-align: left !important;
+    font-weight: 500;
+    min-width: 200px;
+    position: sticky;
+    left: 0;
+    background: #fff; /* Keep it on top of scrolling content */
+    z-index: 5;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+}
