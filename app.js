@@ -1153,7 +1153,7 @@ function showAddOrderModal() {
 function createOrder() {
   const orderNo = $('#order-no').value;
   const projectName = $('#order-project').value.trim();
-  const productName = $('#order-product').value.trim();
+  const productName = $('#order-product').value;
   const quantity = parseInt($('#order-qty').value) || 1;
   const color = $('#order-color').value;
   const startDate = $('#order-start').value;
