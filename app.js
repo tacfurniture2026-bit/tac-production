@@ -1209,6 +1209,10 @@ function createOrder() {
     console.error(debugMsg, boms);
     toast(`警告: 「${productName}」のBOMが見つかりません。`, 'warning');
   } else {
+    // 成功時も念のためデバッグ表示（ユーザー確認用）
+    const bomDetails = productBoms.map(b => `${b.bomName} (${b.partCode})`).join('\n');
+    alert(`【確認】BOMが見つかりました。\n\n件数: ${productBoms.length}件\n内訳:\n${bomDetails}\n\nこれで正しければOKを押してください。`);
+
     toast(`${productBoms.length}件の部材を展開しました`, 'success');
   }
 
@@ -1702,7 +1706,6 @@ function deleteAllBoms() {
 
   DB.save(DB.KEYS.BOM, []);
   toast('全てのBOMデータを削除しました', 'success');
-  renderBom();
   renderBom();
 }
 
