@@ -1180,9 +1180,6 @@ function createOrder() {
   // BOMから部材を取得
   const boms = DB.get(DB.KEYS.BOM);
 
-  // BOMから部材を取得
-  const boms = DB.get(DB.KEYS.BOM);
-
   // マッチングロジック改善: Selectでの選択になったため完全一致検索に変更
   const productBoms = boms.filter(b => b.productName === productName);
 
