@@ -438,13 +438,7 @@ function toggleExpand(event, orderId) {
     expandedOrders.add(Number(orderId));
   }
 
-} else {
-  expandedOrders.add(orderId);
-  expandedOrders.add(String(orderId));
-  expandedOrders.add(Number(orderId));
-}
-
-renderGantt();
+  renderGantt();
 }
 
 function expandAll() {
