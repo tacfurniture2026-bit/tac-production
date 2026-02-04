@@ -1084,7 +1084,8 @@ function hideModal() {
 
 function showAddOrderModal() {
   const boms = DB.get(DB.KEYS.BOM);
-  const products = [...new Set(boms.map(b => b.productName))].sort();
+  // 型不一致対策：すべて文字列に変換してユニーク化
+  const products = [...new Set(boms.map(b => String(b.productName || '')))].sort();
 
   // 備考欄のデフォルトラベル
   const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
@@ -1186,11 +1187,14 @@ function createOrder() {
   // BOMから部材を取得
   const boms = DB.get(DB.KEYS.BOM);
 
-  // マッチングロジック改善: Selectでの選択になったため完全一致検索に変更
-  const productBoms = boms.filter(b => b.productName === productName);
+  // マッチングロジック改善: String型変換して比較し、デバッグ情報を追加
+  const productBoms = boms.filter(b => String(b.productName || '') === productName);
 
   if (productBoms.length === 0) {
+    const debugMsg = `デバッグ情報:\n選択した品名: "${productName}"\n(長さ: ${productName.length})\n\nBOMデータ内の検索に失敗しました。\n登録されている品名数: ${boms.length}\n(データの型不一致などが考えられます)`;
+    // alert(debugMsg); // ユーザーにはトーストで警告
     toast(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成されます。`, 'warning');
+    console.error(debugMsg, boms);
   } else {
     toast(`${productBoms.length}件の部材を展開しました`, 'success');
   }
