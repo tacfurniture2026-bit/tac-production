@@ -1180,14 +1180,11 @@ function createOrder() {
   // BOMから部材を取得
   const boms = DB.get(DB.KEYS.BOM);
 
-  // マッチングロジック改善: 正規化して比較
-  const normalize = (str) => str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '').toLowerCase();
-  const targetName = normalize(productName);
+  // BOMから部材を取得
+  const boms = DB.get(DB.KEYS.BOM);
 
-  const productBoms = boms.filter(b => {
-    const bomName = normalize(b.productName);
-    return bomName === targetName || bomName.includes(targetName) || targetName.includes(bomName);
-  });
+  // マッチングロジック改善: Selectでの選択になったため完全一致検索に変更
+  const productBoms = boms.filter(b => b.productName === productName);
 
   if (productBoms.length === 0) {
     toast(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成されます。`, 'warning');
@@ -1220,6 +1217,7 @@ function createOrder() {
   toast('生産指示書を作成しました', 'success');
   hideModal();
   renderOrders();
+  if (typeof renderGantt === 'function') renderGantt();
 }
 
 function editOrder(id) {
@@ -1339,12 +1337,8 @@ function updateOrder(id) {
   // 品名の変更があればBOMを再取得
   if (oldProductName !== productName) {
     const boms = DB.get(DB.KEYS.BOM);
-    // 品名が完全一致しなくても、どちらかが含んでいればOKとする（PAOBABY対策）
-    const productBoms = boms.filter(b =>
-      b.productName === productName ||
-      b.productName.includes(productName) ||
-      productName.includes(b.productName)
-    );
+    // Selectでの選択になったため完全一致検索に変更
+    const productBoms = boms.filter(b => b.productName === productName);
 
     if (productBoms.length > 0) {
       if (confirm('品名が変更されました。工程情報（進捗）をリセットしてBOMを再展開しますか？')) {
@@ -1370,6 +1364,7 @@ function updateOrder(id) {
   toast('指示書を更新しました', 'success');
   hideModal();
   renderOrders();
+  if (typeof renderGantt === 'function') renderGantt();
 }
 
 function editOrder(id) {
