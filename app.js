@@ -3040,7 +3040,7 @@ function renderInvProductsTable() {
 
   const tbody = $('#inv-products-body');
   tbody.innerHTML = filtered.map(p => `
-    <tr style="${p.isFixed ? 'background: #fff3cd;' : ''}">
+    <tr class="${p.isFixed ? 'fixed-product-row' : ''}">
       <td>${p.id}</td>
       <td>${INV_CATEGORIES[p.category] || p.category}</td>
       <td>${p.name}</td>

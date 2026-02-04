@@ -19,7 +19,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20240205_03">
+    <link rel="stylesheet" href="styles.css?v=20240205_04">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -37,6 +37,24 @@
             max-width: 400px;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        /* 不動品行のスタイル（ライトモード） */
+        .fixed-product-row {
+            background-color: #fff3cd;
+            color: #1e293b;
+        }
+
+        /* 不動品行のスタイル（ダークモード） */
+        body.dark-mode .fixed-product-row {
+            background-color: #422006;
+            /* 暗い茶色 */
+            color: #fbbf24;
+            /* 明るいアンバー */
+        }
+
+        body.dark-mode .fixed-product-row td {
+            border-color: #78350f;
         }
 
         /* 強制レイアウト修正 */
@@ -69,8 +87,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20240205_03"></script>
-    <script src="app.js?v=20240205_04"></script>
+    <script src="data.js?v=20240205_04"></script>
+    <script src="app.js?v=20240205_05"></script>
     <script>
         // サービスワーカー登録（PWA用）
         if ('serviceWorker' in navigator) {
