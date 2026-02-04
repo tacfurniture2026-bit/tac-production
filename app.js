@@ -1714,8 +1714,6 @@ function createBom() {
 
   toast('BOMを作成しました', 'success');
   hideModal();
-  toast('BOMを作成しました', 'success');
-  hideModal();
   renderBom();
 }
 
