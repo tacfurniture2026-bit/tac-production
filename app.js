@@ -324,7 +324,7 @@ function renderGantt() {
             <div class="gantt-data-row gantt-row-parent" data-order-id="${order.id}">
                 <div class="gantt-cell gantt-cell-expand">
                     ${(order.items && order.items.length > 0)
-        ? `<button class="expand-btn" onclick="toggleExpand(${order.id})">${isExpanded ? '▼' : '▶'}</button>`
+        ? `<button class="expand-btn" onclick="toggleExpand(event, ${order.id})">${isExpanded ? '▼' : '▶'}</button>`
         : '<span style="color:var(--color-text-muted); font-size:0.8rem;">・</span>'}
                 </div>
                 <div class="gantt-cell gantt-cell-project">${order.projectName}</div>
@@ -400,11 +400,18 @@ function renderGantt() {
   rightBody.innerHTML = rightHtml;
 }
 
-function toggleExpand(orderId) {
+function toggleExpand(event, orderId) {
+  if (event) event.stopPropagation();
+  // IDの型不一致（数値 vs 文字列）対策
+  // Setには両方の型で入れておくことで、renderGantt側の比較（== または ===）での取りこぼしを防ぐ
   if (expandedOrders.has(orderId)) {
     expandedOrders.delete(orderId);
+    expandedOrders.delete(String(orderId));
+    expandedOrders.delete(Number(orderId));
   } else {
     expandedOrders.add(orderId);
+    expandedOrders.add(String(orderId));
+    expandedOrders.add(Number(orderId));
   }
   renderGantt();
 }
@@ -1065,6 +1072,10 @@ function hideModal() {
 // 各種モーダル表示
 // ========================================
 
+// ========================================
+// 各種モーダル表示
+// ========================================
+
 function showAddOrderModal() {
   const boms = DB.get(DB.KEYS.BOM);
   const products = [...new Set(boms.map(b => b.productName))].sort();
@@ -1077,7 +1088,7 @@ function showAddOrderModal() {
   for (let i = 1; i <= 10; i++) {
     notesFields.push(`
       <div class="form-group" style="margin-bottom: 0.5rem;">
-        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+        <div class="note-row">
           <input type="text" id="order-note-label-${i}" class="form-input" value="${defaultNoteLabels[i - 1]}" placeholder="ラベル" style="font-size: 0.75rem;">
           <input type="text" id="order-note-value-${i}" class="form-input" placeholder="内容を入力" style="font-size: 0.75rem;">
         </div>
@@ -1086,45 +1097,47 @@ function showAddOrderModal() {
   }
 
   const body = `
-    <div class="form-group">
-      <label>特注No.</label>
-      <input type="text" id="order-no" class="form-input" placeholder="例: TK-2026-001">
-    </div>
-    <div class="form-group">
-      <label>物件名 *</label>
-      <input type="text" id="order-project" class="form-input" required>
-    </div>
-    <div class="form-group">
-      <label>品名 * <small style="color: var(--color-text-muted);">（入力で候補を絞込）</small></label>
-      <input type="text" id="order-product" class="form-input" list="product-list" placeholder="品名を入力..." autocomplete="off" required>
-      <datalist id="product-list">
-        ${products.map(p => `<option value="${p}">`).join('')}
-      </datalist>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="modal-body-scrollable">
       <div class="form-group">
-        <label>数量</label>
-        <input type="number" id="order-qty" class="form-input" value="1" min="1">
+        <label>特注No.</label>
+        <input type="text" id="order-no" class="form-input" placeholder="例: TK-2026-001">
       </div>
       <div class="form-group">
-        <label>色</label>
-        <input type="text" id="order-color" class="form-input">
-      </div>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-      <div class="form-group">
-        <label>着工日</label>
-        <input type="date" id="order-start" class="form-input">
+        <label>物件名 *</label>
+        <input type="text" id="order-project" class="form-input" required>
       </div>
       <div class="form-group">
-        <label>納期</label>
-        <input type="date" id="order-due" class="form-input">
+        <label>品名 * <small style="color: var(--color-text-muted);">（入力で候補を絞込）</small></label>
+        <input type="text" id="order-product" class="form-input" list="product-list" placeholder="品名を入力..." autocomplete="off" required>
+        <datalist id="product-list">
+          ${products.map(p => `<option value="${p}">`).join('')}
+        </datalist>
       </div>
-    </div>
-    <div class="form-group" style="margin-top: 1rem;">
-      <label style="margin-bottom: 0.5rem;">備考欄（ラベルはカスタマイズ可能）</label>
-      <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--color-bg-primary); border-radius: var(--radius-sm);">
-        ${notesFields.join('')}
+      <div class="form-grid">
+        <div class="form-group">
+          <label>数量</label>
+          <input type="number" id="order-qty" class="form-input" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>色</label>
+          <input type="text" id="order-color" class="form-input">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>着工日</label>
+          <input type="date" id="order-start" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>納期</label>
+          <input type="date" id="order-due" class="form-input">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 1rem;">
+        <label style="margin-bottom: 0.5rem;">備考欄（ラベルはカスタマイズ可能）</label>
+        <div class="notes-container">
+          ${notesFields.join('')}
+        </div>
       </div>
     </div>
   `;
@@ -1139,8 +1152,8 @@ function showAddOrderModal() {
 
 function createOrder() {
   const orderNo = $('#order-no').value;
-  const projectName = $('#order-project').value;
-  const productName = $('#order-product').value;
+  const projectName = $('#order-project').value.trim();
+  const productName = $('#order-product').value.trim();
   const quantity = parseInt($('#order-qty').value) || 1;
   const color = $('#order-color').value;
   const startDate = $('#order-start').value;
@@ -1166,12 +1179,21 @@ function createOrder() {
 
   // BOMから部材を取得
   const boms = DB.get(DB.KEYS.BOM);
-  // 品名が完全一致しなくても、どちらかが含んでいればOKとする（PAOBABY対策）
-  const productBoms = boms.filter(b =>
-    b.productName === productName ||
-    b.productName.includes(productName) ||
-    productName.includes(b.productName)
-  );
+
+  // マッチングロジック改善: 正規化して比較
+  const normalize = (str) => str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '').toLowerCase();
+  const targetName = normalize(productName);
+
+  const productBoms = boms.filter(b => {
+    const bomName = normalize(b.productName);
+    return bomName === targetName || bomName.includes(targetName) || targetName.includes(bomName);
+  });
+
+  if (productBoms.length === 0) {
+    toast(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成されます。`, 'warning');
+  } else {
+    toast(`${productBoms.length}件の部材を展開しました`, 'success');
+  }
 
   const items = productBoms.map((bom, idx) => ({
     id: idx + 1,
@@ -3694,8 +3716,10 @@ function exportInvProductsCsv() {
 }
 
 // テーマ切替機能
+// テーマ切替機能
 function initTheme() {
-  const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+  // ID変更に対応
+  const toggleSwitch = document.getElementById('theme-toggle') || document.querySelector('.theme-switch input[type="checkbox"]');
   if (!toggleSwitch) return;
 
   const currentTheme = localStorage.getItem('theme');
@@ -3719,3 +3743,50 @@ function initTheme() {
     }
   });
 }
+
+// ========================================
+// 初期化・イベントリスナー
+// ========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  // テーマ初期化
+  if (typeof initTheme === 'function') initTheme();
+
+  // リアルタイム同期インジケータ
+  setTimeout(() => {
+    const indicator = document.createElement('div');
+    Object.assign(indicator.style, {
+      position: 'fixed',
+      bottom: '10px',
+      right: '10px',
+      padding: '6px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      zIndex: '9999',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontFamily: 'sans-serif'
+    });
+
+    // Firebase接続状態チェック
+    const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
+
+    if (isOnline) {
+      indicator.style.background = '#ECFDF5';
+      indicator.style.color = '#047857';
+      indicator.style.border = '1px solid #A7F3D0';
+      indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
+    } else {
+      indicator.style.background = '#FEF2F2';
+      indicator.style.color = '#B91C1C';
+      indicator.style.border = '1px solid #FECACA';
+      indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
+    }
+
+    document.body.appendChild(indicator);
+  }, 2000); // 初期化待ち
+});
