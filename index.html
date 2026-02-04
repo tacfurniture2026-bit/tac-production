@@ -19,7 +19,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20240205_02">
+    <link rel="stylesheet" href="styles.css?v=20240205_03">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -45,8 +45,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20240205_02"></script>
-    <script src="app.js?v=20240205_03"></script>
+    <script src="data.js?v=20240205_03"></script>
+    <script src="app.js?v=20240205_04"></script>
     <script>
         // サービスワーカー登録（PWA用）
         if ('serviceWorker' in navigator) {
@@ -385,7 +385,7 @@
                 <!-- 不良品管理 -->
                 <div id="page-defects" class="page">
                     <div class="page-header">
-                        <div class="flex justify-between items-center">
+                        <div class="flex items-start gap-4" style="flex-direction: column;">
                             <div>
                                 <h1>△ 不良品管理</h1>
                                 <p>不良品の登録・管理</p>
