@@ -1723,6 +1723,10 @@ function importBom() {
   const newBoms = [];
   const duplicates = [];
 
+  // 直前の有効な値を保持（Excelのセル結合対策）
+  let lastCategory = '';
+  let lastProductName = '';
+
   lines.forEach((line, lineIndex) => {
     const cols = line.split('\t');
 
@@ -1730,16 +1734,23 @@ function importBom() {
     if (cols.length < 5) return;
     if (cols[0] === '' && cols[1] === '大分類') return; // ヘッダー行
     if (cols[4] === '芯材カット' || cols[4] === '部材CD') return; // ヘッダー行
-    if (!cols[2] || !cols[3]) return; // BOM名・部材CDが空
+    if (!cols[2] || !cols[3]) return; // BOM名・部材CDが空はスキップ
 
     // データ列のオフセットを検出（空列がある場合）
     let offset = 0;
     if (cols[0] === '') offset = 1;
 
-    const category = cols[offset] || '';
-    const productName = cols[offset + 1] || '';
-    const bomName = cols[offset + 2] || '';
-    const partCode = cols[offset + 3] || '';
+    let category = (cols[offset] || '').trim();
+    let productName = (cols[offset + 1] || '').trim();
+    const bomName = (cols[offset + 2] || '').trim();
+    const partCode = (cols[offset + 3] || '').trim();
+
+    // セル結合/空欄対策: 値があれば更新、なければ前回の値を仕様
+    if (category) lastCategory = category;
+    else category = lastCategory;
+
+    if (productName) lastProductName = productName;
+    else productName = lastProductName;
 
     if (!bomName || !partCode) return;
 
@@ -1758,6 +1769,7 @@ function importBom() {
 
     for (let i = 0; i < PROCESS_COLUMNS.length; i++) {
       const colIndex = offset + 4 + i;
+      // 時間が入力されていれば工程ありとみなす
       if (colIndex < cols.length && cols[colIndex]) {
         const time = parseTime(cols[colIndex]);
         if (time > 0) {
