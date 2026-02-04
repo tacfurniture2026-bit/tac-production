@@ -357,14 +357,24 @@ function renderGantt() {
 
     // 子行
     if (isExpanded && order.items) {
-      order.items.forEach(item => {
-        const itemProgress = (item.processes && item.processes.length > 0)
-          ? Math.round(((item.completed || []).length / item.processes.length) * 100)
-          : 0;
+      // 子行
+      // Debug: 展開状態と項目数の確認
+      // console.log(`Order ${order.id}: Expanded=${isExpanded}, Items=${order.items ? order.items.length : 0}`, order.items);
 
-        // 子行 - 左側
-        leftHtml += `
-                    <div class="gantt-data-row gantt-row-child" data-item-id="${item.id}">
+      if (isExpanded && order.items && order.items.length > 0) {
+        order.items.forEach((item, itemIdx) => {
+          try {
+            if (!item) return;
+
+            const uniqueItemId = `${order.id}-${item.id || itemIdx}`;
+
+            const itemProgress = (item.processes && item.processes.length > 0)
+              ? Math.round(((item.completed || []).length / item.processes.length) * 100)
+              : 0;
+
+            // 子行 - 左側
+            leftHtml += `
+                    <div class="gantt-data-row gantt-row-child" data-unique-item-id="${uniqueItemId}">
                         <div class="gantt-cell gantt-cell-expand"></div>
                         <div class="gantt-cell gantt-cell-project"></div>
                         <div class="gantt-cell gantt-cell-product">
@@ -376,31 +386,38 @@ function renderGantt() {
                     </div>
                 `;
 
-        // 子行 - 右側（工程バー）
-        rightHtml += `
-                    <div class="gantt-process-row gantt-row-child" data-item-id="${item.id}">
+            // 子行 - 右側（工程バー）
+            rightHtml += `
+                    <div class="gantt-process-row gantt-row-child" data-unique-item-id="${uniqueItemId}">
                         ${allProcesses.map(process => {
-          const hasProcess = item.processes.includes(process);
-          const isComplete = (item.completed || []).includes(process);
+              const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
+              const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
 
-          if (!hasProcess) {
-            return `<div class="process-cell"><div style="width: 70px;"></div></div>`;
-          }
+              if (!hasProcess) {
+                return `<div class="gantt-process-cell disabled"></div>`;
+              }
 
-          const barClass = isComplete ? 'complete' : 'pending';
-          const barText = isComplete ? '完了' : '待機';
+              // 工程進捗状態
+              let statusClass = isComplete ? 'status-done' : 'status-todo';
+              let statusIcon = isComplete ? 'check_circle' : 'radio_button_unchecked';
 
-          return `
-                                <div class="process-cell">
-                                    <div class="process-bar ${barClass}">${barText}</div>
-                                </div>
-                            `;
-        }).join('')}
+              return `
+                <div class="gantt-process-cell ${statusClass}" 
+                     onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')"
+                     title="${process}: ${isComplete ? '完了' : '未完了'}">
+                     <span class="material-icons" style="font-size: 16px;">${statusIcon}</span>
+                </div>
+            `;
+            }).join('')}
                     </div>
                 `;
-      });
-    }
-  });
+          } catch (err) {
+            console.error('Render error item:', err);
+            leftHtml += `<div class="gantt-data-row gantt-row-child"><div class="gantt-cell" colspan="6" style="color:red">描画エラー</div></div>`;
+          }
+        });
+      }
+    });
 
   leftBody.innerHTML = leftHtml;
   rightBody.innerHTML = rightHtml;
