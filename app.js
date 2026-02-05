@@ -231,7 +231,7 @@ function renderDashboard() {
   if (urgentOrders.length === 0) {
     urgentContainer.innerHTML = '<p class="text-muted">緊急案件はありません</p>';
   } else {
-    urgentContainer.innerHTML = urgentOrders.slice(0, 5).map(o => {
+    urgentContainer.innerHTML = urgentOrders.map(o => {
       const days = Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
       return `
         <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
@@ -398,7 +398,23 @@ function renderGantt() {
     </div>
   `;
 
+  // スクロール位置の保存
+  const oldContainer = pageBody.querySelector('.matrix-container');
+  let savedScrollTop = 0;
+  let savedScrollLeft = 0;
+  if (oldContainer) {
+    savedScrollTop = oldContainer.scrollTop;
+    savedScrollLeft = oldContainer.scrollLeft;
+  }
+
   pageBody.innerHTML = html;
+
+  // スクロール位置の復元
+  const newContainer = pageBody.querySelector('.matrix-container');
+  if (newContainer) {
+    newContainer.scrollTop = savedScrollTop;
+    newContainer.scrollLeft = savedScrollLeft;
+  }
 }
 
 function toggleExpand(event, orderId) {
@@ -3253,7 +3269,7 @@ function displayInvMonthlyResult(result) {
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    summaryRows += `<tr style="background: #fff3cd;"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
     summaryTotal += s.amount;
     summaryDiff += s.diff;
     fixedTotal = s.amount;
@@ -3341,7 +3357,7 @@ function displayInvMonthlyResult(result) {
                 <td style="text-align: right;">¥${summaryTotal.toLocaleString()}</td>
                 <td style="text-align: right; color: ${summaryDiff >= 0 ? 'green' : 'red'};">${summaryDiff >= 0 ? '+' : ''}¥${summaryDiff.toLocaleString()}</td>
               </tr>
-              <tr style="font-weight: bold; background: #fff2cc;">
+              <tr class="row-tac-fee">
                 <td>1.01（TAC口銭1%）</td>
                 <td style="text-align: right;">¥${tacTotal.toLocaleString()}</td>
                 <td style="text-align: right;">-</td>
@@ -3373,7 +3389,7 @@ function displayInvMonthlyResult(result) {
             </thead>
             <tbody>
               ${result.items.map(i => `
-                <tr style="${i.isFixed ? 'background: #fff3cd;' : ''}">
+                <tr class="${i.isFixed ? 'row-fixed-product' : ''}">
                   <td>${i.productId}</td>
                   <td>${i.name}</td>
                   <td>¥${i.price.toLocaleString()}</td>
@@ -3720,6 +3736,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.body.appendChild(indicator);
+    // フルスクリーン切り替え
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        const container = document.querySelector('.gantt-container-mono');
+        if (!container) return;
+
+        if (!document.fullscreenElement) {
+          container.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    }
+
+    // フルスクリーン状態監視（クラス付与用）
+    document.addEventListener('fullscreenchange', () => {
+      const container = document.querySelector('.gantt-container-mono');
+      if (document.fullscreenElement) {
+        container.classList.add('is-fullscreen');
+      } else {
+        container.classList.remove('is-fullscreen');
+      }
+    });
+
   }, 2000); // 初期化待ち
 });
 
