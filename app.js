@@ -362,6 +362,13 @@ function renderGantt() {
     filtered = orders.filter(o => calculateProgress(o) === 0);
   }
 
+  // 納期順にソート（昇順）
+  filtered.sort((a, b) => {
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate) - new Date(b.dueDate);
+  });
+
   // 全工程リストを取得（ユニーク）
   const allProcesses = STANDARD_PROCESSES;
 
@@ -1418,25 +1425,37 @@ function createOrder() {
   // パーツ指定モード確認
   const isBomSelectMode = $('#order-bom-select-mode').checked;
 
-  // ユーザーの誤操作防止: モードOFFなのにチェックが外れている場合
-  const uncheckedCount = document.querySelectorAll('.new-order-bom-check:not(:checked)').length;
-  // リストが生成されている（＝品名選択済み）かつ、未チェックがある場合
-  if (!isBomSelectMode && uncheckedCount > 0) {
-    toast('【注意】部材の選択が解除されていますが、「パーツのみ発注」モードがOFFです。\n選択を適用するには「パーツのみ発注」にチェックを入れてください。', 'error', 5000);
-    // 自動的にモードをONにしてリストを表示する親切設計
+  // チェックボックスの状態を直接走査して状態を確定
+  const allBomCheckboxes = document.querySelectorAll('.new-order-bom-check');
+  const selectedBomIds = [];
+  const unselectedBomIds = [];
+
+  allBomCheckboxes.forEach(cb => {
+    const val = String(cb.value).trim();
+    if (cb.checked) {
+      selectedBomIds.push(val);
+    } else {
+      unselectedBomIds.push(val);
+    }
+  });
+
+  // モードOFFなのに未選択がある場合の警告（再確認）
+  if (!isBomSelectMode && unselectedBomIds.length > 0) {
+    toast('【注意】一部の部材のチェックが外れていますが、「パーツのみ発注」モードがOFFになっています。\nこのままでは全部材が発注されます。\n\n選択を適用するには「パーツのみ発注」にチェックを入れてください。', 'error', 6000);
+    // 自動ON
     $('#order-bom-select-mode').checked = true;
     toggleBomSelectionMode(true);
     return;
   }
 
+  // フィルタリング実行
   if (isBomSelectMode) {
-    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value));
     // IDでフィルタリング (String同士で比較)
     const initialCount = productBoms.length;
-    productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id)));
+    productBoms = productBoms.filter(b => selectedBomIds.includes(String(b.id).trim()));
 
     // デバッグログ
-    console.log(`BOM Selection Mode: ON. Initial: ${initialCount}, Selected: ${productBoms.length}`, checkedBomIds);
+    console.log(`BOM Selection Mode: ON. Initial: ${initialCount}, Selected: ${productBoms.length}`, selectedBomIds);
 
     if (productBoms.length === 0) {
       toast('部材が選択されていません（チェックボックスを確認してください）', 'warning');
@@ -1449,11 +1468,15 @@ function createOrder() {
   } else {
     // 最終確認ダイアログ
     const itemNames = productBoms.map(b => `・${b.bomName}`).join('\n');
-    const msg = `以下の${productBoms.length}件の部材で指示書を作成します。よろしいですか？\n\n${itemNames}`;
+    let msg = `以下の${productBoms.length}件の部材で指示書を作成します。（除外: ${unselectedBomIds.length}件）\n\n${itemNames}`;
+    if (!isBomSelectMode && unselectedBomIds.length === 0) {
+      msg = `全${productBoms.length}件の部材（フルセット）で指示書を作成します。よろしいですか？\n\n${itemNames}`;
+    }
+
     if (!confirm(msg)) return;
 
     // 成功通知
-    toast(`全${productBoms.length}件の部材で登録しました`, 'success');
+    toast(`${productBoms.length}件の部材で登録しました`, 'success');
   }
 
   const items = productBoms.map((bom, idx) => ({
