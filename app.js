@@ -225,44 +225,50 @@ function navigateToOrder(orderId) {
     // 管理者の場合
     showPage('orders');
 
-    // データフィルタリング等で隠れている可能性があるので、オプションをリセットして再描画
-    if (typeof showCompletedOrders !== 'undefined' && $('#show-completed-check')) {
-      // もし完了していて非表示なら表示させるなどのロジックが必要だが、
-      // 一旦、現在の表示設定で再描画を確実に行う
-      renderOrders();
-    }
+    // 確実に最新のDOM（ID付き）にするために再描画
+    // フィルタリングで非表示になっている可能性も考慮してフラグ操作が必要だが
+    // ここではまず描画を優先
+    renderOrders();
 
+    // DOM更新待ち
     setTimeout(() => {
-      const row = document.getElementById(`order-row-${orderId}`);
+      const rowId = `order-row-${orderId}`;
+      const row = document.getElementById(rowId);
+
       if (row) {
-        row.style.backgroundColor = '#fff3cd'; // ハイライト
+        // スクロールとハイライト
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // ハイライトをフェードアウト
+        // 強調表示エフェクト
+        row.style.transition = 'background-color 0.5s';
+        const originalBg = row.style.backgroundColor;
+        row.style.backgroundColor = '#fbbf24'; // アンバー色で目立たせる
+
         setTimeout(() => {
-          row.style.transition = 'background-color 2s';
-          row.style.backgroundColor = '';
+          row.style.backgroundColor = originalBg || '';
         }, 2000);
       } else {
-        // 見つからない場合（完了分で非表示になっているなど）
-        // 強制的に完了分を表示してリトライするか、トーストで通知
-        const orders = DB.get(DB.KEYS.ORDERS);
-        const target = orders.find(o => o.id === orderId);
-        if (target && calculateProgress(target) === 100 && !showCompletedOrders) {
-          // 完了分を表示して再描画
-          showCompletedOrders = true;
-          renderOrders();
-          // 再帰呼び出しは避けるため、もう一度だけトライ
+        // 見つからない場合（完了分として非表示の可能性）
+        if (!showCompletedOrders) {
+          // 完了分も表示して再トライ
+          $('#show-completed-check').checked = true;
+          toggleShowCompleted(); // これがrenderOrdersを呼ぶ
+
           setTimeout(() => {
-            const retryRow = document.getElementById(`order-row-${orderId}`);
+            const retryRow = document.getElementById(rowId);
             if (retryRow) {
-              retryRow.style.backgroundColor = '#fff3cd';
               retryRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              retryRow.style.backgroundColor = '#fbbf24';
+              setTimeout(() => { retryRow.style.backgroundColor = ''; }, 2000);
+            } else {
+              toast('該当する指示書が見つかりませんでした', 'warning');
             }
-          }, 100);
+          }, 300);
+        } else {
+          toast('該当する指示書が見つかりませんでした', 'warning');
         }
       }
-    }, 200);
+    }, 300);
   }
 }
 
