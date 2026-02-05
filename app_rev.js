@@ -3253,7 +3253,7 @@ function displayInvMonthlyResult(result) {
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    summaryRows += `<tr style="background: #fff3cd;"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
     summaryTotal += s.amount;
     summaryDiff += s.diff;
     fixedTotal = s.amount;
@@ -3341,7 +3341,7 @@ function displayInvMonthlyResult(result) {
                 <td style="text-align: right;">¥${summaryTotal.toLocaleString()}</td>
                 <td style="text-align: right; color: ${summaryDiff >= 0 ? 'green' : 'red'};">${summaryDiff >= 0 ? '+' : ''}¥${summaryDiff.toLocaleString()}</td>
               </tr>
-              <tr style="font-weight: bold; background: #fff2cc;">
+              <tr class="row-tac-fee">
                 <td>1.01（TAC口銭1%）</td>
                 <td style="text-align: right;">¥${tacTotal.toLocaleString()}</td>
                 <td style="text-align: right;">-</td>
@@ -3373,7 +3373,7 @@ function displayInvMonthlyResult(result) {
             </thead>
             <tbody>
               ${result.items.map(i => `
-                <tr style="${i.isFixed ? 'background: #fff3cd;' : ''}">
+                <tr class="${i.isFixed ? 'row-fixed-product' : ''}">
                   <td>${i.productId}</td>
                   <td>${i.name}</td>
                   <td>¥${i.price.toLocaleString()}</td>
