@@ -1307,11 +1307,10 @@ function showAddOrderModal() {
 
       <!-- BOM選択エリア -->
       <div class="form-group" style="background: var(--color-bg-secondary); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--color-border);">
-        <label style="display:flex; align-items:center; cursor:pointer; margin-bottom: 0.5rem;">
-          <input type="checkbox" id="order-bom-select-mode" onchange="toggleBomSelectionMode(this.checked)" style="margin-right: 0.5rem;">
-          <span style="font-weight:bold; color:var(--color-primary);">パーツのみ発注（チェックを入れたまま作成してください）</span>
+        <label style="font-weight:bold; color:var(--color-primary); margin-bottom: 0.5rem; display:block;">
+          部材選択（除外する場合はチェックを外してください）
         </label>
-        <div id="order-bom-list" style="display:none; max-height: 150px; overflow-y: auto; margin-top: 0.5rem; padding-left: 0.5rem; border-left: 2px solid var(--color-primary);">
+        <div id="order-bom-list" style="display:block; max-height: 150px; overflow-y: auto; padding-left: 0.5rem; border-left: 2px solid var(--color-primary);">
           <div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>
         </div>
       </div>
@@ -1417,69 +1416,36 @@ function submitNewOrder() {
       notes.push({ label: labelEl.value || `備考${i}`, value: valueEl.value || '' });
     }
   }
-
   // BOM取得
   const boms = DB.get(DB.KEYS.BOM);
   let productBoms = boms.filter(b => String(b.productName || '') === productName);
 
-  // パーツ指定モード確認
-  const isBomSelectMode = $('#order-bom-select-mode').checked;
-
-  // チェックボックスの状態を直接走査して状態を確定
-  const allBomCheckboxes = document.querySelectorAll('.new-order-bom-check');
-  const selectedBomIds = [];
-  const unselectedBomIds = [];
-
-  allBomCheckboxes.forEach(cb => {
-    const val = String(cb.value).trim();
-    if (cb.checked) {
-      selectedBomIds.push(val);
-    } else {
-      unselectedBomIds.push(val);
-    }
-  });
-
-  // モードOFFなのに未選択がある場合の警告（再確認）
-  if (!isBomSelectMode && unselectedBomIds.length > 0) {
-    toast('【注意】一部の部材のチェックが外れていますが、「パーツのみ発注」モードがOFFになっています。\nこのままでは全部材が発注されます。\n\n選択を適用するには「パーツのみ発注」にチェックを入れてください。', 'error', 6000);
-    // 自動ON
-    $('#order-bom-select-mode').checked = true;
-    toggleBomSelectionMode(true);
-    return;
-  }
-
   // フィルタリング実行
   // DOM上のチェックボックスの状態を正として、選択されたBOMを抽出する
-  /*
-    修正方針: 元のproductBomsからフィルタリングするのではなく、
-    「チェックされているID」のリストを元にBOMマスターから直接取得する。
-    これにより、画面に見えていないが見えないところで残っているデータなどが混入するのを防ぐ。
-  */
-  if (isBomSelectMode) {
-    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
+  // 常にチェックボックスの状態を反映する（モードの概念を廃止）
+  const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
+  const allBomCheckboxes = document.querySelectorAll('.new-order-bom-check');
 
-    // デバッグ: チェックされているID数を確認
-    // alert(`【デバッグ】チェックボックス選択数: ${checkedBomIds.length}`);
+  // 全BOMから、チェックされたIDを持つものを抽出
+  const allBoms = DB.get(DB.KEYS.BOM);
+  // 元のリスト(productBoms: 品名一致分)に含まれ、かつIDがチェックされているもの
+  productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id).trim()));
 
-    // 全BOMから、チェックされたIDを持つものを抽出（品名一致も念のため見るが、IDがユニークならIDだけで良い）
-    // ここでは安全のため ID一致 かつ productBomsに含まれるもの（＝現品名のもの）とする
-    const allBoms = DB.get(DB.KEYS.BOM);
-    // 元のリスト(productBoms)に含まれ、かつIDがチェックされているもの
-    productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id).trim()));
-
-    if (productBoms.length === 0) {
-      toast('部材が選択されていません（チェックボックスを確認してください）', 'warning');
+  if (productBoms.length === 0 && allBomCheckboxes.length > 0) {
+    // 候補があるのに1つも選ばれていない場合
+    if (!confirm('部材が1つも選択されていません（チェックボックスを確認してください）。\n部材なしで作成しますか？')) {
       return;
     }
-  }
-
-  if (productBoms.length === 0 && !isBomSelectMode) {
+  } else if (productBoms.length === 0 && allBomCheckboxes.length === 0) {
+    // そもそもBOMがない場合
     if (!confirm(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成しますか？`)) return;
   } else {
     // 最終確認ダイアログ
     const itemNames = productBoms.map(b => `・${b.bomName}`).join('\n');
-    let msg = `以下の${productBoms.length}件の部材で指示書を作成します。（除外: ${unselectedBomIds.length}件）\n\n${itemNames}`;
-    if (!isBomSelectMode && unselectedBomIds.length === 0) {
+    const unselectedCount = allBomCheckboxes.length - checkedBomIds.length;
+
+    let msg = `以下の${productBoms.length}件の部材で指示書を作成します。（除外: ${unselectedCount}件）\n\n${itemNames}`;
+    if (unselectedCount === 0) {
       msg = `全${productBoms.length}件の部材（フルセット）で指示書を作成します。よろしいですか？\n\n${itemNames}`;
     }
 
