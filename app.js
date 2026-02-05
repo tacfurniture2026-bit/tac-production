@@ -1417,6 +1417,18 @@ function createOrder() {
 
   // パーツ指定モード確認
   const isBomSelectMode = $('#order-bom-select-mode').checked;
+
+  // ユーザーの誤操作防止: モードOFFなのにチェックが外れている場合
+  const uncheckedCount = document.querySelectorAll('.new-order-bom-check:not(:checked)').length;
+  // リストが生成されている（＝品名選択済み）かつ、未チェックがある場合
+  if (!isBomSelectMode && uncheckedCount > 0) {
+    toast('【注意】部材の選択が解除されていますが、「パーツのみ発注」モードがOFFです。\n選択を適用するには「パーツのみ発注」にチェックを入れてください。', 'error', 5000);
+    // 自動的にモードをONにしてリストを表示する親切設計
+    $('#order-bom-select-mode').checked = true;
+    toggleBomSelectionMode(true);
+    return;
+  }
+
   if (isBomSelectMode) {
     const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value));
     // IDでフィルタリング (String同士で比較)
