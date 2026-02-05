@@ -1616,7 +1616,7 @@ input:checked+.slider .moon {
 }
 
 .report-print {
-    background: white;
+    background: var(--color-bg-card);
     padding: 2rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
@@ -1693,6 +1693,34 @@ body.dark-mode {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-text-primary);
+}
+
+/* ダークモード時のサマリ文字色強制指定 */
+body.dark-mode .summary-label {
+    color: #9CA3AF !important;
+    /* 明るめのグレー */
+}
+
+body.dark-mode .summary-value {
+    color: #F9FAFB !important;
+    /* ほぼ白 */
+}
+
+/* ログアウトボタン（デバッグ用・目立たせる） */
+.logout-btn {
+    background: rgba(239, 68, 68, 0.1) !important;
+    /* 薄い赤 */
+    color: var(--color-danger) !important;
+    border: 1px solid var(--color-danger) !important;
+    font-weight: bold;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+}
+
+.logout-btn:hover {
+    background: var(--color-danger) !important;
+    color: white !important;
 }
 
 .report-table {
