@@ -214,29 +214,55 @@ function navigateTo(pageName) {
 // ページ遷移ヘルパー
 function navigateToOrder(orderId) {
   // ページ切り替え
-  showPage('orders'); // 管理者以外でも見れるように、showPageの中で権限チェックしないか確認必要。
-  // もし作業者なら'gantt'の方がいいかもしれないが、今回は指示書確認とのことなので'orders'へ。
-  // ただし作業者はordersが見れない(admin-only)ならganttへ飛ばす。
+  showPage('orders');
+
   const isWorker = currentUser && currentUser.role !== 'admin';
   if (isWorker) {
     showPage('gantt');
-    // Ganttでハイライトするロジックが必要だが、まずはページ遷移のみ。
-    // ガントチャートで該当案件にスクロール等の処理があると良い。
-    setTimeout(() => {
-      // 簡易的に検索フィルタ等をセットするのは難しいので、一旦ページ移動のみ。
-    }, 100);
+    // 作業者の場合はGanttで該当箇所へ（簡易実装）
+    // TODO: Gantt側にもIDを振ってスクロールさせる機能などを追加検討
   } else {
+    // 管理者の場合
     showPage('orders');
-    // 該当行をハイライト（簡易実装）
+
+    // データフィルタリング等で隠れている可能性があるので、オプションをリセットして再描画
+    if (typeof showCompletedOrders !== 'undefined' && $('#show-completed-check')) {
+      // もし完了していて非表示なら表示させるなどのロジックが必要だが、
+      // 一旦、現在の表示設定で再描画を確実に行う
+      renderOrders();
+    }
+
     setTimeout(() => {
-      const rows = document.querySelectorAll('#orders-body tr');
-      rows.forEach(r => {
-        if (r.innerHTML.includes(`editOrder(${orderId})`)) {
-          r.style.backgroundColor = '#fff3cd'; // ハイライト色
-          r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const row = document.getElementById(`order-row-${orderId}`);
+      if (row) {
+        row.style.backgroundColor = '#fff3cd'; // ハイライト
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // ハイライトをフェードアウト
+        setTimeout(() => {
+          row.style.transition = 'background-color 2s';
+          row.style.backgroundColor = '';
+        }, 2000);
+      } else {
+        // 見つからない場合（完了分で非表示になっているなど）
+        // 強制的に完了分を表示してリトライするか、トーストで通知
+        const orders = DB.get(DB.KEYS.ORDERS);
+        const target = orders.find(o => o.id === orderId);
+        if (target && calculateProgress(target) === 100 && !showCompletedOrders) {
+          // 完了分を表示して再描画
+          showCompletedOrders = true;
+          renderOrders();
+          // 再帰呼び出しは避けるため、もう一度だけトライ
+          setTimeout(() => {
+            const retryRow = document.getElementById(`order-row-${orderId}`);
+            if (retryRow) {
+              retryRow.style.backgroundColor = '#fff3cd';
+              retryRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
         }
-      });
-    }, 500);
+      }
+    }, 200);
   }
 }
 
@@ -294,7 +320,7 @@ function renderDashboard() {
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
           <div>
-            <div style="font-weight: 500;">${o.projectName}</div>
+            <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
             <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName}</div>
           </div>
           <div class="progress-cell">
@@ -942,7 +968,7 @@ function renderOrders() {
     const rowClass = isCompleted ? 'background: var(--color-bg-secondary); opacity: 0.8;' : '';
 
     return `
-      <tr style="${rowClass}">
+      <tr id="order-row-${o.id}" style="${rowClass}">
         <td class="text-center">
           <input type="checkbox" class="order-checkbox" value="${o.id}">
         </td>
