@@ -76,11 +76,19 @@ function login(username, password) {
   return false;
 }
 
-function logout() {
+// グローバルスコープに明示的に公開
+window.logout = function () {
+  // モバイルメニューが開いていれば閉じる
+  const moreMenu = document.getElementById('more-menu');
+  if (moreMenu && !moreMenu.classList.contains('hidden')) {
+    moreMenu.classList.add('hidden');
+  }
+
   currentUser = null;
   localStorage.removeItem(DB.KEYS.CURRENT_USER);
   showLoginScreen();
-}
+  toast('ログアウトしました', 'success');
+};
 
 function checkAuth() {
   const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
