@@ -763,7 +763,8 @@ function renderDefects() {
       <td class="text-danger font-semibold">${d.count}</td>
       <td>${d.reason || '-'}</td>
       <td>${d.reporter}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteDefect(${d.id})">削除</button></td>
+      <td><button class="btn btn-sm btn-icon" onclick="editDefect(${d.id})" title="編集" style="margin-right: 4px;">✎</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDefect(${d.id})">削除</button></td>
     </tr>
   `).join('');
 }
@@ -776,6 +777,94 @@ function deleteDefect(id) {
   DB.save(DB.KEYS.DEFECTS, filtered);
 
   toast('削除しました', 'success');
+  renderDefects();
+}
+
+// 簡易編集機能（詳細モーダルを作るのが手間なので、prompt等で簡易実装、あるいは登録フォームを流用）
+// ここでは登録フォームを流用する形にするにはDOM構造への依存が強いので、
+// 既存のモーダルUIシステムがあればそれを使うが、今回はwindow.promptで簡易実装する（要望が「編集できるように」なのでまずは機能優先）
+// 時間があればモーダルにしたいが、まずはpromptで実装し、必要ならUI改善する
+// → いや、ちゃんとモーダル風にする。編集用モーダルが見当たらないので、登録時のフォームはどこにある？
+// tab「進捗登録」>「不良登録」タブの中にあるはず。
+// 専用の編集モーダルを動的生成するのが確実。
+
+function editDefect(id) {
+  const defects = DB.get(DB.KEYS.DEFECTS);
+  const target = defects.find(d => d.id === id);
+  if (!target) return;
+
+  // 簡易的にpromptで数量修正だけ先に実装
+  // const newCount = prompt('不良数を入力してください', target.count);
+  // if (newCount === null) return;
+  // const countVal = parseInt(newCount);
+  // if (isNaN(countVal) || countVal < 1) {
+  //   alert('正しい数値を入力してください');
+  //   return;
+  // }
+  // target.count = countVal;
+  // const newReason = prompt('理由を入力してください', target.reason);
+  // if (newReason !== null) target.reason = newReason;
+  // DB.save(DB.KEYS.DEFECTS, defects);
+  // renderDefects();
+
+  // やっぱりちゃんとしたUIにするために、動的モーダルを表示
+  const modalHtml = `
+    <div id="edit-defect-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:10000;">
+      <div style="background:var(--color-bg-card); padding:2rem; border-radius:8px; width:90%; max-width:500px; box-shadow:var(--shadow-xl);">
+        <h3 style="margin-bottom:1rem; color:var(--color-text-primary);">不良記録の編集</h3>
+        <div class="form-group">
+          <label>案件名: ${target.projectName}</label>
+        </div>
+        <div class="form-group">
+          <label>部材名: ${target.productName}</label>
+        </div>
+        <div class="form-group">
+          <label>不良数</label>
+          <input type="number" id="edit-defect-count" class="form-input" value="${target.count}" min="1">
+        </div>
+        <div class="form-group">
+          <label>理由</label>
+          <input type="text" id="edit-defect-reason" class="form-input" value="${target.reason || ''}">
+        </div>
+        <div class="form-group">
+          <label>報告者</label>
+          <input type="text" id="edit-defect-reporter" class="form-input" value="${target.reporter || ''}">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:1rem; margin-top:1.5rem;">
+          <button class="btn btn-secondary" onclick="document.getElementById('edit-defect-modal').remove()">キャンセル</button>
+          <button class="btn btn-primary" onclick="updateDefect(${target.id})">更新</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function updateDefect(id) {
+  const countInput = document.getElementById('edit-defect-count');
+  const reasonInput = document.getElementById('edit-defect-reason');
+  const reporterInput = document.getElementById('edit-defect-reporter');
+
+  if (!countInput || !reasonInput) return;
+
+  const count = parseInt(countInput.value);
+  if (isNaN(count) || count < 1) {
+    alert('正しい数値を入力してください');
+    return;
+  }
+
+  const defects = DB.get(DB.KEYS.DEFECTS);
+  const idx = defects.findIndex(d => d.id === id);
+  if (idx === -1) return;
+
+  defects[idx].count = count;
+  defects[idx].reason = reasonInput.value;
+  defects[idx].reporter = reporterInput.value;
+
+  DB.save(DB.KEYS.DEFECTS, defects);
+
+  document.getElementById('edit-defect-modal').remove();
+  toast('不良記録を更新しました', 'success');
   renderDefects();
 }
 
