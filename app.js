@@ -945,6 +945,11 @@ function renderOrders() {
   const orders = allOrders.filter(o => {
     if (showCompletedOrders) return true;
     return calculateProgress(o) < 100;
+  }).sort((a, b) => {
+    // 納期が早い順（昇順）。未設定は最後尾へ。
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return new Date(a.dueDate) - new Date(b.dueDate);
   });
 
   const tbody = $('#orders-body');
