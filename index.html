@@ -19,7 +19,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles_rev.css?v=4">
+    <link rel="stylesheet" href="styles_rev.css?v=5">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -93,6 +93,19 @@
             max-height: 80vh !important;
             overflow-y: auto !important;
         }
+
+        /* フルスクリーン時のオーバーライド（インラインスタイルに勝つため） */
+        .gantt-container-mono:fullscreen .col-part-name,
+        .gantt-container-mono.is-fullscreen .col-part-name {
+            min-width: 300px !important;
+            max-width: none !important;
+            width: auto !important;
+        }
+
+        .gantt-container-mono:fullscreen .matrix-container,
+        .gantt-container-mono.is-fullscreen .matrix-container {
+            max-height: 95vh !important;
+        }
     </style>
 
     <!-- Firebase SDK -->
@@ -101,7 +114,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_03"></script>
-    <script src="app_rev.js?v=3"></script>
+    <script src="app_rev.js?v=4"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -311,6 +324,7 @@
                             <div class="btn-group">
                                 <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
                                 <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
+                                <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
                             </div>
                         </div>
                     </div>
