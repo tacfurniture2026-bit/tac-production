@@ -3771,7 +3771,7 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     }
 
     // 3. 保存
-    DB.set(DB.KEYS.ORDERS, orders);
+    DB.save(DB.KEYS.ORDERS, orders);
 
     // 再描画はFirebaseのリスナー任せにするか、遅延させる
     // 即時再描画すると、Optimistic Updateと競合してチカチカする場合があるため

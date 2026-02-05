@@ -103,19 +103,9 @@
     <script src="data.js?v=20240205_FORCE_03"></script>
     <script src="app_rev.js?v=2"></script>
     <script>
-        // サービスワーカー登録（PWA用）
+        // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                // 更新があれば強制的にスキップ待機
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // 新しいバージョンあり
-                            console.log('New content is available; please refresh.');
-                        }
-                    };
-                };
+        };
             });
         }
     </script>
