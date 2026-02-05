@@ -1347,7 +1347,7 @@ function showAddOrderModal() {
 
   const footer = `
     <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-primary" onclick="createOrder()">作成</button>
+    <button class="btn btn-primary" onclick="submitNewOrder()">作成</button>
   `;
 
   showModal('新規生産指示書', body, footer);
@@ -1389,7 +1389,7 @@ function updateNewOrderBoms(productName) {
   `).join('');
 }
 
-function createOrder() {
+function submitNewOrder() {
   const orderNo = $('#order-no').value;
   const projectName = $('#order-project').value.trim();
   const productName = $('#order-product').value;
@@ -1486,6 +1486,9 @@ function createOrder() {
     processes: bom.processes || [],
     completed: []
   }));
+
+  // 【デバッグ用】実際に保存されるアイテム数を表示
+  // alert(`【デバッグ】保存されるアイテム数: ${items.length}件`);
 
   DB.add(DB.KEYS.ORDERS, {
     id: DB.nextId(DB.KEYS.ORDERS),
