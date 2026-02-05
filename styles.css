@@ -1840,6 +1840,9 @@ body.dark-mode {
    ========================================= */
 .matrix-container {
     overflow-x: auto;
+    max-height: 80vh;
+    /* Header sticky requires limited height */
+    overflow-y: auto;
     background: var(--color-bg-card);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
