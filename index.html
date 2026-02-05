@@ -19,7 +19,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20240205_04">
+    <link rel="stylesheet" href="styles.css?v=20240205_05">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -41,20 +41,20 @@
 
         /* 不動品行のスタイル（ライトモード） */
         .fixed-product-row {
-            background-color: #fff3cd;
-            color: #1e293b;
+            background-color: #fff3cd !important;
+            color: #1e293b !important;
         }
 
         /* 不動品行のスタイル（ダークモード） */
         body.dark-mode .fixed-product-row {
-            background-color: #422006;
-            /* 暗い茶色 */
-            color: #fbbf24;
+            background-color: #451a03 !important;
+            /* より濃い茶色 */
+            color: #fbbf24 !important;
             /* 明るいアンバー */
         }
 
         body.dark-mode .fixed-product-row td {
-            border-color: #78350f;
+            border-color: #78350f !important;
         }
 
         /* 強制レイアウト修正 */
@@ -80,6 +80,13 @@
             display: inline-flex !important;
             align-self: flex-start !important;
         }
+
+        /* セル幅統一の強制適用（念のため） */
+        .matrix-table th:not(.col-part-name),
+        .matrix-cell {
+            min-width: 100px !important;
+            width: 100px !important;
+        }
     </style>
 
     <!-- Firebase SDK -->
@@ -87,8 +94,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20240205_04"></script>
-    <script src="app.js?v=20240205_05"></script>
+    <script src="data.js?v=20240205_FORCE_02"></script>
+    <script src="app.js?v=20240205_FORCE_02"></script>
     <script>
         // サービスワーカー登録（PWA用）
         if ('serviceWorker' in navigator) {

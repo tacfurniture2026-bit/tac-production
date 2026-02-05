@@ -1871,6 +1871,13 @@ body.dark-mode {
     /* Prevent wrapping */
 }
 
+/* Process Columns (All headers except part name) */
+.matrix-table th:not(.col-part-name) {
+    min-width: 100px;
+    /* Unify width */
+    width: 100px;
+}
+
 /* Order Group Header */
 .matrix-group-header {
     background: var(--color-bg-tertiary);
@@ -1889,6 +1896,9 @@ body.dark-mode {
     transition: all 0.2s;
     user-select: none;
     height: 40px;
+    min-width: 100px;
+    /* Unify width matches header */
+    width: 100px;
 }
 
 .matrix-cell.status-todo {
