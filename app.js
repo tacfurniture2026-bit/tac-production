@@ -376,7 +376,7 @@ function renderGantt() {
             const statusClass = isComplete ? 'status-done' : 'status-todo';
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus('${order.id}', '${item.id}', '${process}')"
+                   onclick="toggleProcessStatus('${order.id}', ${itemIdx}, '${process}')"
                    style="width: 100px; min-width: 100px;">
                    ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
@@ -3873,33 +3873,43 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 // 工程進捗トグル（完了/未完了の切り替え）
 // ========================================
-window.toggleProcessStatus = function (orderId, itemId, processName) {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  // IDは文字列か数値か混在する可能性があるため、== で比較
-  const order = orders.find(o => o.id == orderId);
-  if (!order) return;
+window.toggleProcessStatus = function (orderId, itemIdx, processName) {
+  console.log(`toggleProcessStatus called: order=${orderId}, itemIdx=${itemIdx}, process=${processName}`);
 
-  const item = order.items.find(i => i.id == itemId);
-  if (!item) return;
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id == orderId);
+
+  if (!order) {
+    console.error('Order not found:', orderId);
+    // UI強制更新（モメンタムスクロールなどでの表示ずれ対策）
+    renderGantt();
+    return;
+  }
+
+  // IDではなくインデックスで取得（確実性のため）
+  const item = order.items && order.items[itemIdx];
+  if (!item) {
+    console.error('Item not found at index:', itemIdx);
+    return;
+  }
 
   // completed配列の初期化
   if (!Array.isArray(item.completed)) {
     item.completed = [];
-    // 既存のステータスがあれば移行する処理が必要ならここで行う
   }
 
   const idx = item.completed.indexOf(processName);
   if (idx > -1) {
-    // 既に完了済み -> 未完了に戻す（削除）
+    // 既に完了済み -> 未完了に戻す
     item.completed.splice(idx, 1);
   } else {
-    // 未完了 -> 完了にする（追加）
+    // 未完了 -> 完了にする
     item.completed.push(processName);
   }
 
   // データ保存
   DB.set(DB.KEYS.ORDERS, orders);
 
-  // UI更新（即時反映）
+  // UI更新
   renderGantt();
 };
