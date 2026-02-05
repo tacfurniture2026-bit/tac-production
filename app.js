@@ -3869,3 +3869,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(indicator);
   }, 2000); // 初期化待ち
 });
+
+// ========================================
+// 工程進捗トグル（完了/未完了の切り替え）
+// ========================================
+window.toggleProcessStatus = function (orderId, itemId, processName) {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  // IDは文字列か数値か混在する可能性があるため、== で比較
+  const order = orders.find(o => o.id == orderId);
+  if (!order) return;
+
+  const item = order.items.find(i => i.id == itemId);
+  if (!item) return;
+
+  // completed配列の初期化
+  if (!Array.isArray(item.completed)) {
+    item.completed = [];
+    // 既存のステータスがあれば移行する処理が必要ならここで行う
+  }
+
+  const idx = item.completed.indexOf(processName);
+  if (idx > -1) {
+    // 既に完了済み -> 未完了に戻す（削除）
+    item.completed.splice(idx, 1);
+  } else {
+    // 未完了 -> 完了にする（追加）
+    item.completed.push(processName);
+  }
+
+  // データ保存
+  DB.set(DB.KEYS.ORDERS, orders);
+
+  // UI更新（即時反映）
+  renderGantt();
+};
