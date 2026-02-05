@@ -398,7 +398,23 @@ function renderGantt() {
     </div>
   `;
 
+  // スクロール位置の保存
+  const oldContainer = pageBody.querySelector('.matrix-container');
+  let savedScrollTop = 0;
+  let savedScrollLeft = 0;
+  if (oldContainer) {
+    savedScrollTop = oldContainer.scrollTop;
+    savedScrollLeft = oldContainer.scrollLeft;
+  }
+
   pageBody.innerHTML = html;
+
+  // スクロール位置の復元
+  const newContainer = pageBody.querySelector('.matrix-container');
+  if (newContainer) {
+    newContainer.scrollTop = savedScrollTop;
+    newContainer.scrollLeft = savedScrollLeft;
+  }
 }
 
 function toggleExpand(event, orderId) {
@@ -3720,6 +3736,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.body.appendChild(indicator);
+    // フルスクリーン切り替え
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        const container = document.querySelector('.gantt-container-mono');
+        if (!container) return;
+
+        if (!document.fullscreenElement) {
+          container.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    }
+
+    // フルスクリーン状態監視（クラス付与用）
+    document.addEventListener('fullscreenchange', () => {
+      const container = document.querySelector('.gantt-container-mono');
+      if (document.fullscreenElement) {
+        container.classList.add('is-fullscreen');
+      } else {
+        container.classList.remove('is-fullscreen');
+      }
+    });
+
   }, 2000); // 初期化待ち
 });
 
