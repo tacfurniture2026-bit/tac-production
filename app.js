@@ -1302,7 +1302,7 @@ function showAddOrderModal() {
       <div class="form-group" style="background: var(--color-bg-secondary); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--color-border);">
         <label style="display:flex; align-items:center; cursor:pointer; margin-bottom: 0.5rem;">
           <input type="checkbox" id="order-bom-select-mode" onchange="toggleBomSelectionMode(this.checked)" style="margin-right: 0.5rem;">
-          <span>パーツのみ（BOMを指定して発注）</span>
+          <span style="font-weight:bold; color:var(--color-primary);">パーツのみ発注（チェックを入れたまま作成してください）</span>
         </label>
         <div id="order-bom-list" style="display:none; max-height: 150px; overflow-y: auto; margin-top: 0.5rem; padding-left: 0.5rem; border-left: 2px solid var(--color-primary);">
           <div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>
@@ -1418,11 +1418,16 @@ function createOrder() {
   // パーツ指定モード確認
   const isBomSelectMode = $('#order-bom-select-mode').checked;
   if (isBomSelectMode) {
-    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => parseInt(cb.value));
-    // IDでフィルタリング
-    productBoms = productBoms.filter(b => checkedBomIds.includes(b.id));
+    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value));
+    // IDでフィルタリング (String同士で比較)
+    const initialCount = productBoms.length;
+    productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id)));
+
+    // デバッグログ
+    console.log(`BOM Selection Mode: ON. Initial: ${initialCount}, Selected: ${productBoms.length}`, checkedBomIds);
+
     if (productBoms.length === 0) {
-      toast('部材が選択されていません', 'warning');
+      toast('部材が選択されていません（チェックボックスを確認してください）', 'warning');
       return;
     }
   }
@@ -1430,7 +1435,8 @@ function createOrder() {
   if (productBoms.length === 0 && !isBomSelectMode) {
     toast(`警告: 「${productName}」のBOMが見つかりません。`, 'warning');
   } else {
-    toast(`${productBoms.length}件の部材を展開しました`, 'success');
+    // 成功メッセージに件数を含める
+    toast(`全${productBoms.length}件の部材で登録しました`, 'success');
   }
 
   const items = productBoms.map((bom, idx) => ({
