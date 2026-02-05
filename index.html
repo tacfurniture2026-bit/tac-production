@@ -19,7 +19,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=REVERTED_01">
+    <link rel="stylesheet" href="styles.css?v=FORCE_14">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -114,7 +114,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_03"></script>
-    <script src="app.js?v=REVERTED_01"></script>
+    <script src="app.js?v=FORCE_14"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -247,7 +247,7 @@
                 <div class="sidebar-footer">
                     <div class="user-info">
                         <span class="user-name" id="current-user-name">管理者</span>
-                        <span class="user-role" id="current-user-role">admin</span>
+                        <span class="user-role" id="current-user-role">v4.0 (Color Added)</span>
                     </div>
                     <button class="nav-item logout-btn" id="logout-btn"
                         onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
@@ -517,6 +517,7 @@
                                         <th>物件名</th>
                                         <th>品名</th>
                                         <th>数量</th>
+                                        <th>色</th>
                                         <th>着工日</th>
                                         <th>納期</th>
                                         <th>進捗</th>

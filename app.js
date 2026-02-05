@@ -211,6 +211,35 @@ function navigateTo(pageName) {
 // ダッシュボード
 // ========================================
 
+// ページ遷移ヘルパー
+function navigateToOrder(orderId) {
+  // ページ切り替え
+  showPage('orders'); // 管理者以外でも見れるように、showPageの中で権限チェックしないか確認必要。
+  // もし作業者なら'gantt'の方がいいかもしれないが、今回は指示書確認とのことなので'orders'へ。
+  // ただし作業者はordersが見れない(admin-only)ならganttへ飛ばす。
+  const isWorker = currentUser && currentUser.role !== 'admin';
+  if (isWorker) {
+    showPage('gantt');
+    // Ganttでハイライトするロジックが必要だが、まずはページ遷移のみ。
+    // ガントチャートで該当案件にスクロール等の処理があると良い。
+    setTimeout(() => {
+      // 簡易的に検索フィルタ等をセットするのは難しいので、一旦ページ移動のみ。
+    }, 100);
+  } else {
+    showPage('orders');
+    // 該当行をハイライト（簡易実装）
+    setTimeout(() => {
+      const rows = document.querySelectorAll('#orders-body tr');
+      rows.forEach(r => {
+        if (r.innerHTML.includes(`editOrder(${orderId})`)) {
+          r.style.backgroundColor = '#fff3cd'; // ハイライト色
+          r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }, 500);
+  }
+}
+
 function renderDashboard() {
   const orders = DB.get(DB.KEYS.ORDERS);
   const defects = DB.get(DB.KEYS.DEFECTS);
@@ -244,7 +273,7 @@ function renderDashboard() {
       return `
         <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
           <div>
-            <div style="font-weight: 500;">${o.projectName}</div>
+            <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
             <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName} × ${o.quantity}</div>
           </div>
           <div style="color: ${days <= 1 ? 'var(--color-danger)' : 'var(--color-warning)'}; font-weight: 600;">
@@ -347,7 +376,7 @@ function renderGantt() {
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
-              <span style="font-weight:600;">${order.projectName}</span> / ${order.productName} (数量: ${order.quantity})
+              <span style="font-weight:600;">${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
               納期: ${formatDate(order.dueDate)}
@@ -921,6 +950,7 @@ function renderOrders() {
         <td>${o.projectName}</td>
         <td>${o.productName}</td>
         <td>${o.quantity}</td>
+        <td>${o.color || '-'}</td>
         <td>${o.startDate || '-'}</td>
         <td>${o.dueDate || '-'}</td>
         <td>
@@ -1197,13 +1227,10 @@ function hideModal() {
 
 function showAddOrderModal() {
   const boms = DB.get(DB.KEYS.BOM);
-  // 型不一致対策：すべて文字列に変換してユニーク化
   const products = [...new Set(boms.map(b => String(b.productName || '')))].sort();
 
   // 備考欄のデフォルトラベル
   const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
-
-  // 備考欄のHTML生成
   const notesFields = [];
   for (let i = 1; i <= 10; i++) {
     notesFields.push(`
@@ -1228,19 +1255,31 @@ function showAddOrderModal() {
       </div>
       <div class="form-group">
         <label>品名 *</label>
-        <select id="order-product" class="form-input" required>
+        <select id="order-product" class="form-input" required onchange="updateNewOrderBoms(this.value)">
           <option value="">品名を選択してください</option>
           ${products.map(p => `<option value="${p}">${p}</option>`).join('')}
         </select>
       </div>
+
+      <!-- BOM選択エリア -->
+      <div class="form-group" style="background: var(--color-bg-secondary); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--color-border);">
+        <label style="display:flex; align-items:center; cursor:pointer; margin-bottom: 0.5rem;">
+          <input type="checkbox" id="order-bom-select-mode" onchange="toggleBomSelectionMode(this.checked)" style="margin-right: 0.5rem;">
+          <span>パーツのみ（BOMを指定して発注）</span>
+        </label>
+        <div id="order-bom-list" style="display:none; max-height: 150px; overflow-y: auto; margin-top: 0.5rem; padding-left: 0.5rem; border-left: 2px solid var(--color-primary);">
+          <div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>
+        </div>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label>数量</label>
           <input type="number" id="order-qty" class="form-input" value="1" min="1">
         </div>
         <div class="form-group">
-          <label>色</label>
-          <input type="text" id="order-color" class="form-input">
+          <label>色 * (必須)</label>
+          <input type="text" id="order-color" class="form-input" required placeholder="例: シルバー, SC">
         </div>
       </div>
       <div class="form-grid">
@@ -1270,12 +1309,48 @@ function showAddOrderModal() {
   showModal('新規生産指示書', body, footer);
 }
 
+// 部材選択モード切り替え
+function toggleBomSelectionMode(enabled) {
+  const list = document.getElementById('order-bom-list');
+  if (list) {
+    list.style.display = enabled ? 'block' : 'none';
+  }
+}
+
+// 品名選択時のBOMリスト更新
+function updateNewOrderBoms(productName) {
+  const container = document.getElementById('order-bom-list');
+  if (!container) return;
+
+  if (!productName) {
+    container.innerHTML = '<div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>';
+    return;
+  }
+
+  const boms = DB.get(DB.KEYS.BOM);
+  const productBoms = boms.filter(b => String(b.productName || '') === productName);
+
+  if (productBoms.length === 0) {
+    container.innerHTML = '<div class="text-danger" style="font-size: 0.75rem;">該当するBOMがありません</div>';
+    return;
+  }
+
+  container.innerHTML = productBoms.map((b, idx) => `
+    <div style="margin-bottom: 0.25rem;">
+      <label style="display:flex; align-items:center; font-size: 0.875rem; cursor:pointer;">
+        <input type="checkbox" class="new-order-bom-check" value="${b.id}" checked style="margin-right: 0.5rem;">
+        ${b.bomName} (${b.partCode})
+      </label>
+    </div>
+  `).join('');
+}
+
 function createOrder() {
   const orderNo = $('#order-no').value;
   const projectName = $('#order-project').value.trim();
   const productName = $('#order-product').value;
   const quantity = parseInt($('#order-qty').value) || 1;
-  const color = $('#order-color').value;
+  const color = $('#order-color').value; // Color取得
   const startDate = $('#order-start').value;
   const dueDate = $('#order-due').value;
 
@@ -1284,46 +1359,40 @@ function createOrder() {
     return;
   }
 
-  // 備考欄を取得
+  if (!color) {
+    toast('「色」は必須項目です', 'warning');
+    return;
+  }
+
+  // 備考欄取得
   const notes = [];
   for (let i = 1; i <= 10; i++) {
     const labelEl = $(`#order-note-label-${i}`);
     const valueEl = $(`#order-note-value-${i}`);
     if (labelEl && valueEl) {
-      notes.push({
-        label: labelEl.value || `備考${i}`,
-        value: valueEl.value || ''
-      });
+      notes.push({ label: labelEl.value || `備考${i}`, value: valueEl.value || '' });
     }
   }
 
-  // BOMから部材を取得
+  // BOM取得
   const boms = DB.get(DB.KEYS.BOM);
+  let productBoms = boms.filter(b => String(b.productName || '') === productName);
 
-  // マッチングロジック改善: String型変換して比較し、デバッグ情報を追加
-  const productBoms = boms.filter(b => String(b.productName || '') === productName);
+  // パーツ指定モード確認
+  const isBomSelectMode = $('#order-bom-select-mode').checked;
+  if (isBomSelectMode) {
+    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => parseInt(cb.value));
+    // IDでフィルタリング
+    productBoms = productBoms.filter(b => checkedBomIds.includes(b.id));
+    if (productBoms.length === 0) {
+      toast('部材が選択されていません', 'warning');
+      return;
+    }
+  }
 
-  if (productBoms.length === 0) {
-    // デバッグ情報を強化
-    const allProducts = [...new Set(boms.map(b => b.productName))];
-    const similarProducts = allProducts.filter(p => p.includes(productName) || productName.includes(p));
-
-    const debugMsg = `デバッグ情報:\n` +
-      `選択した品名: "${productName}" (型: ${typeof productName})\n` +
-      `詳細 (char codes): ${Array.from(productName).map(c => c.charCodeAt(0)).join(',')}\n` +
-      `\nBOMデータ内の検索結果: 0件\n` +
-      `全BOM件数: ${boms.length}\n` +
-      `似ている品名: ${similarProducts.join(', ') || 'なし'}\n` +
-      `\n※この画面のスクリーンショットを管理者に送ってください。`;
-
-    alert(`警告: BOMが見つかりません。\n\n${debugMsg}`);
-    console.error(debugMsg, boms);
+  if (productBoms.length === 0 && !isBomSelectMode) {
     toast(`警告: 「${productName}」のBOMが見つかりません。`, 'warning');
   } else {
-    // 成功時も念のためデバッグ表示（ユーザー確認用）
-    const bomDetails = productBoms.map(b => `${b.bomName} (${b.partCode})`).join('\n');
-    alert(`【確認】BOMが見つかりました。\n\n件数: ${productBoms.length}件\n内訳:\n${bomDetails}\n\nこれで正しければOKを押してください。`);
-
     toast(`${productBoms.length}件の部材を展開しました`, 'success');
   }
 
@@ -1335,7 +1404,6 @@ function createOrder() {
     completed: []
   }));
 
-  // atomic add
   DB.add(DB.KEYS.ORDERS, {
     id: DB.nextId(DB.KEYS.ORDERS),
     orderNo,
@@ -1363,18 +1431,16 @@ function editOrder(id) {
   const boms = DB.get(DB.KEYS.BOM);
   const products = [...new Set(boms.map(b => b.productName))].sort();
 
-  // 備考欄のHTML生成
+  // 備考欄
   const notesFields = [];
   const currentNotes = order.notes || [];
-
-  // デフォルトラベルまたは既存ラベル
   const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
 
   for (let i = 1; i <= 10; i++) {
     const note = currentNotes[i - 1] || { label: defaultNoteLabels[i - 1], value: '' };
     notesFields.push(`
       <div class="form-group" style="margin-bottom: 0.5rem;">
-        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
+        <div class="note-row">
           <input type="text" id="edit-note-label-${i}" class="form-input" value="${note.label || ''}" placeholder="ラベル" style="font-size: 0.75rem;">
           <input type="text" id="edit-note-value-${i}" class="form-input" value="${note.value || ''}" placeholder="内容を入力" style="font-size: 0.75rem;">
         </div>
@@ -1382,43 +1448,54 @@ function editOrder(id) {
     `);
   }
 
+  // 編集モードでのBOM選択は、品名変更時のみ有効にするのが安全だが、
+  // UIの一貫性のため「品名を選択しなおす」場合にアラートを出す既存仕様を踏襲しつつ、
+  // 項目構成は新規作成と合わせる。Colorを追加。
   const body = `
-    <div class="form-group">
-      <label>特注No.</label>
-      <input type="text" id="edit-order-no" class="form-input" value="${order.orderNo || ''}">
-    </div>
-    <div class="form-group">
-      <label>物件名 *</label>
-      <input type="text" id="edit-order-project" class="form-input" value="${order.projectName}" required>
-    </div>
-    <div class="form-group">
-      <label>品名 * <small style="color: var(--color-text-muted);">（変更するとBOMが再設定されます）</small></label>
-      <input type="text" id="edit-order-product" class="form-input" list="product-list" value="${order.productName}" required>
-      <datalist id="product-list">
-        ${products.map(p => `<option value="${p}">`).join('')}
-      </datalist>
-    </div>
-    <div class="form-group">
-      <label>数量 *</label>
-      <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="modal-body-scrollable">
       <div class="form-group">
-        <label>着工日</label>
-        <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
+        <label>特注No.</label>
+        <input type="text" id="edit-order-no" class="form-input" value="${order.orderNo || ''}">
       </div>
       <div class="form-group">
-        <label>納期</label>
-        <input type="date" id="edit-order-due" class="form-input" value="${order.dueDate || ''}">
+        <label>物件名 *</label>
+        <input type="text" id="edit-order-project" class="form-input" value="${order.projectName}" required>
+      </div>
+      <div class="form-group">
+        <label>品名 * <small style="color: var(--color-text-muted);">（変更すると部材がリセットされます）</small></label>
+        <input type="text" id="edit-order-product" class="form-input" list="product-list" value="${order.productName}" required>
+        <datalist id="product-list">
+          ${products.map(p => `<option value="${p}">`).join('')}
+        </datalist>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>数量 *</label>
+          <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
+        </div>
+        <div class="form-group">
+          <label>色 *</label>
+          <input type="text" id="edit-order-color" class="form-input" value="${order.color || ''}" required placeholder="例: シルバー">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>着工日</label>
+          <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
+        </div>
+        <div class="form-group">
+          <label>納期</label>
+          <input type="date" id="edit-order-due" class="form-input" value="${order.dueDate || ''}">
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-top: 1rem;">
+        <label style="margin-bottom: 0.5rem;">備考欄</label>
+        <div class="notes-container">
+          ${notesFields.join('')}
+        </div>
       </div>
     </div>
-    
-    <details>
-      <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.875rem; padding: 0.5rem 0;">備考欄（クリックで展開）</summary>
-      <div style="padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">
-        ${notesFields.join('')}
-      </div>
-    </details>
   `;
 
   const footer = `
@@ -1434,6 +1511,7 @@ function updateOrder(id) {
   const projectName = $('#edit-order-project').value;
   const productName = $('#edit-order-product').value;
   const quantity = parseInt($('#edit-order-quantity').value);
+  const color = $('#edit-order-color').value; // Color追加
   const startDate = $('#edit-order-start').value;
   const dueDate = $('#edit-order-due').value;
 
@@ -1457,7 +1535,7 @@ function updateOrder(id) {
     if (label || value) {
       notes.push({ label, value });
     } else {
-      notes.push({ label: '', value: '' }); // インデックス維持のため空でも入れる
+      notes.push({ label: '', value: '' });
     }
   }
 
@@ -1465,6 +1543,7 @@ function updateOrder(id) {
   order.orderNo = orderNo;
   order.projectName = projectName;
   order.quantity = quantity;
+  order.color = color; // 保存
   order.startDate = startDate;
   order.dueDate = dueDate;
   order.notes = notes;
