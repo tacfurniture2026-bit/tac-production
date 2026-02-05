@@ -114,7 +114,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_03"></script>
-    <script src="app.js?v=FORCE_09"></script>
+    <script src="app.js?v=FORCE_10"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -249,7 +249,7 @@
                         <span class="user-name" id="current-user-name">管理者</span>
                         <span class="user-role" id="current-user-role">admin</span>
                     </div>
-                    <button class="nav-item logout-btn" id="logout-btn">
+                    <button class="nav-item logout-btn" id="logout-btn" onclick="logout()">
                         <span class="nav-icon">↩</span>
                         <span>ログアウト</span>
                     </button>
@@ -1042,7 +1042,7 @@
                 </button>
 
                 <div class="nav-section-label">アカウント</div>
-                <button class="more-menu-item logout" id="mobile-logout-btn">
+                <button class="more-menu-item logout" id="mobile-logout-btn" onclick="logout()">
                     <span class="more-menu-icon">↩</span>
                     <span>ログアウト</span>
                 </button>
