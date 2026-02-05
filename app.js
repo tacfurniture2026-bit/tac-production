@@ -376,7 +376,7 @@ function renderGantt() {
             const statusClass = isComplete ? 'status-done' : 'status-todo';
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')"
+                   onclick="toggleProcessStatus('${order.id}', '${item.id}', '${process}')"
                    style="width: 100px; min-width: 100px;">
                    ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
