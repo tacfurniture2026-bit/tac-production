@@ -315,8 +315,8 @@ function renderGantt() {
       <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
         <thead>
           <tr>
-            <th class="col-part-name" style="position: sticky; top: 0; left: 0; z-index: 20; background: #f3f4f6; border-bottom: 2px solid #ccc;">部材名</th>
-            ${allProcesses.map(p => `<th style="width: 100px; min-width: 100px; position: sticky; top: 0; z-index: 10; background: #f3f4f6; border-bottom: 2px solid #ccc;">${p}</th>`).join('')}
+            <th class="col-part-name" style="position: sticky; top: 0; left: 0; z-index: 20; background: var(--color-bg-tertiary); color: var(--color-text-primary); border-bottom: 2px solid var(--color-border);">部材名</th>
+            ${allProcesses.map(p => `<th style="width: 100px; min-width: 100px; position: sticky; top: 0; z-index: 10; background: var(--color-bg-tertiary); color: var(--color-text-primary); border-bottom: 2px solid var(--color-border);">${p}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -376,7 +376,7 @@ function renderGantt() {
             const statusClass = isComplete ? 'status-done' : 'status-todo';
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus('${order.id}', ${itemIdx}, '${process}')"
+                   onclick="toggleProcessStatus(this, '${order.id}', ${itemIdx}, '${process}')"
                    style="width: 100px; min-width: 100px;">
                    ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
@@ -1238,153 +1238,6 @@ function createOrder() {
   });
 
   toast('生産指示書を作成しました', 'success');
-  hideModal();
-  renderOrders();
-  if (typeof renderGantt === 'function') renderGantt();
-}
-
-function editOrder(id) {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const order = orders.find(o => o.id === id);
-  if (!order) return;
-
-  const boms = DB.get(DB.KEYS.BOM);
-  const products = [...new Set(boms.map(b => b.productName))].sort();
-
-  // 備考欄のHTML生成
-  const notesFields = [];
-  const currentNotes = order.notes || [];
-
-  // デフォルトラベルまたは既存ラベル
-  const defaultNoteLabels = ['採光部', '丁番色', '備考3', '備考4', '備考5', '備考6', '備考7', '備考8', '備考9', '備考10'];
-
-  for (let i = 1; i <= 10; i++) {
-    const note = currentNotes[i - 1] || { label: defaultNoteLabels[i - 1], value: '' };
-    notesFields.push(`
-      <div class="form-group" style="margin-bottom: 0.5rem;">
-        <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem;">
-          <input type="text" id="edit-note-label-${i}" class="form-input" value="${note.label || ''}" placeholder="ラベル" style="font-size: 0.75rem;">
-          <input type="text" id="edit-note-value-${i}" class="form-input" value="${note.value || ''}" placeholder="内容を入力" style="font-size: 0.75rem;">
-        </div>
-      </div>
-    `);
-  }
-
-  const body = `
-    <div class="form-group">
-      <label>特注No.</label>
-      <input type="text" id="edit-order-no" class="form-input" value="${order.orderNo || ''}">
-    </div>
-    <div class="form-group">
-      <label>物件名 *</label>
-      <input type="text" id="edit-order-project" class="form-input" value="${order.projectName}" required>
-    </div>
-    <div class="form-group">
-      <label>品名 * <small style="color: var(--color-text-muted);">（変更するとBOMが再設定されます）</small></label>
-      <select id="edit-order-product" class="form-input" required>
-        <option value="">品名を選択してください</option>
-        ${products.map(p => `<option value="${p}" ${p === order.productName ? 'selected' : ''}>${p}</option>`).join('')}
-      </select>
-    </div>
-    <div class="form-group">
-      <label>数量 *</label>
-      <input type="number" id="edit-order-quantity" class="form-input" value="${order.quantity}" min="1" required>
-    </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>着工日</label>
-        <input type="date" id="edit-order-start" class="form-input" value="${order.startDate || ''}">
-      </div>
-      <div class="form-group">
-        <label>納期</label>
-        <input type="date" id="edit-order-due" class="form-input" value="${order.dueDate || ''}">
-      </div>
-    </div>
-    
-    <details>
-      <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.875rem; padding: 0.5rem 0;">備考欄（クリックで展開）</summary>
-      <div style="padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">
-        ${notesFields.join('')}
-      </div>
-    </details>
-  `;
-
-  const footer = `
-    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-primary" onclick="updateOrder(${order.id})">更新</button>
-  `;
-
-  showModal('指示書を編集', body, footer);
-}
-
-function updateOrder(id) {
-  const orderNo = $('#edit-order-no').value;
-  const projectName = $('#edit-order-project').value;
-  const productName = $('#edit-order-product').value;
-  const quantity = parseInt($('#edit-order-quantity').value);
-  const startDate = $('#edit-order-start').value;
-  const dueDate = $('#edit-order-due').value;
-
-  if (!projectName || !productName || !quantity) {
-    toast('必須項目を入力してください', 'warning');
-    return;
-  }
-
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const index = orders.findIndex(o => o.id === id);
-  if (index === -1) return;
-
-  const order = orders[index];
-  const oldProductName = order.productName;
-
-  // 備考の取得
-  const notes = [];
-  for (let i = 1; i <= 10; i++) {
-    const label = $(`#edit-note-label-${i}`).value;
-    const value = $(`#edit-note-value-${i}`).value;
-    if (label || value) {
-      notes.push({ label, value });
-    } else {
-      notes.push({ label: '', value: '' }); // インデックス維持のため空でも入れる
-    }
-  }
-
-  // 更新
-  order.orderNo = orderNo;
-  order.projectName = projectName;
-  order.quantity = quantity;
-  order.startDate = startDate;
-  order.dueDate = dueDate;
-  order.notes = notes;
-
-  // 品名の変更があればBOMを再取得
-  if (oldProductName !== productName) {
-    const boms = DB.get(DB.KEYS.BOM);
-    // Selectでの選択になったため完全一致検索に変更
-    const productBoms = boms.filter(b => b.productName === productName);
-
-    if (productBoms.length > 0) {
-      if (confirm('品名が変更されました。工程情報（進捗）をリセットしてBOMを再展開しますか？')) {
-        order.productName = productName;
-        order.items = productBoms.map((bom, idx) => ({
-          id: idx + 1,
-          bomName: bom.bomName,
-          partCode: bom.partCode,
-          processes: bom.processes || [],
-          completed: []
-        }));
-        toast('品名変更に伴い工程情報を更新しました', 'info');
-      } else {
-        order.productName = productName;
-      }
-    } else {
-      order.productName = productName;
-      toast('新しい品名に対するBOMが見つかりません。工程情報は更新されませんでした。', 'warning');
-    }
-  }
-
-  DB.save(DB.KEYS.ORDERS, orders);
-  toast('指示書を更新しました', 'success');
   hideModal();
   renderOrders();
   if (typeof renderGantt === 'function') renderGantt();
@@ -3873,43 +3726,57 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 // 工程進捗トグル（完了/未完了の切り替え）
 // ========================================
-window.toggleProcessStatus = function (orderId, itemIdx, processName) {
-  console.log(`toggleProcessStatus called: order=${orderId}, itemIdx=${itemIdx}, process=${processName}`);
-
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const order = orders.find(o => o.id == orderId);
-
-  if (!order) {
-    console.error('Order not found:', orderId);
-    // UI強制更新（モメンタムスクロールなどでの表示ずれ対策）
-    renderGantt();
-    return;
+window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processName) {
+  // 1. 即時UIフィードバック（Optimistic Update）
+  // ユーザーに「反応した」ことを伝えるため、データ保存を待たずに色を変える
+  if (cellElement) {
+    const isDone = cellElement.classList.contains('status-done');
+    if (isDone) {
+      cellElement.className = 'matrix-cell status-todo'; // クラスを完全に書き換え
+      cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
+    } else {
+      cellElement.className = 'matrix-cell status-done'; // クラスを完全に書き換え
+      cellElement.innerHTML = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+    }
   }
 
-  // IDではなくインデックスで取得（確実性のため）
-  const item = order.items && order.items[itemIdx];
-  if (!item) {
-    console.error('Item not found at index:', itemIdx);
-    return;
+  // 2. データ処理
+  try {
+    const orders = DB.get(DB.KEYS.ORDERS);
+    const order = orders.find(o => o.id == orderId);
+
+    if (!order) {
+      console.error('Order not found');
+      return;
+    }
+
+    const item = order.items && order.items[itemIdx];
+    if (!item) {
+      console.error('Item not found');
+      return;
+    }
+
+    if (!Array.isArray(item.completed)) {
+      item.completed = [];
+    }
+
+    // trim()して比較（目に見えない空白対策）
+    const proc = processName.trim();
+    const idx = item.completed.findIndex(p => p.trim() === proc);
+
+    if (idx > -1) {
+      item.completed.splice(idx, 1);
+    } else {
+      item.completed.push(proc);
+    }
+
+    // 3. 保存
+    DB.set(DB.KEYS.ORDERS, orders);
+
+    // 再描画はFirebaseのリスナー任せにするか、遅延させる
+    // 即時再描画すると、Optimistic Updateと競合してチカチカする場合があるため
+  } catch (e) {
+    console.error('Toggle Error:', e);
+    alert('エラーが発生しました: ' + e.message);
   }
-
-  // completed配列の初期化
-  if (!Array.isArray(item.completed)) {
-    item.completed = [];
-  }
-
-  const idx = item.completed.indexOf(processName);
-  if (idx > -1) {
-    // 既に完了済み -> 未完了に戻す
-    item.completed.splice(idx, 1);
-  } else {
-    // 未完了 -> 完了にする
-    item.completed.push(processName);
-  }
-
-  // データ保存
-  DB.set(DB.KEYS.ORDERS, orders);
-
-  // UI更新
-  renderGantt();
 };
