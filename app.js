@@ -214,16 +214,16 @@ function navigateTo(pageName) {
 // ページ遷移ヘルパー
 function navigateToOrder(orderId) {
   // ページ切り替え
-  showPage('orders');
+  navigateTo('orders');
 
   const isWorker = currentUser && currentUser.role !== 'admin';
   if (isWorker) {
-    showPage('gantt');
+    navigateTo('gantt');
     // 作業者の場合はGanttで該当箇所へ（簡易実装）
     // TODO: Gantt側にもIDを振ってスクロールさせる機能などを追加検討
   } else {
     // 管理者の場合
-    showPage('orders');
+    navigateTo('orders');
 
     // 確実に最新のDOM（ID付き）にするために再描画
     // フィルタリングで非表示になっている可能性も考慮してフラグ操作が必要だが
