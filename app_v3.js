@@ -763,8 +763,8 @@ function renderDefects() {
       <td class="text-danger font-semibold">${d.count}</td>
       <td>${d.reason || '-'}</td>
       <td>${d.reporter}</td>
-      <td><button class="btn btn-sm btn-icon" onclick="editDefect(${d.id})" title="編集" style="margin-right: 4px;">✎</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDefect(${d.id})">削除</button></td>
+      <td><button class="btn btn-sm btn-icon" onclick="editDefect('${d.id}')" title="編集" style="margin-right: 4px;">✎</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDefect('${d.id}')">削除</button></td>
     </tr>
   `).join('');
 }
@@ -773,25 +773,24 @@ function deleteDefect(id) {
   if (!confirm('この記録を削除しますか？')) return;
 
   const defects = DB.get(DB.KEYS.DEFECTS);
-  const filtered = defects.filter(d => d.id !== id);
+  // 型変換して比較（IDが数値か文字列か不明なため）
+  const filtered = defects.filter(d => String(d.id) !== String(id));
   DB.save(DB.KEYS.DEFECTS, filtered);
 
   toast('削除しました', 'success');
   renderDefects();
 }
 
-// 簡易編集機能（詳細モーダルを作るのが手間なので、prompt等で簡易実装、あるいは登録フォームを流用）
-// ここでは登録フォームを流用する形にするにはDOM構造への依存が強いので、
-// 既存のモーダルUIシステムがあればそれを使うが、今回はwindow.promptで簡易実装する（要望が「編集できるように」なのでまずは機能優先）
-// 時間があればモーダルにしたいが、まずはpromptで実装し、必要ならUI改善する
-// → いや、ちゃんとモーダル風にする。編集用モーダルが見当たらないので、登録時のフォームはどこにある？
-// tab「進捗登録」>「不良登録」タブの中にあるはず。
-// 専用の編集モーダルを動的生成するのが確実。
-
 function editDefect(id) {
+  console.log('Edit defect clicked:', id);
   const defects = DB.get(DB.KEYS.DEFECTS);
-  const target = defects.find(d => d.id === id);
-  if (!target) return;
+  // 型変換して検索
+  const target = defects.find(d => String(d.id) === String(id));
+
+  if (!target) {
+    console.error('Target defect not found:', id);
+    return;
+  }
 
   // 簡易的にpromptで数量修正だけ先に実装
   // const newCount = prompt('不良数を入力してください', target.count);
@@ -854,7 +853,7 @@ function updateDefect(id) {
   }
 
   const defects = DB.get(DB.KEYS.DEFECTS);
-  const idx = defects.findIndex(d => d.id === id);
+  const idx = defects.findIndex(d => String(d.id) === String(id));
   if (idx === -1) return;
 
   defects[idx].count = count;
