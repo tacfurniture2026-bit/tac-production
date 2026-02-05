@@ -1449,13 +1449,23 @@ function submitNewOrder() {
   }
 
   // フィルタリング実行
+  // DOM上のチェックボックスの状態を正として、選択されたBOMを抽出する
+  /*
+    修正方針: 元のproductBomsからフィルタリングするのではなく、
+    「チェックされているID」のリストを元にBOMマスターから直接取得する。
+    これにより、画面に見えていないが見えないところで残っているデータなどが混入するのを防ぐ。
+  */
   if (isBomSelectMode) {
-    // IDでフィルタリング (String同士で比較)
-    const initialCount = productBoms.length;
-    productBoms = productBoms.filter(b => selectedBomIds.includes(String(b.id).trim()));
+    const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
 
-    // デバッグログ
-    console.log(`BOM Selection Mode: ON. Initial: ${initialCount}, Selected: ${productBoms.length}`, selectedBomIds);
+    // デバッグ: チェックされているID数を確認
+    // alert(`【デバッグ】チェックボックス選択数: ${checkedBomIds.length}`);
+
+    // 全BOMから、チェックされたIDを持つものを抽出（品名一致も念のため見るが、IDがユニークならIDだけで良い）
+    // ここでは安全のため ID一致 かつ productBomsに含まれるもの（＝現品名のもの）とする
+    const allBoms = DB.get(DB.KEYS.BOM);
+    // 元のリスト(productBoms)に含まれ、かつIDがチェックされているもの
+    productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id).trim()));
 
     if (productBoms.length === 0) {
       toast('部材が選択されていません（チェックボックスを確認してください）', 'warning');
