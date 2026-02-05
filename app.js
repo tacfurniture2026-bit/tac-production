@@ -1445,9 +1445,14 @@ function createOrder() {
   }
 
   if (productBoms.length === 0 && !isBomSelectMode) {
-    toast(`警告: 「${productName}」のBOMが見つかりません。`, 'warning');
+    if (!confirm(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成しますか？`)) return;
   } else {
-    // 成功メッセージに件数を含める
+    // 最終確認ダイアログ
+    const itemNames = productBoms.map(b => `・${b.bomName}`).join('\n');
+    const msg = `以下の${productBoms.length}件の部材で指示書を作成します。よろしいですか？\n\n${itemNames}`;
+    if (!confirm(msg)) return;
+
+    // 成功通知
     toast(`全${productBoms.length}件の部材で登録しました`, 'success');
   }
 
