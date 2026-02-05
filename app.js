@@ -311,12 +311,12 @@ function renderGantt() {
 
   // HTML生成開始
   let html = `
-    <div class="matrix-container">
-      <table class="matrix-table">
+    <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative;">
+      <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
         <thead>
           <tr>
-            <th class="col-part-name">部材名</th>
-            ${allProcesses.map(p => `<th>${p}</th>`).join('')}
+            <th class="col-part-name" style="position: sticky; top: 0; left: 0; z-index: 20; background: #f3f4f6; border-bottom: 2px solid #ccc;">部材名</th>
+            ${allProcesses.map(p => `<th style="width: 100px; min-width: 100px; position: sticky; top: 0; z-index: 10; background: #f3f4f6; border-bottom: 2px solid #ccc;">${p}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -376,7 +376,8 @@ function renderGantt() {
             const statusClass = isComplete ? 'status-done' : 'status-todo';
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')">
+                   onclick="toggleProcessStatus(${order.id}, ${item.id}, '${process}')"
+                   style="width: 100px; min-width: 100px;">
                    ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
              `;
