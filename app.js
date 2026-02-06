@@ -1009,14 +1009,17 @@ function renderOrders() {
     const isLate = o.dueDate && new Date(o.dueDate) < new Date() && progress < 100;
     const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
 
+    // 背景色が薄いため、文字色は強制的に濃い色にする（ダークモード対策）
+    const textColor = bgColor === '#ffffff' ? 'inherit' : '#1e293b';
+
     return `
-    <tr style="background-color: ${bgColor};">
+    <tr style="background-color: ${bgColor}; color: ${textColor};">
       <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
       <td>${o.orderNo || '-'}</td>
       <td>${o.projectName}</td>
       <td>
           <div>${o.productName}</div>
-          ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px;">${category}</span>` : ''}
+          ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333;">${category}</span>` : ''}
       </td>
       <td>${o.quantity}</td>
       <td>${o.color || '-'}</td>
@@ -1028,11 +1031,11 @@ function renderOrders() {
         </div>
       </td>
       <td>
-        <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})">編集</button>
-          <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
-        </td>
-      </tr>
+        <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})" style="color: ${textColor}; border-color: ${textColor};">編集</button>
+        <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製" style="color: ${textColor};">❐</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
+      </td>
+    </tr>
     `;
   }).join('');
 }
@@ -1634,14 +1637,7 @@ function downloadErrorCsv() {
   URL.revokeObjectURL(url);
 }
 
-// カテゴリ別カラー定義
-const CATEGORY_COLORS = {
-  'T-G': '#e0f2fe', // Light Blue
-  'P-G': '#f0fdf4', // Light Green
-  'DRB': '#fefce8', // Light Yellow
-  'S-G': '#f3e8ff', // Light Purple
-  'T-R': '#ffe4e6', // Light Red
-};
+
 
 function importOrdersFromCsv(input) {
   const file = input.files[0];
