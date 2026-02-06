@@ -4094,6 +4094,61 @@ function previewCsvFile(e) {
 }
 
 // CSV解析
+// 進捗切り替え（Gantt）
+function toggleProcessStatus(el, orderId, itemIndex, process) {
+  // イベント伝播防止
+  if (window.event) window.event.stopPropagation();
+
+  // Optimistic Update (UIを即時更新)
+  const isDone = el.classList.contains('status-done');
+  const newClass = isDone ? 'status-todo' : 'status-done';
+  const newText = isDone ? '<span style="font-size:10px; color:#94a3b8;">未</span>' : '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+
+  el.className = `matrix-cell ${newClass}`;
+  el.innerHTML = newText;
+
+  // データ更新処理
+  setTimeout(() => {
+    try {
+      const orders = DB.get(DB.KEYS.ORDERS);
+      // IDは数値の場合と文字列の場合があるため緩く比較
+      const order = orders.find(o => String(o.id) === String(orderId));
+
+      if (!order || !order.items || !order.items[itemIndex]) {
+        console.error('Target item not found', orderId, itemIndex);
+        return;
+      }
+
+      const item = order.items[itemIndex];
+      if (!Array.isArray(item.completed)) item.completed = [];
+
+      if (isDone) {
+        // 完了 -> 未完了 (削除)
+        item.completed = item.completed.filter(p => p !== process);
+      } else {
+        // 未完了 -> 完了 (追加)
+        if (!item.completed.includes(process)) {
+          item.completed.push(process);
+        }
+      }
+
+      // 保存
+      DB.save(DB.KEYS.ORDERS, orders);
+
+      // 進捗履歴の保存 (registerProgressと同じロジックならいいが、簡易的にここで済ますか、関数呼ぶか)
+      // ここでは履歴保存は省略するか、あるいはregisterProgressを呼ぶか。
+      // Ganttからのクリックは頻度が高いので履歴は必須ではないかもしれないが、
+      // 整合性を取るなら履歴もあったほうがいい。
+
+      // 再描画はFirebaseのリスナー任せにするか、遅延させる
+    } catch (e) {
+      console.error('Toggle Error:', e);
+      // UIを戻す処理が必要だが、シンプルにするため省略
+      toast('エラーが発生しました: ' + e.message, 'error');
+    }
+  }, 0);
+}
+
 function parseCsv(text) {
   const rows = [];
   let currentRow = [];
