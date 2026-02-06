@@ -2081,14 +2081,15 @@ function createBom() {
   let partCode = $('#bom-code').value;
   const processesStr = $('#bom-processes').value;
 
+  // GRIDロジック: カテゴリがGRIDの場合、不整合を防ぐため強制的に 部材CD = 製品名 とする
+  if (category && category.toUpperCase() === 'GRID') {
+    partCode = productName;
+  }
+
   if (!productName || !bomName || !partCode) {
     toast('製品名、BOM名、部材CDは必須です', 'warning');
     return;
   }
-
-  // GRIDロジック: カテゴリがGRIDの場合、部材CDを製品名と強制的に同じにする（ユーザー要望）
-  // ただし手入力フォームなので、ユーザーが入力したpartCodeを優先するか、上書きするか。
-  // ここでは入力があるためそのまま採用するが、Import時に自動化する。
 
   const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
 
@@ -2103,99 +2104,92 @@ function createBom() {
   });
   DB.save(DB.KEYS.BOM, boms);
 
-  lines.forEach((line, lineIndex) => {
-    const cols = line.split('\t');
+  if (!cols[2] || !cols[3]) return; // BOM名・部材CDが空はスキップ
 
-    // ヘッダー行をスキップ（最初の4列で判定）
-    if (cols.length < 5) return;
-    if (cols[0] === '' && cols[1] === '大分類') return; // ヘッダー行
-    if (cols[4] === '芯材カット' || cols[4] === '部材CD') return; // ヘッダー行
-    if (!cols[2] || !cols[3]) return; // BOM名・部材CDが空はスキップ
+  // データ列のオフセットを検出（空列がある場合）
+  let offset = 0;
+  if (cols[0] === '') offset = 1;
 
-    // データ列のオフセットを検出（空列がある場合）
-    let offset = 0;
-    if (cols[0] === '') offset = 1;
+  let category = (cols[offset] || '').trim();
+  let productName = (cols[offset + 1] || '').trim();
+  const bomName = (cols[offset + 2] || '').trim();
+  const partCode = (cols[offset + 3] || '').trim();
 
-    let category = (cols[offset] || '').trim();
-    let productName = (cols[offset + 1] || '').trim();
-    const bomName = (cols[offset + 2] || '').trim();
-    const partCode = (cols[offset + 3] || '').trim();
+  // セル結合/空欄対策: 値があれば更新、なければ前回の値を仕様
+  if (category) lastCategory = category;
+  else category = lastCategory;
 
-    // セル結合/空欄対策: 値があれば更新、なければ前回の値を仕様
-    if (category) lastCategory = category;
-    else category = lastCategory;
+  if (productName) lastProductName = productName;
+  else productName = lastProductName;
 
-    if (productName) lastProductName = productName;
-    else productName = lastProductName;
+  if (!bomName || !partCode) return;
 
-    if (!bomName || !partCode) return;
+  // 重複チェック（BOM名と部材CDで判断）
+  const existingIndex = existingBoms.findIndex(b =>
+    b.bomName === bomName && b.partCode === partCode
+  );
 
-    // 重複チェック（BOM名と部材CDで判断）
-    const existingIndex = existingBoms.findIndex(b =>
-      b.bomName === bomName && b.partCode === partCode
-    );
+  if (existingIndex >= 0) {
+    duplicates.push(bomName);
+  }
 
-    if (existingIndex >= 0) {
-      duplicates.push(bomName);
-    }
+  // 工程と時間を解析
+  const processes = [];
+  const processTimes = {};
 
-    // 工程と時間を解析
-    const processes = [];
-    const processTimes = {};
-
-    for (let i = 0; i < PROCESS_COLUMNS.length; i++) {
-      const colIndex = offset + 4 + i;
-      // 時間が入力されていれば工程ありとみなす
-      if (colIndex < cols.length && cols[colIndex]) {
-        const time = parseTime(cols[colIndex]);
-        if (time > 0) {
-          processes.push(PROCESS_COLUMNS[i]);
-          processTimes[PROCESS_COLUMNS[i]] = time;
-        }
+  for (let i = 0; i < PROCESS_COLUMNS.length; i++) {
+    const colIndex = offset + 4 + i;
+    // 時間が入力されていれば工程ありとみなす
+    if (colIndex < cols.length && cols[colIndex]) {
+      const time = parseTime(cols[colIndex]);
+      if (time > 0) {
+        processes.push(PROCESS_COLUMNS[i]);
+        processTimes[PROCESS_COLUMNS[i]] = time;
       }
     }
+  }
 
-    newBoms.push({
-      id: DB.nextId(DB.KEYS.BOM),
-      category: category,
-      productName: productName,
-      bomName: bomName,
-      partCode: partCode,
-      processes: processes,
-      processTimes: processTimes
-    });
+  newBoms.push({
+    id: DB.nextId(DB.KEYS.BOM),
+    category: category,
+    productName: productName,
+    bomName: bomName,
+    partCode: partCode,
+    processes: processes,
+    processTimes: processTimes
   });
+});
 
-  if (newBoms.length === 0) {
-    toast('インポートできるデータがありません', 'warning');
+if (newBoms.length === 0) {
+  toast('インポートできるデータがありません', 'warning');
+  return;
+}
+
+// 重複がある場合は確認
+if (duplicates.length > 0) {
+  const uniqueDuplicates = [...new Set(duplicates)];
+  const confirmMsg = `以下のBOMが既に存在します。上書きしますか？\n\n${uniqueDuplicates.slice(0, 5).join('\n')}${uniqueDuplicates.length > 5 ? `\n...他${uniqueDuplicates.length - 5}件` : ''}`;
+
+  if (!confirm(confirmMsg)) {
     return;
   }
 
-  // 重複がある場合は確認
-  if (duplicates.length > 0) {
-    const uniqueDuplicates = [...new Set(duplicates)];
-    const confirmMsg = `以下のBOMが既に存在します。上書きしますか？\n\n${uniqueDuplicates.slice(0, 5).join('\n')}${uniqueDuplicates.length > 5 ? `\n...他${uniqueDuplicates.length - 5}件` : ''}`;
+  // 重複を削除
+  const filteredBoms = existingBoms.filter(b => {
+    return !newBoms.some(n => n.bomName === b.bomName && n.partCode === b.partCode);
+  });
 
-    if (!confirm(confirmMsg)) {
-      return;
-    }
+  // 新しいBOMを追加
+  DB.save(DB.KEYS.BOM, [...filteredBoms, ...newBoms]);
+  toast(`${newBoms.length}件のBOMをインポート（${duplicates.length}件上書き）`, 'success');
+} else {
+  // 重複なし：単純追加
+  DB.save(DB.KEYS.BOM, [...existingBoms, ...newBoms]);
+  toast(`${newBoms.length}件のBOMをインポートしました`, 'success');
+}
 
-    // 重複を削除
-    const filteredBoms = existingBoms.filter(b => {
-      return !newBoms.some(n => n.bomName === b.bomName && n.partCode === b.partCode);
-    });
-
-    // 新しいBOMを追加
-    DB.save(DB.KEYS.BOM, [...filteredBoms, ...newBoms]);
-    toast(`${newBoms.length}件のBOMをインポート（${duplicates.length}件上書き）`, 'success');
-  } else {
-    // 重複なし：単純追加
-    DB.save(DB.KEYS.BOM, [...existingBoms, ...newBoms]);
-    toast(`${newBoms.length}件のBOMをインポートしました`, 'success');
-  }
-
-  hideModal();
-  renderBom();
+hideModal();
+renderBom();
 }
 
 function showAddRateModal() {

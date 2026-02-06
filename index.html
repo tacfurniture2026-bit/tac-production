@@ -114,7 +114,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_03"></script>
-    <script src="app.js?v=FORCE_32"></script>
+    <script src="app.js?v=FORCE_33"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -140,7 +140,7 @@
 <body>
     <div
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 4px; z-index: 99999; font-size: 10px; pointer-events: none;">
-        v4.18 (UI Restore)
+        v4.19 (GRID Fix)
     </div>
     <!-- テーマ切替スイッチ -->
     <div class="theme-switch-wrapper">
@@ -544,8 +544,8 @@
                 <div class="page-header">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h1>🏗 BOMマスター</h1>
-                            <p>製品の構成部品（Bill of Materials）を管理</p>
+                            <h1>⊟ BOM管理</h1>
+                            <p>部品表（Bill of Materials）の管理</p>
                         </div>
                         <div class="btn-group">
                             <button class="btn btn-danger" onclick="deleteSelectedBoms()">🗑 選択削除</button>
