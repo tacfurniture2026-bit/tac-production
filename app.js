@@ -1441,33 +1441,51 @@ function submitNewOrder() {
   let productBoms = boms.filter(b => String(b.productName || '') === productName);
 
   // フィルタリング実行
-  // モーダル内のチェックボックスのみを対象にする (Scope to #modal-body)
+  // モーダル内のチェックボックスのみを対象にする
   const modalBody = document.querySelector('#modal-body');
   if (!modalBody) {
     toast('システムエラー: モーダルが見つかりません', 'error');
     return;
   }
 
-  const checkedBomIds = Array.from(modalBody.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
-  const allBomCheckboxes = modalBody.querySelectorAll('.new-order-bom-check');
+  const allBomCheckboxes = Array.from(modalBody.querySelectorAll('.new-order-bom-check'));
 
-  // 全BOMから、チェックされたIDを持つものを抽出
-  const allBoms = DB.get(DB.KEYS.BOM);
-  // 元のリスト(productBoms: 品名一致分)に含まれ、かつIDがチェックされているもの
-  productBoms = productBoms.filter(b => checkedBomIds.includes(String(b.id).trim()));
+  // 安全策: チェックボックスの数と、論理上のBOM数が一致するか確認
+  if (productBoms.length !== allBomCheckboxes.length) {
+    console.warn('BOM count mismatch', productBoms.length, allBomCheckboxes.length);
+    // 万が一不一致の場合は、従来のIDベース（ただしID重複時は全選択されるリスクあり）あるいは警告を出す
+    // ここでは、ユーザーの混乱を避けるため、「チェックされている数」を正として、配列のindexで照合する
+    // 不一致時は「全部表示」の安全側に倒すか、IDで頑張るか
+    // 今回はアラートを出して中断する（データの整合性問題）
+    toast(`システム警告: 画面上の部材数(${allBomCheckboxes.length})とマスターデータ(${productBoms.length})が一致しません。画面を更新してください。`, 'error');
+    return;
+  }
+
+  // INDEXベースでのフィルタリング（ID重複対策）
+  // 画面に表示されている順序 = productBomsの順序 であることを前提とする
+  const selectedIndices = [];
+  allBomCheckboxes.forEach((cb, index) => {
+    if (cb.checked) {
+      selectedIndices.push(index);
+    }
+  });
+
+  // checkされているindexのみを抽出
+  productBoms = productBoms.filter((_, index) => selectedIndices.includes(index));
+
+  // デバッグ用（本番では消して良いが、確認のため残す）
+  // console.log('Selected Indices:', selectedIndices);
 
   if (productBoms.length === 0 && allBomCheckboxes.length > 0) {
-    // 候補があるのに1つも選ばれていない場合
     if (!confirm('部材が1つも選択されていません（チェックボックスを確認してください）。\n部材なしで作成しますか？')) {
       return;
     }
   } else if (productBoms.length === 0 && allBomCheckboxes.length === 0) {
-    // そもそもBOMがない場合
     if (!confirm(`警告: 「${productName}」のBOMが見つかりません。部材なしで作成しますか？`)) return;
   } else {
     // 最終確認ダイアログ
     const itemNames = productBoms.map(b => `・${b.bomName}`).join('\n');
-    const unselectedCount = allBomCheckboxes.length - checkedBomIds.length;
+    const unselectedCount = allBomCheckboxes.length - productBoms.length;
 
     let msg = `以下の${productBoms.length}件の部材で指示書を作成します。（除外: ${unselectedCount}件）\n\n${itemNames}`;
     if (unselectedCount === 0) {
