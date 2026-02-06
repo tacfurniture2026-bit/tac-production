@@ -1574,6 +1574,62 @@ function downloadCsvTemplate() {
   document.body.removeChild(a);
 }
 
+// インポートエラー表示用モーダル
+function showImportErrorModal(errors) {
+  const errorText = errors.map(e => `【${e.row}行目】${e.reason}`).join('\n');
+  const csvContent = errors.map(e => e.rawData).join('\n');
+
+  const body = `
+    <div style="margin-bottom: 1rem;">
+      <p class="text-danger" style="font-weight: bold; margin-bottom: 0.5rem;">以下のデータは取り込めませんでした（${errors.length}件）</p>
+      <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">マスタ未登録の製品が含まれている可能性があります。コピーまたはダウンロードして修正してください。</p>
+      
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; justify-content: flex-end;">
+        <button class="btn btn-sm btn-secondary" onclick="copyErrorText()">📋 エラー内容をコピー</button>
+        <button class="btn btn-sm btn-secondary" onclick="downloadErrorCsv()">📥 エラー分をCSVダウンロード</button>
+      </div>
+
+      <textarea id="import-error-text" class="form-input" style="height: 200px; font-family: monospace; font-size: 0.8rem;" readonly>${errorText}</textarea>
+      
+      <!-- 隠しデータ保持用 -->
+      <textarea id="import-error-csv" style="display: none;">${csvContent}</textarea>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">閉じる</button>
+  `;
+
+  showModal('インポート結果（エラーあり）', body, footer);
+}
+
+function copyErrorText() {
+  const text = document.getElementById('import-error-text');
+  if (text) {
+    text.select();
+    document.execCommand('copy');
+    toast('クリップボードにコピーしました', 'success');
+  }
+}
+
+function downloadErrorCsv() {
+  const rawData = document.getElementById('import-error-csv').value;
+  if (!rawData) return;
+
+  // ヘッダーを追加（標準フォーマット）
+  const header = 'あ,物件名,品名,数量,色,着工日,納期,備考1,備考2,備考3'; // 簡易ヘッダー
+  // 実際には元のCSVヘッダーがあればそれがベストだが、ここでは簡易的に付与
+
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bom, header + '\n' + rawData], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `import_errors_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function importOrdersFromCsv(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1593,12 +1649,12 @@ function importOrdersFromCsv(input) {
     const validProductNames = [...new Set(boms.map(b => String(b.productName || '')))];
 
     let successCount = 0;
-    let errorCount = 0;
-    let errorMessages = [];
+    let errors = []; // エラー詳細オブジェクト配列
 
     // 1行ずつ処理 (1行目はヘッダーなのでスキップ)
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim());
+      const line = lines[i];
+      const cols = line.split(',').map(c => c.trim());
       if (cols.length < 5) continue; // 最低限の列数チェック
 
       const orderNo = cols[0];
@@ -1618,14 +1674,12 @@ function importOrdersFromCsv(input) {
 
       // バリデーション
       if (!projectName || !productName) {
-        errorCount++;
-        errorMessages.push(`${i + 1}行目: 物件名または品名が不足しています`);
+        errors.push({ row: i + 1, reason: '必須項目不足', rawData: line });
         continue;
       }
 
       if (!validProductNames.includes(productName)) {
-        errorCount++;
-        errorMessages.push(`${i + 1}行目: 品名「${productName}」はマスターに存在しません`);
+        errors.push({ row: i + 1, reason: `品名「${productName}」のマスタ未登録`, rawData: line });
         continue;
       }
 
@@ -1657,8 +1711,8 @@ function importOrdersFromCsv(input) {
 
     input.value = ''; // Reset input
 
-    if (errorCount > 0) {
-      alert(`インポート結果:\n成功: ${successCount}件\nエラー: ${errorCount}件\n\nエラー内容:\n${errorMessages.slice(0, 10).join('\n')}${errorMessages.length > 10 ? '\n...' : ''}`);
+    if (errors.length > 0) {
+      showImportErrorModal(errors);
     } else {
       toast(`${successCount}件の指示書をインポートしました`, 'success');
     }
@@ -1667,7 +1721,7 @@ function importOrdersFromCsv(input) {
     if (typeof renderGantt === 'function') renderGantt();
   };
 
-  reader.readAsText(file);
+  reader.readAsText(file, 'Shift_JIS'); // Shift_JIS指定 (Excel CSV対策)
 }
 
 function deleteSelectedOrders() {
