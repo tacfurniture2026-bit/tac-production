@@ -1996,6 +1996,7 @@ function renderBom() {
                     <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
                   </td>
                 </tr>
+                </tr>
               `).join('')}
             </tbody>
           </table>
@@ -2005,6 +2006,42 @@ function renderBom() {
   });
 
   list.innerHTML = html;
+}
+
+// サンプルデータ復元（緊急用）
+function restoreSampleBom() {
+  if (!confirm('BOMデータを初期サンプルデータに戻しますか？\n現在のデータは全て削除されます。')) return;
+
+  const sampleBoms = [
+    {
+      id: 1,
+      category: 'PAO',
+      productName: 'PAO1012BL',
+      bomName: 'PaO1012BL(正面)',
+      partCode: 'FR1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
+    },
+    {
+      id: 2,
+      category: 'PAO',
+      productName: 'PAO1012BL',
+      bomName: 'PaO1012BL(側面L)',
+      partCode: 'SL1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+    },
+    {
+      id: 3,
+      category: 'PAO',
+      productName: 'PAO1012BL',
+      bomName: 'PaO1012BL(側面R)',
+      partCode: 'SR1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+    }
+  ];
+
+  DB.save(DB.KEYS.BOM, sampleBoms);
+  toast('サンプルデータを復元しました', 'success');
+  renderBom();
 }
 
 function showAddBomModal() {
