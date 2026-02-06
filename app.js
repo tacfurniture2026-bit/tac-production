@@ -308,10 +308,13 @@ function renderDashboard() {
             <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
             <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName} × ${o.quantity}</div>
           </div>
-          <div style="color: ${days <= 1 ? 'var(--color-danger)' : 'var(--color-warning)'}; font-weight: 600;">
             ${days <= 0 ? '今日' : `あと${days}日`}
           </div>
         </div>
+      `;
+    }).join('');
+  }
+
   // 最近の指示書
   const recentContainer = $('#recent-orders');
   if (orders.length === 0) {
@@ -1007,6 +1010,25 @@ function renderOrders() {
     const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
 
     return `
+    <tr style="background-color: ${bgColor};">
+      <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
+      <td>${o.orderNo || '-'}</td>
+      <td>${o.projectName}</td>
+      <td>
+          <div>${o.productName}</div>
+          ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px;">${category}</span>` : ''}
+      </td>
+      <td>${o.quantity}</td>
+      <td>${o.color || '-'}</td>
+      <td>${o.startDate || '-'}</td>
+      <td style="${dueDateStyle}">${o.dueDate || '-'}</td>
+      <td>
+        <div class="progress-bar-container" title="${Math.round(progress)}%">
+          <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%"></div>
+        </div>
+      </td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})">編集</button>
           <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
           <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
         </td>
