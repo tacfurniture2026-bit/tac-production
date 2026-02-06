@@ -2965,16 +2965,32 @@ function renderReport() {
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
+  const defects = DB.get(DB.KEYS.DEFECTS) || []; // 不良データ取得
 
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
-  // 日付フィルタ
+  // 日付フィルタ (日付文字列比較)
   if (startDate) {
     filteredOrders = filteredOrders.filter(o => o.dueDate >= startDate);
   }
   if (endDate) {
     filteredOrders = filteredOrders.filter(o => o.dueDate <= endDate);
+  }
+
+  // 不良数集計 (期間内)
+  let totalDefects = 0;
+  if (startDate || endDate) {
+    totalDefects = defects.filter(d => {
+      const dDate = (d.createdAt || d.date || '').substring(0, 10);
+      let matchStart = true;
+      let matchEnd = true;
+      if (startDate) matchStart = dDate >= startDate;
+      if (endDate) matchEnd = dDate <= endDate;
+      return matchStart && matchEnd;
+    }).length;
+  } else {
+    totalDefects = defects.length;
   }
 
   // 統計計算
@@ -3175,6 +3191,10 @@ function renderReport() {
           <div class="summary-item">
             <span class="summary-label">総生産時間</span>
             <span class="summary-value">${totalTime.toLocaleString()} 分</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label" style="color:var(--color-danger);">不良発生数</span>
+            <span class="summary-value" style="color:var(--color-danger);">${totalDefects.toLocaleString()} 件</span>
           </div>
         </div>
       </div>
