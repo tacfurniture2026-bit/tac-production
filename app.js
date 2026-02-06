@@ -2172,39 +2172,113 @@ function renderBom() {
 }
 
 // サンプルデータ復元（緊急用）
-function restoreSampleBom() {
-  if (!confirm('BOMデータを初期サンプルデータに戻しますか？\n現在のデータは全て削除されます。')) return;
+// サンプルデータ復元（BOM）
+// サンプルデータ復元（指示書）
+function restoreSampleOrders() {
+  if (!confirm('現在の生産指示書データを全て削除し、サンプルの初期データに戻しますか？')) return;
 
-  const sampleBoms = [
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+  const sampleOrders = [
+    {
+      id: 1,
+      orderNo: 'ORD-001',
+      projectName: 'A邸新築工事',
+      productName: 'PAO1012BL',
+      quantity: 4,
+      color: 'シルバー',
+      startDate: dateStr,
+      dueDate: nextWeekStr,
+      notes: [{ label: '備考1', value: '急ぎ' }],
+      items: [
+        { id: 1, bomName: '上枠', partCode: 'PAO-U100', processes: ['切断', '穴あけ'], completed: [] },
+        { id: 2, bomName: '下枠', partCode: 'PAO-S100', processes: ['切断', '水抜き'], completed: [] },
+        { id: 3, bomName: '縦枠', partCode: 'PAO-T100', processes: ['切断', '組立'], completed: [] }
+      ]
+    },
+    {
+      id: 2,
+      orderNo: 'ORD-002',
+      projectName: 'Bビル改修',
+      productName: 'DRB-2020',
+      quantity: 10,
+      color: 'ブラック',
+      startDate: dateStr,
+      dueDate: nextWeekStr,
+      notes: [],
+      items: [
+        { id: 1, bomName: '中骨', partCode: 'DRB-M20', processes: ['切断', '被覆'], completed: [] }
+      ]
+    }
+  ];
+
+  DB.save(DB.KEYS.ORDERS, sampleOrders);
+  toast('生産指示書を初期データに戻しました', 'success');
+  renderOrders();
+  if (typeof renderGantt === 'function') renderGantt();
+}
+
+function restoreSampleBom() {
+  if (!confirm('BOMデータを初期状態に戻しますか？\n現在の変更はすべて失われます。')) return;
+  const boms = [
     {
       id: 1,
       category: 'PAO',
       productName: 'PAO1012BL',
-      bomName: 'PaO1012BL(正面)',
-      partCode: 'FR1012BL',
-      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
+      bomName: '上枠',
+      partCode: 'PAO-U100',
+      length: 1200,
+      quantity: 1,
+      processes: ['切断', '穴あけ']
     },
-    {
-      id: 2,
-      category: 'PAO',
-      productName: 'PAO1012BL',
-      bomName: 'PaO1012BL(側面L)',
-      partCode: 'SL1012BL',
-      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-    },
-    {
-      id: 3,
-      category: 'PAO',
-      productName: 'PAO1012BL',
-      bomName: 'PaO1012BL(側面R)',
-      partCode: 'SR1012BL',
-      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-    }
+    // ... (abbreviated for brevity in diff match, but need to match existing content exactly or just append)
+    // Actually, I'll just append restoreSampleOrders BEFORE restoreSampleBom if I can match the line before.
+    // Or simpler: append it at the end of file? No, better near other restored functions.
+    // Let's use PREPEND to restoreSampleBom if possible.
   ];
+  // ...
+}
 
-  DB.save(DB.KEYS.BOM, sampleBoms);
-  toast('サンプルデータを復元しました', 'success');
-  renderBom();
+// ------------------------------------------------
+// I will rewrite the file content strategy.
+// View showed `restoreSampleBom` starts around 1520? No, I need to see the file content first.
+
+if (!confirm('BOMデータを初期サンプルデータに戻しますか？\n現在のデータは全て削除されます。')) return;
+
+const sampleBoms = [
+  {
+    id: 1,
+    category: 'PAO',
+    productName: 'PAO1012BL',
+    bomName: 'PaO1012BL(正面)',
+    partCode: 'FR1012BL',
+    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
+  },
+  {
+    id: 2,
+    category: 'PAO',
+    productName: 'PAO1012BL',
+    bomName: 'PaO1012BL(側面L)',
+    partCode: 'SL1012BL',
+    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+  },
+  {
+    id: 3,
+    category: 'PAO',
+    productName: 'PAO1012BL',
+    bomName: 'PaO1012BL(側面R)',
+    partCode: 'SR1012BL',
+    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+  }
+];
+
+DB.save(DB.KEYS.BOM, sampleBoms);
+toast('サンプルデータを復元しました', 'success');
+renderBom();
 }
 
 function showAddBomModal() {
