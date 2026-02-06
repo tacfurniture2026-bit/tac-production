@@ -2528,40 +2528,37 @@ function showRatePasteImport() {
 }
 
 function processRateCsv(text, separator = ',') {
-  // 簡易的な解析（複雑なBOMと違って単純な固定列）
-  // CSVならカンマ、TSVならタブ
   const lines = text.split(/\r\n|\n/).filter(l => l.trim());
   const existingRates = DB.get(DB.KEYS.RATES);
   const newRates = [];
   let currentId = DB.nextId(DB.KEYS.RATES);
   let updatedCount = 0;
 
-  // ヘッダー判定（1行目が「判定CD」ならスキップ）
+  // 区切り文字の自動判定 (引数優先だが、内容から推測)
+  let char = separator;
+  if (text.indexOf('\t') !== -1 && (text.indexOf(',') === -1 || separator === '\t')) {
+    char = '\t';
+  }
+
+  // ヘッダー判定
   let startIdx = 0;
-  if (lines[0].includes('判定CD')) startIdx = 1;
+  // 1行目に「判定CD」や「部」が含まれていればヘッダーとみなす
+  if (lines.length > 0 && (lines[0].includes('判定CD') || lines[0].includes('部'))) {
+    startIdx = 1;
+  }
 
   for (let i = startIdx; i < lines.length; i++) {
-    // カンマ区切り前提だが、引用符除去など最低限の処理
-    // separator引数が指定されていなければ単純なsplitで良いと仮定するか、引数で渡すか
-    // 引数がなければ自動判定... はリスクあるので、呼び出し元で分けたほうがいいが、
-    // ここでは共通処理として単純化
-
-    // 呼び出し側でseparator制御していないなら、簡易判定
-    let char = separator;
-    if (text.indexOf('\t') !== -1 && text.indexOf(',') === -1) char = '\t';
-    else if (separator) char = separator;
-
     const cols = lines[i].split(char).map(c => c.replace(/^"|"$/g, '').trim());
 
-    // 列: 0:CD, 1:部, 2:課, 3:係, 4:月額, 5:日額, 6:時給, 7:分給
+    // 最低限の列数チェック (CD, 部, 課)
     if (cols.length < 3) continue;
 
-    const code = cols[0];
-    if (!code) continue;
+    const rateCode = cols[0];
+    if (!rateCode) continue;
 
     const rateData = {
-      id: currentId, // Temporary logic, strict logic below
-      code: cols[0],
+      id: currentId, // 仮ID
+      rateCode: cols[0], // 表示用プロパティ名は rateCode
       department: cols[1],
       section: cols[2],
       subsection: cols[3] || '',
@@ -2572,9 +2569,11 @@ function processRateCsv(text, separator = ',') {
     };
 
     // 重複チェック（判定CDで上書き）
-    const idx = existingRates.findIndex(r => r.code === rateData.code);
+    const idx = existingRates.findIndex(r => r.rateCode === rateData.rateCode);
     if (idx !== -1) {
-      existingRates[idx] = { ...existingRates[idx], ...rateData, id: existingRates[idx].id };
+      // IDは既存を維持
+      rateData.id = existingRates[idx].id;
+      existingRates[idx] = rateData;
       updatedCount++;
     } else {
       rateData.id = currentId++;
@@ -2583,13 +2582,21 @@ function processRateCsv(text, separator = ',') {
     }
   }
 
+  if (newRates.length === 0 && updatedCount === 0) {
+    toast('有効なデータが見つかりませんでした。フォーマットを確認してください。', 'warning');
+    return;
+  }
+
   DB.save(DB.KEYS.RATES, existingRates);
   toast(`${newRates.length}件追加、${updatedCount}件更新しました`, 'success');
   hideModal();
-  // 賃率画面のリロードが必要だが、現在の画面が賃率画面かどうか...
-  // 汎用的に renderRateList() があると仮定（またはリロード推奨）
-  if (window.renderRateList) renderRateList();
-  else location.reload();
+
+  // 画面更新
+  if (typeof renderRates === 'function') {
+    renderRates();
+  } else {
+    location.reload();
+  }
 }
 
 function executeRatePasteImport() {
