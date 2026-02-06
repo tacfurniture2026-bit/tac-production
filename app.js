@@ -2230,103 +2230,145 @@ function importBomsFromCsv(input) {
   input.value = ''; // Reset
 }
 
-function processBomCsv(text) {
-  const lines = text.split(/\r\n|\n/);
-  const boms = DB.get(DB.KEYS.BOM);
-  const existingBoms = [...boms];
-  const newBoms = [];
+// 共通BOM解析ロジック (CSV/TSV)
+function parseBomText(text, separator) {
+  const lines = text.split(/\r\n|\n/).filter(l => l.trim());
+  const boms = [];
   const duplicates = [];
 
-  // 工程列の定義（標準的な並び順と仮定、またはヘッダーから推測）
-  // ここでは固定のカラム位置から読み取る簡易ロジックを採用
-  const PROCESS_COLUMNS = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+  if (lines.length === 0) return { boms: [], duplicates: [] };
+
+  // ヘッダー解析
+  // Excelからのコピペなどはタブ区切り、CSVアップロードはカンマ区切り
+  // separatorが指定されていればそれを使う
+  let headers = lines[0].split(separator).map(c => c.replace(/^"|"$/g, '').trim());
+
+  let processNames = [];
+  let startIndex = 0; // データ開始行
+
+  // 標準的なヘッダーが含まれているか確認
+  // (A:カテゴリ, B:製品名, C:BOM名, D:部材CD ... 以降は工程)
+  // ヘッダー行っぽければ、そこから工程名を抽出する
+  if (headers.includes('製品名') || headers.includes('BOM名') || headers.includes('部材CD')) {
+    startIndex = 1; // 1行目はヘッダー
+    // 4番目以降を工程名として取得 (0:カテゴリ, 1:製品名, 2:BOM名, 3:部材CD)
+    if (headers.length > 4) {
+      processNames = headers.slice(4).filter(h => h && h.length > 0);
+    }
+  } else {
+    // ヘッダーなしの場合、工程は取り込めない
+    console.warn('No headers detected');
+  }
 
   let lastCategory = '';
   let lastProductName = '';
 
-  lines.forEach((line) => {
-    if (!line.trim()) return;
-    const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim()); // Simple CSV parse
+  for (let i = startIndex; i < lines.length; i++) {
+    const line = lines[i];
+    const cols = line.split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
-    // ヘッダー行判定 (簡易)
-    if (cols[0] === 'カテゴリ' || cols[1] === '製品名') return;
-    if (cols[1] === '大分類') return;
-
-    // データマッピング (A:カテゴリ, B:製品名, C:BOM名, D:部材CD, E~:工程)
-    // Excelコピペ(TSV)とCSVで区切りが違うが、ここではCSV前提
-    // もしTSVなら cols = line.split('\t');
-
-    // CSVの場合のインデックス
-    // 0: カテゴリ, 1: 製品名, 2: BOM名, 3: 部材CD, 4...: 工程
-
+    // 必須列チェック (BOM名, 部材CD)
+    // index: 0=Cat, 1=Prod, 2=BomName, 3=PartCode
     let category = cols[0] || lastCategory;
     let productName = cols[1] || lastProductName;
     let bomName = cols[2];
     let partCode = cols[3];
 
-    if (!bomName || !partCode) return;
+    // BOM名も部材CDもない行はスキップ（空行など）
+    if (!bomName && !partCode) continue;
+    // 部材CDがない場合はBOM名を入れるなどの補完も考えられるが、一旦必須とする
+    if (!bomName) bomName = partCode;
+    if (!partCode) partCode = bomName;
 
-    // 継続値の更新
+    // 継続値更新
     if (cols[0]) lastCategory = cols[0];
     if (cols[1]) lastProductName = cols[1];
 
-    // GRIDロジック
+    // GRIDルール
     if (category && category.toUpperCase() === 'GRID') {
       partCode = productName;
     }
 
-    // 重複チェック
-    if (existingBoms.some(b => b.bomName === bomName && b.partCode === partCode)) {
-      duplicates.push(bomName);
-      // 上書きモードならここで既存を除外するか、newBomsに含めて後でマージ
+    // 工程解析
+    let processes = [];
+    if (processNames.length > 0) {
+      // ヘッダーがある場合: 各列をチェック
+      processNames.forEach((procName, idx) => {
+        // colsのindexは 4 + idx
+        const val = cols[4 + idx];
+        // 値が '1', 'TRUE', '○', 'ON', 'Yes' などなら採用
+        // Excelで空欄以外（何か書いてあれば）採用とするのが一番汎用的
+        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase())) {
+          processes.push(procName);
+        }
+      });
     }
 
-    // 工程解析 (4列目以降に '1' や '○' がある、または工程名が入っていると仮定)
-    // ここではシンプルに「標準工程全て」または「指定なし」
-    // 要望のCSVフォーマットに合わせて調整が必要だが、復旧優先で空配列または標準
-    // 今回は空で登録し、後で編集可能にする
-    const processes = [];
-
-    newBoms.push({
-      id: DB.nextId(DB.KEYS.BOM), // ID will be reassigned strictly later
-      category,
-      productName,
+    boms.push({
+      category: category || lastCategory || '未分類',
+      productName: productName || lastProductName || '名称未設定',
       bomName,
       partCode,
       processes
     });
-  });
+  }
 
-  if (newBoms.length === 0) {
-    toast('インポート可能なデータが見つかりませんでした', 'warning');
+  return { boms, duplicates };
+}
+
+function processBomCsv(text) {
+  const existingBoms = DB.get(DB.KEYS.BOM);
+  const { boms: newBomsRaw } = parseBomText(text, ','); // CSV
+
+  if (newBomsRaw.length === 0) {
+    toast('有効なデータが見つかりませんでした', 'warning');
     return;
   }
 
-  // 重複確認
-  if (duplicates.length > 0) {
-    if (!confirm(`${duplicates.length}件の重複があります。上書き（追加）しますか？`)) return;
-  }
-
-  // ID採番し直しして保存
+  // 重複・ID付与
+  const newBoms = [];
   let currentId = DB.nextId(DB.KEYS.BOM);
-  newBoms.forEach(b => {
-    b.id = currentId++;
-    boms.push(b);
+  let duplicatesCount = 0;
+
+  newBomsRaw.forEach(raw => {
+    // 既存チェック (BOM名 + 部材CD + 製品名)
+    const exists = existingBoms.some(e =>
+      e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+    );
+    if (!exists) {
+      raw.id = currentId++;
+      newBoms.push(raw);
+    } else {
+      duplicatesCount++;
+    }
   });
 
-  DB.save(DB.KEYS.BOM, boms);
+  if (newBoms.length === 0) {
+    toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
+    return;
+  }
+
+  // 保存
+  const updatedBoms = [...existingBoms, ...newBoms];
+  DB.save(DB.KEYS.BOM, updatedBoms);
   toast(`${newBoms.length}件インポートしました`, 'success');
   hideModal();
   renderBom();
 }
 
-// Paste Import (Excel copy-paste)
+// Paste Import
 function showBomPasteImport() {
   const body = `
         <div class="form-group">
             <label>Excelからコピーしたデータを貼り付けてください</label>
-            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="カテゴリ	製品名	BOM名	部材CD	工程..."></textarea>
-            <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem;">※タブ区切りテキスト（Excel標準）に対応しています</p>
+            <p class="text-muted" style="font-size:0.8rem;">
+              ※1行目にヘッダー（カテゴリ, 製品名, BOM名, 部材CD, [工程1], [工程2]...）を含めると工程も取り込めます。
+            </p>
+            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="カテゴリ	製品名	BOM名	部材CD	芯材カット..."></textarea>
+            
+            <div style="text-align:right; margin-top:0.5rem;">
+               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレートをダウンロード</button>
+            </div>
         </div>
     `;
   const footer = `
@@ -2340,47 +2382,54 @@ function executeBomPasteImport() {
   const text = document.getElementById('bom-paste-area').value;
   if (!text.trim()) return;
 
-  // Process TSV
-  // Reuse processBomCsv logic but with tab split?
-  // For safety/speed, implementing separate simple logic here
+  const existingBoms = DB.get(DB.KEYS.BOM);
+  const { boms: newBomsRaw } = parseBomText(text, '\t'); // TSV
 
-  const lines = text.split(/\r\n|\n/);
-  const boms = DB.get(DB.KEYS.BOM);
-  let count = 0;
-  let nextId = DB.nextId(DB.KEYS.BOM);
+  if (newBomsRaw.length === 0) {
+    toast('データが解析できませんでした', 'warning');
+    return;
+  }
 
-  lines.forEach(line => {
-    if (!line.trim()) return;
-    const cols = line.split('\t');
-    if (cols.length < 4) return;
+  let currentId = DB.nextId(DB.KEYS.BOM);
+  let addedCount = 0;
 
-    const category = cols[0].trim();
-    const productName = cols[1].trim();
-    const bomName = cols[2].trim();
-    let partCode = cols[3].trim();
-
-    if (!productName || !bomName) return;
-
-    // GRID Logic
-    if (category.toUpperCase() === 'GRID') {
-      partCode = productName;
+  newBomsRaw.forEach(raw => {
+    const exists = existingBoms.some(e =>
+      e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+    );
+    if (!exists) {
+      raw.id = currentId++;
+      existingBoms.push(raw);
+      addedCount++;
     }
-
-    boms.push({
-      id: nextId++,
-      category,
-      productName,
-      bomName,
-      partCode,
-      processes: [] // Default empty
-    });
-    count++;
   });
 
-  DB.save(DB.KEYS.BOM, boms);
-  toast(`${count}件登録しました`, 'success');
+  DB.save(DB.KEYS.BOM, existingBoms);
+  toast(`${addedCount}件登録しました`, 'success');
   hideModal();
   renderBom();
+}
+
+// CSVテンプレートダウンロード
+function downloadBomCsvTemplate() {
+  const headers = ['カテゴリ', '製品名', 'BOM名', '部材CD', '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包', '〇〇加工'];
+  const example1 = ['PAO', 'PAO1012BL', 'PaO1012BL(正面)', 'FR1012BL', '1', '1', '1', '1', '1', '1', '1', ''];
+  const example2 = ['GRID', 'GR1212', 'GRID1212', 'GR1212', '', '', '', '', '', '', '', '1'];
+
+  // Excelで文字化けしないよう BOM (0xEF, 0xBB, 0xBF) を付与
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  let csv = headers.join(',') + '\n';
+  csv += example1.join(',') + '\n';
+  csv += example2.join(',') + '\n';
+
+  const blob = new Blob([bom, csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `BOM_import_template_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('テンプレートをダウンロードしました', 'success');
 }
 
 function showAddRateModal() {
