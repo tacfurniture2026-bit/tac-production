@@ -1952,6 +1952,12 @@ function renderBom() {
 
     const boms = DB.get(DB.KEYS.BOM);
 
+    if (!Array.isArray(boms)) {
+      console.warn('BOM data is not an array:', boms);
+      list.innerHTML = '<p class="text-danger">データ形式エラー (リセット推奨)</p>';
+      return;
+    }
+
     if (boms.length === 0) {
       list.innerHTML = '<p class="text-muted">登録データがありません</p>';
       return;
@@ -1963,6 +1969,7 @@ function renderBom() {
     // カテゴリごとにグループ化
     const grouped = {};
     boms.forEach(b => {
+      if (!b) return;
       const cat = b.category || '未分類';
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(b);
@@ -1989,24 +1996,28 @@ function renderBom() {
               </tr>
             </thead>
             <tbody>
-              ${grouped[cat].map(b => `
+              ${grouped[cat].map(b => {
+        // 安全策: processesがundefinedの場合は空配列扱い
+        const safeProcesses = Array.isArray(b.processes) ? b.processes : [];
+        return `
                 <tr>
                   <td style="text-align:center;">
                     <input type="checkbox" class="bom-check" value="${b.id}" data-cat="${cat}">
                   </td>
-                  <td>${b.productName}</td>
-                  <td>${b.bomName}</td>
-                  <td>${b.partCode}</td>
+                  <td>${b.productName || ''}</td>
+                  <td>${b.bomName || ''}</td>
+                  <td>${b.partCode || ''}</td>
                   <td>
-                    ${b.processes.length > 0 ?
-          b.processes.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
-          '<span class="text-muted">なし</span>'}
+                    ${safeProcesses.length > 0 ?
+            safeProcesses.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
+            '<span class="text-muted">なし</span>'}
                   </td>
                   <td>
                     <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
                   </td>
                 </tr>
-              `).join('')}
+              `;
+      }).join('')}
             </tbody>
           </table>
         </div>

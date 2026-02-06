@@ -291,7 +291,13 @@ const DB = {
         }
         // ローカルストレージ
         const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : [];
+        try {
+            const parsed = data ? JSON.parse(data) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('DB Parse Error:', key, e);
+            return [];
+        }
     },
 
     // 次のID
