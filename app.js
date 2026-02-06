@@ -312,10 +312,6 @@ function renderDashboard() {
             ${days <= 0 ? '今日' : `あと${days}日`}
           </div>
         </div>
-      `;
-    }).join('');
-  }
-
   // 最近の指示書
   const recentContainer = $('#recent-orders');
   if (orders.length === 0) {
@@ -999,32 +995,18 @@ function renderOrders() {
 
   tbody.innerHTML = orders.map(o => {
     const progress = calculateProgress(o);
-    // 進捗100%ならスタイルを変える
-    const isCompleted = progress === 100;
-    const rowClass = isCompleted ? 'background: var(--color-bg-secondary); opacity: 0.8;' : '';
+    const progressClass = getProgressClass(progress);
+
+    // カテゴリ色判定
+    const boms = DB.get(DB.KEYS.BOM);
+    const bom = boms.find(b => b.productName === o.productName);
+    const category = bom ? bom.category : '';
+    const bgColor = CATEGORY_COLORS[category] || '#ffffff';
+
+    const isLate = o.dueDate && new Date(o.dueDate) < new Date() && progress < 100;
+    const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
 
     return `
-      <tr id="order-row-${o.id}" style="${rowClass}">
-        <td class="text-center">
-          <input type="checkbox" class="order-checkbox" value="${o.id}">
-        </td>
-        <td>${o.orderNo || '-'}</td>
-        <td>${o.projectName}</td>
-        <td>${o.productName}</td>
-        <td>${o.quantity}</td>
-        <td>${o.color || '-'}</td>
-        <td>${o.startDate || '-'}</td>
-        <td>${o.dueDate || '-'}</td>
-        <td>
-          <div class="progress-cell">
-            <span class="progress-text">${progress}%</span>
-            <div class="progress-bar">
-              <div class="progress-bar-fill" style="width: ${progress}%; background: ${isCompleted ? 'var(--color-success)' : 'var(--color-primary)'};"></div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-icon" onclick="editOrder(${o.id})" title="編集" style="margin-right: 4px;">✎</button>
           <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
           <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
         </td>
@@ -1630,6 +1612,15 @@ function downloadErrorCsv() {
   URL.revokeObjectURL(url);
 }
 
+// カテゴリ別カラー定義
+const CATEGORY_COLORS = {
+  'T-G': '#e0f2fe', // Light Blue
+  'P-G': '#f0fdf4', // Light Green
+  'DRB': '#fefce8', // Light Yellow
+  'S-G': '#f3e8ff', // Light Purple
+  'T-R': '#ffe4e6', // Light Red
+};
+
 function importOrdersFromCsv(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1647,15 +1638,18 @@ function importOrdersFromCsv(input) {
 
     const boms = DB.get(DB.KEYS.BOM);
     const validProductNames = [...new Set(boms.map(b => String(b.productName || '')))];
+    const existingOrders = DB.get(DB.KEYS.ORDERS);
 
     let successCount = 0;
-    let errors = []; // エラー詳細オブジェクト配列
+    let errors = [];
+    let duplicateCount = 0;
+    let newOrdersMap = new Map(); // orderNo -> orderObj
 
-    // 1行ずつ処理 (1行目はヘッダーなのでスキップ)
+    // 1行ずつ解析 (バリデーションと一時保存)
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       const cols = line.split(',').map(c => c.trim());
-      if (cols.length < 5) continue; // 最低限の列数チェック
+      if (cols.length < 5) continue;
 
       const orderNo = cols[0];
       const projectName = cols[1];
@@ -1664,7 +1658,6 @@ function importOrdersFromCsv(input) {
       const color = cols[4];
       const startDate = cols[5];
       const dueDate = cols[6];
-      // Note1~10
       const notes = [];
       for (let n = 0; n < 10; n++) {
         if (cols[7 + n]) {
@@ -1672,7 +1665,6 @@ function importOrdersFromCsv(input) {
         }
       }
 
-      // バリデーション
       if (!projectName || !productName) {
         errors.push({ row: i + 1, reason: '必須項目不足', rawData: line });
         continue;
@@ -1683,7 +1675,11 @@ function importOrdersFromCsv(input) {
         continue;
       }
 
-      // 部材展開 (自動的にFull Set)
+      // 重複チェック用カウント
+      if (existingOrders.some(o => o.orderNo === orderNo)) {
+        duplicateCount++;
+      }
+
       const productBoms = boms.filter(b => String(b.productName || '') === productName);
       const items = productBoms.map((bom, idx) => ({
         id: idx + 1,
@@ -1693,9 +1689,7 @@ function importOrdersFromCsv(input) {
         completed: []
       }));
 
-      // データ登録
-      DB.add(DB.KEYS.ORDERS, {
-        id: DB.nextId(DB.KEYS.ORDERS),
+      newOrdersMap.set(orderNo, {
         orderNo,
         projectName,
         productName,
@@ -1706,22 +1700,62 @@ function importOrdersFromCsv(input) {
         notes,
         items
       });
-      successCount++;
     }
 
-    input.value = ''; // Reset input
+    // 重複確認
+    let overwrite = true;
+    if (duplicateCount > 0) {
+      overwrite = confirm(`重複する指示書Noが ${duplicateCount} 件見つかりました。\n上書きしますか？\n（キャンセルを選ぶと、重複分はスキップして新規のみ登録されます）`);
+    }
+
+    // 登録処理
+    const finalOrders = [...existingOrders];
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    newOrdersMap.forEach((newOrder, orderNo) => {
+      const existingIdx = finalOrders.findIndex(o => o.orderNo === orderNo);
+
+      if (existingIdx !== -1) {
+        if (overwrite) {
+          // 上書き (ID維持)
+          finalOrders[existingIdx] = {
+            ...newOrder,
+            id: finalOrders[existingIdx].id,
+            // 進捗状況(items.completed)はリセットするか？ 
+            // 「生産指示書取り込み」なので、内容は新しいものにする＝進捗もリセットが自然。
+            // しかし items の構造が変わるため、履歴との整合性は切れる可能性あり。
+            // ここでは newOrder の items (completed=[]) を使うためリセットされる。
+          };
+          updatedCount++;
+        }
+        // overwrite falseならスキップ
+      } else {
+        // 新規追加
+        newOrder.id = DB.nextId(DB.KEYS.ORDERS) + addedCount;
+        finalOrders.push(newOrder);
+        addedCount++;
+      }
+    });
+
+    DB.save(DB.KEYS.ORDERS, finalOrders);
+
+    input.value = '';
 
     if (errors.length > 0) {
       showImportErrorModal(errors);
     } else {
-      toast(`${successCount}件の指示書をインポートしました`, 'success');
+      let msg = `${addedCount}件を追加`;
+      if (updatedCount > 0) msg += `、${updatedCount}件を更新`;
+      msg += 'しました';
+      toast(msg, 'success');
     }
 
     renderOrders();
     if (typeof renderGantt === 'function') renderGantt();
   };
 
-  reader.readAsText(file, 'Shift_JIS'); // Shift_JIS指定 (Excel CSV対策)
+  reader.readAsText(file, 'Shift_JIS');
 }
 
 function deleteSelectedOrders() {
