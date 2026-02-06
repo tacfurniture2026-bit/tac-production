@@ -4096,6 +4096,8 @@ function previewCsvFile(e) {
 // CSV解析
 // 進捗切り替え（Gantt）
 function toggleProcessStatus(el, orderId, itemIndex, process) {
+  console.log('toggleProcessStatus called:', orderId, itemIndex, process); // Debug log
+
   // イベント伝播防止
   if (window.event) window.event.stopPropagation();
 
@@ -4110,12 +4112,17 @@ function toggleProcessStatus(el, orderId, itemIndex, process) {
   // データ更新処理
   setTimeout(() => {
     try {
+      // 検索の堅牢化 (IDが文字列でも数値でも対応)
       const orders = DB.get(DB.KEYS.ORDERS);
-      // IDは数値の場合と文字列の場合があるため緩く比較
       const order = orders.find(o => String(o.id) === String(orderId));
 
-      if (!order || !order.items || !order.items[itemIndex]) {
-        console.error('Target item not found', orderId, itemIndex);
+      if (!order) {
+        console.error('Order not found:', orderId);
+        return;
+      }
+
+      if (!order.items || !order.items[itemIndex]) {
+        console.error('Target item not found', orderId, itemIndex, order.items);
         return;
       }
 
@@ -4148,6 +4155,9 @@ function toggleProcessStatus(el, orderId, itemIndex, process) {
     }
   }, 0);
 }
+
+// 確実にグローバル公開
+window.toggleProcessStatus = toggleProcessStatus;
 
 function parseCsv(text) {
   const rows = [];
