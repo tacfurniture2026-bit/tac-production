@@ -1355,12 +1355,7 @@ function showAddOrderModal() {
   showModal('新規生産指示書', body, footer);
 }
 
-// 部材選択モード切り替え
-function toggleBomSelectionMode(enabled) {
-  const list = document.getElementById('order-bom-list');
-  list.style.display = enabled ? 'block' : 'none';
-}
-}
+
 
 // 実況カウンター更新
 function updateBomSelectionCounter() {
