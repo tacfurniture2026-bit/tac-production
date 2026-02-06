@@ -1937,8 +1937,86 @@ function createDefect() {
   renderDefects();
 }
 
+// ========================================
+// BOM管理 (一括処理対応)
+// ========================================
+
+function renderBom() {
+  const list = document.getElementById('bom-list');
+  const boms = DB.get(DB.KEYS.BOM);
+
+  if (boms.length === 0) {
+    list.innerHTML = '<p class="text-muted">登録データがありません</p>';
+    return;
+  }
+
+  // カテゴリごとにグループ化
+  const grouped = {};
+  boms.forEach(b => {
+    const cat = b.category || '未分類';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(b);
+  });
+
+  let html = '';
+  Object.keys(grouped).sort().forEach(cat => {
+    html += `
+      <div style="margin-bottom: 2rem;">
+        <h3 style="border-bottom: 2px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center;">
+          <input type="checkbox" class="bom-cat-check" onchange="toggleBomChecks(this, '${cat}')" style="margin-right:0.5rem;">
+          ${cat}
+        </h3>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">選択</th>
+                <th>製品名</th>
+                <th>BOM名</th>
+                <th>部材CD</th>
+                <th>工程</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${grouped[cat].map(b => `
+                <tr>
+                  <td style="text-align:center;">
+                    <input type="checkbox" class="bom-check" value="${b.id}" data-cat="${cat}">
+                  </td>
+                  <td>${b.productName}</td>
+                  <td>${b.bomName}</td>
+                  <td>${b.partCode}</td>
+                  <td>
+                    ${b.processes.length > 0 ?
+        b.processes.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
+        '<span class="text-muted">なし</span>'}
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
 function showAddBomModal() {
   const body = `
+    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
+      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
+      <div style="display:flex; gap:1rem;">
+        <button class="btn btn-sm btn-secondary" onclick="showBomPasteImport()">📋 Excelからコピペ登録</button>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('bom-csv-upload').click()">📂 CSVインポート</button>
+        <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;" onchange="importBomsFromCsv(this)">
+      </div>
+    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
       <div class="form-group">
         <label>カテゴリ</label>
@@ -1970,20 +2048,47 @@ function showAddBomModal() {
     <button class="btn btn-primary" onclick="createBom()">作成</button>
   `;
 
-  showModal('新規BOM作成', body, footer);
+  showModal('新規BOM登録', body, footer);
+}
+
+function toggleBomChecks(catCheck, catName) {
+  const checks = document.querySelectorAll(`.bom-check[data-cat="${catName}"]`);
+  checks.forEach(c => c.checked = catCheck.checked);
+}
+
+function deleteSelectedBoms() {
+  const checks = document.querySelectorAll('.bom-check:checked');
+  if (checks.length === 0) {
+    toast('削除するBOMを選択してください', 'warning');
+    return;
+  }
+
+  if (!confirm(`選択された${checks.length}件のBOMを削除しますか？`)) return;
+
+  const ids = Array.from(checks).map(c => parseInt(c.value));
+  let boms = DB.get(DB.KEYS.BOM);
+  boms = boms.filter(b => !ids.includes(b.id)); // ID is number
+
+  DB.save(DB.KEYS.BOM, boms);
+  toast(`${checks.length}件削除しました`, 'success');
+  renderBom();
 }
 
 function createBom() {
   const category = $('#bom-category').value;
   const productName = $('#bom-product').value;
   const bomName = $('#bom-name').value;
-  const partCode = $('#bom-code').value;
+  let partCode = $('#bom-code').value;
   const processesStr = $('#bom-processes').value;
 
   if (!productName || !bomName || !partCode) {
     toast('製品名、BOM名、部材CDは必須です', 'warning');
     return;
   }
+
+  // GRIDロジック: カテゴリがGRIDの場合、部材CDを製品名と強制的に同じにする（ユーザー要望）
+  // ただし手入力フォームなので、ユーザーが入力したpartCodeを優先するか、上書きするか。
+  // ここでは入力があるためそのまま採用するが、Import時に自動化する。
 
   const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
 
@@ -1997,72 +2102,6 @@ function createBom() {
     processes
   });
   DB.save(DB.KEYS.BOM, boms);
-
-  toast('BOMを作成しました', 'success');
-  hideModal();
-  renderBom();
-}
-
-function toggleBomChecks(headerCheck, modelName) {
-  const checks = document.querySelectorAll(`.bom-check[data-model="${modelName}"]`);
-  checks.forEach(c => c.checked = headerCheck.checked);
-  updateBomDeleteBtn();
-}
-
-function updateBomDeleteBtn() {
-  const checked = document.querySelectorAll('.bom-check:checked');
-  const btn = $('#delete-selected-bom-btn');
-  if (btn) {
-    btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
-    btn.textContent = `選択削除 (${checked.length})`;
-  }
-}
-
-function showImportBomModal() {
-  const body = `
-    <p style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
-      スプレッドシートからコピー&ペーストでBOMをインポートできます。<br>
-      形式: 大分類 [TAB] 品名 [TAB] BOM [TAB] 部材CD [TAB] 芯材カット [TAB] 面材カット [TAB] 芯組 [TAB] ...<br>
-      <small>※工程時間は「5分」形式で入力。ヘッダー行も含めてコピーしてください。</small>
-    </p>
-    <textarea id="import-bom-data" class="form-input" rows="10" placeholder="スプレッドシートからコピーしたデータを貼り付けてください..."></textarea>
-  `;
-
-  const footer = `
-    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-primary" onclick="importBom()">インポート</button>
-  `;
-
-  showModal('BOM一括インポート', body, footer);
-}
-
-// 工程名リスト（スプレッドシートの列順）
-const PROCESS_COLUMNS = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包', 'フロア加工', 'アクリルBOX作成', '扉面材くり抜き'];
-
-function parseTime(timeStr) {
-  // "5分" -> 5 (数値)
-  if (!timeStr) return 0;
-  const match = timeStr.match(/(\d+)/);
-  return match ? parseInt(match[1]) : 0;
-}
-
-function importBom() {
-  const data = $('#import-bom-data').value.trim();
-  if (!data) {
-    toast('データを入力してください', 'warning');
-    return;
-  }
-
-  const lines = data.split('\n');
-  const existingBoms = DB.get(DB.KEYS.BOM);
-
-  // 新しいBOMリストを作成
-  const newBoms = [];
-  const duplicates = [];
-
-  // 直前の有効な値を保持（Excelのセル結合対策）
-  let lastCategory = '';
-  let lastProductName = '';
 
   lines.forEach((line, lineIndex) => {
     const cols = line.split('\t');
