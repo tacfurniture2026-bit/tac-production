@@ -13,6 +13,16 @@ let currentUser = null;
 let expandedOrders = new Set();
 let ganttFilter = 'all';
 
+// カテゴリ別カラー定義
+const CATEGORY_COLORS = {
+  'T-G': '#e0f2fe', // Light Blue
+  'P-G': '#f0fdf4', // Light Green
+  'DRB': '#fefce8', // Light Yellow
+  'S-G': '#f3e8ff', // Light Purple
+  'T-R': '#ffe4e6', // Light Red
+};
+
+
 // ========================================
 // ユーティリティ
 // ========================================
