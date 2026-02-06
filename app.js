@@ -450,9 +450,13 @@ function renderGantt() {
             html += `<td class="matrix-cell status-disabled"></td>`;
           } else {
             const statusClass = isComplete ? 'status-done' : 'status-todo';
+            // エスケープ処理（シングルクォート対策）
+            const safeProcess = process.replace(/'/g, "\\'");
+            const safeOrderId = String(order.id).replace(/'/g, "\\'");
+
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus(this, '${order.id}', ${itemIdx}, '${process}')"
+                   onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}')"
                    style="width: 100px; min-width: 100px;">
                    ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
                </td>
@@ -4096,7 +4100,7 @@ function previewCsvFile(e) {
 // CSV解析
 // 進捗切り替え（Gantt）
 function toggleProcessStatus(el, orderId, itemIndex, process) {
-  console.log('toggleProcessStatus called:', orderId, itemIndex, process); // Debug log
+  toast('toggleProcessStatus called: ' + orderId + ', ' + itemIndex + ', ' + process, 'debug'); // Debug log
 
   // イベント伝播防止
   if (window.event) window.event.stopPropagation();
