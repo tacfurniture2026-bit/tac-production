@@ -114,7 +114,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_04"></script>
-    <script src="app.js?v=FORCE_59"></script>
+    <script src="app.js?v=FORCE_RELOAD_202602061835"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -139,8 +139,10 @@
 
 <body>
     <div
-        style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 4px; z-index: 99999; font-size: 10px; pointer-events: none;">
-        v4.45 (Fix Logic)
+        style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
+        <span id="app-version-display">v4.46</span><br>
+        <a href="#" onclick="window.location.reload(true); return false;"
+            style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
     <!-- テーマ切替スイッチ -->
     <div class="theme-switch-wrapper">
