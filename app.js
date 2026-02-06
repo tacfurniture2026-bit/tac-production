@@ -2432,8 +2432,20 @@ function downloadBomCsvTemplate() {
   toast('テンプレートをダウンロードしました', 'success');
 }
 
+// ========================================
+// 賃率管理 (CSV対応)
+// ========================================
+
 function showAddRateModal() {
   const body = `
+    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
+      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
+      <div style="display:flex; gap:1rem;">
+        <button class="btn btn-sm btn-secondary" onclick="showRatePasteImport()">📋 Excelからコピペ登録</button>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('rate-csv-upload').click()">📂 CSVインポート</button>
+        <input type="file" id="rate-csv-upload" accept=".csv" style="display: none;" onchange="importRatesFromCsv(this)">
+      </div>
+    </div>
     <div class="form-group">
       <label>判定CD *</label>
       <input type="text" id="rate-code" class="form-input" required>
@@ -2478,6 +2490,129 @@ function showAddRateModal() {
   `;
 
   showModal('新規賃率作成', body, footer);
+}
+
+// 賃率CSVインポート
+function importRatesFromCsv(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    processRateCsv(e.target.result);
+  };
+  reader.readAsText(file, 'Shift_JIS');
+  input.value = '';
+}
+
+// 賃率ペーストインポート
+function showRatePasteImport() {
+  const body = `
+        <div class="form-group">
+            <label>Excelからコピーしたデータを貼り付けてください</label>
+            <p class="text-muted" style="font-size:0.8rem;">
+              フォーマット: 判定CD, 部, 課, 係, 月額, 日額, 時給, 分給
+            </p>
+            <textarea id="rate-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="CD001	製造部	組立課	第一係	300000..."></textarea>
+            
+            <div style="text-align:right; margin-top:0.5rem;">
+               <button class="btn btn-sm btn-outline" onclick="downloadRateCsvTemplate()">📥 CSVテンプレートをダウンロード</button>
+            </div>
+        </div>
+    `;
+  const footer = `
+        <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="executeRatePasteImport()">インポート</button>
+    `;
+  showModal('賃率ペースト登録', body, footer);
+}
+
+function processRateCsv(text, separator = ',') {
+  // 簡易的な解析（複雑なBOMと違って単純な固定列）
+  // CSVならカンマ、TSVならタブ
+  const lines = text.split(/\r\n|\n/).filter(l => l.trim());
+  const existingRates = DB.get(DB.KEYS.RATES);
+  const newRates = [];
+  let currentId = DB.nextId(DB.KEYS.RATES);
+  let updatedCount = 0;
+
+  // ヘッダー判定（1行目が「判定CD」ならスキップ）
+  let startIdx = 0;
+  if (lines[0].includes('判定CD')) startIdx = 1;
+
+  for (let i = startIdx; i < lines.length; i++) {
+    // カンマ区切り前提だが、引用符除去など最低限の処理
+    // separator引数が指定されていなければ単純なsplitで良いと仮定するか、引数で渡すか
+    // 引数がなければ自動判定... はリスクあるので、呼び出し元で分けたほうがいいが、
+    // ここでは共通処理として単純化
+
+    // 呼び出し側でseparator制御していないなら、簡易判定
+    let char = separator;
+    if (text.indexOf('\t') !== -1 && text.indexOf(',') === -1) char = '\t';
+    else if (separator) char = separator;
+
+    const cols = lines[i].split(char).map(c => c.replace(/^"|"$/g, '').trim());
+
+    // 列: 0:CD, 1:部, 2:課, 3:係, 4:月額, 5:日額, 6:時給, 7:分給
+    if (cols.length < 3) continue;
+
+    const code = cols[0];
+    if (!code) continue;
+
+    const rateData = {
+      id: currentId, // Temporary logic, strict logic below
+      code: cols[0],
+      department: cols[1],
+      section: cols[2],
+      subsection: cols[3] || '',
+      monthlyRate: parseInt(cols[4]) || 0,
+      dailyRate: parseInt(cols[5]) || 0,
+      hourlyRate: parseInt(cols[6]) || 0,
+      minuteRate: parseFloat(cols[7]) || 0
+    };
+
+    // 重複チェック（判定CDで上書き）
+    const idx = existingRates.findIndex(r => r.code === rateData.code);
+    if (idx !== -1) {
+      existingRates[idx] = { ...existingRates[idx], ...rateData, id: existingRates[idx].id };
+      updatedCount++;
+    } else {
+      rateData.id = currentId++;
+      existingRates.push(rateData);
+      newRates.push(rateData);
+    }
+  }
+
+  DB.save(DB.KEYS.RATES, existingRates);
+  toast(`${newRates.length}件追加、${updatedCount}件更新しました`, 'success');
+  hideModal();
+  // 賃率画面のリロードが必要だが、現在の画面が賃率画面かどうか...
+  // 汎用的に renderRateList() があると仮定（またはリロード推奨）
+  if (window.renderRateList) renderRateList();
+  else location.reload();
+}
+
+function executeRatePasteImport() {
+  const text = document.getElementById('rate-paste-area').value;
+  if (!text.trim()) return;
+  processRateCsv(text, '\t');
+}
+
+function downloadRateCsvTemplate() {
+  const headers = ['判定CD', '部', '課', '係', '月額', '日額', '時給', '分給'];
+  const example = ['CD001', '製造部', '組立課', '第一係', '300000', '15000', '1800', '30'];
+
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  let csv = headers.join(',') + '\n';
+  csv += example.join(',') + '\n';
+
+  const blob = new Blob([bom, csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Rate_template_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function createRate() {
