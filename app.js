@@ -2949,6 +2949,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#import-rates-btn').addEventListener('click', showImportRateModal);
   $('#add-user-btn').addEventListener('click', showAddUserModal);
 
+  // 賃率管理
+  const addRateBtn = document.getElementById('add-rate-btn');
+  if (addRateBtn) addRateBtn.addEventListener('click', showAddRateModal);
+
+  const importRateBtn = document.getElementById('import-rates-btn');
+  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal); // 一括インポートボタンも同じモーダルを開く（中にインポート機能があるため）
+
   // 月次報告
   $('#filter-report-btn').addEventListener('click', renderReport);
   $('#generate-report-btn').addEventListener('click', printReport);
