@@ -1946,25 +1946,31 @@ function createDefect() {
 // ========================================
 
 function renderBom() {
-  const list = document.getElementById('bom-list');
-  const boms = DB.get(DB.KEYS.BOM);
+  try {
+    const list = document.getElementById('bom-list');
+    if (!list) return;
 
-  if (boms.length === 0) {
-    list.innerHTML = '<p class="text-muted">登録データがありません</p>';
-    return;
-  }
+    const boms = DB.get(DB.KEYS.BOM);
 
-  // カテゴリごとにグループ化
-  const grouped = {};
-  boms.forEach(b => {
-    const cat = b.category || '未分類';
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(b);
-  });
+    if (boms.length === 0) {
+      list.innerHTML = '<p class="text-muted">登録データがありません</p>';
+      return;
+    }
 
-  let html = '';
-  Object.keys(grouped).sort().forEach(cat => {
-    html += `
+    // Debug: データ確認
+    console.log('Rendering BOMs:', boms.length);
+
+    // カテゴリごとにグループ化
+    const grouped = {};
+    boms.forEach(b => {
+      const cat = b.category || '未分類';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(b);
+    });
+
+    let html = '';
+    Object.keys(grouped).sort().forEach(cat => {
+      html += `
       <div style="margin-bottom: 2rem;">
         <h3 style="border-bottom: 2px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center;">
           <input type="checkbox" class="bom-cat-check" onchange="toggleBomChecks(this, '${cat}')" style="margin-right:0.5rem;">
@@ -1993,13 +1999,12 @@ function renderBom() {
                   <td>${b.partCode}</td>
                   <td>
                     ${b.processes.length > 0 ?
-        b.processes.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
-        '<span class="text-muted">なし</span>'}
+          b.processes.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
+          '<span class="text-muted">なし</span>'}
                   </td>
                   <td>
                     <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
                   </td>
-                </tr>
                 </tr>
               `).join('')}
             </tbody>
@@ -2007,9 +2012,13 @@ function renderBom() {
         </div>
       </div>
     `;
-  });
+    });
 
-  list.innerHTML = html;
+    list.innerHTML = html;
+  } catch (e) {
+    console.error('renderBom Error:', e);
+    toast('BOM表示エラー: ' + e.message, 'error');
+  }
 }
 
 // サンプルデータ復元（緊急用）
