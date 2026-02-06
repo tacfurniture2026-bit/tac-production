@@ -1307,9 +1307,12 @@ function showAddOrderModal() {
 
       <!-- BOM選択エリア -->
       <div class="form-group" style="background: var(--color-bg-secondary); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--color-border);">
-        <label style="font-weight:bold; color:var(--color-primary); margin-bottom: 0.5rem; display:block;">
-          部材選択（除外する場合はチェックを外してください）
-        </label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+          <label style="font-weight:bold; color:var(--color-primary); margin:0;">
+            部材選択（除外対応）
+          </label>
+          <span id="bom-selection-counter" style="font-size: 0.75rem; color: var(--color-text-muted);">選択中: -</span>
+        </div>
         <div id="order-bom-list" style="display:block; max-height: 150px; overflow-y: auto; padding-left: 0.5rem; border-left: 2px solid var(--color-primary);">
           <div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>
         </div>
@@ -1355,8 +1358,26 @@ function showAddOrderModal() {
 // 部材選択モード切り替え
 function toggleBomSelectionMode(enabled) {
   const list = document.getElementById('order-bom-list');
-  if (list) {
-    list.style.display = enabled ? 'block' : 'none';
+  list.style.display = enabled ? 'block' : 'none';
+}
+}
+
+// 実況カウンター更新
+function updateBomSelectionCounter() {
+  const modalBody = document.querySelector('#modal-body');
+  if (!modalBody) return;
+
+  const all = modalBody.querySelectorAll('.new-order-bom-check').length;
+  const checked = modalBody.querySelectorAll('.new-order-bom-check:checked').length;
+  const el = document.getElementById('bom-selection-counter');
+  if (el) {
+    el.textContent = `選択中: ${checked} / ${all}`;
+    if (checked < all) {
+      el.style.color = '#ef4444'; // Red if partial
+      el.style.fontWeight = 'bold';
+    } else {
+      el.style.color = 'var(--color-text-muted)';
+    }
   }
 }
 
@@ -1367,6 +1388,7 @@ function updateNewOrderBoms(productName) {
 
   if (!productName) {
     container.innerHTML = '<div class="text-muted" style="font-size: 0.75rem;">品名を選択するとBOM一覧が表示されます</div>';
+    updateBomSelectionCounter();
     return;
   }
 
@@ -1375,17 +1397,20 @@ function updateNewOrderBoms(productName) {
 
   if (productBoms.length === 0) {
     container.innerHTML = '<div class="text-danger" style="font-size: 0.75rem;">該当するBOMがありません</div>';
+    updateBomSelectionCounter();
     return;
   }
 
   container.innerHTML = productBoms.map((b, idx) => `
     <div style="margin-bottom: 0.25rem;">
-      <label style="display:flex; align-items:center; font-size: 0.875rem; cursor:pointer;">
-        <input type="checkbox" class="new-order-bom-check" value="${b.id}" checked style="margin-right: 0.5rem;">
+      <label style="display:flex; align-items:center; font-size: 0.875rem; cursor:pointer;" onclick="setTimeout(updateBomSelectionCounter, 0)">
+        <input type="checkbox" class="new-order-bom-check" value="${b.id}" checked style="margin-right: 0.5rem;" onchange="updateBomSelectionCounter()">
         ${b.bomName} (${b.partCode})
       </label>
     </div>
   `).join('');
+
+  updateBomSelectionCounter();
 }
 
 function submitNewOrder() {
@@ -1421,10 +1446,15 @@ function submitNewOrder() {
   let productBoms = boms.filter(b => String(b.productName || '') === productName);
 
   // フィルタリング実行
-  // DOM上のチェックボックスの状態を正として、選択されたBOMを抽出する
-  // 常にチェックボックスの状態を反映する（モードの概念を廃止）
-  const checkedBomIds = Array.from(document.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
-  const allBomCheckboxes = document.querySelectorAll('.new-order-bom-check');
+  // モーダル内のチェックボックスのみを対象にする (Scope to #modal-body)
+  const modalBody = document.querySelector('#modal-body');
+  if (!modalBody) {
+    toast('システムエラー: モーダルが見つかりません', 'error');
+    return;
+  }
+
+  const checkedBomIds = Array.from(modalBody.querySelectorAll('.new-order-bom-check:checked')).map(cb => String(cb.value).trim());
+  const allBomCheckboxes = modalBody.querySelectorAll('.new-order-bom-check');
 
   // 全BOMから、チェックされたIDを持つものを抽出
   const allBoms = DB.get(DB.KEYS.BOM);
