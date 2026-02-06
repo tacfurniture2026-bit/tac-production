@@ -369,8 +369,22 @@ function renderGantt() {
     return new Date(a.dueDate) - new Date(b.dueDate);
   });
 
-  // 全工程リストを取得（ユニーク）
-  const allProcesses = STANDARD_PROCESSES;
+  // 全工程リストを取得（ユニーク: 標準 + 実データから収集）
+  // 元のSTANDARD_PROCESSESをベースにしつつ、オーダーに含まれる未知の工程も追加する
+  const allProcesses = [...STANDARD_PROCESSES];
+  filtered.forEach(order => {
+    if (order.items) {
+      order.items.forEach(item => {
+        if (item.processes && Array.isArray(item.processes)) {
+          item.processes.forEach(p => {
+            if (!allProcesses.includes(p)) {
+              allProcesses.push(p);
+            }
+          });
+        }
+      });
+    }
+  });
 
   // マトリクス表示のメインコンテナ
   // index.htmlには .card-body がないので .gantt-container-mono をターゲットにする
