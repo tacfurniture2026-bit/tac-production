@@ -965,36 +965,45 @@ function toggleShowCompleted() {
 
 function renderOrders() {
   const allOrders = DB.get(DB.KEYS.ORDERS);
-  // フィルタリング: 完了分を表示するかどうか
-  const orders = allOrders.filter(o => {
-    if (showCompletedOrders) return true;
-    return calculateProgress(o) < 100;
-  }).sort((a, b) => {
-    // 納期が早い順（昇順）。未設定は最後尾へ。
+  console.log('renderOrders: allOrders count =', allOrders.length);
+
+  // デバッグのため一時的にフィルタ・ソートを無効化し、全件表示を試みる
+  let orders = allOrders;
+
+  // フィルタリング有効化 (デバッグ完了後、必要なら戻す)
+  if (!showCompletedOrders) {
+    orders = orders.filter(o => {
+      // 進捗型チェック
+      const p = calculateProgress(o);
+      return typeof p === 'number' && p < 100;
+    });
+  }
+
+  // ソート (エラー回避)
+  orders.sort((a, b) => {
     if (!a.dueDate) return 1;
     if (!b.dueDate) return -1;
-    return new Date(a.dueDate) - new Date(b.dueDate);
+    const dateA = new Date(a.dueDate).getTime();
+    const dateB = new Date(b.dueDate).getTime();
+    return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
   });
 
   const tbody = $('#orders-body');
-
-  // チェックボックスの状態を反映させるため、描画前にツールバーのチェック状態も同期
   const completedCheck = $('#show-completed-check');
   if (completedCheck) completedCheck.checked = showCompletedOrders;
 
   if (orders.length === 0) {
     if (allOrders.length > 0 && !showCompletedOrders) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">進行中の指示書はありません（完了分: ' + (allOrders.length - orders.length) + '件）</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted p-4">進行中の指示書はありません（完了分: ${allOrders.length - orders.length}件 / 全${allOrders.length}件）<br><small>※ツールバーで[選択を複製]などを試せます</small></td></tr>`;
     } else {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">指示書がありません</td></tr>';
+      // 全件0の場合
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted p-4">指示書がありません (全${allOrders.length}件)</td></tr>`;
     }
     return;
   }
 
-  // テーブルヘッダーの修正も必要だが、JSで書き換えるか、HTMLで修正するか。
-  // ここではHTMLのヘッダー修正もコードで行う（またはHTMLファイルを編集する）
-  // 既存のHTMLヘッダーは8列。チェックボックス列を追加して9列にする必要がある。
-  // ここではtbodyのみ生成。ヘッダーの修正はindex.htmlで行うこととする。
+  // HTMLヘッダー列数調整 (9->10列: checkbox, No, Project, Product, Qty, Color, Start, Due, Progress, Actions)
+  // ... ここではtbodyのみ
 
   tbody.innerHTML = orders.map(o => {
     const progress = calculateProgress(o);
