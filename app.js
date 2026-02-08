@@ -2223,62 +2223,39 @@ function restoreSampleOrders() {
 }
 
 function restoreSampleBom() {
-  if (!confirm('BOMデータを初期状態に戻しますか？\n現在の変更はすべて失われます。')) return;
-  const boms = [
+  if (!confirm('BOMデータを初期サンプルデータに戻しますか？\\n現在のデータは全て削除されます。')) return;
+
+
+  const sampleBoms = [
     {
       id: 1,
       category: 'PAO',
       productName: 'PAO1012BL',
-      bomName: '上枠',
-      partCode: 'PAO-U100',
-      length: 1200,
-      quantity: 1,
-      processes: ['切断', '穴あけ']
+      bomName: 'PaO1012BL(正面)',
+      partCode: 'FR1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
     },
-    // ... (abbreviated for brevity in diff match, but need to match existing content exactly or just append)
-    // Actually, I'll just append restoreSampleOrders BEFORE restoreSampleBom if I can match the line before.
-    // Or simpler: append it at the end of file? No, better near other restored functions.
-    // Let's use PREPEND to restoreSampleBom if possible.
+    {
+      id: 2,
+      category: 'PAO',
+      productName: 'PAO1012BL',
+      bomName: 'PaO1012BL(側面L)',
+      partCode: 'SL1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+    },
+    {
+      id: 3,
+      category: 'PAO',
+      productName: 'PAO1012BL',
+      bomName: 'PaO1012BL(側面R)',
+      partCode: 'SR1012BL',
+      processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+    }
   ];
-  // ...
-}
 
-// ------------------------------------------------
-// I will rewrite the file content strategy.
-// View showed `restoreSampleBom` starts around 1520? No, I need to see the file content first.
-
-if (!confirm('BOMデータを初期サンプルデータに戻しますか？\n現在のデータは全て削除されます。')) return;
-
-const sampleBoms = [
-  {
-    id: 1,
-    category: 'PAO',
-    productName: 'PAO1012BL',
-    bomName: 'PaO1012BL(正面)',
-    partCode: 'FR1012BL',
-    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
-  },
-  {
-    id: 2,
-    category: 'PAO',
-    productName: 'PAO1012BL',
-    bomName: 'PaO1012BL(側面L)',
-    partCode: 'SL1012BL',
-    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-  },
-  {
-    id: 3,
-    category: 'PAO',
-    productName: 'PAO1012BL',
-    bomName: 'PaO1012BL(側面R)',
-    partCode: 'SR1012BL',
-    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-  }
-];
-
-DB.save(DB.KEYS.BOM, sampleBoms);
-toast('サンプルデータを復元しました', 'success');
-renderBom();
+  DB.save(DB.KEYS.BOM, sampleBoms);
+  toast('サンプルデータを復元しました', 'success');
+  renderBom();
 }
 
 function showAddBomModal() {
