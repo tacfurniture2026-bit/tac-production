@@ -1775,6 +1775,35 @@ function importOrdersFromCsv(input) {
       return;
     }
 
+    // ヘッダー判定
+    const headerCols = lines[0].split(',').map(c => c.trim().toLowerCase());
+    let colMap = {
+      orderNo: 0,
+      projectName: 1,
+      productName: 2,
+      quantity: 3,
+      color: 4,
+      startDate: 5,
+      dueDate: 6,
+      notesStart: 7
+    };
+
+    // エクスポートされたCSV (id列が先頭にある) の場合
+    if (headerCols[0] === 'id' || headerCols[0] === '"id"') {
+      colMap = {
+        orderNo: 1,
+        projectName: 2,
+        productName: 3,
+        quantity: 4,
+        color: 5,
+        startDate: 6,
+        dueDate: 7,
+        notesStart: 10 // id, orderNo, project, product, qty, color, start, due, progress, status, note1...
+        // Export format: id, orderNo, project, product, qty, color, start, due, progress, status, note1...
+        // Indices: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10...
+      };
+    }
+
     const boms = DB.get(DB.KEYS.BOM);
     const validProductNames = [...new Set(boms.map(b => String(b.productName || '')))];
     const existingOrders = DB.get(DB.KEYS.ORDERS);
@@ -1786,20 +1815,24 @@ function importOrdersFromCsv(input) {
     // 1行ずつ解析 (バリデーションと一時保存)
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      const cols = line.split(',').map(c => c.trim());
+      // 単純splitだとダブルクォート内のカンマに対応できないが、今回は簡易実装
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+
       if (cols.length < 5) continue;
 
-      const orderNo = cols[0];
-      const projectName = cols[1];
-      const productName = cols[2];
-      const quantity = parseInt(cols[3]) || 1;
-      const color = cols[4];
-      const startDate = cols[5];
-      const dueDate = cols[6];
+      const orderNo = cols[colMap.orderNo];
+      const projectName = cols[colMap.projectName];
+      const productName = cols[colMap.productName];
+      const quantity = parseInt(cols[colMap.quantity]) || 1;
+      const color = cols[colMap.color];
+      const startDate = cols[colMap.startDate];
+      const dueDate = cols[colMap.dueDate];
       const notes = [];
+
       // 備考 (Note1～Note10)
-      for (let j = 7; j < 17; j++) {
-        if (cols[j]) notes.push({ label: `備考${j - 6}`, value: cols[j] });
+      for (let j = 0; j < 10; j++) {
+        const val = cols[colMap.notesStart + j];
+        if (val) notes.push({ label: `備考${j + 1}`, value: val });
       }
 
       // 必須チェック
