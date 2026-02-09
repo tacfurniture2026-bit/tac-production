@@ -1634,22 +1634,77 @@ function downloadCsvTemplate() {
     'Note1', 'Note2', 'Note3', 'Note4', 'Note5', 'Note6', 'Note7', 'Note8', 'Note9', 'Note10'
   ];
   const example = [
-    'Example-001', 'Aマンション', '片開きドア(H2000)', '1', 'シルバー', '2026-02-01', '2026-02-28',
-    '採光部あり', '丁番色：黒', '', '', '', '', '', '', '', ''
-  ];
+  const csvContent = '特注No.,物件名,品名,数量,色,着工日,納期,備考1,備考2,備考3\n' +
+    'TK-001,A邸,PAO1012BL,1,シルバー,2024-02-01,2024-02-10,急ぎ,,\n' +
+    'TK-002,Bビル,DRB-2020,10,ブラック,2024-02-05,2024-02-20,,分納,';
 
-  // BOM (Shift-JIS is hard in JS only without libraries, so we use UTF-8 with BOM for Excel compatibility)
-  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  const content = headers.join(',') + '\n' + example.join(',');
-  const blob = new Blob([bom, content], { type: 'text/csv' });
+  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'production_orders_template.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'order_import_template.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function exportOrdersToCsv() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  if (orders.length === 0) {
+    toast('出力するデータがありません', 'warning');
+    return;
+  }
+
+  // ヘッダー
+  let csvContent = 'id,orderNo,projectName,productName,quantity,color,startDate,dueDate,progress,status,note1,note2,note3,note4,note5\n';
+
+  orders.forEach(o => {
+    // 備考の展開 (最大5個まで出力してみる)
+    const notes = o.notes || [];
+    const n1 = notes[0] ? notes[0].value : '';
+    const n2 = notes[1] ? notes[1].value : '';
+    const n3 = notes[2] ? notes[2].value : '';
+    const n4 = notes[3] ? notes[3].value : '';
+    const n5 = notes[4] ? notes[4].value : '';
+
+    const progress = calculateProgress(o);
+    const status = progress === 100 ? '完了' : (progress > 0 ? '進行中' : '未着手');
+
+    // CSVエスケープ処理 (" -> "")
+    const escape = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    csvContent += [
+      o.id,
+      o.orderNo,
+      o.projectName,
+      o.productName,
+      o.quantity,
+      o.color,
+      o.startDate,
+      o.dueDate,
+      progress,
+      status,
+      n1, n2, n3, n4, n5
+    ].map(escape).join(',') + '\n';
+  });
+
+  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `production_orders_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('CSVを出力しました', 'success');
 }
 
 // インポートエラー表示用モーダル
