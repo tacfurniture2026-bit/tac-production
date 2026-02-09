@@ -351,6 +351,9 @@ function renderDashboard() {
   }
 }
 
+
+
+
 // ========================================
 // ガントチャート（工程管理）- Monorevo風
 // ========================================
@@ -1023,7 +1026,15 @@ function renderOrders() {
         if (!o) return ''; // Nullデータはスキップ
 
         const progress = calculateProgress(o);
-        const progressClass = getProgressClass(progress);
+        // getProgressClassが存在しない、またはエラーになる可能性を考慮
+        let progressClass = 'bg-gray-200';
+        try {
+          if (typeof getProgressClass === 'function') {
+            progressClass = getProgressClass(progress);
+          }
+        } catch (e) {
+          console.warn('getProgressClass error', e);
+        }
 
         // カテゴリ色判定 (Global CATEGORY_COLORS presence check)
         let bgColor = '#ffffff';
@@ -1071,7 +1082,18 @@ function renderOrders() {
       } catch (e) {
         console.error('Error rendering order:', o, e);
         const errorId = o ? o.id : 'unknown';
-        return `<tr><td colspan="10" class="text-danger">描画エラー (ID: ${errorId}): データ破損の可能性があります</td></tr>`;
+        // エラー詳細を表示し、削除ボタンを提供する
+        return `
+          <tr style="background-color: #fee2e2;">
+            <td><input type="checkbox" class="order-checkbox" value="${errorId}"></td>
+            <td colspan="8" class="text-danger" style="font-size: 0.8rem;">
+                <strong>描画エラー (ID: ${errorId})</strong><br>
+                ${e.message || '不明なエラー'}
+            </td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteOrder(${errorId})">強制削除</button>
+            </td>
+          </tr>`;
       }
     }).join('');
   } catch (e) {
