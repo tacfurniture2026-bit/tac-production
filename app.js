@@ -1629,11 +1629,6 @@ function submitNewOrder() {
 // ========================================
 
 function downloadCsvTemplate() {
-  const headers = [
-    'OrderNo', 'ProjectName', 'ProductName', 'Quantity', 'Color', 'StartDate', 'DueDate',
-    'Note1', 'Note2', 'Note3', 'Note4', 'Note5', 'Note6', 'Note7', 'Note8', 'Note9', 'Note10'
-  ];
-  const example = [
   const csvContent = '特注No.,物件名,品名,数量,色,着工日,納期,備考1,備考2,備考3\n' +
     'TK-001,A邸,PAO1012BL,1,シルバー,2024-02-01,2024-02-10,急ぎ,,\n' +
     'TK-002,Bビル,DRB-2020,10,ブラック,2024-02-05,2024-02-20,,分納,';
