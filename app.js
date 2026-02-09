@@ -373,6 +373,9 @@ function renderGantt() {
     filtered = orders.filter(o => calculateProgress(o) === 100);
   } else if (ganttFilter === 'pending') {
     filtered = orders.filter(o => calculateProgress(o) === 0);
+  } else if (ganttFilter === 'incomplete') {
+    // 未完了 = 進行中 OR 未着手 (進捗 < 100)
+    filtered = orders.filter(o => calculateProgress(o) < 100);
   }
 
   // 納期順にソート（昇順）
