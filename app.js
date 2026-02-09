@@ -377,6 +377,21 @@ function renderGantt() {
   } else if (ganttFilter === 'incomplete') {
     // 未完了 = 進行中 OR 未着手 (進捗 < 100)
     filtered = orders.filter(o => calculateProgress(o) < 100);
+  } else if (['pao_incomplete', 'grid_incomplete', 'other_incomplete'].includes(ganttFilter)) {
+    filtered = orders.filter(o => {
+      if (calculateProgress(o) === 100) return false; // 完了は除外
+
+      // カテゴリ判定
+      const bom = boms ? boms.find(b => b.productName === o.productName) : null;
+      const category = bom ? (bom.category || '') : '';
+      const isPAO = category.includes('PAO') || o.productName.includes('PAO');
+      const isGRID = category.includes('GRID') || o.productName.includes('GRID');
+
+      if (ganttFilter === 'pao_incomplete') return isPAO;
+      if (ganttFilter === 'grid_incomplete') return isGRID;
+      if (ganttFilter === 'other_incomplete') return !isPAO && !isGRID;
+      return false;
+    });
   }
 
   // 納期順にソート（昇順）
