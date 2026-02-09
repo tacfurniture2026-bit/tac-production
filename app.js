@@ -974,89 +974,105 @@ function toggleShowCompleted() {
 }
 
 function renderOrders() {
-  const allOrders = DB.get(DB.KEYS.ORDERS);
-  console.log('renderOrders: allOrders count =', allOrders.length);
+  try {
+    const allOrders = DB.get(DB.KEYS.ORDERS) || [];
+    console.log('renderOrders: allOrders count =', allOrders.length);
 
-  // デバッグのため一時的にフィルタ・ソートを無効化し、全件表示を試みる
-  let orders = allOrders;
+    // デバッグ: 強制的に全件表示（フィルタ・ソート無効化）
+    let orders = [...allOrders];
 
-  // フィルタリング有効化 (デバッグ完了後、必要なら戻す)
-  if (!showCompletedOrders) {
-    orders = orders.filter(o => {
-      // 進捗型チェック
-      const p = calculateProgress(o);
-      return typeof p === 'number' && p < 100;
-    });
-  }
-
-  // ソート (エラー回避)
-  orders.sort((a, b) => {
-    if (!a.dueDate) return 1;
-    if (!b.dueDate) return -1;
-    const dateA = new Date(a.dueDate).getTime();
-    const dateB = new Date(b.dueDate).getTime();
-    return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
-  });
-
-  const tbody = $('#orders-body');
-  const completedCheck = $('#show-completed-check');
-  if (completedCheck) completedCheck.checked = showCompletedOrders;
-
-  if (orders.length === 0) {
-    if (allOrders.length > 0 && !showCompletedOrders) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted p-4">進行中の指示書はありません（完了分: ${allOrders.length - orders.length}件 / 全${allOrders.length}件）<br><small>※ツールバーで[選択を複製]などを試せます</small></td></tr>`;
-    } else {
-      // 全件0の場合
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted p-4">指示書がありません (全${allOrders.length}件)</td></tr>`;
+    /* 
+    // 一時的に無効化
+    if (!showCompletedOrders) {
+      orders = orders.filter(o => {
+          const p = calculateProgress(o);
+          return typeof p === 'number' && p < 100;
+      });
     }
-    return;
+    
+    orders.sort((a, b) => {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      const dateA = new Date(a.dueDate).getTime();
+      const dateB = new Date(b.dueDate).getTime();
+      return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+    });
+    */
+
+    const tbody = $('#orders-body');
+    if (!tbody) {
+      console.error('#orders-body not found');
+      return;
+    }
+
+    const completedCheck = $('#show-completed-check');
+    if (completedCheck) completedCheck.checked = showCompletedOrders;
+
+    if (orders.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted p-4">表示できる指示書がありません (全${allOrders.length}件)</td></tr>`;
+      return;
+    }
+
+    // HTMLヘッダー列数調整 (9->10列: checkbox, No, Project, Product, Qty, Color, Start, Due, Progress, Actions)
+    // ... ここではtbodyのみ
+
+    tbody.innerHTML = orders.map(o => {
+      // エラーハンドリング: 個別のオーダー描画でコケても他は出す
+      try {
+        const progress = calculateProgress(o);
+        const progressClass = getProgressClass(progress);
+
+        // カテゴリ色判定 (Global CATEGORY_COLORS presence check)
+        let bgColor = '#ffffff';
+        let category = '';
+
+        if (typeof CATEGORY_COLORS !== 'undefined') {
+          const boms = DB.get(DB.KEYS.BOM);
+          const bom = boms.find(b => b.productName === o.productName);
+          category = bom ? bom.category : '';
+          bgColor = CATEGORY_COLORS[category] || '#ffffff';
+        }
+
+        const isLate = o.dueDate && new Date(o.dueDate) < new Date() && progress < 100;
+        const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
+
+        // 文字色調整
+        const textColor = bgColor === '#ffffff' ? 'inherit' : '#1e293b';
+
+        return `
+          <tr style="background-color: ${bgColor}; color: ${textColor};">
+            <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
+            <td>${o.orderNo || '-'}</td>
+            <td>${o.projectName}</td>
+            <td>
+                <div>${o.productName}</div>
+                ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333;">${category}</span>` : ''}
+            </td>
+            <td>${o.quantity}</td>
+            <td>${o.color || '-'}</td>
+            <td>${o.startDate || '-'}</td>
+            <td style="${dueDateStyle}">${o.dueDate || '-'}</td>
+            <td>
+              <div class="progress-bar-container" title="${Math.round(progress)}%">
+                <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%"></div>
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})" style="color: ${textColor}; border-color: ${textColor};">編集</button>
+              <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製" style="color: ${textColor};">❐</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
+            </td>
+          </tr>
+          `;
+      } catch (e) {
+        console.error('Error rendering order:', o, e);
+        return `<tr><td colspan="10" class="text-danger">Error rendering order ${o.id}</td></tr>`;
+      }
+    }).join('');
+  } catch (e) {
+    console.error('Fatal error in renderOrders:', e);
+    toast('一覧描画エラー: ' + e.message, 'error');
   }
-
-  // HTMLヘッダー列数調整 (9->10列: checkbox, No, Project, Product, Qty, Color, Start, Due, Progress, Actions)
-  // ... ここではtbodyのみ
-
-  tbody.innerHTML = orders.map(o => {
-    const progress = calculateProgress(o);
-    const progressClass = getProgressClass(progress);
-
-    // カテゴリ色判定
-    const boms = DB.get(DB.KEYS.BOM);
-    const bom = boms.find(b => b.productName === o.productName);
-    const category = bom ? bom.category : '';
-    const bgColor = CATEGORY_COLORS[category] || '#ffffff';
-
-    const isLate = o.dueDate && new Date(o.dueDate) < new Date() && progress < 100;
-    const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
-
-    // 背景色が薄いため、文字色は強制的に濃い色にする（ダークモード対策）
-    const textColor = bgColor === '#ffffff' ? 'inherit' : '#1e293b';
-
-    return `
-    <tr style="background-color: ${bgColor}; color: ${textColor};">
-      <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
-      <td>${o.orderNo || '-'}</td>
-      <td>${o.projectName}</td>
-      <td>
-          <div>${o.productName}</div>
-          ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333;">${category}</span>` : ''}
-      </td>
-      <td>${o.quantity}</td>
-      <td>${o.color || '-'}</td>
-      <td>${o.startDate || '-'}</td>
-      <td style="${dueDateStyle}">${o.dueDate || '-'}</td>
-      <td>
-        <div class="progress-bar-container" title="${Math.round(progress)}%">
-          <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%"></div>
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})" style="color: ${textColor}; border-color: ${textColor};">編集</button>
-        <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製" style="color: ${textColor};">❐</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
-      </td>
-    </tr>
-    `;
-  }).join('');
 }
 
 // 個別複製
