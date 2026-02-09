@@ -54,17 +54,18 @@ function formatDate(dateStr) {
 }
 
 function calculateProgress(order) {
-  if (!order.items || order.items.length === 0) return 0;
+  if (!order) return 0;
+  if (!order.items || !Array.isArray(order.items) || order.items.length === 0) return 0;
 
   let totalProcesses = 0;
   let completedProcesses = 0;
 
   order.items.forEach(item => {
     // プロセス未定義のアイテムをスキップ
-    if (!item || !item.processes) return;
+    if (!item || !item.processes || !Array.isArray(item.processes)) return;
 
     totalProcesses += item.processes.length;
-    completedProcesses += (item.completed || []).length;
+    completedProcesses += (Array.isArray(item.completed) ? item.completed.length : 0);
   });
 
   return totalProcesses > 0 ? Math.round((completedProcesses / totalProcesses) * 100) : 0;
@@ -1019,6 +1020,8 @@ function renderOrders() {
     tbody.innerHTML = orders.map(o => {
       // エラーハンドリング: 個別のオーダー描画でコケても他は出す
       try {
+        if (!o) return ''; // Nullデータはスキップ
+
         const progress = calculateProgress(o);
         const progressClass = getProgressClass(progress);
 
@@ -1027,8 +1030,9 @@ function renderOrders() {
         let category = '';
 
         if (typeof CATEGORY_COLORS !== 'undefined') {
-          const boms = DB.get(DB.KEYS.BOM);
-          const bom = boms.find(b => b.productName === o.productName);
+          const boms = DB.get(DB.KEYS.BOM) || []; // BOMがnullの場合の対策
+          const productName = o.productName || '';
+          const bom = boms.find(b => b && b.productName === productName);
           category = bom ? bom.category : '';
           bgColor = CATEGORY_COLORS[category] || '#ffffff';
         }
@@ -1043,12 +1047,12 @@ function renderOrders() {
           <tr style="background-color: ${bgColor}; color: ${textColor};">
             <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
             <td>${o.orderNo || '-'}</td>
-            <td>${o.projectName}</td>
+            <td>${o.projectName || '(名称なし)'}</td>
             <td>
-                <div>${o.productName}</div>
+                <div>${o.productName || '(品名なし)'}</div>
                 ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333;">${category}</span>` : ''}
             </td>
-            <td>${o.quantity}</td>
+            <td>${o.quantity || 0}</td>
             <td>${o.color || '-'}</td>
             <td>${o.startDate || '-'}</td>
             <td style="${dueDateStyle}">${o.dueDate || '-'}</td>
@@ -1066,7 +1070,8 @@ function renderOrders() {
           `;
       } catch (e) {
         console.error('Error rendering order:', o, e);
-        return `<tr><td colspan="10" class="text-danger">Error rendering order ${o.id}</td></tr>`;
+        const errorId = o ? o.id : 'unknown';
+        return `<tr><td colspan="10" class="text-danger">描画エラー (ID: ${errorId}): データ破損の可能性があります</td></tr>`;
       }
     }).join('');
   } catch (e) {
