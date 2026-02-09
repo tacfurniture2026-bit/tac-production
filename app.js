@@ -461,7 +461,7 @@ function renderGantt() {
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
-              <span style="font-weight:600;">${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
+              <span style="font-weight:600;">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
               納期: ${formatDate(order.dueDate)}
