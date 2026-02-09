@@ -1781,8 +1781,7 @@ function importOrdersFromCsv(input) {
 
     let successCount = 0;
     let errors = [];
-    let duplicateCount = 0;
-    let newOrdersMap = new Map(); // orderNo -> orderObj
+    let processedList = []; // { type: 'create'|'update', data: obj }
 
     // 1行ずつ解析 (バリデーションと一時保存)
     for (let i = 1; i < lines.length; i++) {
@@ -1798,103 +1797,65 @@ function importOrdersFromCsv(input) {
       const startDate = cols[5];
       const dueDate = cols[6];
       const notes = [];
-      for (let n = 0; n < 10; n++) {
-        if (cols[7 + n]) {
-          notes.push({ label: `備考${n + 1}`, value: cols[7 + n] });
-        }
+      // 備考 (Note1～Note10)
+      for (let j = 7; j < 17; j++) {
+        if (cols[j]) notes.push({ label: `備考${j - 6}`, value: cols[j] });
       }
 
-      if (!projectName || !productName) {
-        errors.push({ row: i + 1, reason: '必須項目不足', rawData: line });
-        continue;
-      }
+      // 必須チェック
+      if (!orderNo || !productName) continue;
 
+      // 製品名チェック
       if (!validProductNames.includes(productName)) {
-        errors.push({ row: i + 1, reason: `品名「${productName}」のマスタ未登録`, rawData: line });
+        errors.push({ row: i + 1, reason: `製品名「${productName}」はマスタに存在しません`, rawData: line });
         continue;
       }
 
-      // 重複チェック用カウント
-      if (existingOrders.some(o => o.orderNo === orderNo)) {
-        duplicateCount++;
-      }
-
-      const productBoms = boms.filter(b => String(b.productName || '') === productName);
-      const items = productBoms.map((bom, idx) => ({
-        id: idx + 1,
-        bomName: bom.bomName,
-        partCode: bom.partCode,
-        processes: bom.processes || [],
-        completed: []
-      }));
-
-      newOrdersMap.set(orderNo, {
+      // データオブジェクト作成
+      const newOrderData = {
         orderNo,
         projectName,
         productName,
         quantity,
-        color: color || '未指定',
+        color,
         startDate,
         dueDate,
-        notes,
-        items
-      });
+        ...newOrder,
+        id: finalOrders[existingIdx].id,
+        // 進捗状況(items.completed)はリセットするか？ 
+        // 「生産指示書取り込み」なので、内容は新しいものにする＝進捗もリセットが自然。
+        // しかし items の構造が変わるため、履歴との整合性は切れる可能性あり。
+        // ここでは newOrder の items (completed=[]) を使うためリセットされる。
+      };
+      updatedCount++;
     }
+    // overwrite falseならスキップ
+  } else {
+    // 新規追加
+    newOrder.id = DB.nextId(DB.KEYS.ORDERS) + addedCount;
+    finalOrders.push(newOrder);
+    addedCount++;
+  }
+});
 
-    // 重複確認
-    let overwrite = true;
-    if (duplicateCount > 0) {
-      overwrite = confirm(`重複する指示書Noが ${duplicateCount} 件見つかりました。\n上書きしますか？\n（キャンセルを選ぶと、重複分はスキップして新規のみ登録されます）`);
-    }
+DB.save(DB.KEYS.ORDERS, finalOrders);
 
-    // 登録処理
-    const finalOrders = [...existingOrders];
-    let addedCount = 0;
-    let updatedCount = 0;
+input.value = '';
 
-    newOrdersMap.forEach((newOrder, orderNo) => {
-      const existingIdx = finalOrders.findIndex(o => o.orderNo === orderNo);
+if (errors.length > 0) {
+  showImportErrorModal(errors);
+} else {
+  let msg = `${addedCount}件を追加`;
+  if (updatedCount > 0) msg += `、${updatedCount}件を更新`;
+  msg += 'しました';
+  toast(msg, 'success');
+}
 
-      if (existingIdx !== -1) {
-        if (overwrite) {
-          // 上書き (ID維持)
-          finalOrders[existingIdx] = {
-            ...newOrder,
-            id: finalOrders[existingIdx].id,
-            // 進捗状況(items.completed)はリセットするか？ 
-            // 「生産指示書取り込み」なので、内容は新しいものにする＝進捗もリセットが自然。
-            // しかし items の構造が変わるため、履歴との整合性は切れる可能性あり。
-            // ここでは newOrder の items (completed=[]) を使うためリセットされる。
-          };
-          updatedCount++;
-        }
-        // overwrite falseならスキップ
-      } else {
-        // 新規追加
-        newOrder.id = DB.nextId(DB.KEYS.ORDERS) + addedCount;
-        finalOrders.push(newOrder);
-        addedCount++;
-      }
-    });
-
-    DB.save(DB.KEYS.ORDERS, finalOrders);
-
-    input.value = '';
-
-    if (errors.length > 0) {
-      showImportErrorModal(errors);
-    } else {
-      let msg = `${addedCount}件を追加`;
-      if (updatedCount > 0) msg += `、${updatedCount}件を更新`;
-      msg += 'しました';
-      toast(msg, 'success');
-    }
-
-    renderOrders();
-    if (typeof renderGantt === 'function') renderGantt();
+renderOrders();
+if (typeof renderGantt === 'function') renderGantt();
   };
 
-  reader.readAsText(file, 'Shift_JIS');
+reader.readAsText(file, 'Shift_JIS');
 }
 
 function deleteSelectedOrders() {
