@@ -1811,51 +1811,127 @@ function importOrdersFromCsv(input) {
         continue;
       }
 
-      // データオブジェクト作成
-      const newOrderData = {
-        orderNo,
-        projectName,
-        productName,
-        quantity,
-        color,
-        startDate,
-        dueDate,
-        ...newOrder,
-        id: finalOrders[existingIdx].id,
-        // 進捗状況(items.completed)はリセットするか？ 
-        // 「生産指示書取り込み」なので、内容は新しいものにする＝進捗もリセットが自然。
-        // しかし items の構造が変わるため、履歴との整合性は切れる可能性あり。
-        // ここでは newOrder の items (completed=[]) を使うためリセットされる。
-      };
-      updatedCount++;
+      // 既存データチェック
+      const existingIndex = existingOrders.findIndex(o => o.orderNo === orderNo);
+
+      if (existingIndex !== -1) {
+        // 既存あり -> 差分チェック
+        const existing = existingOrders[existingIndex];
+        let hasDiff = false;
+
+        if (existing.projectName !== projectName) hasDiff = true;
+        // 品名が変わると危険なので、簡易チェック。
+        // 本当は品名変更＝別物として扱うべきだが、ユーザー要望的には「修正」なので更新を試みる。
+        if (existing.productName !== productName) hasDiff = true;
+        if (existing.quantity !== quantity) hasDiff = true;
+        if (existing.color !== color) hasDiff = true;
+        if (existing.startDate !== startDate) hasDiff = true;
+        if (existing.dueDate !== dueDate) hasDiff = true;
+
+        // 備考の比較
+        const exNotes = existing.notes || [];
+        if (exNotes.length !== notes.length) {
+          hasDiff = true;
+        } else {
+          notes.forEach((n, idx) => {
+            if (!exNotes[idx] || exNotes[idx].value !== n.value) hasDiff = true;
+          });
+        }
+
+        if (hasDiff) {
+          // 差分あり -> 更新対象
+          const updateData = {
+            ...newOrderData,
+            id: existing.id, // ID引継ぎ
+            items: existing.items // 基本は既存の進捗(items)を維持
+          };
+
+          // 品名が変わった場合はBOM再展開して items をリセットする必要がある
+          if (existing.productName !== productName) {
+            const productBoms = boms.filter(b => b.productName === productName);
+            updateData.items = productBoms.map((bom, idx) => ({
+              id: idx + 1,
+              bomName: bom.bomName,
+              partCode: bom.partCode,
+              processes: bom.processes || [],
+              completed: []
+            }));
+            updateData._productChanged = true;
+          }
+
+          processedList.push({ type: 'update', data: updateData });
+        }
+      } else {
+        // 新規 -> BOM展開して追加
+        const productBoms = boms.filter(b => b.productName === productName);
+        const items = productBoms.map((bom, idx) => ({
+          id: idx + 1,
+          bomName: bom.bomName,
+          partCode: bom.partCode,
+          processes: bom.processes || [],
+          completed: []
+        }));
+
+        processedList.push({
+          type: 'create',
+          data: { ...newOrderData, items }
+        });
+      }
     }
-    // overwrite falseならスキップ
-  } else {
-    // 新規追加
-    newOrder.id = DB.nextId(DB.KEYS.ORDERS) + addedCount;
-    finalOrders.push(newOrder);
-    addedCount++;
-  }
-});
 
-DB.save(DB.KEYS.ORDERS, finalOrders);
+    // エラーモーダル表示
+    if (errors.length > 0) {
+      showImportErrorModal(errors);
+    }
 
-input.value = '';
+    if (processedList.length === 0 && errors.length === 0) {
+      toast('取り込み対象のデータがありませんでした', 'info');
+      input.value = '';
+      return;
+    }
 
-if (errors.length > 0) {
-  showImportErrorModal(errors);
-} else {
-  let msg = `${addedCount}件を追加`;
-  if (updatedCount > 0) msg += `、${updatedCount}件を更新`;
-  msg += 'しました';
-  toast(msg, 'success');
-}
+    // 変更適用
+    let updatedCount = 0;
+    let createdCount = 0;
+    // ID発行用
+    let nextId = DB.nextId(DB.KEYS.ORDERS);
 
-renderOrders();
-if (typeof renderGantt === 'function') renderGantt();
+    processedList.forEach(action => {
+      if (action.type === 'update') {
+        const order = action.data;
+        const targetIndex = existingOrders.findIndex(o => o.id === order.id);
+        if (targetIndex !== -1) {
+          // 更新 (データ入れ替え)
+          // _productChanged フラグは保存しないので削除（もしあれば）
+          delete order._productChanged;
+          existingOrders[targetIndex] = order;
+          updatedCount++;
+        }
+      } else if (action.type === 'create') {
+        // 新規作成
+        const order = action.data;
+        order.id = nextId++;
+        existingOrders.push(order);
+        createdCount++;
+      }
+    });
+
+    DB.save(DB.KEYS.ORDERS, existingOrders);
+
+    let msg = [];
+    if (createdCount > 0) msg.push(`新規登録: ${createdCount}件`);
+    if (updatedCount > 0) msg.push(`既存更新: ${updatedCount}件`);
+
+    if (msg.length > 0) {
+      toast('インポート完了: ' + msg.join(', '), 'success');
+      renderOrders();
+      if (typeof renderGantt === 'function') renderGantt();
+    }
+
+    input.value = ''; // Reset input
   };
-
-reader.readAsText(file, 'Shift_JIS');
+  // Shift_JISで読み込む（エクセルCSV対策）
+  reader.readAsText(file, 'Shift_JIS');
 }
 
 function deleteSelectedOrders() {
