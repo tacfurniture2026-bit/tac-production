@@ -300,55 +300,56 @@ function renderDashboard() {
   $('#stat-complete').textContent = complete;
   $('#stat-defects').textContent = defects.length;
 
-  // 緊急案件
-  const urgentContainer = $('#urgent-orders');
+  // 緊急案件 (カテゴリ別)
   const urgentOrders = orders.filter(o => {
     if (!o.dueDate) return false;
     const days = Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
     return days <= 3 && calculateProgress(o) < 100;
   });
 
-  if (urgentOrders.length === 0) {
-    urgentContainer.innerHTML = '<p class="text-muted">緊急案件はありません</p>';
-  } else {
-    urgentContainer.innerHTML = urgentOrders.map(o => {
+  const boms = DB.get(DB.KEYS.BOM) || [];
+
+  // カテゴリ分類
+  const paoOrders = [];
+  const gridOrders = [];
+  const otherOrders = [];
+
+  urgentOrders.forEach(o => {
+    const bom = boms.find(b => b.productName === o.productName);
+    const category = bom ? (bom.category || '') : '';
+
+    // キーワード判定 (BOMのカテゴリ または 品名から推測)
+    if (category.includes('PAO') || o.productName.includes('PAO')) {
+      paoOrders.push(o);
+    } else if (category.includes('GRID') || o.productName.includes('GRID')) {
+      gridOrders.push(o);
+    } else {
+      otherOrders.push(o);
+    }
+  });
+
+  const generateUrgentHtml = (list) => {
+    if (list.length === 0) return '<p class="text-muted">緊急案件はありません</p>';
+    return list.map(o => {
       const days = Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+      const daysClass = days < 0 ? 'text-danger' : (days <= 1 ? 'text-warning' : '');
       return `
         <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
           <div>
             <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
             <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName} × ${o.quantity}</div>
           </div>
+          <div class="${daysClass}" style="font-weight: bold;">
             ${days <= 0 ? '今日' : `あと${days}日`}
           </div>
         </div>
       `;
     }).join('');
-  }
+  };
 
-  // 最近の指示書
-  const recentContainer = $('#recent-orders');
-  if (orders.length === 0) {
-    recentContainer.innerHTML = '<p class="text-muted">指示書がありません</p>';
-  } else {
-    recentContainer.innerHTML = orders.slice(0, 5).map(o => {
-      const progress = calculateProgress(o);
-      return `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
-          <div>
-            <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
-            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName}</div>
-          </div>
-          <div class="progress-cell">
-            <span class="progress-text">${progress}%</span>
-            <div class="progress-bar">
-              <div class="progress-bar-fill" style="width: ${progress}%;"></div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
+  $('#urgent-orders-pao').innerHTML = generateUrgentHtml(paoOrders);
+  $('#urgent-orders-grid').innerHTML = generateUrgentHtml(gridOrders);
+  $('#urgent-orders-other').innerHTML = generateUrgentHtml(otherOrders);
 }
 
 
