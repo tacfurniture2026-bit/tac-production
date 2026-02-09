@@ -1036,26 +1036,31 @@ function renderOrders() {
           console.warn('getProgressClass error', e);
         }
 
-        // カテゴリ色判定 (Global CATEGORY_COLORS presence check)
-        let bgColor = '#ffffff';
+        // カテゴリ色判定
+        let rowStyle = '';
         let category = '';
 
         if (typeof CATEGORY_COLORS !== 'undefined') {
-          const boms = DB.get(DB.KEYS.BOM) || []; // BOMがnullの場合の対策
+          const boms = DB.get(DB.KEYS.BOM) || [];
           const productName = o.productName || '';
           const bom = boms.find(b => b && b.productName === productName);
           category = bom ? bom.category : '';
-          bgColor = CATEGORY_COLORS[category] || '#ffffff';
+
+          const catColor = CATEGORY_COLORS[category];
+          if (catColor) {
+            // カテゴリ色がある場合: パステル背景＋濃い文字色で固定
+            rowStyle = `background-color: ${catColor}; color: #1e293b;`;
+          } else {
+            // カテゴリ色がない場合: スタイルを指定せずCSS(ダークモード対応)に任せる
+            rowStyle = '';
+          }
         }
 
         const isLate = o.dueDate && new Date(o.dueDate) < new Date() && progress < 100;
         const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
 
-        // 文字色調整
-        const textColor = bgColor === '#ffffff' ? 'inherit' : '#1e293b';
-
         return `
-          <tr style="background-color: ${bgColor}; color: ${textColor};">
+          <tr style="${rowStyle}">
             <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
             <td>${o.orderNo || '-'}</td>
             <td>${o.projectName || '(名称なし)'}</td>
@@ -1073,8 +1078,8 @@ function renderOrders() {
               </div>
             </td>
             <td>
-              <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})" style="color: ${textColor}; border-color: ${textColor};">編集</button>
-              <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製" style="color: ${textColor};">❐</button>
+              <button class="btn btn-sm btn-outline" onclick="editOrder(${o.id})" style="border-color: currentColor;">編集</button>
+              <button class="btn btn-sm btn-icon" onclick="copyOrder(${o.id})" title="複製">❐</button>
               <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">削除</button>
             </td>
           </tr>
