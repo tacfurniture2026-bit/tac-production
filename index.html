@@ -117,7 +117,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_04"></script>
-    <script src="app.js?v=FORCE_STYLE_FIX_20260209_1425"></script>
+    <script src="app.js?v=FORCE_SCROLL_FIX_20260209_1430"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -143,7 +143,7 @@
 <body>
     <div
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.62</span><br>
+        <span id="app-version-display">v4.63</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -367,7 +367,6 @@
                     <button class="filter-btn" data-filter="pao_incomplete">PAO(未完)</button>
                     <button class="filter-btn" data-filter="grid_incomplete">GRID(未完)</button>
                     <button class="filter-btn" data-filter="other_incomplete">その他(未完)</button>
-                    <div style="flex-basis: 100%; height: 4px;"></div> <!-- 改行用スペーサー -->
                     <button class="filter-btn" data-filter="progress">進行中</button>
                     <button class="filter-btn" data-filter="complete">完了</button>
                     <button class="filter-btn" data-filter="pending">未着手</button>
