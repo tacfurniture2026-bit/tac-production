@@ -1775,23 +1775,60 @@ function downloadErrorCsv() {
 
 
 
+// CSV読み込み (エンコーディング自動判別)
 function importOrdersFromCsv(input) {
   const file = input.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const text = e.target.result;
-    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+  const tryRead = (encoding) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ text: e.target.result, encoding });
+      reader.readAsText(file, encoding);
+    });
+  };
 
-    // ヘッダー行をスキップ
+  // まずUTF-8で試行し、ヘッダーが正しく読めなければShift_JISを試す
+  tryRead('UTF-8').then(({ text, encoding }) => {
+    let lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) {
       toast('データが含まれていません', 'warning');
+      input.value = '';
       return;
     }
 
+    // BOM削除 (UTF-8の場合)
+    if (lines[0].charCodeAt(0) === 0xFEFF) {
+      lines[0] = lines[0].slice(1);
+    }
+
+    // ヘッダーチェック
+    let firstCell = lines[0].split(',')[0].trim().replace(/^"|"$/g, '').toLowerCase();
+    // 予期するヘッダー先頭キーワード
+    const expectedHeaders = ['id', 'orderno', '特注no.', '特注no'];
+
+    // キーワードが含まれているか確認 (完全一致または前方一致)
+    const isValidHeader = expectedHeaders.some(h => firstCell.includes(h));
+
+    if (!isValidHeader) {
+      // UTF-8でダメならShift_JISで再試行
+      // console.log('UTF-8 header mismatch, retrying as Shift_JIS...');
+      tryRead('Shift_JIS').then(result => processCsv(result.text, input));
+    } else {
+      processCsv(text, input);
+    }
+  });
+
+  function processCsv(text, input) {
+    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+
+    // 再度BOMケア
+    if (lines.length > 0 && lines[0].charCodeAt(0) === 0xFEFF) {
+      lines[0] = lines[0].slice(1);
+    }
+
     // ヘッダー判定
-    const headerCols = lines[0].split(',').map(c => c.trim().toLowerCase());
+    const headerCols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/^"|"$/g, ''));
     let colMap = {
       orderNo: 0,
       projectName: 1,
@@ -1803,8 +1840,8 @@ function importOrdersFromCsv(input) {
       notesStart: 7
     };
 
-    // エクスポートされたCSV (id列が先頭にある) の場合
-    if (headerCols[0] === 'id' || headerCols[0] === '"id"') {
+    // エクスポート形式判定 (先頭が 'id')
+    if (headerCols[0] === 'id') {
       colMap = {
         orderNo: 1,
         projectName: 2,
@@ -1813,9 +1850,7 @@ function importOrdersFromCsv(input) {
         color: 5,
         startDate: 6,
         dueDate: 7,
-        notesStart: 10 // id, orderNo, project, product, qty, color, start, due, progress, status, note1...
-        // Export format: id, orderNo, project, product, qty, color, start, due, progress, status, note1...
-        // Indices: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10...
+        notesStart: 10
       };
     }
 
@@ -1823,16 +1858,15 @@ function importOrdersFromCsv(input) {
     const validProductNames = [...new Set(boms.map(b => String(b.productName || '')))];
     const existingOrders = DB.get(DB.KEYS.ORDERS);
 
-    let successCount = 0;
     let errors = [];
     let processedList = []; // { type: 'create'|'update', data: obj }
 
-    // 1行ずつ解析 (バリデーションと一時保存)
+    // 1行ずつ解析
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      // 単純splitだとダブルクォート内のカンマに対応できないが、今回は簡易実装
       const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
 
+      // 簡易的な列数チェック
       if (cols.length < 5) continue;
 
       const orderNo = cols[colMap.orderNo];
@@ -1842,121 +1876,85 @@ function importOrdersFromCsv(input) {
       const color = cols[colMap.color];
       const startDate = cols[colMap.startDate];
       const dueDate = cols[colMap.dueDate];
-      const notes = [];
 
-      // 備考 (Note1～Note10)
+      const notes = [];
       for (let j = 0; j < 10; j++) {
         const val = cols[colMap.notesStart + j];
         if (val) notes.push({ label: `備考${j + 1}`, value: val });
       }
 
-      // 必須チェック
+      // 必須＆マスタチェック
       if (!orderNo || !productName) continue;
-
-      // 製品名チェック
       if (!validProductNames.includes(productName)) {
-        errors.push({ row: i + 1, reason: `製品名「${productName}」はマスタに存在しません`, rawData: line });
+        errors.push({ row: i + 1, reason: `製品名「${productName}」未登録`, rawData: line });
         continue;
       }
 
-      // 既存データチェック
-      const existingIndex = existingOrders.findIndex(o => o.orderNo === orderNo);
+      // --- 差分チェック & リスト作成処理 (既存ロジック) ---
+      const newOrderData = {
+        orderNo, projectName, productName, quantity, color, startDate, dueDate, notes
+      };
 
+      const existingIndex = existingOrders.findIndex(o => o.orderNo === orderNo);
       if (existingIndex !== -1) {
-        // 既存あり -> 差分チェック
         const existing = existingOrders[existingIndex];
         let hasDiff = false;
 
         if (existing.projectName !== projectName) hasDiff = true;
-        // 品名が変わると危険なので、簡易チェック。
-        // 本当は品名変更＝別物として扱うべきだが、ユーザー要望的には「修正」なので更新を試みる。
         if (existing.productName !== productName) hasDiff = true;
         if (existing.quantity !== quantity) hasDiff = true;
-        if (existing.color !== color) hasDiff = true;
-        if (existing.startDate !== startDate) hasDiff = true;
-        if (existing.dueDate !== dueDate) hasDiff = true;
+        if (existing.color !== color) hasDiff = true; // color undefined対策はDB読み込み時になされている前提
+        if ((existing.startDate || '') !== (startDate || '')) hasDiff = true; // 日付の空文字・Null対策
+        if ((existing.dueDate || '') !== (dueDate || '')) hasDiff = true;
 
-        // 備考の比較
         const exNotes = existing.notes || [];
-        if (exNotes.length !== notes.length) {
-          hasDiff = true;
-        } else {
+        if (exNotes.length !== notes.length) hasDiff = true;
+        else {
           notes.forEach((n, idx) => {
             if (!exNotes[idx] || exNotes[idx].value !== n.value) hasDiff = true;
           });
         }
 
         if (hasDiff) {
-          // 差分あり -> 更新対象
-          const updateData = {
-            ...newOrderData,
-            id: existing.id, // ID引継ぎ
-            items: existing.items // 基本は既存の進捗(items)を維持
-          };
-
-          // 品名が変わった場合はBOM再展開して items をリセットする必要がある
+          const updateData = { ...newOrderData, id: existing.id, items: existing.items };
           if (existing.productName !== productName) {
             const productBoms = boms.filter(b => b.productName === productName);
             updateData.items = productBoms.map((bom, idx) => ({
-              id: idx + 1,
-              bomName: bom.bomName,
-              partCode: bom.partCode,
-              processes: bom.processes || [],
-              completed: []
+              id: idx + 1, bomName: bom.bomName, partCode: bom.partCode, processes: bom.processes || [], completed: []
             }));
-            updateData._productChanged = true;
           }
-
           processedList.push({ type: 'update', data: updateData });
         }
       } else {
-        // 新規 -> BOM展開して追加
         const productBoms = boms.filter(b => b.productName === productName);
         const items = productBoms.map((bom, idx) => ({
-          id: idx + 1,
-          bomName: bom.bomName,
-          partCode: bom.partCode,
-          processes: bom.processes || [],
-          completed: []
+          id: idx + 1, bomName: bom.bomName, partCode: bom.partCode, processes: bom.processes || [], completed: []
         }));
-
-        processedList.push({
-          type: 'create',
-          data: { ...newOrderData, items }
-        });
+        processedList.push({ type: 'create', data: { ...newOrderData, items } });
       }
     }
 
-    // エラーモーダル表示
-    if (errors.length > 0) {
-      showImportErrorModal(errors);
-    }
+    // 結果適用
+    if (errors.length > 0) showImportErrorModal(errors);
 
     if (processedList.length === 0 && errors.length === 0) {
-      toast('取り込み対象のデータがありませんでした', 'info');
+      toast('取込データなし（変更なし）', 'info');
       input.value = '';
       return;
     }
 
-    // 変更適用
     let updatedCount = 0;
     let createdCount = 0;
-    // ID発行用
     let nextId = DB.nextId(DB.KEYS.ORDERS);
 
     processedList.forEach(action => {
       if (action.type === 'update') {
-        const order = action.data;
-        const targetIndex = existingOrders.findIndex(o => o.id === order.id);
-        if (targetIndex !== -1) {
-          // 更新 (データ入れ替え)
-          // _productChanged フラグは保存しないので削除（もしあれば）
-          delete order._productChanged;
-          existingOrders[targetIndex] = order;
+        const idx = existingOrders.findIndex(o => o.id === action.data.id);
+        if (idx !== -1) {
+          existingOrders[idx] = action.data;
           updatedCount++;
         }
-      } else if (action.type === 'create') {
-        // 新規作成
+      } else {
         const order = action.data;
         order.id = nextId++;
         existingOrders.push(order);
@@ -1964,22 +1962,14 @@ function importOrdersFromCsv(input) {
       }
     });
 
-    DB.save(DB.KEYS.ORDERS, existingOrders);
-
-    let msg = [];
-    if (createdCount > 0) msg.push(`新規登録: ${createdCount}件`);
-    if (updatedCount > 0) msg.push(`既存更新: ${updatedCount}件`);
-
-    if (msg.length > 0) {
-      toast('インポート完了: ' + msg.join(', '), 'success');
+    if (updatedCount > 0 || createdCount > 0) {
+      DB.save(DB.KEYS.ORDERS, existingOrders);
+      toast(`インポート完了: 新規${createdCount}, 更新${updatedCount}`, 'success');
       renderOrders();
       if (typeof renderGantt === 'function') renderGantt();
     }
-
-    input.value = ''; // Reset input
-  };
-  // Shift_JISで読み込む（エクセルCSV対策）
-  reader.readAsText(file, 'Shift_JIS');
+    input.value = '';
+  }
 }
 
 function deleteSelectedOrders() {
