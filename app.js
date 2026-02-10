@@ -1788,31 +1788,39 @@ function importOrdersFromCsv(input) {
     });
   };
 
-  // まずUTF-8で試行し、ヘッダーが正しく読めなければShift_JISを試す
+  // まずUTF-8で試行
   tryRead('UTF-8').then(({ text, encoding }) => {
+    // 文字化け判定:  (U+FFFD) が含まれている場合、またはヘッダーが期待通りでない場合はShift_JISとみなす
+    // Excelで保存したShift_JISファイルは、UTF-8で読むと置換文字()が含まれる可能性が高い
+    const hasReplacementChar = text.includes('\uFFFD');
+
     let lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) {
+      if (hasReplacementChar) {
+        // データなしに見えるが文字化けのせいかもしれない
+        tryRead('Shift_JIS').then(result => processCsv(result.text, input));
+        return;
+      }
       toast('データが含まれていません', 'warning');
       input.value = '';
       return;
     }
 
     // BOM削除 (UTF-8の場合)
-    if (lines[0].charCodeAt(0) === 0xFEFF) {
+    if (lines.length > 0 && lines[0].charCodeAt(0) === 0xFEFF) {
       lines[0] = lines[0].slice(1);
     }
 
     // ヘッダーチェック
     let firstCell = lines[0].split(',')[0].trim().replace(/^"|"$/g, '').toLowerCase();
-    // 予期するヘッダー先頭キーワード
     const expectedHeaders = ['id', 'orderno', '特注no.', '特注no'];
 
-    // キーワードが含まれているか確認 (完全一致または前方一致)
+    // ヘッダーキーワード確認
     const isValidHeader = expectedHeaders.some(h => firstCell.includes(h));
 
-    if (!isValidHeader) {
-      // UTF-8でダメならShift_JISで再試行
-      // console.log('UTF-8 header mismatch, retrying as Shift_JIS...');
+    // 判定ロジック強化: ヘッダー不一致 OR データ中に文字化け()がある場合 -> Shift_JISで再試行
+    if (!isValidHeader || hasReplacementChar) {
+      // console.log('Encoding mismatch detected (Header invalid or Replacement char found). Retrying as Shift_JIS...');
       tryRead('Shift_JIS').then(result => processCsv(result.text, input));
     } else {
       processCsv(text, input);
