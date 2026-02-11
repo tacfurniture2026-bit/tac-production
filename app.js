@@ -1004,23 +1004,23 @@ function renderOrders() {
     // デバッグ: 強制的に全件表示（フィルタ・ソート無効化）
     let orders = [...allOrders];
 
-    /* 
-    // 一時的に無効化
+    // 完了分を非表示にするフィルタリング
     if (!showCompletedOrders) {
       orders = orders.filter(o => {
-          const p = calculateProgress(o);
-          return typeof p === 'number' && p < 100;
+        const p = calculateProgress(o);
+        // 進捗が100未満、または計算できない場合は表示
+        return typeof p !== 'number' || p < 100;
       });
     }
-    
+
     orders.sort((a, b) => {
+      // 納期が設定されていないものは後ろへ
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       const dateA = new Date(a.dueDate).getTime();
       const dateB = new Date(b.dueDate).getTime();
       return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
     });
-    */
 
     const tbody = $('#orders-body');
     if (!tbody) {
