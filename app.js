@@ -1079,7 +1079,7 @@ function renderOrders() {
         const dueDateStyle = isLate ? 'color: var(--color-danger); font-weight: bold;' : '';
 
         return `
-          <tr style="${rowStyle}">
+          <tr id="order-row-${o.id}" style="${rowStyle}">
             <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
             <td>${o.orderNo || '-'}</td>
             <td>${o.projectName || '(名称なし)'}</td>
