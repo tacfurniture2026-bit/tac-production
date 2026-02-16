@@ -1286,6 +1286,179 @@ function deleteBom(id) {
   renderBom();
 }
 
+function exportBomsToCsv() {
+  const boms = DB.get(DB.KEYS.BOM);
+  if (boms.length === 0) {
+    toast('出力するBOMデータがありません', 'warning');
+    return;
+  }
+
+  // ヘッダー
+  let csvContent = 'id,productName,category,bomName,partCode,processes,note\n';
+
+  boms.forEach(b => {
+    const processes = (b.processes || []).join('|'); // パイプ区切りで工程を結合
+    const note = (b.note || '').replace(/"/g, '""'); // ダブルクォートエスケープ
+    const row = [
+      b.id,
+      `"${b.productName || ''}"`,
+      `"${b.category || ''}"`,
+      `"${b.bomName || ''}"`,
+      `"${b.partCode || ''}"`,
+      `"${processes}"`,
+      `"${note}"`
+    ].join(',');
+    csvContent += row + '\n';
+  });
+
+  // BOM付与してダウンロード (UTF-8)
+  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `bom_export_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function importBomsFromCsv(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const tryRead = (encoding) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ text: e.target.result, encoding });
+      reader.readAsText(file, encoding);
+    });
+  };
+
+  tryRead('UTF-8').then(({ text }) => {
+    const hasReplacementChar = text.includes('\uFFFD');
+    let lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+
+    if (lines.length < 2) {
+      if (hasReplacementChar) {
+        tryRead('Shift_JIS').then(result => processBomCsv(result.text, input));
+        return;
+      }
+      toast('データが含まれていません', 'warning');
+      input.value = '';
+      return;
+    }
+
+    if (lines.length > 0 && lines[0].charCodeAt(0) === 0xFEFF) {
+      lines[0] = lines[0].slice(1);
+    }
+
+    // ヘッダーチェック (簡易: id, productNameが含まれているか)
+    const headerRow = lines[0].toLowerCase();
+    const isValidHeader = headerRow.includes('id') && headerRow.includes('productname');
+
+    if (!isValidHeader || hasReplacementChar) {
+      tryRead('Shift_JIS').then(result => processBomCsv(result.text, input));
+    } else {
+      processBomCsv(text, input);
+    }
+  });
+
+  function processBomCsv(text, input) {
+    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+    // 再度BOMケア
+    if (lines.length > 0 && lines[0].charCodeAt(0) === 0xFEFF) {
+      lines[0] = lines[0].slice(1);
+    }
+
+    const header = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/^"|"$/g, ''));
+    // マッピング
+    const colMap = {
+      id: header.indexOf('id'),
+      productName: header.indexOf('productname'), // または日本語ヘッダー対応 "品名"
+      category: header.indexOf('category'),
+      bomName: header.indexOf('bomname'),
+      partCode: header.indexOf('partcode'),
+      processes: header.indexOf('processes'),
+      note: header.indexOf('note')
+    };
+
+    // 日本語ヘッダー対応のフォールバック
+    if (colMap.productName === -1) colMap.productName = header.indexOf('品名');
+    if (colMap.category === -1) colMap.category = header.indexOf('カテゴリ');
+    if (colMap.bomName === -1) colMap.bomName = header.indexOf('bom名');
+    if (colMap.partCode === -1) colMap.partCode = header.indexOf('部材cd');
+    if (colMap.processes === -1) colMap.processes = header.indexOf('工程');
+    if (colMap.note === -1) colMap.note = header.indexOf('備考');
+
+
+    if (colMap.productName === -1 || colMap.bomName === -1) {
+      toast('CSVヘッダーに必要な列（productName/品名, bomName/BOM名）が見つかりません', 'error');
+      input.value = '';
+      return;
+    }
+
+    const currentBoms = DB.get(DB.KEYS.BOM);
+    let nextId = DB.nextId(DB.KEYS.BOM);
+    let updatedCount = 0;
+    let createdCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      // 簡易CSVパース (ダブルクォート内のカンマは無視できない簡易版... 実運用ではライブラリ推奨だが既存コードに合わせる)
+      // ここでは importOrdersFromCsv と同じ正規表現置換アプローチを使用
+      // しかし工程カラムにパイプなどが含まれるため、単純splitでOKなケースが多いが、備考にカンマがあるとずれる
+      // 簡易パース: 
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+
+      if (cols.length < 3) continue;
+
+      const idVal = parseInt(cols[colMap.id]);
+      const productName = cols[colMap.productName];
+      const category = colMap.category !== -1 ? cols[colMap.category] : '';
+      const bomName = cols[colMap.bomName];
+      const partCode = colMap.partCode !== -1 ? cols[colMap.partCode] : '';
+      const processesRaw = colMap.processes !== -1 ? cols[colMap.processes] : '';
+      const note = colMap.note !== -1 ? cols[colMap.note] : '';
+
+      if (!productName || !bomName) continue;
+
+      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+
+      // 重複チェック (ID または 品名+BOM名)
+      let existingIdx = -1;
+
+      if (!isNaN(idVal) && idVal > 0) {
+        existingIdx = currentBoms.findIndex(b => b.id === idVal);
+      }
+
+      // IDで見つからなければ複合キーで探す
+      if (existingIdx === -1) {
+        existingIdx = currentBoms.findIndex(b => b.productName === productName && b.bomName === bomName);
+      }
+
+      const newBomData = {
+        productName, category, bomName, partCode, processes, note
+      };
+
+      if (existingIdx !== -1) {
+        // 更新
+        currentBoms[existingIdx] = { ...currentBoms[existingIdx], ...newBomData };
+        updatedCount++;
+      } else {
+        // 新規
+        currentBoms.push({ id: nextId++, ...newBomData });
+        createdCount++;
+      }
+    }
+
+    DB.save(DB.KEYS.BOM, currentBoms);
+    toast(`BOMインポート完了: 新規${createdCount}件, 更新${updatedCount}件`, 'success');
+    renderBom();
+    input.value = '';
+  }
+}
+
+
 // ========================================
 // 賃率管理
 // ========================================
