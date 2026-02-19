@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="80" fill="#FFFFFF"/>
+  <rect x="8" y="8" width="496" height="496" rx="72" fill="none" stroke="#E5E7EB" stroke-width="2"/>
+  <!-- Factory Building -->
+  <rect x="120" y="220" width="272" height="180" rx="8" fill="#0B2D48"/>
+  <!-- Chimney -->
+  <rect x="160" y="160" width="40" height="60" rx="4" fill="#0B2D48"/>
+  <rect x="220" y="140" width="36" height="80" rx="4" fill="#0B2D48"/>
+  <!-- Smoke -->
+  <circle cx="180" cy="140" r="12" fill="#9CA3AF" opacity="0.5"/>
+  <circle cx="195" cy="120" r="10" fill="#9CA3AF" opacity="0.4"/>
+  <circle cx="238" cy="115" r="14" fill="#9CA3AF" opacity="0.5"/>
+  <circle cx="255" cy="95" r="11" fill="#9CA3AF" opacity="0.35"/>
+  <!-- Windows -->
+  <rect x="148" y="250" width="44" height="36" rx="4" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="208" y="250" width="44" height="36" rx="4" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="268" y="250" width="44" height="36" rx="4" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="328" y="250" width="44" height="36" rx="4" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Door -->
+  <rect x="224" y="328" width="64" height="72" rx="6" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Gear Icon -->
+  <g transform="translate(340, 170)">
+    <circle cx="0" cy="0" r="28" fill="#0B2D48" stroke="#FFFFFF" stroke-width="3"/>
+    <circle cx="0" cy="0" r="10" fill="#FFFFFF"/>
+    <!-- Gear teeth -->
+    <rect x="-5" y="-35" width="10" height="14" rx="2" fill="#0B2D48"/>
+    <rect x="-5" y="21" width="10" height="14" rx="2" fill="#0B2D48"/>
+    <rect x="-35" y="-5" width="14" height="10" rx="2" fill="#0B2D48"/>
+    <rect x="21" y="-5" width="14" height="10" rx="2" fill="#0B2D48"/>
+    <rect x="16" y="-27" width="10" height="14" rx="2" fill="#0B2D48" transform="rotate(45 21 -20)"/>
+    <rect x="-26" y="13" width="10" height="14" rx="2" fill="#0B2D48" transform="rotate(45 -21 20)"/>
+    <rect x="13" y="16" width="14" height="10" rx="2" fill="#0B2D48" transform="rotate(45 20 21)"/>
+    <rect x="-27" y="-26" width="14" height="10" rx="2" fill="#0B2D48" transform="rotate(45 -20 -21)"/>
+  </g>
+  <!-- TAC Text -->
+  <text x="256" y="435" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="36" fill="#0B2D48" letter-spacing="4">TAC</text>
+</svg>
