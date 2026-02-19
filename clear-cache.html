@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャッシュクリア - TAC生産管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #0B2D48;
+        }
+
+        p {
+            color: #64748b;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-weight: 600;
+        }
+
+        .running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .done {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            background: #0B2D48;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 16px;
+        }
+
+        .log {
+            text-align: left;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 0.75rem;
+            color: #475569;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🔧 キャッシュクリア</h1>
+        <p>スマホで最新バージョンが反映されない場合、<br>このページでキャッシュを強制クリアします。</p>
+        <div id="status" class="status running">⏳ キャッシュをクリア中...</div>
+        <div id="log" class="log"></div>
+        <a id="go-btn" class="btn" style="display:none;" href="./index.html">✅ アプリに戻る</a>
+    </div>
+    <script>
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const goBtn = document.getElementById('go-btn');
+
+        function log(msg) {
+            logEl.innerHTML += msg + '<br>';
+            console.log(msg);
+        }
+
+        async function clearEverything() {
+            try {
+                // 1. Service Worker解除
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`Service Worker: ${registrations.length}件検出`);
+                    for (const reg of registrations) {
+                        await reg.unregister();
+                        log(`  → ${reg.scope} を解除`);
+                    }
+                } else {
+                    log('Service Worker: 非対応');
+                }
+
+                // 2. Cache API クリア
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    log(`Cache API: ${names.length}件検出`);
+                    for (const name of names) {
+                        await caches.delete(name);
+                        log(`  → ${name} を削除`);
+                    }
+                } else {
+                    log('Cache API: 非対応');
+                }
+
+                // 3. LocalStorage は維持（データ消失防止）
+                log('LocalStorage: 保持（データ保護のため）');
+
+                // 4. 新しいSWを登録（自己解除型）
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const reg = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+                        log('自己解除型SWを登録 → キャッシュ完全クリア');
+                        // すぐに解除
+                        setTimeout(async () => {
+                            await reg.unregister();
+                            log('自己解除型SWを解除完了');
+                        }, 2000);
+                    } catch (e) {
+                        log('SW登録スキップ: ' + e.message);
+                    }
+                }
+
+                statusEl.className = 'status done';
+                statusEl.textContent = '✅ キャッシュクリア完了！';
+                goBtn.style.display = 'inline-block';
+                log('---');
+                log('完了！「アプリに戻る」をタップしてください。');
+
+            } catch (err) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ エラー: ' + err.message;
+                log('エラー: ' + err.message);
+                goBtn.style.display = 'inline-block';
+            }
+        }
+
+        clearEverything();
+    </script>
+</body>
+
+</html>
