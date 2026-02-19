@@ -785,13 +785,14 @@ function selectFromQrData(projectName, productName, bomName) {
 function updateQrItemSelect() {
   const orderId = parseInt($('#qr-order').value);
   const itemSelect = $('#qr-item');
-  const processSelect = $('#qr-process');
+  const processContainer = $('#qr-process-buttons');
+  const processHidden = $('#qr-process');
 
   if (!orderId) {
     itemSelect.innerHTML = '<option value="">先に指示書を選択</option>';
     itemSelect.disabled = true;
-    processSelect.innerHTML = '<option value="">先に部材を選択</option>';
-    processSelect.disabled = true;
+    if (processContainer) processContainer.innerHTML = '<p class="text-muted" style="width:100%;">先に部材を選択してください</p>';
+    if (processHidden) processHidden.value = '';
     return;
   }
 
@@ -808,11 +809,14 @@ function updateQrItemSelect() {
 function updateQrProcessSelect() {
   const orderId = parseInt($('#qr-order').value);
   const itemId = parseInt($('#qr-item').value);
-  const processSelect = $('#qr-process');
+  const processContainer = $('#qr-process-buttons');
+  const processHidden = $('#qr-process');
+
+  if (!processContainer) return;
 
   if (!orderId || !itemId) {
-    processSelect.innerHTML = '<option value="">先に部材を選択</option>';
-    processSelect.disabled = true;
+    processContainer.innerHTML = '<p class="text-muted" style="width:100%;">先に部材を選択してください</p>';
+    if (processHidden) processHidden.value = '';
     return;
   }
 
@@ -820,12 +824,45 @@ function updateQrProcessSelect() {
   const order = orders.find(o => o.id === orderId);
   const item = order?.items?.find(i => i.id === itemId);
 
-  if (item) {
-    const uncompletedProcesses = item.processes.filter(p => !(item.completed || []).includes(p));
-    processSelect.innerHTML = '<option value="">選択してください</option>' +
-      uncompletedProcesses.map(p => `<option value="${p}">${p}</option>`).join('');
-    processSelect.disabled = false;
+  if (!item || !item.processes || item.processes.length === 0) {
+    processContainer.innerHTML = '<p class="text-muted" style="width:100%;">工程がありません</p>';
+    if (processHidden) processHidden.value = '';
+    return;
   }
+
+  const completed = item.completed || [];
+
+  // ボタンで工程を表示
+  processContainer.innerHTML = item.processes.map(p => {
+    const isCompleted = completed.includes(p);
+    const cls = isCompleted ? 'process-btn completed' : 'process-btn';
+    const label = isCompleted ? `✓ ${p}` : p;
+    const disabled = isCompleted ? 'disabled' : '';
+    return `<button type="button" class="${cls}" data-process="${p}" ${disabled} onclick="selectProcess(this, '${p.replace(/'/g, "\\\\'")}')">${label}</button>`;
+  }).join('');
+
+  if (processHidden) processHidden.value = '';
+
+  // 未完了が1つだけなら自動選択
+  const uncompleted = item.processes.filter(p => !completed.includes(p));
+  if (uncompleted.length === 1) {
+    const btn = processContainer.querySelector(`[data-process="${uncompleted[0]}"]`);
+    if (btn) selectProcess(btn, uncompleted[0]);
+  }
+}
+
+// 工程ボタン選択
+function selectProcess(btn, processName) {
+  // 他のボタンの選択を解除
+  const container = btn.closest('.process-btn-grid');
+  if (container) {
+    container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
+  }
+  btn.classList.add('selected');
+
+  // hidden inputに値をセット
+  const processHidden = $('#qr-process');
+  if (processHidden) processHidden.value = processName;
 }
 
 function registerProgress(orderId, itemId, processName) {
