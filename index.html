@@ -22,7 +22,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=MOBILE_UI_20260220">
+    <link rel="stylesheet" href="styles.css?v=MOBILE_FIX_20260220_0820">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -117,7 +117,7 @@
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
     <script src="data.js?v=20240205_FORCE_04"></script>
-    <script src="app.js?v=MOBILE_UI_20260220_0740"></script>
+    <script src="app.js?v=QR_FIX_20260220_0820"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -141,9 +141,9 @@
 </head>
 
 <body>
-    <div
+    <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.72</span><br>
+        <span id="app-version-display">v4.73</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>

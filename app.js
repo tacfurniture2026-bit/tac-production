@@ -713,31 +713,98 @@ function onQrCodeScanned(decodedText) {
 
   if (resultDiv) resultDiv.style.display = 'block';
 
-  // QRコードのフォーマットをパース
-  // 期待フォーマット: "現場名|品名|部材コード" または "現場名,品名,部材コード"
-  const parts = decodedText.split(/[|,\t]/);
+  // QRコードのフォーマットを柔軟にパース
+  let projectName = '';
+  let productName = '';
+  let bomName = '';
+  let parsed = false;
 
-  if (parts.length >= 3) {
-    const projectName = parts[0].trim();
-    const productName = parts[1].trim();
-    const bomName = parts[2].trim();
-
-    if (dataDiv) {
-      dataDiv.innerHTML = `
-        <div><strong>現場名:</strong> ${projectName}</div>
-        <div><strong>品名:</strong> ${productName}</div>
-        <div><strong>部材:</strong> ${bomName}</div>
-      `;
+  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
+  try {
+    const json = JSON.parse(decodedText);
+    if (json.project || json.projectName) {
+      projectName = (json.project || json.projectName || '').trim();
+      productName = (json.product || json.productName || '').trim();
+      bomName = (json.bom || json.bomName || json.item || '').trim();
+      parsed = true;
     }
+  } catch (e) { /* not JSON */ }
 
-    // 自動選択を試みる
-    selectFromQrData(projectName, productName, bomName);
-  } else {
-    // シンプルなフォーマットの場合
-    if (dataDiv) {
+  // 2. デリミタ形式 (パイプ、カンマ、タブ)
+  if (!parsed) {
+    const parts = decodedText.split(/[|\t]/);
+    if (parts.length >= 3) {
+      projectName = parts[0].trim();
+      productName = parts[1].trim();
+      bomName = parts[2].trim();
+      parsed = true;
+    } else {
+      // カンマ区切りの場合(3つ以上)
+      const commaParts = decodedText.split(',');
+      if (commaParts.length >= 3) {
+        projectName = commaParts[0].trim();
+        productName = commaParts[1].trim();
+        bomName = commaParts[2].trim();
+        parsed = true;
+      }
+    }
+  }
+
+  // 3. 2パート: "品名|部材" または "現場|品名"
+  if (!parsed) {
+    const parts2 = decodedText.split(/[|,\t]/);
+    if (parts2.length === 2) {
+      // 品名と部材として扱う
+      productName = parts2[0].trim();
+      bomName = parts2[1].trim();
+      parsed = true;
+    }
+  }
+
+  // 4. 単一文字列: オーダーデータから検索
+  if (!parsed) {
+    const orders = DB.get(DB.KEYS.ORDERS);
+    const searchText = decodedText.trim();
+
+    // orderNo, projectName, productName, bomNameのいずれかに一致するか検索
+    const matchOrder = orders.find(o =>
+      o.orderNo === searchText ||
+      o.projectName === searchText ||
+      o.productName === searchText ||
+      (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+    );
+
+    if (matchOrder) {
+      projectName = matchOrder.projectName;
+      productName = matchOrder.productName;
+
+      // 部材まで一致した場合
+      const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+      if (matchItem) {
+        bomName = matchItem.bomName;
+      }
+      parsed = true;
+    }
+  }
+
+  // スキャン結果を表示
+  if (dataDiv) {
+    if (parsed && (projectName || productName || bomName)) {
+      dataDiv.innerHTML = `
+        ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+        ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+        ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+      `;
+    } else {
       dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
     }
-    toast('QRコードを読み取りましたが、フォーマットが一致しません', 'warning');
+  }
+
+  // 指示書自動選択
+  if (parsed && (projectName || productName)) {
+    selectFromQrData(projectName, productName, bomName);
+  } else {
+    toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
   }
 
   // 成功音（バイブレーション）

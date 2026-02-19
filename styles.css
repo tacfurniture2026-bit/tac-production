@@ -1421,21 +1421,15 @@ input:checked+.slider .moon {
 
     /* テーマ切替をモバイルではトップに移動（ボトムナビと干渉しないように） */
     .theme-switch-wrapper {
+        position: fixed !important;
         bottom: auto !important;
         top: 8px !important;
         left: 8px !important;
         z-index: 20002 !important;
     }
 
-    /* バージョン表示・リアルタイム同期ステータスはモバイルでは非表示 */
-    #app-version-display,
-    .app-version-banner,
-    [id="app-version-display"] {
-        display: none !important;
-    }
-
-    /* バージョンバナー全体 (position:fixed top-right) */
-    body>div[style*="position: fixed"][style*="top: 5px"][style*="right: 5px"] {
+    /* バージョン表示バナーはモバイルでは非表示 */
+    #version-banner {
         display: none !important;
     }
 }
