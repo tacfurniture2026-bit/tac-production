@@ -713,6 +713,15 @@ function stopQrScanner() {
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
+function logToDebug(msg) {
+    const el = document.getElementById('debug-log');
+    if (el) {
+        el.style.display = 'block';
+        const now = new Date().toLocaleTimeString();
+        el.innerHTML = `<div style="border-bottom:1px solid #eee;">[${now}] ${msg}</div>` + el.innerHTML;
+    }
+    console.log(msg);
+}
 function onQrCodeScanned(decodedText, decodedResult) {
   try {
     // Define safeSet helper early
@@ -840,54 +849,70 @@ function onQrCodeScanned(decodedText, decodedResult) {
 
 
 function selectFromQrData(projectName, productName, bomName) {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase(); // Normalize spaces and full-width
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  logToDebug(`Matching... Scan: "${projectName}" / "${productName}" (DB: ${orders.length} orders)`);
+
+  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
   
   const pNameNorm = normalize(projectName);
   const prodNameNorm = normalize(productName);
   const bomNameNorm = normalize(bomName);
 
-  // 1. Strict Match
+  // 1. Strict
   let order = orders.find(o => 
       o.projectName.includes(projectName) && o.productName.includes(productName)
   );
   
-  // 2. Fuzzy Match (attributes normalized)
+  if (order) logToDebug(`Strict match found: ID=${order.id}`);
+
+  // 2. Fuzzy
   if (!order) {
       order = orders.find(o => 
           normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
       );
+      if (order) logToDebug(`Fuzzy match found: ID=${order.id} (${order.projectName})`);
   }
 
   if (!order) {
-     // Debug finding
+     logToDebug("No match found.");
+     // Partial check
      const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
-     const prodMatch = orders.find(o => normalize(o.productName).includes(prodNameNorm));
+     if (pMatch) logToDebug(`Partial: Project OK (${pMatch.projectName}), Product fail.`);
+     else logToDebug("Partial: Project fail.");
      
-     if (pMatch && !prodMatch) {
-         toast(`現場名は一致しましたが、品名が一致しません: ${productName}`, 'warning');
-     } else if (!pMatch && prodMatch) {
-         toast(`品名は一致しましたが、現場名が一致しません: ${projectName}`, 'warning');
-     } else {
-         toast(`該当データなし (現場: ${projectName}, 品名: ${productName}) - 転記のみ実行`, 'warning');
-     }
+     toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
      return;
   }
   
-  // Found!
   // Select Order
   const orderSelect = document.getElementById('qr-order');
-  if (orderSelect) orderSelect.value = order.id;
+  if (orderSelect) {
+      // Create option if missing? Be careful.
+      // Check if option exists
+      const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
+      if (!opt) {
+          logToDebug(`Option for ID=${order.id} missing in select! Adding it.`);
+          const newOpt = document.createElement('option');
+          newOpt.value = order.id;
+          newOpt.text = `${order.projectName} - ${order.productName}`;
+          orderSelect.add(newOpt);
+      }
+      orderSelect.value = order.id;
+      // Trigger change event if needed? No, updateQrItemSelect reads value.
+      logToDebug(`Selected Order ID: ${order.id}`);
+  } else {
+      logToDebug("Error: #qr-order select not found");
+  }
+
   updateQrItemSelect(); 
 
-  // Select Item (Bom)
+  // Select Item
   setTimeout(() => {
     let item = order.items?.find(i => 
        i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
     );
     
     if (!item && bomNameNorm) {
-        // Fuzzy item match
         item = order.items?.find(i => 
            normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
         );
@@ -895,12 +920,15 @@ function selectFromQrData(projectName, productName, bomName) {
 
     if (item) {
        const itemSelect = document.getElementById('qr-item');
-       if (itemSelect) itemSelect.value = item.id;
-       
+       if (itemSelect) {
+           itemSelect.value = item.id;
+           logToDebug(`Selected Item ID: ${item.id}`);
+       }
        updateQrProcessSelect();
-       toast(`指示書と部材を選択しました。工程ボタンを押して登録してください。`, 'success');
+       toast(`指示書と部材を選択しました`, 'success');
     } else {
-       toast(`指示書は見つかりましたが、部材が見つかりません: ${bomName}`, 'warning');
+       logToDebug(`Item not found for BOM: ${bomName}`);
+       toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
   }, 100);
 }
