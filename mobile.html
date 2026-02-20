@@ -2070,7 +2070,7 @@ body.dark-mode .summary-value {
 
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
-    .theme-switch-wrapper { position: fixed !important; top: 10px !important; left: 10px !important; bottom: auto !important; z-index: 99999 !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
     
 </style>
     <style>
@@ -2162,7 +2162,7 @@ body.dark-mode .summary-value {
     
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
-    .theme-switch-wrapper { position: fixed !important; top: 10px !important; left: 10px !important; bottom: auto !important; z-index: 99999 !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
     
 </style>
 
@@ -3278,124 +3278,127 @@ function stopQrScanner() {
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
-function onQrCodeScanned(decodedText) {
-  // スキャン成功時の処理
-  stopQrScanner();
-
-  const resultDiv = $('#qr-scan-result');
-  const dataDiv = $('#qr-scan-data');
-
-  if (resultDiv) resultDiv.style.display = 'block';
-
-  // QRコードのフォーマットを柔軟にパース
-  let projectName = '';
-  let productName = '';
-  let bomName = '';
-  let parsed = false;
-
-  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
+function onQrCodeScanned(decodedText, decodedResult) {
   try {
-    const json = JSON.parse(decodedText);
-    if (json.project || json.projectName) {
-      projectName = (json.project || json.projectName || '').trim();
-      productName = (json.product || json.productName || '').trim();
-      bomName = (json.bom || json.bomName || json.item || '').trim();
-      parsed = true;
-    }
-  } catch (e) { /* not JSON */ }
+      console.log(`QR Scanned: ${decodedText}`);
+      // Debug toast
+      const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
+      toast(`読取成功: ${debugMsg}`, 'success');
 
-  // 2. デリミタ形式 (パイプ、カンマ、タブ)
-  if (!parsed) {
-    const parts = decodedText.split(/[|\t]/);
-    if (parts.length >= 3) {
-      projectName = parts[0].trim();
-      productName = parts[1].trim();
-      bomName = parts[2].trim();
-      parsed = true;
-    } else {
-      // カンマ区切りの場合(3つ以上)
-      const commaParts = decodedText.split(',');
-      if (commaParts.length >= 3) {
-        projectName = commaParts[0].trim();
-        productName = commaParts[1].trim();
-        bomName = commaParts[2].trim();
-        parsed = true;
+      // Stop scanner
+      stopQrScanner();
+
+      const resultDiv = document.getElementById('qr-scan-result');
+      const dataDiv = document.getElementById('qr-scan-data');
+      if (resultDiv) resultDiv.style.display = 'block';
+
+      // Parse
+      let projectName = '';
+      let productName = '';
+      let bomName = '';
+      let parsed = false;
+
+      // 1. JSON
+      try {
+        const json = JSON.parse(decodedText);
+        if (json.project || json.projectName) {
+          projectName = (json.project || json.projectName || '').trim();
+          productName = (json.product || json.productName || '').trim();
+          bomName = (json.bom || json.bomName || json.item || '').trim();
+          parsed = true;
+        }
+      } catch (e) { }
+
+      // 2. Delimiter
+      if (!parsed) {
+        const parts = decodedText.split(/[|\t]/);
+        if (parts.length >= 3) {
+          projectName = parts[0].trim();
+          productName = parts[1].trim();
+          bomName = parts[2].trim();
+          parsed = true;
+        } else {
+          const commaParts = decodedText.split(',');
+          if (commaParts.length >= 3) {
+            projectName = commaParts[0].trim();
+            productName = commaParts[1].trim();
+            bomName = commaParts[2].trim();
+            parsed = true;
+          }
+        }
       }
-    }
-  }
 
-  // 3. 2パート: "品名|部材" または "現場|品名"
-  if (!parsed) {
-    const parts2 = decodedText.split(/[|,\t]/);
-    if (parts2.length === 2) {
-      // 品名と部材として扱う
-      productName = parts2[0].trim();
-      bomName = parts2[1].trim();
-      parsed = true;
-    }
-  }
-
-  // 4. 単一文字列: オーダーデータから検索
-  if (!parsed) {
-    const orders = DB.get(DB.KEYS.ORDERS);
-    const searchText = decodedText.trim();
-
-    // orderNo, projectName, productName, bomNameのいずれかに一致するか検索
-    const matchOrder = orders.find(o =>
-      o.orderNo === searchText ||
-      o.projectName === searchText ||
-      o.productName === searchText ||
-      (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
-    );
-
-    if (matchOrder) {
-      projectName = matchOrder.projectName;
-      productName = matchOrder.productName;
-
-      // 部材まで一致した場合
-      const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
-      if (matchItem) {
-        bomName = matchItem.bomName;
+      // 3. Two parts
+      if (!parsed) {
+        const parts2 = decodedText.split(/[|,\t]/);
+        if (parts2.length === 2) {
+          productName = parts2[0].trim();
+          bomName = parts2[1].trim();
+          parsed = true;
+        }
       }
-      parsed = true;
-    }
+
+      // 4. Single string search
+      if (!parsed) {
+        const orders = DB.get(DB.KEYS.ORDERS) || [];
+        const searchText = decodedText.trim();
+        const matchOrder = orders.find(o =>
+          o.orderNo === searchText ||
+          o.projectName === searchText ||
+          o.productName === searchText ||
+          (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+        );
+
+        if (matchOrder) {
+          projectName = matchOrder.projectName;
+          productName = matchOrder.productName;
+          const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+          if (matchItem) bomName = matchItem.bomName;
+          parsed = true;
+        }
+      }
+
+      // Display and Auto Transcription
+      if (dataDiv) {
+        if (parsed && (projectName || productName || bomName)) {
+          dataDiv.innerHTML = `
+            ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+            ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+            ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+          `;
+          
+          const safeSet = (id, val) => {
+             const el = document.getElementById(id);
+             if (el) el.value = val;
+          };
+          safeSet('qr-project-name', projectName || '');
+          safeSet('qr-product-name', productName || '');
+          safeSet('qr-bom-name', bomName || '');
+          
+        } else {
+          dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+        }
+      }
+
+      // Auto Select
+      if (parsed && (projectName || productName)) {
+        selectFromQrData(projectName, productName, bomName);
+      } else {
+        toast('データが見つかりませんでした (転記不可)', 'warning');
+      }
+
+      // Vibrate
+      if (navigator.vibrate) {
+        try { navigator.vibrate(100); } catch(e){}
+      }
+      
+  } catch (e) {
+      console.error('QR Scan Error:', e);
+      alert('エラー: ' + e.message);
+      toast('システムエラー: ' + e.message, 'error');
   }
-
-  // スキャン結果を表示
-  if (dataDiv) {
-    if (parsed && (projectName || productName || bomName)) {
-      dataDiv.innerHTML = `
-        ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
-        ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
-        ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
-      `;
-      // 自動転記 (Auto Transcription)
-      const pNameInput = document.getElementById('qr-project-name');
-      const prodNameInput = document.getElementById('qr-product-name');
-      const bomNameInput = document.getElementById('qr-bom-name');
-
-      if (pNameInput) pNameInput.value = projectName || '';
-      if (prodNameInput) prodNameInput.value = productName || '';
-      if (bomNameInput) bomNameInput.value = bomName || '';
-
-    } else {
-      dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
-    }
-  }
-
-  // 指示書自動選択
-  if (parsed && (projectName || productName)) {
-    selectFromQrData(projectName, productName, bomName);
-  } else {
-    toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
-  }
-
-  // 成功音（バイブレーション）
-  if (navigator.vibrate) {
-    navigator.vibrate(100);
-  }
-  toast('QRコードを読み取りました', 'success');
 }
+
 
 function selectFromQrData(projectName, productName, bomName) {
   const orders = DB.get(DB.KEYS.ORDERS);
@@ -6612,7 +6615,7 @@ function printReport() {
       
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
-    .theme-switch-wrapper { position: fixed !important; top: 10px !important; left: 10px !important; bottom: auto !important; z-index: 99999 !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
     
 </style>
     </head>

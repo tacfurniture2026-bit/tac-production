@@ -37,7 +37,7 @@ def main():
     mobile_overrides = """
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
-    .theme-switch-wrapper { position: fixed !important; top: 10px !important; left: 10px !important; bottom: auto !important; z-index: 99999 !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
     """
     html = html.replace('</style>', f'{mobile_overrides}\n</style>')
 
