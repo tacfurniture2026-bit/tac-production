@@ -7,7 +7,7 @@ def read_file(path):
         return f.read()
 
 def main():
-    base_html = read_file('mobile.html')
+    base_html = read_file('mobile_source.html')
     css_content = read_file('styles.css') # Use main styles.css (latest)
     app_js_content = read_file('app.js') # Use main app.js (latest)
     data_js_content = read_file('data.js')

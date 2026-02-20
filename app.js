@@ -804,6 +804,15 @@ function onQrCodeScanned(decodedText) {
         ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
         ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
       `;
+      // 自動転記 (Auto Transcription)
+      const pNameInput = document.getElementById('qr-project-name');
+      const prodNameInput = document.getElementById('qr-product-name');
+      const bomNameInput = document.getElementById('qr-bom-name');
+
+      if (pNameInput) pNameInput.value = projectName || '';
+      if (prodNameInput) prodNameInput.value = productName || '';
+      if (bomNameInput) bomNameInput.value = bomName || '';
+
     } else {
       dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
     }
@@ -832,7 +841,11 @@ function selectFromQrData(projectName, productName, bomName) {
   );
 
   if (!order) {
-    toast(`指示書が見つかりません: ${projectName} - ${productName}`, 'warning');
+    if (orders.length === 0) {
+      toast(`指示書データがありません (転記のみ実行)`, 'warning');
+    } else {
+      toast(`該当する指示書が見つかりませんでした (転記のみ実行)`, 'warning');
+    }
     return;
   }
 
@@ -5385,6 +5398,11 @@ document.addEventListener('DOMContentLoaded', () => {
       gap: '6px',
       fontFamily: 'sans-serif'
     });
+
+    // モバイルの場合は非表示
+    if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      indicator.style.display = 'none';
+    }
 
     // Firebase接続状態チェック
     const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
