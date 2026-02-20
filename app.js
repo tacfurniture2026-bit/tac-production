@@ -841,39 +841,66 @@ function onQrCodeScanned(decodedText, decodedResult) {
 
 function selectFromQrData(projectName, productName, bomName) {
   const orders = DB.get(DB.KEYS.ORDERS);
+  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase(); // Normalize spaces and full-width
+  
+  const pNameNorm = normalize(projectName);
+  const prodNameNorm = normalize(productName);
+  const bomNameNorm = normalize(bomName);
 
-  // 現場名と品名で指示書を検索
-  const order = orders.find(o =>
-    o.projectName.includes(projectName) && o.productName.includes(productName)
+  // 1. Strict Match
+  let order = orders.find(o => 
+      o.projectName.includes(projectName) && o.productName.includes(productName)
   );
-
+  
+  // 2. Fuzzy Match (attributes normalized)
   if (!order) {
-    if (orders.length === 0) {
-      toast(`指示書データがありません (転記のみ実行)`, 'warning');
-    } else {
-      toast(`該当する指示書が見つかりませんでした (転記のみ実行)`, 'warning');
-    }
-    return;
+      order = orders.find(o => 
+          normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
+      );
   }
 
-  // 指示書を選択
-  const orderSelect = $('#qr-order');
-  orderSelect.value = order.id;
-  updateQrItemSelect();
+  if (!order) {
+     // Debug finding
+     const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
+     const prodMatch = orders.find(o => normalize(o.productName).includes(prodNameNorm));
+     
+     if (pMatch && !prodMatch) {
+         toast(`現場名は一致しましたが、品名が一致しません: ${productName}`, 'warning');
+     } else if (!pMatch && prodMatch) {
+         toast(`品名は一致しましたが、現場名が一致しません: ${projectName}`, 'warning');
+     } else {
+         toast(`該当データなし (現場: ${projectName}, 品名: ${productName}) - 転記のみ実行`, 'warning');
+     }
+     return;
+  }
+  
+  // Found!
+  // Select Order
+  const orderSelect = document.getElementById('qr-order');
+  if (orderSelect) orderSelect.value = order.id;
+  updateQrItemSelect(); 
 
-  // 部材を検索して選択
+  // Select Item (Bom)
   setTimeout(() => {
-    const item = order.items?.find(i =>
-      i.bomName.includes(bomName) || i.partCode?.includes(bomName)
+    let item = order.items?.find(i => 
+       i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
     );
+    
+    if (!item && bomNameNorm) {
+        // Fuzzy item match
+        item = order.items?.find(i => 
+           normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
+        );
+    }
 
     if (item) {
-      const itemSelect = $('#qr-item');
-      itemSelect.value = item.id;
-      updateQrProcessSelect();
-      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
+       const itemSelect = document.getElementById('qr-item');
+       if (itemSelect) itemSelect.value = item.id;
+       
+       updateQrProcessSelect();
+       toast(`指示書と部材を選択しました。工程ボタンを押して登録してください。`, 'success');
     } else {
-      toast(`部材が見つかりません: ${bomName}`, 'warning');
+       toast(`指示書は見つかりましたが、部材が見つかりません: ${bomName}`, 'warning');
     }
   }, 100);
 }
@@ -949,16 +976,48 @@ function updateQrProcessSelect() {
 
 // 工程ボタン選択
 function selectProcess(btn, processName) {
-  // 他のボタンの選択を解除
+  // 1. UI Feedback (Instant)
   const container = btn.closest('.process-btn-grid');
   if (container) {
     container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
   }
   btn.classList.add('selected');
+  // Add temporary processing state
+  btn.style.opacity = '0.7';
+  btn.innerText = '登録中...';
 
-  // hidden inputに値をセット
-  const processHidden = $('#qr-process');
-  if (processHidden) processHidden.value = processName;
+  // 2. Get Data
+  const orderId = parseInt(document.getElementById('qr-order').value);
+  const itemId = parseInt(document.getElementById('qr-item').value);
+  
+  if (!orderId || !itemId) {
+      toast('指示書と部材が選択されていません', 'error');
+      btn.style.opacity = '1';
+      btn.innerText = processName;
+      return;
+  }
+
+  // 3. Register (Async simulation)
+  // registerProgress retrieves from DB and calls save. It is synchronous in this app (localStorage/Firebase shim).
+  // But if Firebase is real, it might take time?
+  // Current app.js registerProgress handles DB.
+  
+  const success = registerProgress(orderId, itemId, processName);
+  
+  if (success) {
+      toast(`${processName} を完了として登録しました`, 'success');
+      btn.classList.add('completed');
+      btn.innerText = `✓ ${processName}`;
+      btn.disabled = true;
+      btn.style.opacity = '1';
+      
+      // Vibrate
+      if (navigator.vibrate) try { navigator.vibrate(50); } catch(e){}
+  } else {
+      toast('登録に失敗しました', 'error');
+      btn.style.opacity = '1';
+      btn.innerText = processName;
+  }
 }
 
 function registerProgress(orderId, itemId, processName) {
