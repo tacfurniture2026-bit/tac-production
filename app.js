@@ -5255,70 +5255,101 @@ document.addEventListener('DOMContentLoaded', () => {
   // テーマ初期化
   if (typeof initTheme === 'function') initTheme();
 
-  // リアルタイム同期インジケータ
-  setTimeout(() => {
-    const indicator = document.createElement('div');
-    Object.assign(indicator.style, {
-      position: 'fixed',
-      bottom: '10px',
-      right: '10px',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      zIndex: '9999',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      fontFamily: 'sans-serif'
-    });
+  // モバイル判定
+  const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Firebase接続状態チェック
-    const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
-
-    if (isOnline) {
-      indicator.style.background = '#ECFDF5';
-      indicator.style.color = '#047857';
-      indicator.style.border = '1px solid #A7F3D0';
-      indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
-    } else {
-      indicator.style.background = '#FEF2F2';
-      indicator.style.color = '#B91C1C';
-      indicator.style.border = '1px solid #FECACA';
-      indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
+  // ===== モバイルUI調整 =====
+  if (isMobile) {
+    // 1. テーマ切替をトップに移動
+    const themeWrapper = document.querySelector('.theme-switch-wrapper');
+    if (themeWrapper) {
+      themeWrapper.style.position = 'fixed';
+      themeWrapper.style.bottom = 'auto';
+      themeWrapper.style.top = '8px';
+      themeWrapper.style.left = '8px';
+      themeWrapper.style.zIndex = '20002';
     }
 
-    document.body.appendChild(indicator);
-    // フルスクリーン切り替え
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    if (fullscreenBtn) {
-      fullscreenBtn.addEventListener('click', () => {
-        const container = document.querySelector('.gantt-container-mono');
-        if (!container) return;
-
-        if (!document.fullscreenElement) {
-          container.requestFullscreen().catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-          });
-        } else {
-          document.exitFullscreen();
-        }
-      });
+    // 2. バージョンバナーを非表示
+    const versionBanner = document.getElementById('version-banner');
+    if (versionBanner) {
+      versionBanner.style.display = 'none';
     }
-
-    // フルスクリーン状態監視（クラス付与用）
-    document.addEventListener('fullscreenchange', () => {
-      const container = document.querySelector('.gantt-container-mono');
-      if (document.fullscreenElement) {
-        container.classList.add('is-fullscreen');
-      } else {
-        container.classList.remove('is-fullscreen');
+    // IDがない古いキャッシュ版にも対応
+    document.querySelectorAll('body > div').forEach(div => {
+      if (div.style.position === 'fixed' && div.querySelector('#app-version-display')) {
+        div.style.display = 'none';
       }
     });
+  }
 
-  }, 2000); // 初期化待ち
+  // リアルタイム同期インジケータ（PC版のみ表示）
+  if (!isMobile) {
+    setTimeout(() => {
+      const indicator = document.createElement('div');
+      Object.assign(indicator.style, {
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        padding: '6px 12px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        zIndex: '9999',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        fontFamily: 'sans-serif'
+      });
+
+      // Firebase接続状態チェック
+      const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
+
+      if (isOnline) {
+        indicator.style.background = '#ECFDF5';
+        indicator.style.color = '#047857';
+        indicator.style.border = '1px solid #A7F3D0';
+        indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
+      } else {
+        indicator.style.background = '#FEF2F2';
+        indicator.style.color = '#B91C1C';
+        indicator.style.border = '1px solid #FECACA';
+        indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
+      }
+
+      document.body.appendChild(indicator);
+    }, 1000);
+  }
+  // フルスクリーン切り替え
+  const fullscreenBtn = document.getElementById('fullscreen-btn');
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', () => {
+      const container = document.querySelector('.gantt-container-mono');
+      if (!container) return;
+
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => {
+          alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  }
+
+  // フルスクリーン状態監視（クラス付与用）
+  document.addEventListener('fullscreenchange', () => {
+    const container = document.querySelector('.gantt-container-mono');
+    if (document.fullscreenElement) {
+      container.classList.add('is-fullscreen');
+    } else {
+      container.classList.remove('is-fullscreen');
+    }
+  });
+
+}, 2000); // 初期化待ち
 });
 
 // ========================================

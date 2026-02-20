@@ -45,7 +45,10 @@ const DB = {
 
         // ユーザーに通知（Firebaseが設定されていないことへの注意喚起）
         setTimeout(() => {
-            toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (!isMobile) {
+                toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
+            }
         }, 2000);
 
         // ユーザー
@@ -155,13 +158,12 @@ const DB = {
 
         // 接続状態監視
         firebaseDB.ref('.info/connected').on('value', (snap) => {
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (snap.val() === true) {
                 console.log('✅ Firebase接続完了');
-                toast('☁️ サーバーに接続しました（共有有効）', 'success');
+                if (!isMobile) toast('☁️ サーバーに接続しました（共有有効）', 'success');
             } else {
                 console.warn('⚠️ Firebase未接続');
-                // 切断時（または初期接続失敗時）
-                // toast('⚠️ サーバー接続が切れています', 'warning');
             }
         });
 
