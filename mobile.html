@@ -3280,126 +3280,126 @@ function stopQrScanner() {
 
 function onQrCodeScanned(decodedText, decodedResult) {
   try {
-      // Define safeSet helper early
-      const safeSet = (id, val) => {
-         const el = document.getElementById(id);
-         if (el) el.value = val;
-      };
-      
-      console.log('Force Raw Data:', decodedText);
-      safeSet('qr-raw-data', decodedText);
-      console.log(`QR Scanned: ${decodedText}`);
-      // Debug toast
-      const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
-      toast(`読取成功: ${debugMsg}`, 'success');
+    // Define safeSet helper early
+    const safeSet = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
 
-      // Stop scanner
-      stopQrScanner();
+    console.log('Force Raw Data:', decodedText);
+    safeSet('qr-raw-data', decodedText);
+    console.log(`QR Scanned: ${decodedText}`);
+    // Debug toast
+    const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
+    toast(`読取成功: ${debugMsg}`, 'success');
 
-      const resultDiv = document.getElementById('qr-scan-result');
-      const dataDiv = document.getElementById('qr-scan-data');
-      if (resultDiv) resultDiv.style.display = 'block';
+    // Stop scanner
+    stopQrScanner();
 
-      // Parse
-      let projectName = '';
-      let productName = '';
-      let bomName = '';
-      let parsed = false;
+    const resultDiv = document.getElementById('qr-scan-result');
+    const dataDiv = document.getElementById('qr-scan-data');
+    if (resultDiv) resultDiv.style.display = 'block';
 
-      // 1. JSON
-      try {
-        const json = JSON.parse(decodedText);
-        if (json.project || json.projectName) {
-          projectName = (json.project || json.projectName || '').trim();
-          productName = (json.product || json.productName || '').trim();
-          bomName = (json.bom || json.bomName || json.item || '').trim();
-          parsed = true;
-        }
-      } catch (e) { }
+    // Parse
+    let projectName = '';
+    let productName = '';
+    let bomName = '';
+    let parsed = false;
 
-      // 2. Delimiter
-      if (!parsed) {
-        const parts = decodedText.split(/[|\t]/);
-        if (parts.length >= 3) {
-          projectName = parts[0].trim();
-          productName = parts[1].trim();
-          bomName = parts[2].trim();
-          parsed = true;
-        } else {
-          const commaParts = decodedText.split(',');
-          if (commaParts.length >= 3) {
-            projectName = commaParts[0].trim();
-            productName = commaParts[1].trim();
-            bomName = commaParts[2].trim();
-            parsed = true;
-          }
-        }
+    // 1. JSON
+    try {
+      const json = JSON.parse(decodedText);
+      if (json.project || json.projectName) {
+        projectName = (json.project || json.projectName || '').trim();
+        productName = (json.product || json.productName || '').trim();
+        bomName = (json.bom || json.bomName || json.item || '').trim();
+        parsed = true;
       }
+    } catch (e) { }
 
-      // 3. Two parts
-      if (!parsed) {
-        const parts2 = decodedText.split(/[|,\t]/);
-        if (parts2.length === 2) {
-          productName = parts2[0].trim();
-          bomName = parts2[1].trim();
+    // 2. Delimiter
+    if (!parsed) {
+      const parts = decodedText.split(/[|\t_]/);
+      if (parts.length >= 3) {
+        projectName = parts[0].trim();
+        productName = parts[1].trim();
+        bomName = parts[2].trim();
+        parsed = true;
+      } else {
+        const commaParts = decodedText.split(',');
+        if (commaParts.length >= 3) {
+          projectName = commaParts[0].trim();
+          productName = commaParts[1].trim();
+          bomName = commaParts[2].trim();
           parsed = true;
         }
       }
+    }
 
-      // 4. Single string search
-      if (!parsed) {
-        const orders = DB.get(DB.KEYS.ORDERS) || [];
-        const searchText = decodedText.trim();
-        const matchOrder = orders.find(o =>
-          o.orderNo === searchText ||
-          o.projectName === searchText ||
-          o.productName === searchText ||
-          (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
-        );
-
-        if (matchOrder) {
-          projectName = matchOrder.projectName;
-          productName = matchOrder.productName;
-          const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
-          if (matchItem) bomName = matchItem.bomName;
-          parsed = true;
-        }
+    // 3. Two parts
+    if (!parsed) {
+      const parts2 = decodedText.split(/[|,\t_]/);
+      if (parts2.length === 2) {
+        productName = parts2[0].trim();
+        bomName = parts2[1].trim();
+        parsed = true;
       }
+    }
 
-      // Display and Auto Transcription
-      if (dataDiv) {
-        if (parsed && (projectName || productName || bomName)) {
-          dataDiv.innerHTML = `
+    // 4. Single string search
+    if (!parsed) {
+      const orders = DB.get(DB.KEYS.ORDERS) || [];
+      const searchText = decodedText.trim();
+      const matchOrder = orders.find(o =>
+        o.orderNo === searchText ||
+        o.projectName === searchText ||
+        o.productName === searchText ||
+        (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+      );
+
+      if (matchOrder) {
+        projectName = matchOrder.projectName;
+        productName = matchOrder.productName;
+        const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+        if (matchItem) bomName = matchItem.bomName;
+        parsed = true;
+      }
+    }
+
+    // Display and Auto Transcription
+    if (dataDiv) {
+      if (parsed && (projectName || productName || bomName)) {
+        dataDiv.innerHTML = `
             ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
             ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
             ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
           `;
-          
-          safeSet('qr-project-name', projectName || '');
-          safeSet('qr-product-name', productName || '');
-          safeSet('qr-bom-name', bomName || '');
-          
-        } else {
-          dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
-        }
-      }
 
-      // Auto Select
-      if (parsed && (projectName || productName)) {
-        selectFromQrData(projectName, productName, bomName);
+        safeSet('qr-project-name', projectName || '');
+        safeSet('qr-product-name', productName || '');
+        safeSet('qr-bom-name', bomName || '');
+
       } else {
-        toast('データが見つかりませんでした (転記不可)', 'warning');
+        dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
       }
+    }
 
-      // Vibrate
-      if (navigator.vibrate) {
-        try { navigator.vibrate(100); } catch(e){}
-      }
-      
+    // Auto Select
+    if (parsed && (projectName || productName)) {
+      selectFromQrData(projectName, productName, bomName);
+    } else {
+      toast('データが見つかりませんでした (転記不可)', 'warning');
+    }
+
+    // Vibrate
+    if (navigator.vibrate) {
+      try { navigator.vibrate(100); } catch (e) { }
+    }
+
   } catch (e) {
-      console.error('QR Scan Error:', e);
-      alert('エラー: ' + e.message);
-      toast('システムエラー: ' + e.message, 'error');
+    console.error('QR Scan Error:', e);
+    alert('エラー: ' + e.message);
+    toast('システムエラー: ' + e.message, 'error');
   }
 }
 
