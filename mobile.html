@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>TAC生産管理 (Mobile)</title>
+
+    <!-- PWA無効化 (Manifest削除) -->
+    <meta name="theme-color" content="#0B2D48">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TAC生産管理">
+    <link rel="apple-touch-icon" href="icon-192.png?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles-mobile.css?v=EMERGENCY_07">
+    <style>
+        /* 緊急パッチ: CSSキャッシュ対策 */
+        .matrix-cell.status-todo::after,
+        .matrix-cell.status-done::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .matrix-table th,
+        .col-part-name {
+            white-space: nowrap !important;
+        }
+
+        .col-part-name {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 不動品行のスタイル（ライトモード） */
+        .fixed-product-row {
+            background-color: #fff3cd !important;
+            color: #1e293b !important;
+        }
+
+        /* 不動品行のスタイル（ダークモード） */
+        body.dark-mode .fixed-product-row {
+            background-color: #451a03 !important;
+            /* より濃い茶色 */
+            color: #fbbf24 !important;
+            /* 明るいアンバー */
+        }
+
+        body.dark-mode .fixed-product-row td {
+            border-color: #78350f !important;
+        }
+
+        /* 強制レイアウト修正 */
+        .theme-switch-wrapper {
+            top: auto !important;
+            right: auto !important;
+            bottom: 20px !important;
+            left: 20px !important;
+        }
+
+        /* 不良品管理ヘッダーの強制左寄せ */
+        #page-defects .page-header>div {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 1rem !important;
+            justify-content: flex-start !important;
+        }
+
+        /* ボタンが横長になるのを防ぐ */
+        #add-defect-btn {
+            width: auto !important;
+            display: inline-flex !important;
+            align-self: flex-start !important;
+        }
+
+        /* セル幅統一の強制適用（念のため） */
+        .matrix-table th:not(.col-part-name),
+        .matrix-cell {
+            min-width: 100px !important;
+            width: 100px !important;
+        }
+
+        /* ヘッダー固定用コンテナ設定 */
+        .matrix-container {
+            max-height: 80vh !important;
+            overflow-y: auto !important;
+        }
+
+        /* フルスクリーン時のオーバーライド（インラインスタイルに勝つため） */
+        .gantt-container-mono:fullscreen .col-part-name,
+        .gantt-container-mono.is-fullscreen .col-part-name {
+            min-width: 300px !important;
+            max-width: none !important;
+            width: auto !important;
+        }
+
+        .gantt-container-mono:fullscreen .matrix-container,
+        .gantt-container-mono.is-fullscreen .matrix-container {
+            max-height: 95vh !important;
+        }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- アプリケーションロジック -->
+    <script src="firebase-config.js"></script>
+    <script src="data.js?v=20240205_FORCE_04"></script>
+    <script src="app-mobile.js?v=EMERGENCY_07"></script>
+    <script>
+        // 【緊急】キャッシュ強制クリア & Service Worker解除
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            if ('caches' in window) {
+                caches.keys().then(function (names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+        }
+    </script>
+
+    <!-- QRスキャナー -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+
+<body>
+    <div id="version-banner"
+        style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
+        <span id="app-version-display">v4.73</span><br>
+        <a href="#" onclick="window.location.reload(true); return false;"
+            style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
+    </div>
+    <!-- テーマ切替スイッチ -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle" />
+            <div class="slider">
+                <i class="fas fa-sun icon sun"></i>
+                <i class="fas fa-moon icon moon"></i>
+            </div>
+        </label>
+        <span class="theme-label"
+            style="margin-left:8px; font-size:0.7rem; color:var(--color-text-tertiary);">Mode</span>
+    </div>
+
+    <div id="app">
+        <!-- ログイン画面 -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-header">
+                    <div class="login-icon">🏭</div>
+                    <h1>TAC製造部 生産管理</h1>
+                    <p>Production Management System</p>
+                </div>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>ユーザー名</label>
+                        <input type="text" id="login-username" placeholder="ユーザー名を入力" required>
+                    </div>
+                    <div class="form-group">
+                        <label>パスワード</label>
+                        <input type="password" id="login-password" placeholder="パスワードを入力" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">ログイン</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- メイン画面 -->
+    <div id="main-screen" class="screen">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo-icon">🏭</span>
+                <span class="logo-text">TAC製造部</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">▣</span>
+                    <span>ダッシュボード</span>
+                </a>
+                <a href="#" class="nav-item" data-page="gantt">
+                    <span class="nav-icon">▤</span>
+                    <span>工程管理</span>
+                </a>
+                <a href="#" class="nav-item" data-page="qr">
+                    <span class="nav-icon">⊞</span>
+                    <span>進捗登録</span>
+                </a>
+                <a href="#" class="nav-item" data-page="defects">
+                    <span class="nav-icon">△</span>
+                    <span>不良品管理</span>
+                </a>
+                <div class="nav-section">管理者メニュー</div>
+                <a href="#" class="nav-item admin-only" data-page="orders">
+                    <span class="nav-icon">☰</span>
+                    <span>生産指示書</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="bom">
+                    <span class="nav-icon">⊟</span>
+                    <span>BOM管理</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="rates">
+                    <span class="nav-icon">¥</span>
+                    <span>賃率管理</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="users">
+                    <span class="nav-icon">◉</span>
+                    <span>ユーザー管理</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="report">
+                    <span class="nav-icon">☷</span>
+                    <span>月次報告</span>
+                </a>
+                <div class="nav-section">在庫管理</div>
+                <a href="#" class="nav-item" data-page="inv-scan">
+                    <span class="nav-icon">▦</span>
+                    <span>棚卸スキャン</span>
+                </a>
+                <a href="#" class="nav-item" data-page="inv-search">
+                    <span class="nav-icon">◎</span>
+                    <span>在庫検索</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="inv-products">
+                    <span class="nav-icon">▤</span>
+                    <span>商品マスタ</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="inv-adjust">
+                    <span class="nav-icon">↕</span>
+                    <span>在庫増減</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="inv-monthly">
+                    <span class="nav-icon">☰</span>
+                    <span>月次締め</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-name" id="current-user-name">管理者</span>
+                    <span class="user-role" id="current-user-role">v4.0 (Color Added)</span>
+                </div>
+                <button class="nav-item logout-btn" id="logout-btn"
+                    onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
+                    <span class="nav-icon">↩</span>
+                    <span>ログアウト</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <!-- ダッシュボード -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h1>▣ ダッシュボード</h1>
+                    <p>生産状況の概要</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-total">☰</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-total">0</span>
+                            <span class="stat-label">総指示書数</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-progress">◐</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-progress">0</span>
+                            <span class="stat-label">進行中</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-complete">◉</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-complete">0</span>
+                            <span class="stat-label">完了</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-defect">△</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-defects">0</span>
+                            <span class="stat-label">不良品</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-grid">
+                    <!-- 納期間近 (PAO) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚠ 納期間近 (PAO)</h3>
+                        </div>
+                        <div class="card-body" id="urgent-orders-pao">
+                            <p class="text-muted">読み込み中...</p>
+                        </div>
+                    </div>
+
+                    <!-- 納期間近 (GRID) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚠ 納期間近 (GRID)</h3>
+                        </div>
+                        <div class="card-body" id="urgent-orders-grid">
+                            <p class="text-muted">読み込み中...</p>
+                        </div>
+                    </div>
+
+                    <!-- 納期間近 (その他) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚠ 納期間近 (その他)</h3>
+                        </div>
+                        <div class="card-body" id="urgent-orders-other">
+                            <p class="text-muted">読み込み中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ガントチャート（工程管理） -->
+            <div id="page-gantt" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>▤ 工程管理</h1>
+                            <p>案件別スケジュール・進捗をリアルタイム確認</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
+                            <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
+                            <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 凡例 -->
+                <div class="gantt-legend">
+                    <div class="legend-title">工程凡例:</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #8CC63F;"></span>完了</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #F7941D;"></span>作業中
+                    </div>
+                    <div class="legend-item"><span class="legend-color" style="background: #E5E7EB;"></span>未着手
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="all">すべて</button>
+                    <button class="filter-btn" data-filter="incomplete">未完了（全）</button>
+                    <button class="filter-btn" data-filter="pao_incomplete">PAO(未完)</button>
+                    <button class="filter-btn" data-filter="grid_incomplete">GRID(未完)</button>
+                    <button class="filter-btn" data-filter="other_incomplete">その他(未完)</button>
+                    <button class="filter-btn" data-filter="progress">進行中</button>
+                    <button class="filter-btn" data-filter="complete">完了</button>
+                    <button class="filter-btn" data-filter="pending">未着手</button>
+                </div>
+
+                <!-- Monorevo風 ガントビュー -->
+                <div class="gantt-container-mono">
+                    <div class="gantt-wrapper">
+                        <!-- 左側：案件情報テーブル -->
+                        <div class="gantt-left">
+                            <div class="gantt-header-row">
+                                <div class="gantt-cell gantt-cell-expand"></div>
+                                <div class="gantt-cell gantt-cell-project">物件名</div>
+                                <div class="gantt-cell gantt-cell-product">品名/部材</div>
+                                <div class="gantt-cell gantt-cell-qty">数量</div>
+                                <div class="gantt-cell gantt-cell-date">着工</div>
+                                <div class="gantt-cell gantt-cell-date">納期</div>
+                            </div>
+                            <div id="gantt-left-body"></div>
+                        </div>
+                        <!-- 右側：工程タイムラインバー -->
+                        <div class="gantt-right">
+                            <div class="gantt-header-row gantt-process-header" id="gantt-process-header"></div>
+                            <div id="gantt-right-body"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR読取 -->
+            <div id="page-qr" class="page">
+                <div class="page-header">
+                    <h1>⊞ QR読取</h1>
+                    <p>QRコードをスキャンして工程進捗を登録</p>
+                </div>
+                <div class="qr-layout">
+                    <!-- QRスキャナー -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📷 QRスキャン</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="qr-scanner-container">
+                                <div id="qr-scanner-preview"
+                                    style="width: 100%; max-width: 400px; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+                                    <div id="qr-scanner-placeholder"
+                                        style="color: #fff; text-align: center; padding: 20px;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+                                        <p>カメラを起動してQRコードをスキャン</p>
+                                    </div>
+                                    <video id="qr-video"
+                                        style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+                                </div>
+                                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+                                    <button type="button" class="btn btn-primary" id="start-scan-btn">📷
+                                        スキャン開始</button>
+                                    <button type="button" class="btn btn-secondary" id="stop-scan-btn"
+                                        style="display: none;">⏹ 停止</button>
+                                </div>
+                                <div id="qr-scan-result"
+                                    style="margin-top: 16px; padding: 12px; background: var(--color-bg-primary); border-radius: 8px; display: none;">
+                                    <div style="font-weight: 600; margin-bottom: 8px;">✅ スキャン結果</div>
+                                    <div id="qr-scan-data" style="font-size: 14px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 手動選択フォーム -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📝 進捗登録</h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">QRスキャンまたは手動で選択して登録</p>
+                            <form id="qr-form">
+                                <div class="form-group">
+                                    <label>指示書（現場名 - 品名）</label>
+                                    <select id="qr-order" class="form-input" required>
+                                        <option value="">選択してください</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>部材</label>
+                                    <select id="qr-item" class="form-input" required disabled>
+                                        <option value="">先に指示書を選択</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>工程（タップして選択）</label>
+                                    <div id="qr-process-buttons" class="process-btn-grid">
+                                        <p class="text-muted" style="width:100%;">先に部材を選択してください</p>
+                                    </div>
+                                    <input type="hidden" id="qr-process" value="">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full"
+                                    style="font-size: 18px; padding: 16px;">✓ 完了登録</button>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- 履歴 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📜 登録履歴</h3>
+                        </div>
+                        <div class="card-body" id="qr-history">
+                            <p class="text-muted">履歴がありません</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 不良品管理 -->
+            <div id="page-defects" class="page">
+                <div class="page-header">
+                    <div class="flex items-start gap-4" style="flex-direction: column;">
+                        <div>
+                            <h1>△ 不良品管理</h1>
+                            <p>不良品の登録・管理</p>
+                        </div>
+                        <button class="btn btn-primary" id="add-defect-btn">+ 不良品登録</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>物件名</th>
+                                    <th>品名</th>
+                                    <th>部材</th>
+                                    <th>工程</th>
+                                    <th>数量</th>
+                                    <th>理由</th>
+                                    <th>報告者</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="defects-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生産指示書 -->
+            <div id="page-orders" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>☰ 生産指示書</h1>
+                            <p>生産指示書の作成・管理</p>
+                        </div>
+                        <button class="btn btn-primary" id="add-order-btn">+ 新規作成</button>
+                    </div>
+                </div>
+                <!-- ツールバー -->
+                <div class="toolbar"
+                    style="margin-bottom: 1rem; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="restoreSampleOrders()" title="データ消失時用">🔄
+                            初期データ復元</button>
+                        <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
+                        <button class="btn btn-sm btn-secondary" onclick="copySelectedOrders()">❏ 選択を複製</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSelectedOrders()">🗑 選択を削除</button>
+                        <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadCsvTemplate()">⬇ テンプレート</button>
+                        <button class="btn btn-sm btn-primary" onclick="document.getElementById('csv-upload').click()">⬆
+                            CSV取込</button>
+                        <button class="btn btn-sm btn-outline" onclick="exportOrdersToCsv()" title="現在のリストをCSV出力">⬇
+                            CSV出力</button>
+                        <input type="file" id="csv-upload" accept=".csv" style="display: none;"
+                            onchange="importOrdersFromCsv(this)">
+                    </div>
+                    <label style="display: flex; align-items: center; font-size: 0.875rem; cursor: pointer;">
+                        <input type="checkbox" id="show-completed-check" onchange="toggleShowCompleted()"
+                            style="margin-right: 0.5rem;"> 完了分も表示
+                    </label>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px; text-align: center;">選択</th>
+                                    <th>特注No.</th>
+                                    <th>物件名</th>
+                                    <th>品名</th>
+                                    <th>数量</th>
+                                    <th>色</th>
+                                    <th>着工日</th>
+                                    <th>納期</th>
+                                    <th>進捗</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOM管理 -->
+            <div id="page-bom" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>⊟ BOM管理</h1>
+                            <p>部品表（Bill of Materials）の管理</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="exportBomsToCsv()"
+                                style="margin-right: 0.5rem;">CSV出力</button>
+                            <label class="btn btn-secondary" style="margin-right: 0.5rem; cursor: pointer;">
+                                CSV取込 <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;"
+                                    onchange="importBomsFromCsv(this)">
+                            </label>
+                            <button class="btn btn-secondary" onclick="restoreSampleBom()"
+                                style="font-size: 0.8rem; margin-right: 0.5rem;" title="データが消えた場合に押してください">🔄
+                                初期データ復元</button>
+                            <button class="btn btn-danger" onclick="deleteSelectedBoms()">🗑 選択削除</button>
+                            <button class="btn btn-primary" onclick="showAddBomModal()">+ 新規登録</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="bom-list"></div>
+            </div>
+
+            <!-- 賃率管理 -->
+            <div id="page-rates" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>¥ 賃率管理</h1>
+                            <p>部門別労務費率の管理</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="showAddRateModal()">一括インポート</button>
+                            <button class="btn btn-primary" onclick="showAddRateModal()">+ 新規作成</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>判定CD</th>
+                                    <th>部</th>
+                                    <th>課</th>
+                                    <th>係</th>
+                                    <th>月額</th>
+                                    <th>日額</th>
+                                    <th>時給</th>
+                                    <th>分給</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rates-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ユーザー管理 -->
+            <div id="page-users" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>◉ ユーザー管理</h1>
+                            <p>システムユーザーの管理</p>
+                        </div>
+                        <button class="btn btn-primary" id="add-user-btn">+ 新規作成</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ユーザー名</th>
+                                    <th>表示名</th>
+                                    <th>権限</th>
+                                    <th>部門</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月次報告 -->
+            <div id="page-report" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>☷ 月次報告</h1>
+                            <p>月次・製造原価報告書の作成</p>
+                        </div>
+                        <button class="btn btn-primary" id="generate-report-btn">PDF出力</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📅 期間設定</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>開始日</label>
+                                <input type="date" id="report-start-date" class="form-input">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>終了日</label>
+                                <input type="date" id="report-end-date" class="form-input">
+                            </div>
+                            <button class="btn btn-secondary" id="filter-report-btn">集計</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- レポート表示エリア -->
+                <div id="report-content" class="report-container"></div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 在庫管理セクション -->
+            <!-- ========================================== -->
+
+            <!-- 棚卸スキャン -->
+            <div id="page-inv-scan" class="page">
+                <div class="page-header">
+                    <h1>▦ 棚卸スキャン</h1>
+                    <p>QRコードをスキャンして棚卸を登録</p>
+                </div>
+                <div class="qr-layout">
+                    <!-- QRスキャナー -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📷 QRスキャン</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="inv-scanner-container">
+                                <div id="inv-scanner-preview"
+                                    style="width: 100%; max-width: 400px; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+                                    <div id="inv-scanner-placeholder"
+                                        style="color: #fff; text-align: center; padding: 20px;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                                        <p>カメラを起動して商品QRをスキャン</p>
+                                    </div>
+                                    <video id="inv-qr-video"
+                                        style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+                                </div>
+                                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+                                    <button type="button" class="btn btn-primary" id="inv-start-scan-btn">📷
+                                        スキャン開始</button>
+                                    <button type="button" class="btn btn-secondary" id="inv-stop-scan-btn"
+                                        style="display: none;">⏹ 停止</button>
+                                </div>
+                                <div id="inv-scan-result"
+                                    style="margin-top: 16px; padding: 16px; background: var(--color-bg-primary); border-radius: 8px; display: none;">
+                                    <div style="font-weight: 600; margin-bottom: 12px;">✅ スキャン結果</div>
+                                    <div id="inv-scan-data" style="font-size: 14px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 棚卸登録フォーム -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📝 棚卸登録</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="inv-scan-form">
+                                <div class="form-group">
+                                    <label>資材ID</label>
+                                    <input type="text" id="inv-scan-product-id" class="form-input"
+                                        placeholder="QRスキャンまたは手入力" required>
+                                </div>
+                                <div id="inv-product-info"
+                                    style="padding: 12px; background: var(--color-bg-secondary); border-radius: 8px; margin-bottom: 16px; display: none;">
+                                    <div style="font-weight: 600;" id="inv-product-name">-</div>
+                                    <div style="font-size: 14px; color: var(--color-text-muted);">
+                                        現在庫: <span id="inv-current-stock">-</span> / 単価: ¥<span
+                                            id="inv-product-price">-</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>実棚数量</label>
+                                    <input type="number" id="inv-scan-quantity" class="form-input" min="0" required
+                                        style="font-size: 24px; padding: 16px; text-align: center;">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full"
+                                    style="font-size: 18px; padding: 16px;">✓ 棚卸登録</button>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- 本日の棚卸履歴 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📜 本日の棚卸</h3>
+                        </div>
+                        <div class="card-body" id="inv-today-logs">
+                            <p class="text-muted">履歴がありません</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 在庫検索 -->
+            <div id="page-inv-search" class="page">
+                <div class="page-header">
+                    <h1>◎ 在庫検索</h1>
+                    <p>商品を検索して在庫状況を確認</p>
+                </div>
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-body">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="inv-search-keyword" class="form-input"
+                                    placeholder="資材ID、品名、分類で検索..." style="flex: 1;">
+                                <button type="button" class="btn btn-primary" id="inv-search-btn">🔍 検索</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>資材ID</th>
+                                    <th>分類</th>
+                                    <th>品名</th>
+                                    <th>在庫数</th>
+                                    <th>単価</th>
+                                    <th>在庫金額</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inv-search-results"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品マスタ（管理者のみ） -->
+            <div id="page-inv-products" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>▤ 商品マスタ</h1>
+                            <p>商品の登録・編集・削除</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" id="import-inv-csv-btn">📥 CSV取込</button>
+                            <button class="btn btn-secondary" id="export-inv-csv-btn">📤 CSV出力</button>
+                            <button class="btn btn-primary" id="add-inv-product-btn">+ 新規登録</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- CSV取り込みエリア（非表示） -->
+                <div id="csv-import-area" class="card" style="margin-bottom: 1.5rem; display: none;">
+                    <div class="card-header">
+                        <h3>📥 CSV一括取り込み</h3>
+                    </div>
+                    <div class="card-body">
+                        <p style="margin-bottom: 1rem; color: var(--color-text-muted);">
+                            スプレッドシートからCSV形式でダウンロードしたファイルを選択してください。<br>
+                            <strong>必須列：</strong> ID（C列）、資材分類（D列）、品名（E列）、単価（L列）<br>
+                            <strong>オプション列：</strong> 不動（B列）、色/他（F列）、構成（G列）、巾（H列）、長さ（I列）
+                        </p>
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="csv-file-input" accept=".csv,.txt" style="flex: 1;">
+                            <button type="button" class="btn btn-primary" id="execute-csv-import-btn">取込実行</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-csv-import-btn">キャンセル</button>
+                        </div>
+                        <div id="csv-import-preview" style="margin-top: 1rem; max-height: 300px; overflow: auto;">
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-body">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <select id="inv-products-category-filter" class="form-input" style="width: auto;">
+                                <option value="">全分類</option>
+                            </select>
+                            <input type="text" id="inv-products-search" class="form-input" placeholder="検索..."
+                                style="flex: 1; min-width: 200px;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="inv-products-fixed-only">
+                                不動品のみ
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>資材ID</th>
+                                    <th>分類</th>
+                                    <th>品名</th>
+                                    <th>単価</th>
+                                    <th>不動</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inv-products-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 在庫増減（管理者のみ） -->
+            <div id="page-inv-adjust" class="page">
+                <div class="page-header">
+                    <h1>↕ 在庫増減</h1>
+                    <p>入庫・出庫の手動登録</p>
+                </div>
+                <div class="qr-layout">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>➕ 入庫 / ➖ 出庫 登録</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="inv-adjust-form">
+                                <div class="form-group">
+                                    <label>種別</label>
+                                    <select id="inv-adjust-type" class="form-input" required>
+                                        <option value="in">➕ 入庫</option>
+                                        <option value="out">➖ 出庫</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>商品</label>
+                                    <select id="inv-adjust-product" class="form-input" required>
+                                        <option value="">選択してください</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>数量</label>
+                                    <input type="number" id="inv-adjust-quantity" class="form-input" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>備考</label>
+                                    <input type="text" id="inv-adjust-note" class="form-input" placeholder="任意">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full">登録</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📜 最新履歴</h3>
+                        </div>
+                        <div class="card-body" id="inv-adjust-logs">
+                            <p class="text-muted">履歴がありません</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月次締め（管理者のみ） -->
+            <div id="page-inv-monthly" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>月次締め</h1>
+                            <p>月末在庫の集計・確定</p>
+                        </div>
+                        <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <h3>📅 対象月選択</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>年月</label>
+                                <input type="month" id="inv-closing-month" class="form-input">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="view-inv-monthly-btn">📊
+                                集計確認</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 集計結果エリア -->
+                <div id="inv-monthly-result"></div>
+            </div>
+        </main>
+    </div>
+    </div>
+
+    <!-- モーダル -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">モーダル</h3>
+                <button class="btn btn-icon" id="modal-close">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+
+    <!-- トースト -->
+    <div id="toast-container"></div>
+
+    <!-- スマホ用ボトムナビゲーション -->
+    <nav id="mobile-nav" class="mobile-nav hidden">
+        <!-- 作業者用ナビ（2項目） -->
+        <div id="mobile-nav-worker" class="mobile-nav-tabs">
+            <button class="mobile-nav-btn active" data-page="qr">
+                <span class="mobile-nav-icon">⊞</span>
+                <span class="mobile-nav-label">工程完了</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="inv-scan">
+                <span class="mobile-nav-icon">▦</span>
+                <span class="mobile-nav-label">棚卸</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="inv-search">
+                <span class="mobile-nav-icon">◎</span>
+                <span class="mobile-nav-label">検索</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="more">
+                <span class="mobile-nav-icon">⋯</span>
+                <span class="mobile-nav-label">その他</span>
+            </button>
+        </div>
+        <!-- 管理者用ナビ（全メニュー） -->
+        <div id="mobile-nav-admin" class="mobile-nav-tabs hidden">
+            <button class="mobile-nav-btn active" data-page="dashboard">
+                <span class="mobile-nav-icon">▣</span>
+                <span class="mobile-nav-label">概要</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="gantt">
+                <span class="mobile-nav-icon">▤</span>
+                <span class="mobile-nav-label">工程</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="qr">
+                <span class="mobile-nav-icon">⊞</span>
+                <span class="mobile-nav-label">進捗</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="orders">
+                <span class="mobile-nav-icon">☰</span>
+                <span class="mobile-nav-label">指示書</span>
+            </button>
+            <button class="mobile-nav-btn" data-page="more">
+                <span class="mobile-nav-icon">⋯</span>
+                <span class="mobile-nav-label">その他</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- その他メニュー（管理者用スライドアップメニュー） -->
+    <div id="more-menu" class="more-menu hidden">
+        <div class="more-menu-overlay"></div>
+        <div class="more-menu-content">
+            <div class="more-menu-header">
+                <h3>その他のメニュー</h3>
+                <button class="more-menu-close">&times;</button>
+            </div>
+            <div class="more-menu-items">
+                <div class="nav-section-label">在庫管理</div>
+                <button class="more-menu-item" data-page="inv-scan">
+                    <span class="more-menu-icon">▦</span>
+                    <span>棚卸スキャン</span>
+                </button>
+                <button class="more-menu-item" data-page="inv-search">
+                    <span class="more-menu-icon">◎</span>
+                    <span>在庫検索</span>
+                </button>
+                <button class="more-menu-item" data-page="inv-adjust">
+                    <span class="more-menu-icon">↕</span>
+                    <span>在庫増減</span>
+                </button>
+
+                <div class="nav-section-label">生産管理</div>
+                <button class="more-menu-item" data-page="qr">
+                    <span class="more-menu-icon">⊞</span>
+                    <span>進捗登録</span>
+                </button>
+                <button class="more-menu-item" data-page="defects">
+                    <span class="more-menu-icon">△</span>
+                    <span>不良品管理</span>
+                </button>
+
+                <div class="nav-section-label admin-only">管理者機能</div>
+                <button class="more-menu-item admin-only" data-page="bom">
+                    <span class="more-menu-icon">⊟</span>
+                    <span>BOM管理</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="rates">
+                    <span class="more-menu-icon">¥</span>
+                    <span>賃率管理</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="users">
+                    <span class="more-menu-icon">◉</span>
+                    <span>ユーザー管理</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="report">
+                    <span class="more-menu-icon">☷</span>
+                    <span>月次報告</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="inv-products">
+                    <span class="more-menu-icon">▤</span>
+                    <span>商品マスタ</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="inv-monthly">
+                    <span class="more-menu-icon">☰</span>
+                    <span>月次締め</span>
+                </button>
+
+                <div class="nav-section-label">アカウント</div>
+                <button class="more-menu-item logout" id="mobile-logout-btn"
+                    onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
+                    <span class="more-menu-icon">↩</span>
+                    <span>ログアウト</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js?v=20240204-2"></script>
+    <!-- バージョン表示 -->
+</body>
+
+</html>
+```
