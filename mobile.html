@@ -3278,15 +3278,6 @@ function stopQrScanner() {
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
-function logToDebug(msg) {
-    const el = document.getElementById('debug-log');
-    if (el) {
-        el.style.display = 'block';
-        const now = new Date().toLocaleTimeString();
-        el.innerHTML = `<div style="border-bottom:1px solid #eee;">[${now}] ${msg}</div>` + el.innerHTML;
-    }
-    console.log(msg);
-}
 function onQrCodeScanned(decodedText, decodedResult) {
   try {
     // Define safeSet helper early
@@ -3415,7 +3406,6 @@ function onQrCodeScanned(decodedText, decodedResult) {
 
 function selectFromQrData(projectName, productName, bomName) {
   const orders = DB.get(DB.KEYS.ORDERS) || [];
-  logToDebug(`Matching... Scan: "${projectName}" / "${productName}" (DB: ${orders.length} orders)`);
 
   const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
   
@@ -3428,22 +3418,17 @@ function selectFromQrData(projectName, productName, bomName) {
       o.projectName.includes(projectName) && o.productName.includes(productName)
   );
   
-  if (order) logToDebug(`Strict match found: ID=${order.id}`);
 
   // 2. Fuzzy
   if (!order) {
       order = orders.find(o => 
           normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
       );
-      if (order) logToDebug(`Fuzzy match found: ID=${order.id} (${order.projectName})`);
   }
 
   if (!order) {
-     logToDebug("No match found.");
      // Partial check
      const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
-     if (pMatch) logToDebug(`Partial: Project OK (${pMatch.projectName}), Product fail.`);
-     else logToDebug("Partial: Project fail.");
      
      toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
      return;
@@ -3456,7 +3441,6 @@ function selectFromQrData(projectName, productName, bomName) {
       // Check if option exists
       const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
       if (!opt) {
-          logToDebug(`Option for ID=${order.id} missing in select! Adding it.`);
           const newOpt = document.createElement('option');
           newOpt.value = order.id;
           newOpt.text = `${order.projectName} - ${order.productName}`;
@@ -3464,9 +3448,7 @@ function selectFromQrData(projectName, productName, bomName) {
       }
       orderSelect.value = order.id;
       // Trigger change event if needed? No, updateQrItemSelect reads value.
-      logToDebug(`Selected Order ID: ${order.id}`);
   } else {
-      logToDebug("Error: #qr-order select not found");
   }
 
   updateQrItemSelect(); 
@@ -3487,12 +3469,10 @@ function selectFromQrData(projectName, productName, bomName) {
        const itemSelect = document.getElementById('qr-item');
        if (itemSelect) {
            itemSelect.value = item.id;
-           logToDebug(`Selected Item ID: ${item.id}`);
        }
        updateQrProcessSelect();
        toast(`指示書と部材を選択しました`, 'success');
     } else {
-       logToDebug(`Item not found for BOM: ${bomName}`);
        toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
   }, 100);
