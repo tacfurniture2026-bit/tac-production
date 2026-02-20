@@ -454,14 +454,23 @@ function renderGantt() {
     const isExpanded = expandedOrders.has(order.id);
     const expandIcon = isExpanded ? '▼' : '▶';
 
+    // カテゴリ色判定
+    let rowStyle = '';
+    const bom = boms ? boms.find(b => b.productName === order.productName) : null;
+    const category = bom ? (bom.category || '') : '';
+    if (typeof CATEGORY_COLORS !== 'undefined' && CATEGORY_COLORS[category]) {
+      rowStyle = `background-color: ${CATEGORY_COLORS[category]}; color: #1e293b;`;
+    }
+
     html += `
-      <tr>
-        <td colspan="${allProcesses.length + 1}" class="matrix-group-header">
+      <tr style="${rowStyle}">
+        <td colspan="${allProcesses.length + 1}" class="matrix-group-header" style="${rowStyle}">
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
               <span style="font-weight:600;">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
+              ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
               納期: ${formatDate(order.dueDate)}
@@ -2228,6 +2237,18 @@ function importOrdersFromCsv(input) {
       return;
     }
 
+    // 確認ダイアログ
+    const updateCount = processedList.filter(a => a.type === 'update').length;
+    const createCount = processedList.filter(a => a.type === 'create').length;
+
+    if (updateCount > 0) {
+      if (!confirm(`${updateCount}件の既存データが更新され、${createCount}件が新規登録されます。\n実行してもよろしいですか？\n（更新対象: ID重複または特注No重複）`)) {
+        toast('インポートをキャンセルしました', 'info');
+        input.value = '';
+        return;
+      }
+    }
+
     let updatedCount = 0;
     let createdCount = 0;
     let nextId = DB.nextId(DB.KEYS.ORDERS);
@@ -3631,19 +3652,31 @@ function renderReport() {
   }
 
   // 不良数集計 (期間内)
-  let totalDefects = 0;
+  let filteredDefects = [];
   if (startDate || endDate) {
-    totalDefects = defects.filter(d => {
+    filteredDefects = defects.filter(d => {
       const dDate = (d.createdAt || d.date || '').substring(0, 10);
       let matchStart = true;
       let matchEnd = true;
       if (startDate) matchStart = dDate >= startDate;
       if (endDate) matchEnd = dDate <= endDate;
       return matchStart && matchEnd;
-    }).length;
+    });
   } else {
-    totalDefects = defects.length;
+    filteredDefects = defects;
   }
+
+  const totalDefects = filteredDefects.length;
+
+  // 不良理由別集計
+  const defectReasons = {};
+  let totalDefectQty = 0;
+  filteredDefects.forEach(d => {
+    const r = d.reason || 'その他';
+    const qty = parseInt(d.quantity) || 1;
+    defectReasons[r] = (defectReasons[r] || 0) + qty;
+    totalDefectQty += qty;
+  });
 
   // 統計計算
   let totalQuantity = 0;
@@ -3848,6 +3881,45 @@ function renderReport() {
             <span class="summary-label" style="color:var(--color-danger);">不良発生数</span>
             <span class="summary-value" style="color:var(--color-danger);">${totalDefects.toLocaleString()} 件</span>
           </div>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h3>■不良品分析</h3>
+        <div style="display: flex; gap: 2rem;">
+            <div style="flex: 1;">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>不良理由</th>
+                            <th>発生件数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(defectReasons).length > 0 ?
+      Object.entries(defectReasons)
+        .sort((a, b) => b[1] - a[1]) // 件数降順
+        .map(([reason, qty]) => `
+                                <tr>
+                                    <td>${reason}</td>
+                                    <td>${qty}</td>
+                                </tr>
+                            `).join('') :
+      '<tr><td colspan="2" class="text-center text-muted">不良データがありません</td></tr>'
+    }
+                    </tbody>
+                </table>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <div class="summary-item">
+                    <span class="summary-label">不良総数 (個数ベース)</span>
+                    <span class="summary-value" style="color:var(--color-danger); font-size: 1.5rem;">${totalDefectQty} 個</span>
+                </div>
+                 <div class="summary-item" style="margin-top: 1rem;">
+                    <span class="summary-label">発生件数 (レコード数)</span>
+                    <span class="summary-value">${totalDefects} 件</span>
+                </div>
+            </div>
         </div>
       </div>
 
@@ -5255,101 +5327,73 @@ document.addEventListener('DOMContentLoaded', () => {
   // テーマ初期化
   if (typeof initTheme === 'function') initTheme();
 
-  // モバイル判定
-  const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // 認証状態チェック (ログイン画面/メイン画面の切り替え)
+  checkAuth();
 
-  // ===== モバイルUI調整 =====
-  if (isMobile) {
-    // 1. テーマ切替をトップに移動
-    const themeWrapper = document.querySelector('.theme-switch-wrapper');
-    if (themeWrapper) {
-      themeWrapper.style.position = 'fixed';
-      themeWrapper.style.bottom = 'auto';
-      themeWrapper.style.top = '8px';
-      themeWrapper.style.left = '8px';
-      themeWrapper.style.zIndex = '20002';
-    }
-
-    // 2. バージョンバナーを非表示
-    const versionBanner = document.getElementById('version-banner');
-    if (versionBanner) {
-      versionBanner.style.display = 'none';
-    }
-    // IDがない古いキャッシュ版にも対応
-    document.querySelectorAll('body > div').forEach(div => {
-      if (div.style.position === 'fixed' && div.querySelector('#app-version-display')) {
-        div.style.display = 'none';
-      }
+  // リアルタイム同期インジケータ
+  setTimeout(() => {
+    const indicator = document.createElement('div');
+    Object.assign(indicator.style, {
+      position: 'fixed',
+      bottom: '10px',
+      right: '10px',
+      padding: '6px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      zIndex: '9999',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s ease',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontFamily: 'sans-serif'
     });
-  }
 
-  // リアルタイム同期インジケータ（PC版のみ表示）
-  if (!isMobile) {
-    setTimeout(() => {
-      const indicator = document.createElement('div');
-      Object.assign(indicator.style, {
-        position: 'fixed',
-        bottom: '10px',
-        right: '10px',
-        padding: '6px 12px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        zIndex: '9999',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontFamily: 'sans-serif'
-      });
+    // Firebase接続状態チェック
+    const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
 
-      // Firebase接続状態チェック
-      const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
-
-      if (isOnline) {
-        indicator.style.background = '#ECFDF5';
-        indicator.style.color = '#047857';
-        indicator.style.border = '1px solid #A7F3D0';
-        indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
-      } else {
-        indicator.style.background = '#FEF2F2';
-        indicator.style.color = '#B91C1C';
-        indicator.style.border = '1px solid #FECACA';
-        indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
-      }
-
-      document.body.appendChild(indicator);
-    }, 1000);
-  }
-  // フルスクリーン切り替え
-  const fullscreenBtn = document.getElementById('fullscreen-btn');
-  if (fullscreenBtn) {
-    fullscreenBtn.addEventListener('click', () => {
-      const container = document.querySelector('.gantt-container-mono');
-      if (!container) return;
-
-      if (!document.fullscreenElement) {
-        container.requestFullscreen().catch(err => {
-          alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    });
-  }
-
-  // フルスクリーン状態監視（クラス付与用）
-  document.addEventListener('fullscreenchange', () => {
-    const container = document.querySelector('.gantt-container-mono');
-    if (document.fullscreenElement) {
-      container.classList.add('is-fullscreen');
+    if (isOnline) {
+      indicator.style.background = '#ECFDF5';
+      indicator.style.color = '#047857';
+      indicator.style.border = '1px solid #A7F3D0';
+      indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
     } else {
-      container.classList.remove('is-fullscreen');
+      indicator.style.background = '#FEF2F2';
+      indicator.style.color = '#B91C1C';
+      indicator.style.border = '1px solid #FECACA';
+      indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
     }
-  });
 
-}, 2000); // 初期化待ち
+    document.body.appendChild(indicator);
+    // フルスクリーン切り替え
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        const container = document.querySelector('.gantt-container-mono');
+        if (!container) return;
+
+        if (!document.fullscreenElement) {
+          container.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    }
+
+    // フルスクリーン状態監視（クラス付与用）
+    document.addEventListener('fullscreenchange', () => {
+      const container = document.querySelector('.gantt-container-mono');
+      if (document.fullscreenElement) {
+        container.classList.add('is-fullscreen');
+      } else {
+        container.classList.remove('is-fullscreen');
+      }
+    });
+
+  }, 2000); // 初期化待ち
 });
 
 // ========================================

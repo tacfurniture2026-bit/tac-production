@@ -7495,6 +7495,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // テーマ初期化
   if (typeof initTheme === 'function') initTheme();
 
+  // 認証状態チェック (ログイン画面/メイン画面の切り替え)
+  checkAuth();
+
   // リアルタイム同期インジケータ
   setTimeout(() => {
     const indicator = document.createElement('div');
