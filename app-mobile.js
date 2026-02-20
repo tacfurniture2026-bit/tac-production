@@ -5324,6 +5324,42 @@ function initTheme() {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ログインボタン
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => {
+      const username = $('#username').value;
+      const password = $('#password').value;
+      if (login(username, password)) {
+        showMainScreen();
+        toast('ログインしました', 'success');
+      } else {
+        toast('ユーザー名またはパスワードが間違っています', 'error');
+      }
+    });
+  }
+
+  // モバイル判定
+  const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  // ===== モバイルUI調整 =====
+  if (isMobile) {
+    // 1. テーマ切替をトップに移動
+    const themeWrapper = document.querySelector('.theme-switch-wrapper');
+    if (themeWrapper) {
+      themeWrapper.style.position = 'fixed';
+      themeWrapper.style.bottom = 'auto';
+      themeWrapper.style.top = '8px';
+      themeWrapper.style.left = '8px';
+      themeWrapper.style.zIndex = '20002';
+    }
+
+    // 2. バージョンバナーを非表示
+    const versionBanner = document.getElementById('version-banner');
+    if (versionBanner) {
+      versionBanner.style.display = 'none';
+    }
+  }
   // テーマ初期化
   if (typeof initTheme === 'function') initTheme();
 
