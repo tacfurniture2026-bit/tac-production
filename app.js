@@ -806,6 +806,7 @@ function onQrCodeScanned(decodedText, decodedResult) {
              const el = document.getElementById(id);
              if (el) el.value = val;
           };
+          safeSet('qr-raw-data', decodedText);
           safeSet('qr-project-name', projectName || '');
           safeSet('qr-product-name', productName || '');
           safeSet('qr-bom-name', bomName || '');
