@@ -223,8 +223,14 @@ const DB = {
                 { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
             ]);
         }
-        // 賃率データは ensureInitialData でリセットしない（ユーザーデータ保護）
-        // if (this.get(this.KEYS.RATES).length === 0) { ... }
+        // 賃率: Firebase同期後にデータが空なら初期値を設定
+        if (this.get(this.KEYS.RATES).length === 0) {
+            this.save(this.KEYS.RATES, [
+                { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+                { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+                { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+            ]);
+        }
     },
 
     // 保存（全置換 - 初期化時など限定）
