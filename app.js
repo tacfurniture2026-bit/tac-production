@@ -843,72 +843,72 @@ function selectFromQrData(projectName, productName, bomName) {
   const orders = DB.get(DB.KEYS.ORDERS) || [];
 
   const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
-  
+
   const pNameNorm = normalize(projectName);
   const prodNameNorm = normalize(productName);
   const bomNameNorm = normalize(bomName);
 
   // 1. Strict
-  let order = orders.find(o => 
-      o.projectName.includes(projectName) && o.productName.includes(productName)
+  let order = orders.find(o =>
+    o.projectName.includes(projectName) && o.productName.includes(productName)
   );
-  
+
 
   // 2. Fuzzy
   if (!order) {
-      order = orders.find(o => 
-          normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
-      );
+    order = orders.find(o =>
+      normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
+    );
   }
 
   if (!order) {
-     // Partial check
-     const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
-     
-     toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
-     return;
+    // Partial check
+    const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
+
+    toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
+    return;
   }
-  
+
   // Select Order
   const orderSelect = document.getElementById('qr-order');
   if (orderSelect) {
-      // Create option if missing? Be careful.
-      // Check if option exists
-      const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
-      if (!opt) {
-          const newOpt = document.createElement('option');
-          newOpt.value = order.id;
-          newOpt.text = `${order.projectName} - ${order.productName}`;
-          orderSelect.add(newOpt);
-      }
-      orderSelect.value = order.id;
-      // Trigger change event if needed? No, updateQrItemSelect reads value.
+    // Create option if missing? Be careful.
+    // Check if option exists
+    const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
+    if (!opt) {
+      const newOpt = document.createElement('option');
+      newOpt.value = order.id;
+      newOpt.text = `${order.projectName} - ${order.productName}`;
+      orderSelect.add(newOpt);
+    }
+    orderSelect.value = order.id;
+    // Trigger change event if needed? No, updateQrItemSelect reads value.
   } else {
   }
 
-  updateQrItemSelect(); 
+  updateQrItemSelect();
 
   // Select Item
   setTimeout(() => {
-    let item = order.items?.find(i => 
-       i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
+    let item = order.items?.find(i =>
+      i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
     );
-    
+
     if (!item && bomNameNorm) {
-        item = order.items?.find(i => 
-           normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
-        );
+      item = order.items?.find(i =>
+        normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
+      );
     }
 
     if (item) {
-       const itemSelect = document.getElementById('qr-item');
-       if (itemSelect) {
-           itemSelect.value = item.id;
-       }
-       updateQrProcessSelect();
-       toast(`指示書と部材を選択しました`, 'success');
+      const itemSelect = document.getElementById('qr-item');
+      if (itemSelect) {
+        itemSelect.value = item.id;
+      }
+      updateQrProcessSelect();
+      toast(`指示書と部材を選択しました`, 'success');
     } else {
-       toast(`部材が見つかりません: ${bomName}`, 'warning');
+      toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
   }, 100);
 }
@@ -997,34 +997,34 @@ function selectProcess(btn, processName) {
   // 2. Get Data
   const orderId = parseInt(document.getElementById('qr-order').value);
   const itemId = parseInt(document.getElementById('qr-item').value);
-  
+
   if (!orderId || !itemId) {
-      toast('指示書と部材が選択されていません', 'error');
-      btn.style.opacity = '1';
-      btn.innerText = processName;
-      return;
+    toast('指示書と部材が選択されていません', 'error');
+    btn.style.opacity = '1';
+    btn.innerText = processName;
+    return;
   }
 
   // 3. Register (Async simulation)
   // registerProgress retrieves from DB and calls save. It is synchronous in this app (localStorage/Firebase shim).
   // But if Firebase is real, it might take time?
   // Current app.js registerProgress handles DB.
-  
+
   const success = registerProgress(orderId, itemId, processName);
-  
+
   if (success) {
-      toast(`${processName} を完了として登録しました`, 'success');
-      btn.classList.add('completed');
-      btn.innerText = `✓ ${processName}`;
-      btn.disabled = true;
-      btn.style.opacity = '1';
-      
-      // Vibrate
-      if (navigator.vibrate) try { navigator.vibrate(50); } catch(e){}
+    toast(`${processName} を完了として登録しました`, 'success');
+    btn.classList.add('completed');
+    btn.innerText = `✓ ${processName}`;
+    btn.disabled = true;
+    btn.style.opacity = '1';
+
+    // Vibrate
+    if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
   } else {
-      toast('登録に失敗しました', 'error');
-      btn.style.opacity = '1';
-      btn.innerText = processName;
+    toast('登録に失敗しました', 'error');
+    btn.style.opacity = '1';
+    btn.innerText = processName;
   }
 }
 
@@ -1668,7 +1668,7 @@ function renderRates() {
   const tbody = $('#rates-body');
 
   if (rates.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
     return;
   }
 
@@ -1682,6 +1682,7 @@ function renderRates() {
       <td class="text-right">${r.dailyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.hourlyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.minuteRate?.toFixed(1) || 0}</td>
+      <td class="text-right">${r.secondRate?.toFixed(1) || 0}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})">削除</button></td>
     </tr>
   `).join('');
@@ -3227,6 +3228,10 @@ function showAddRateModal() {
         <label>分給(円)</label>
         <input type="number" id="rate-minute" class="form-input" step="0.1" value="0">
       </div>
+      <div class="form-group">
+        <label>秒給(円)</label>
+        <input type="number" id="rate-second" class="form-input" step="0.01" value="0">
+      </div>
     </div>
   `;
 
@@ -3377,6 +3382,7 @@ function createRate() {
   const dailyRate = parseInt($('#rate-daily').value) || 0;
   const hourlyRate = parseInt($('#rate-hourly').value) || 0;
   const minuteRate = parseFloat($('#rate-minute').value) || 0;
+  const secondRate = parseFloat($('#rate-second').value) || 0;
 
   if (!rateCode || !department || !section) {
     toast('判定CD、部、課は必須です', 'warning');
@@ -3393,7 +3399,8 @@ function createRate() {
     monthlyRate,
     dailyRate,
     hourlyRate,
-    minuteRate
+    minuteRate,
+    secondRate
   });
   DB.save(DB.KEYS.RATES, rates);
 
@@ -3407,20 +3414,144 @@ function showImportRateModal() {
     <div style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
       <p>スプレッドシートからコピー&ペーストで賃率をインポートできます。</p>
       <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: 4px;">
-        <strong>形式（11列）:</strong><br>
+        <strong>形式A（9列 - 推奨）:</strong><br>
+        判定CD | 部 | 課 | 係 | 月額 | 日額 | 時給 | 分給 | 秒給<br>
+        <br>
+        <strong>形式B（11列 - 旧形式）:</strong><br>
         [A列:名称] [ID] [C列:判定CD] [部] [課] [係] [G列:月給] [日給] [時給] [分給] [秒給]
       </div>
-      <small>※ヘッダー行（3行目）も含めて、A列〜J列（またはK列）をまとめてコピーしてください。</small>
+      <small>※ヘッダー行を含めてもOKです。自動判別します。</small>
     </div>
     <textarea id="import-rate-data" class="form-input" rows="10" placeholder="ここに貼り付けてください..."></textarea>
+    <div style="margin-top: 0.5rem; text-align: right;">
+      <button class="btn btn-sm btn-outline" onclick="exportRatesToClipboard()">📋 現在のデータをコピー（編集用）</button>
+    </div>
   `;
 
   const footer = `
     <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-primary" onclick="importRates()">インポート</button>
+    <button class="btn btn-danger" onclick="if(confirm('既存の賃率を全て削除して、貼り付けデータで置き換えますか？'))importRatesReplace()">全置換インポート</button>
+    <button class="btn btn-primary" onclick="importRates()">追加/更新インポート</button>
   `;
 
   showModal('賃率一括インポート', body, footer);
+}
+
+// 賃率データをクリップボードにコピー（コピペ編集用）
+function exportRatesToClipboard() {
+  const rates = DB.get(DB.KEYS.RATES);
+  if (rates.length === 0) {
+    toast('賃率データがありません', 'warning');
+    return;
+  }
+
+  const header = '判定CD\t部\t課\t係\t月額\t日額\t時給\t分給\t秒給';
+  const rows = rates.map(r =>
+    [r.rateCode, r.department, r.section, r.subsection || '',
+    r.monthlyRate || 0, r.dailyRate || 0, r.hourlyRate || 0,
+    r.minuteRate || 0, r.secondRate || 0].join('\t')
+  );
+
+  const text = [header, ...rows].join('\n');
+
+  // テキストエリアにも表示
+  const ta = document.getElementById('import-rate-data');
+  if (ta) ta.value = text;
+
+  // クリップボードにコピー
+  navigator.clipboard.writeText(text).then(() => {
+    toast('賃率データをクリップボードにコピーしました。編集後に貼り直して再インポートできます。', 'success');
+  }).catch(() => {
+    toast('テキストエリアに出力しました。手動でコピーしてください。', 'info');
+  });
+}
+
+// 全置換インポート
+function importRatesReplace() {
+  const data = $('#import-rate-data').value.trim();
+  if (!data) {
+    toast('データを入力してください', 'warning');
+    return;
+  }
+
+  const parsed = parseRateLines(data);
+  if (parsed.length === 0) {
+    toast('インポートできるデータがありませんでした', 'warning');
+    return;
+  }
+
+  // 全置換
+  let id = 1;
+  parsed.forEach(r => { r.id = id++; });
+  DB.save(DB.KEYS.RATES, parsed);
+  renderRates();
+  hideModal();
+  toast(`${parsed.length}件の賃率を全置換しました`, 'success');
+}
+
+// 賃率行パーサー（9列 or 11列 自動判定）
+function parseRateLines(data) {
+  const lines = data.split('\n');
+  const results = [];
+
+  const parseVal = (val) => {
+    if (!val) return 0;
+    const numStr = val.toString().replace(/[¥,]/g, '').trim();
+    const num = parseFloat(numStr);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const isHeader = (cols) => {
+    const joined = cols.join(' ');
+    return joined.includes('判定CD') || joined.includes('コード') ||
+      joined.includes('労務費率') || joined.includes('月額') ||
+      joined.includes('職種');
+  };
+
+  lines.forEach(line => {
+    if (!line.trim()) return;
+    const cols = line.split('\t');
+
+    if (isHeader(cols)) return;
+
+    let rateCode, department, section, subsection;
+    let monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate;
+
+    if (cols.length >= 10) {
+      // 11列形式: [名称][ID][CD][部][課][係][月][日][時][分][秒]
+      rateCode = (cols[2] || '').trim();
+      department = (cols[3] || '').trim();
+      section = (cols[4] || '').trim();
+      subsection = (cols[5] || '').trim();
+      monthlyRate = parseVal(cols[6]);
+      dailyRate = parseVal(cols[7]);
+      hourlyRate = parseVal(cols[8]);
+      minuteRate = parseVal(cols[9]);
+      secondRate = parseVal(cols[10]);
+    } else if (cols.length >= 5) {
+      // 9列形式: [CD][部][課][係][月][日][時][分][秒]
+      rateCode = (cols[0] || '').trim();
+      department = (cols[1] || '').trim();
+      section = (cols[2] || '').trim();
+      subsection = (cols[3] || '').trim();
+      monthlyRate = parseVal(cols[4]);
+      dailyRate = parseVal(cols[5]);
+      hourlyRate = parseVal(cols[6]);
+      minuteRate = parseVal(cols[7]);
+      secondRate = parseVal(cols[8]);
+    } else {
+      return; // skip
+    }
+
+    if (!rateCode) return;
+
+    results.push({
+      rateCode, department, section, subsection,
+      monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate
+    });
+  });
+
+  return results;
 }
 
 function importRates() {
@@ -3430,86 +3561,15 @@ function importRates() {
     return;
   }
 
-  const lines = data.split('\n');
-  const existingRates = DB.get(DB.KEYS.RATES);
-  const newRates = [];
-  let skipCount = 0;
-  let errorDetails = [];
-
-  console.log(`Starting import of ${lines.length} lines...`);
-
-  lines.forEach((line, index) => {
-    // 空行はスキップ
-    if (!line.trim()) return;
-
-    // タブ区切り以外（例えばExcelからのコピペでスペース変換されてしまった場合など）も考慮したいが、
-    // 基本はタブ区切りを想定。
-    const cols = line.split('\t');
-
-    // 列数チェック緩和: 最低限 コード(2), 部門(3), 月給(6) くらいがあれば許可
-    if (cols.length < 7) {
-      console.warn(`Line ${index + 1} skipped: Not enough columns (${cols.length})`, line);
-      skipCount++;
-      return;
-    }
-
-    // ヘッダー判定（C列が空、または "コード" などの文字列）
-    const col2 = (cols[2] || '').trim();
-    if (col2 === 'コード' || col2 === '職種・役職CD' || !col2) {
-      console.log(`Line ${index + 1} skipped: Header or empty code`);
-      skipCount++;
-      return;
-    }
-
-    // 数値パース（カンマ除去）
-    const parseVal = (val) => {
-      if (!val) return 0;
-      // 円マークやカンマを除去
-      const numStr = val.toString().replace(/[¥,]/g, '').trim();
-      const num = parseFloat(numStr);
-      return isNaN(num) ? 0 : num;
-    };
-
-    // データマッピング (A=0, Start from C=2)
-    // C=Code, D=Dept, E=Section, F=SubSection
-    // G=Monthly, H=Daily, I=Hourly, J=Minute
-
-    const rateCode = col2;
-    const department = (cols[3] || '').trim();
-    const section = (cols[4] || '').trim();
-    const subsection = (cols[5] || '').trim();
-
-    const monthlyRate = parseVal(cols[6]);
-    const dailyRate = parseVal(cols[7]);
-    const hourlyRate = parseVal(cols[8]);
-    const minuteRate = parseVal(cols[9]); // J列がなくても0になる
-
-    if (!rateCode || !department) {
-      console.warn(`Line ${index + 1} skipped: Missing code or dept`);
-      skipCount++;
-      return;
-    }
-
-    newRates.push({
-      // IDは後で採番
-      rateCode,
-      department,
-      section,
-      subsection,
-      monthlyRate,
-      dailyRate,
-      hourlyRate,
-      minuteRate
-    });
-  });
+  const newRates = parseRateLines(data);
 
   if (newRates.length === 0) {
-    console.error('No valid rates parsed');
     toast('インポートできるデータがありませんでした。\n形式を確認してください（タブ区切り）', 'warning');
     return;
   }
 
   // 既存データとマージ
+  const existingRates = DB.get(DB.KEYS.RATES);
   let addedCount = 0;
   let updatedCount = 0;
 
@@ -3532,8 +3592,7 @@ function importRates() {
   renderRates();
   hideModal();
 
-  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件 (スキップ ${skipCount}行)`;
-  console.log(msg);
+  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件`;
   toast(msg, 'success');
 }
 
