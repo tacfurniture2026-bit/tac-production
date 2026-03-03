@@ -110,13 +110,32 @@ const DB = {
             ]);
         }
 
-        // 賃率
-        if (!localStorage.getItem(this.KEYS.RATES)) {
-            this.save(this.KEYS.RATES, [
-                { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
-                { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
-                { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
-            ]);
+        // 賃率（マイグレーション対応）
+        const defaultRates = [
+            { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+            { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+            { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+        ];
+        const existingRates = localStorage.getItem(this.KEYS.RATES);
+        if (!existingRates) {
+            // 初回: デフォルト値を設定
+            this.save(this.KEYS.RATES, defaultRates);
+        } else {
+            // マイグレーション: 旧形式データ（secondRate未対応/旧サンプル）を検出して置換
+            try {
+                const parsed = JSON.parse(existingRates);
+                const isOldFormat = Array.isArray(parsed) && parsed.length > 0 &&
+                    (parsed[0].rate !== undefined || // 旧フィールド名
+                        parsed[0].secondRate === undefined || // 秒給なし
+                        parsed[0].rateCode === 'A01'); // 旧サンプルデータ
+                if (isOldFormat) {
+                    console.log('🔄 賃率データをマイグレーション: 旧形式 → 新形式');
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            } catch (e) {
+                // パース失敗時はデフォルトで上書き
+                this.save(this.KEYS.RATES, defaultRates);
+            }
         }
 
         // 不良品
