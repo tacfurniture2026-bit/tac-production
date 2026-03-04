@@ -3086,43 +3086,162 @@ function parseBomText(text, separator) {
 }
 
 function processBomCsv(text) {
-  const existingBoms = DB.get(DB.KEYS.BOM);
-  const { boms: newBomsRaw } = parseBomText(text, ','); // CSV
-
-  if (newBomsRaw.length === 0) {
-    toast('有効なデータが見つかりませんでした', 'warning');
+  // ヘッダー行を解析して形式を自動判定
+  const lines = text.split(/\r\n|\n/).filter(l => l.trim());
+  if (lines.length < 2) {
+    toast('データが含まれていません', 'warning');
     return;
   }
 
-  // 重複・ID付与
-  const newBoms = [];
-  let currentId = DB.nextId(DB.KEYS.BOM);
-  let duplicatesCount = 0;
+  // BOMケア
+  if (lines[0].charCodeAt(0) === 0xFEFF) {
+    lines[0] = lines[0].slice(1);
+  }
 
-  newBomsRaw.forEach(raw => {
-    // 既存チェック (BOM名 + 部材CD + 製品名)
-    const exists = existingBoms.some(e =>
-      e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
-    );
-    if (!exists) {
-      raw.id = currentId++;
-      newBoms.push(raw);
-    } else {
-      duplicatesCount++;
+  const headerRaw = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  const headerLower = headerRaw.map(h => h.toLowerCase());
+
+  // エクスポート形式の判定: id,productName,category,bomName,partCode,processes,note
+  const isExportFormat = headerLower.includes('id') &&
+    (headerLower.includes('productname') || headerLower.includes('品名')) &&
+    (headerLower.includes('processes') || headerLower.includes('工程'));
+
+  if (isExportFormat) {
+    // ========== エクスポート形式パーサー ==========
+    const colMap = {};
+    headerLower.forEach((h, idx) => {
+      if (h === 'id') colMap.id = idx;
+      else if (h === 'productname' || h === '品名' || h === '製品名') colMap.productName = idx;
+      else if (h === 'category' || h === 'カテゴリ') colMap.category = idx;
+      else if (h === 'bomname' || h === 'bom名') colMap.bomName = idx;
+      else if (h === 'partcode' || h === '部材cd') colMap.partCode = idx;
+      else if (h === 'processes' || h === '工程') colMap.processes = idx;
+      else if (h === 'note' || h === '備考') colMap.note = idx;
+    });
+
+    if (colMap.productName === undefined || colMap.bomName === undefined) {
+      toast('CSVヘッダーに必要な列（productName, bomName）が見つかりません', 'error');
+      return;
     }
-  });
 
-  if (newBoms.length === 0) {
-    toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
-    return;
+    const existingBoms = DB.get(DB.KEYS.BOM);
+    let nextId = DB.nextId(DB.KEYS.BOM);
+    let updatedCount = 0;
+    let createdCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      // CSVパース（ダブルクォート内のカンマに対応）
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 3) continue;
+
+      const idVal = colMap.id !== undefined ? parseInt(cols[colMap.id]) : NaN;
+      const productName = (cols[colMap.productName] || '').trim();
+      const category = colMap.category !== undefined ? (cols[colMap.category] || '').trim() : '';
+      const bomName = (cols[colMap.bomName] || '').trim();
+      const partCode = colMap.partCode !== undefined ? (cols[colMap.partCode] || '').trim() : '';
+      const processesRaw = colMap.processes !== undefined ? (cols[colMap.processes] || '').trim() : '';
+      const note = colMap.note !== undefined ? (cols[colMap.note] || '').trim() : '';
+
+      if (!productName || !bomName) continue;
+
+      // パイプ区切りの工程を配列に変換
+      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+
+      // 重複チェック (ID → 品名+BOM名)
+      let existingIdx = -1;
+      if (!isNaN(idVal) && idVal > 0) {
+        existingIdx = existingBoms.findIndex(b => b.id === idVal);
+      }
+      if (existingIdx === -1) {
+        existingIdx = existingBoms.findIndex(b => b.productName === productName && b.bomName === bomName);
+      }
+
+      const newBomData = { productName, category, bomName, partCode, processes, note };
+
+      if (existingIdx !== -1) {
+        existingBoms[existingIdx] = { ...existingBoms[existingIdx], ...newBomData };
+        updatedCount++;
+      } else {
+        existingBoms.push({ id: nextId++, ...newBomData });
+        createdCount++;
+      }
+    }
+
+    DB.save(DB.KEYS.BOM, existingBoms);
+    toast(`BOMインポート完了: 新規${createdCount}件, 更新${updatedCount}件`, 'success');
+    hideModal();
+    renderBom();
+  } else {
+    // ========== テンプレート形式 (カテゴリ,製品名,BOM名,部材CD,...工程) ==========
+    const existingBoms = DB.get(DB.KEYS.BOM);
+    const { boms: newBomsRaw } = parseBomText(text, ',');
+
+    if (newBomsRaw.length === 0) {
+      toast('有効なデータが見つかりませんでした', 'warning');
+      return;
+    }
+
+    let currentId = DB.nextId(DB.KEYS.BOM);
+    let duplicatesCount = 0;
+    const newBoms = [];
+
+    newBomsRaw.forEach(raw => {
+      const exists = existingBoms.some(e =>
+        e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+      );
+      if (!exists) {
+        raw.id = currentId++;
+        newBoms.push(raw);
+      } else {
+        duplicatesCount++;
+      }
+    });
+
+    if (newBoms.length === 0) {
+      toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
+      return;
+    }
+
+    const updatedBoms = [...existingBoms, ...newBoms];
+    DB.save(DB.KEYS.BOM, updatedBoms);
+    toast(`${newBoms.length}件インポートしました`, 'success');
+    hideModal();
+    renderBom();
   }
+}
 
-  // 保存
-  const updatedBoms = [...existingBoms, ...newBoms];
-  DB.save(DB.KEYS.BOM, updatedBoms);
-  toast(`${newBoms.length}件インポートしました`, 'success');
-  hideModal();
-  renderBom();
+// CSV行パーサー（ダブルクォート内のカンマに対応）
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+  result.push(current.trim());
+  return result;
 }
 
 // Paste Import
