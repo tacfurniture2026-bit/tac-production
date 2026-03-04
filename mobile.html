@@ -2745,6 +2745,28 @@ function showMainScreen() {
   }
 }
 
+// 現在表示中のページを再描画する（Firebaseデータ同期時のUI更新用）
+window.refreshCurrentPage = function () {
+  const activePage = localStorage.getItem('lastPage') || 'dashboard';
+
+  switch (activePage) {
+    case 'dashboard': renderDashboard(); break;
+    case 'gantt': renderGantt(); break;
+    case 'qr': renderQrPage(); break;
+    case 'defects': renderDefects(); break;
+    case 'orders': renderOrders(); break;
+    case 'bom': renderBom(); break;
+    case 'rates': renderRates(); break;
+    case 'users': renderUsers(); break;
+    case 'report': renderReport(); break;
+    case 'inv-scan': renderInvScanPage(); break;
+    case 'inv-search': renderInvSearchPage(); break;
+    case 'inv-products': renderInvProductsPage(); break;
+    case 'inv-adjust': renderInvAdjustPage(); break;
+    case 'inv-monthly': renderInvMonthlyPage(); break;
+  }
+};
+
 function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
