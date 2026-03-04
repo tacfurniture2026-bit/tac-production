@@ -1681,8 +1681,8 @@ function renderRates() {
       <td class="text-right">${r.monthlyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.dailyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.hourlyRate?.toLocaleString() || 0}</td>
-      <td class="text-right">${r.minuteRate?.toFixed(1) || 0}</td>
-      <td class="text-right">${r.secondRate?.toFixed(1) || 0}</td>
+      <td class="text-right">${r.minuteRate?.toFixed(2) || 0}</td>
+      <td class="text-right">${r.secondRate?.toFixed(2) || 0}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})">削除</button></td>
     </tr>
   `).join('');
