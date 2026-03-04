@@ -5605,66 +5605,85 @@ function parseBomText(text, separator) {
   if (lines.length === 0) return { boms: [], duplicates: [] };
 
   // ヘッダー解析
-  // Excelからのコピペなどはタブ区切り、CSVアップロードはカンマ区切り
-  // separatorが指定されていればそれを使う
   let headers = lines[0].split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
   let processNames = [];
-  let startIndex = 0; // データ開始行
+  let startIndex = 0;
+  let hasPartCodeCol = true; // 部材CD列の有無
 
-  // 標準的なヘッダーが含まれているか確認
-  // (A:カテゴリ, B:製品名, C:BOM名, D:部材CD ... 以降は工程)
-  // ヘッダー行っぽければ、そこから工程名を抽出する
-  if (headers.includes('製品名') || headers.includes('BOM名') || headers.includes('部材CD')) {
-    startIndex = 1; // 1行目はヘッダー
-    // 4番目以降を工程名として取得 (0:カテゴリ, 1:製品名, 2:BOM名, 3:部材CD)
-    if (headers.length > 4) {
-      processNames = headers.slice(4).filter(h => h && h.length > 0);
+  // ヘッダー判定: 複数のエイリアスに対応
+  const isHeader = (h) => {
+    const candidates = ['カテゴリ', '大分類', '製品名', '品名', 'BOM名', 'BOM', '部材CD', '部材cd',
+      '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー',
+      '仕上・梱包', 'TOYO', 'HOMAG', 'productname', 'bomname', 'partcode', 'category'];
+    return candidates.some(c => h.toLowerCase().includes(c.toLowerCase()));
+  };
+
+  const headerMatch = headers.some(h => isHeader(h));
+
+  if (headerMatch) {
+    startIndex = 1;
+
+    // 部材CD列があるか判定
+    hasPartCodeCol = headers.some(h => h === '部材CD' || h === '部材cd' || h.toLowerCase() === 'partcode');
+    const fixedCols = hasPartCodeCol ? 4 : 3; // 固定列数
+
+    if (headers.length > fixedCols) {
+      processNames = headers.slice(fixedCols).filter(h => h && h.length > 0);
     }
   } else {
-    // ヘッダーなしの場合、工程は取り込めない
     console.warn('No headers detected');
   }
 
   let lastCategory = '';
   let lastProductName = '';
 
+  // 時間値判定 (例: "5分", "10分")
+  const isTimeValue = (val) => /^\d+分$/.test((val || '').trim());
+
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
     const cols = line.split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
-    // 必須列チェック (BOM名, 部材CD)
-    // index: 0=Cat, 1=Prod, 2=BomName, 3=PartCode
     let category = cols[0] || lastCategory;
     let productName = cols[1] || lastProductName;
     let bomName = cols[2];
-    let partCode = cols[3];
+    let partCode = '';
+    let processStartCol = hasPartCodeCol ? 4 : 3;
 
-    // BOM名も部材CDもない行はスキップ（空行など）
-    if (!bomName && !partCode) continue;
-    // 部材CDがない場合はBOM名を入れるなどの補完も考えられるが、一旦必須とする
-    if (!bomName) bomName = partCode;
-    if (!partCode) partCode = bomName;
+    if (hasPartCodeCol) {
+      partCode = cols[3] || '';
+      // GRID行の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無い
+      if (category && category.toUpperCase() === 'GRID' && isTimeValue(partCode)) {
+        // GRID行はpartCode列がなく、col[3]から工程開始
+        processStartCol = 3;
+        partCode = ''; // 後で設定
+      }
+    }
+
+    // BOM名がない行はスキップ
+    if (!bomName) continue;
+
+    // 補完
+    if (!partCode) {
+      if (category && category.toUpperCase() === 'GRID') {
+        partCode = productName; // GRIDルール: partCode = productName
+      } else {
+        partCode = bomName; // デフォルト: partCode = bomName
+      }
+    }
 
     // 継続値更新
     if (cols[0]) lastCategory = cols[0];
     if (cols[1]) lastProductName = cols[1];
 
-    // GRIDルール
-    if (category && category.toUpperCase() === 'GRID') {
-      partCode = productName;
-    }
-
     // 工程解析
     let processes = [];
     if (processNames.length > 0) {
-      // ヘッダーがある場合: 各列をチェック
       processNames.forEach((procName, idx) => {
-        // colsのindexは 4 + idx
-        const val = cols[4 + idx];
-        // 値が '1', 'TRUE', '○', 'ON', 'Yes' などなら採用
-        // Excelで空欄以外（何か書いてあれば）採用とするのが一番汎用的
-        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase())) {
+        const val = cols[processStartCol + idx];
+        // 空欄以外（1, TRUE, ○, 数字+分 など）なら採用
+        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase().trim())) {
           processes.push(procName);
         }
       });
@@ -5847,20 +5866,44 @@ function showBomPasteImport() {
         <div class="form-group">
             <label>Excelからコピーしたデータを貼り付けてください</label>
             <p class="text-muted" style="font-size:0.8rem;">
-              ※1行目にヘッダー（カテゴリ, 製品名, BOM名, 部材CD, [工程1], [工程2]...）を含めると工程も取り込めます。
+              ※1行目にヘッダーを含めてください。<br>
+              <strong>形式:</strong> 大分類 / 品名 / BOM / 部材CD / [工程1] / [工程2]...<br>
+              ※工程列に値（5分, 1, ○ など）があれば、その工程を登録します。<br>
+              ※GRID行は部材CD列なしでもOKです。
             </p>
-            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="カテゴリ	製品名	BOM名	部材CD	芯材カット..."></textarea>
+            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="大分類\t品名\tBOM\t部材CD\t芯材カット\t面材カット..."></textarea>
             
             <div style="text-align:right; margin-top:0.5rem;">
-               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレートをダウンロード</button>
+               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレート</button>
+               <button class="btn btn-sm btn-outline" onclick="exportBomsToCsv()">📤 現在のBOMをCSV出力</button>
             </div>
         </div>
     `;
   const footer = `
         <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-        <button class="btn btn-primary" onclick="executeBomPasteImport()">インポート</button>
+        <button class="btn btn-danger" onclick="if(confirm('既存BOMを全て削除して貼り付けデータで置き換えますか？'))executeBomPasteReplace()">全置換</button>
+        <button class="btn btn-primary" onclick="executeBomPasteImport()">追加インポート</button>
     `;
   showModal('BOMペースト登録', body, footer);
+}
+
+// 全置換ペーストインポート
+function executeBomPasteReplace() {
+  const text = document.getElementById('bom-paste-area').value;
+  if (!text.trim()) { toast('データを貼り付けてください', 'warning'); return; }
+
+  const { boms: newBomsRaw } = parseBomText(text, '\t');
+  if (newBomsRaw.length === 0) {
+    toast('データが解析できませんでした', 'warning');
+    return;
+  }
+
+  let id = 1;
+  newBomsRaw.forEach(b => { b.id = id++; });
+  DB.save(DB.KEYS.BOM, newBomsRaw);
+  toast(`${newBomsRaw.length}件のBOMで全置換しました`, 'success');
+  hideModal();
+  renderBom();
 }
 
 function executeBomPasteImport() {
