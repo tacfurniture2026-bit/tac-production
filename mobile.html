@@ -6650,21 +6650,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSelBtn = $('#delete-selected-bom-btn');
   if (deleteSelBtn) deleteSelBtn.addEventListener('click', deleteSelectedBoms);
 
-  $('#import-bom-btn').addEventListener('click', showImportBomModal);
-  $('#add-rate-btn').addEventListener('click', showAddRateModal);
-  $('#import-rates-btn').addEventListener('click', showImportRateModal);
-  $('#add-user-btn').addEventListener('click', showAddUserModal);
+  // ボタン登録（null安全）
+  const importBomBtn = $('#import-bom-btn');
+  if (importBomBtn) importBomBtn.addEventListener('click', showImportBomModal);
 
-  // 賃率管理
-  const addRateBtn = document.getElementById('add-rate-btn');
+  const addRateBtn = $('#add-rate-btn');
   if (addRateBtn) addRateBtn.addEventListener('click', showAddRateModal);
 
-  const importRateBtn = document.getElementById('import-rates-btn');
-  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal); // 一括インポートボタンも同じモーダルを開く（中にインポート機能があるため）
+  const importRateBtn = $('#import-rates-btn');
+  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal);
 
-  // 月次報告
-  $('#filter-report-btn').addEventListener('click', renderReport);
-  $('#generate-report-btn').addEventListener('click', printReport);
+  const addUserBtn = $('#add-user-btn');
+  if (addUserBtn) addUserBtn.addEventListener('click', showAddUserModal);
+
+  const filterReportBtn = $('#filter-report-btn');
+  if (filterReportBtn) filterReportBtn.addEventListener('click', renderReport);
+
+  const genReportBtn = $('#generate-report-btn');
+  if (genReportBtn) genReportBtn.addEventListener('click', printReport);
 });
 
 // ========================================
