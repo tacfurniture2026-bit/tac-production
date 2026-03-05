@@ -162,6 +162,7 @@ window.refreshCurrentPage = function () {
     case 'rates': renderRates(); break;
     case 'users': renderUsers(); break;
     case 'report': renderReport(); break;
+    case 'backup': renderBackupPage(); break;
     case 'inv-scan': renderInvScanPage(); break;
     case 'inv-search': renderInvSearchPage(); break;
     case 'inv-products': renderInvProductsPage(); break;
@@ -220,6 +221,9 @@ function navigateTo(pageName) {
       break;
     case 'report':
       renderReport();
+      break;
+    case 'backup':
+      renderBackupPage();
       break;
     // 在庫管理
     case 'inv-scan':
@@ -5824,3 +5828,167 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     alert('エラーが発生しました: ' + e.message);
   }
 };
+
+// ========================================
+// バックアップ管理
+// ========================================
+
+function renderBackupPage() {
+  const container = document.getElementById('backup-list');
+  if (!container) return;
+
+  const backups = DB.getBackupList().sort((a, b) => b.id - a.id);
+  const lastBackup = localStorage.getItem('pms_last_backup_date');
+
+  let nextAutoText = '未定';
+  if (lastBackup) {
+    const nextDate = new Date(new Date(lastBackup).getTime() + 28 * 24 * 60 * 60 * 1000);
+    // 次の日曜日を計算
+    while (nextDate.getDay() !== 0) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
+    nextAutoText = nextDate.toLocaleDateString('ja-JP');
+  }
+
+  let html = `
+    <div class="card" style="margin-bottom: 1rem;">
+      <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <strong>📅 自動バックアップ設定</strong><br>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">
+            毎月1回・日曜日に自動実行 ｜ 最新6件を保持 ｜
+            最終バックアップ: ${lastBackup ? new Date(lastBackup).toLocaleString('ja-JP') : 'なし'} ｜
+            次回予定: ${nextAutoText}
+          </span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="downloadAllBackupJson()">📥 全データJSON出力</button>
+      </div>
+    </div>
+  `;
+
+  if (backups.length === 0) {
+    html += `
+      <div class="card" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+        <p style="font-size: 1.2rem;">💾 バックアップはまだありません</p>
+        <p>「今すぐバックアップ」ボタンで手動バックアップを作成できます。</p>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>種類</th>
+              <th>レコード数</th>
+              <th>サイズ</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    backups.forEach(b => {
+      const date = new Date(b.createdAt).toLocaleString('ja-JP');
+      const sizeKB = (b.dataSize / 1024).toFixed(1);
+      const isAuto = b.label.includes('自動');
+      const labelClass = isAuto ? 'badge badge-info' : 'badge badge-success';
+
+      html += `
+        <tr>
+          <td>${date}</td>
+          <td><span class="${labelClass}">${b.label}</span></td>
+          <td>${b.totalRecords.toLocaleString()}件</td>
+          <td>${sizeKB} KB</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="restoreFromBackup(${b.id})" title="このバックアップから復元">🔄 復元</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadBackup(${b.id})" title="JSONダウンロード">📥</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBackupItem(${b.id})" title="削除">🗑</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// 手動バックアップ
+function createManualBackup() {
+  try {
+    const backup = DB.createBackup('手動バックアップ');
+    toast(`💾 バックアップを作成しました（${backup.totalRecords}件, ${(backup.dataSize / 1024).toFixed(1)}KB）`, 'success');
+    renderBackupPage();
+  } catch (e) {
+    toast('バックアップの作成に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// バックアップから復元
+function restoreFromBackup(backupId) {
+  if (!confirm('このバックアップからデータを復元しますか？\n\n現在のデータは全て上書きされます。\n（復元前に自動バックアップを作成します）')) return;
+
+  try {
+    // 復元前に自動でバックアップ
+    DB.createBackup('復元前の自動バックアップ');
+
+    const success = DB.restoreBackup(backupId);
+    if (success) {
+      toast('✅ バックアップから復元しました。ページをリロードします。', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      toast('復元に失敗しました。バックアップデータが見つかりません。', 'error');
+    }
+  } catch (e) {
+    toast('復元に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// バックアップ削除
+function deleteBackupItem(backupId) {
+  if (!confirm('このバックアップを削除しますか？')) return;
+  DB.deleteBackupById(backupId);
+  toast('バックアップを削除しました', 'info');
+  renderBackupPage();
+}
+
+// バックアップJSONダウンロード
+function downloadBackup(backupId) {
+  const backups = DB.get(DB.KEYS.BACKUPS);
+  const backup = backups.find(b => b.id === backupId);
+  if (!backup) { toast('バックアップが見つかりません', 'error'); return; }
+
+  const json = JSON.stringify(backup.snapshot, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `backup_${new Date(backup.createdAt).toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('バックアップをダウンロードしました', 'success');
+}
+
+// 全データJSON出力（復元用）
+function downloadAllBackupJson() {
+  const snapshot = {};
+  DB._backupTargetKeys().forEach(key => {
+    snapshot[key] = DB.get(key);
+  });
+  const json = JSON.stringify(snapshot, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `full_backup_${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('全データをJSONファイルとしてダウンロードしました', 'success');
+}

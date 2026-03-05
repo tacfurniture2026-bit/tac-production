@@ -230,6 +230,10 @@
                     <span class="nav-icon">☷</span>
                     <span>月次報告</span>
                 </a>
+                <a href="#" class="nav-item admin-only" data-page="backup">
+                    <span class="nav-icon">💾</span>
+                    <span>バックアップ</span>
+                </a>
                 <div class="nav-section">在庫管理</div>
                 <a href="#" class="nav-item" data-page="inv-scan">
                     <span class="nav-icon">▦</span>
@@ -593,6 +597,22 @@
                     </div>
                 </div>
                 <div id="bom-list"></div>
+            </div>
+
+            <!-- バックアップ管理 -->
+            <div id="page-backup" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1>💾 バックアップ管理</h1>
+                            <p>データのバックアップと復元（毎月第1日曜日に自動バックアップ）</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="createManualBackup()">💾 今すぐバックアップ</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="backup-list"></div>
             </div>
 
             <!-- 賃率管理 -->

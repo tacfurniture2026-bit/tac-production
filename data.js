@@ -15,7 +15,9 @@ const DB = {
         // 在庫管理
         INV_PRODUCTS: 'pms_inv_products',      // 商品マスタ
         INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
-        INV_MONTHLY: 'pms_inv_monthly'         // 月次在庫データ
+        INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
+        // バックアップ
+        BACKUPS: 'pms_backups'                 // バックアップ履歴
     },
 
     // Firebaseキーへの変換（pms_プレフィックスを除去）
@@ -188,7 +190,8 @@ const DB = {
         const dataKeys = [
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
-            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
+            this.KEYS.BACKUPS
         ];
 
         dataKeys.forEach(key => {
@@ -213,6 +216,11 @@ const DB = {
         setTimeout(() => {
             this.ensureInitialData();
         }, 2000);
+
+        // 自動バックアップチェック（データ読み込み後）
+        setTimeout(() => {
+            this.checkAutoBackup();
+        }, 5000);
     },
 
     // Firebase初期データ確認
@@ -336,6 +344,107 @@ const DB = {
     nextId(key) {
         const data = this.get(key);
         return data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
+    },
+
+    // ========================================
+    // バックアップ機能
+    // ========================================
+
+    // バックアップ対象のキー一覧
+    _backupTargetKeys() {
+        return [
+            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
+            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
+        ];
+    },
+
+    // バックアップ作成
+    createBackup(label) {
+        const snapshot = {};
+        let totalRecords = 0;
+        this._backupTargetKeys().forEach(key => {
+            const data = this.get(key);
+            snapshot[key] = data;
+            totalRecords += data.length;
+        });
+
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = {
+            id: Date.now(),
+            label: label || '手動バックアップ',
+            createdAt: new Date().toISOString(),
+            totalRecords,
+            dataSize: JSON.stringify(snapshot).length,
+            snapshot
+        };
+        backups.push(backup);
+        this.save(this.KEYS.BACKUPS, backups);
+        localStorage.setItem('pms_last_backup_date', new Date().toISOString());
+        return backup;
+    },
+
+    // バックアップから復元
+    restoreBackup(backupId) {
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = backups.find(b => b.id === backupId);
+        if (!backup || !backup.snapshot) return false;
+
+        this._backupTargetKeys().forEach(key => {
+            if (backup.snapshot[key] !== undefined) {
+                this.save(key, backup.snapshot[key]);
+            }
+        });
+        return true;
+    },
+
+    // バックアップ削除
+    deleteBackupById(backupId) {
+        let backups = this.get(this.KEYS.BACKUPS);
+        backups = backups.filter(b => b.id !== backupId);
+        this.save(this.KEYS.BACKUPS, backups);
+    },
+
+    // バックアップ一覧取得(スナップショットなし=軽量)
+    getBackupList() {
+        const backups = this.get(this.KEYS.BACKUPS);
+        return backups.map(b => ({
+            id: b.id,
+            label: b.label,
+            createdAt: b.createdAt,
+            totalRecords: b.totalRecords,
+            dataSize: b.dataSize
+        }));
+    },
+
+    // 自動バックアップチェック（月1回・日曜日）
+    checkAutoBackup() {
+        const now = new Date();
+        // 日曜日（0）でなければスキップ
+        if (now.getDay() !== 0) return;
+
+        const lastBackup = localStorage.getItem('pms_last_backup_date');
+        if (lastBackup) {
+            const lastDate = new Date(lastBackup);
+            const daysSince = (now - lastDate) / (1000 * 60 * 60 * 24);
+            if (daysSince < 28) return; // 28日未満ならスキップ
+        }
+
+        // 自動バックアップ実行
+        console.log('💾 自動バックアップを実行中...');
+        const backup = this.createBackup('自動バックアップ（月次）');
+        console.log(`✅ 自動バックアップ完了: ${backup.totalRecords}件`);
+        if (typeof toast === 'function') {
+            toast(`💾 月次自動バックアップを作成しました（${backup.totalRecords}件）`, 'success');
+        }
+
+        // 古いバックアップを整理（最新6件のみ保持）
+        let backups = this.get(this.KEYS.BACKUPS);
+        if (backups.length > 6) {
+            backups.sort((a, b) => b.id - a.id);
+            backups = backups.slice(0, 6);
+            this.save(this.KEYS.BACKUPS, backups);
+        }
     }
 };
 
