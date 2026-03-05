@@ -147,18 +147,7 @@
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
-    <!-- テーマ切替スイッチ -->
-    <div class="theme-switch-wrapper">
-        <label class="theme-switch" for="theme-toggle">
-            <input type="checkbox" id="theme-toggle" />
-            <div class="slider">
-                <i class="fas fa-sun icon sun"></i>
-                <i class="fas fa-moon icon moon"></i>
-            </div>
-        </label>
-        <span class="theme-label"
-            style="margin-left:8px; font-size:0.7rem; color:var(--color-text-tertiary);">Mode</span>
-    </div>
+
 
     <div id="app">
         <!-- ログイン画面 -->
@@ -261,11 +250,25 @@
                     <span class="user-name" id="current-user-name">管理者</span>
                     <span class="user-role" id="current-user-role">v4.0 (Color Added)</span>
                 </div>
-                <button class="nav-item logout-btn" id="logout-btn"
-                    onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
-                    <span class="nav-icon">↩</span>
-                    <span>ログアウト</span>
-                </button>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.5rem 1rem;">
+                    <div class="theme-switch-wrapper"
+                        style="position:static; background:none; padding:0; backdrop-filter:none;">
+                        <label class="theme-switch" for="theme-toggle">
+                            <input type="checkbox" id="theme-toggle" />
+                            <div class="slider">
+                                <i class="fas fa-sun icon sun"></i>
+                                <i class="fas fa-moon icon moon"></i>
+                            </div>
+                        </label>
+                        <span class="theme-label"
+                            style="margin-left:8px; font-size:0.7rem; color:var(--color-text-tertiary);">Mode</span>
+                    </div>
+                    <button class="nav-item logout-btn" id="logout-btn"
+                        onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
+                        <span class="nav-icon">↩</span>
+                        <span>ログアウト</span>
+                    </button>
+                </div>
             </div>
         </aside>
 
