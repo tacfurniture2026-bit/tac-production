@@ -250,23 +250,23 @@
                     <span class="user-name" id="current-user-name">管理者</span>
                     <span class="user-role" id="current-user-role">v4.0 (Color Added)</span>
                 </div>
-                <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.5rem 1rem;">
-                    <div class="theme-switch-wrapper"
-                        style="position:static; background:none; padding:0; backdrop-filter:none;">
-                        <label class="theme-switch" for="theme-toggle">
+                <div
+                    style="display:flex; align-items:center; justify-content:space-between; padding: 0.4rem 1rem 0.6rem;">
+                    <div style="display:flex; align-items:center;">
+                        <label class="theme-switch" for="theme-toggle" style="margin:0;">
                             <input type="checkbox" id="theme-toggle" />
                             <div class="slider">
                                 <i class="fas fa-sun icon sun"></i>
                                 <i class="fas fa-moon icon moon"></i>
                             </div>
                         </label>
-                        <span class="theme-label"
-                            style="margin-left:8px; font-size:0.7rem; color:var(--color-text-tertiary);">Mode</span>
+                        <span
+                            style="margin-left:6px; font-size:0.65rem; color:var(--color-text-tertiary); opacity:0.7;">Mode</span>
                     </div>
-                    <button class="nav-item logout-btn" id="logout-btn"
+                    <button id="logout-btn"
+                        style="background:none; border:1px solid rgba(255,255,255,0.2); color:var(--color-text-secondary); padding:4px 12px; border-radius:4px; font-size:0.75rem; cursor:pointer; display:flex; align-items:center; gap:4px;"
                         onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
-                        <span class="nav-icon">↩</span>
-                        <span>ログアウト</span>
+                        ↩ ログアウト
                     </button>
                 </div>
             </div>
