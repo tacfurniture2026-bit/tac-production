@@ -231,25 +231,58 @@ const DB = {
             { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
         ];
 
-        if (this.get(this.KEYS.USERS).length === 0) {
-            this.save(this.KEYS.USERS, [
-                { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
-                { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
-            ]);
-        }
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.USERS)).once('value').then(snap => {
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    this.save(this.KEYS.USERS, [
+                        { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                        { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                    ]);
+                }
+            });
 
-        // 賃率: 空 OR 旧形式なら初期値を設定
-        const rates = this.get(this.KEYS.RATES);
-        const needsInit = rates.length === 0 ||
-            (rates.length > 0 && (
-                rates[0].secondRate === undefined ||
-                rates[0].rate !== undefined ||
-                rates[0].rateCode === 'A01'
-            ));
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.RATES)).once('value').then(snap => {
+                let needsInit = false;
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    needsInit = true;
+                } else {
+                    const data = snap.val();
+                    const rates = Array.isArray(data) ? data : Object.values(data);
+                    if (rates.length > 0 && (
+                        rates[0].secondRate === undefined ||
+                        rates[0].rate !== undefined ||
+                        rates[0].rateCode === 'A01'
+                    )) {
+                        needsInit = true;
+                    }
+                }
 
-        if (needsInit) {
-            console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
-            this.save(this.KEYS.RATES, defaultRates);
+                if (needsInit) {
+                    console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            });
+        } else {
+            if (this.get(this.KEYS.USERS).length === 0) {
+                this.save(this.KEYS.USERS, [
+                    { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                    { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                ]);
+            }
+
+            // 賃率: 空 OR 旧形式なら初期値を設定
+            const rates = this.get(this.KEYS.RATES);
+            const needsInit = rates.length === 0 ||
+                (rates.length > 0 && (
+                    rates[0].secondRate === undefined ||
+                    rates[0].rate !== undefined ||
+                    rates[0].rateCode === 'A01'
+                ));
+
+            if (needsInit) {
+                console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                this.save(this.KEYS.RATES, defaultRates);
+            }
         }
     },
 
