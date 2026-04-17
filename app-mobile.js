@@ -1626,7 +1626,10 @@ function renderUsers() {
       <td><span class="badge ${u.role === 'admin' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? '管理者' : '作業者'}</span></td>
       <td>${u.department || '-'}</td>
       <td>
-        ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">削除</button>` : ''}
+        ${u.username !== 'admin' ? `
+          <button class="btn btn-primary btn-sm" onclick="showEditUserModal(${u.id})" style="margin-right: 4px;">編集</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">削除</button>
+        ` : ''}
       </td>
     </tr>
   `).join('');
@@ -3515,6 +3518,76 @@ function createUser() {
   DB.save(DB.KEYS.USERS, users);
 
   toast('ユーザーを作成しました', 'success');
+  hideModal();
+  renderUsers();
+}
+
+function showEditUserModal(id) {
+  const users = DB.get(DB.KEYS.USERS);
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+
+  const body = `
+    <div class="form-group">
+      <label>ユーザー名 * (変更不可)</label>
+      <input type="text" id="edit-user-username" class="form-input" value="${user.username}" readonly style="background-color: #f1f5f9;">
+    </div>
+    <div class="form-group">
+      <label>パスワード *</label>
+      <input type="text" id="edit-user-password" class="form-input" value="${user.password}" required>
+    </div>
+    <div class="form-group">
+      <label>表示名 *</label>
+      <input type="text" id="edit-user-display" class="form-input" value="${user.displayName}" required>
+    </div>
+    <div class="form-group">
+      <label>権限</label>
+      <select id="edit-user-role" class="form-input">
+        <option value="worker" ${user.role === 'worker' ? 'selected' : ''}>作業者</option>
+        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理者</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>部門</label>
+      <input type="text" id="edit-user-dept" class="form-input" value="${user.department || ''}">
+    </div>
+    <input type="hidden" id="edit-user-id" value="${user.id}">
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="updateUser()">更新</button>
+  `;
+
+  showModal('ユーザー情報の編集', body, footer);
+}
+
+function updateUser() {
+  const id = parseInt($('#edit-user-id').value);
+  const password = $('#edit-user-password').value;
+  const displayName = $('#edit-user-display').value;
+  const role = $('#edit-user-role').value;
+  const department = $('#edit-user-dept').value;
+
+  if (!password || !displayName) {
+    toast('パスワード、表示名は必須です', 'warning');
+    return;
+  }
+
+  const users = DB.get(DB.KEYS.USERS);
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return;
+
+  users[index] = {
+    ...users[index],
+    password,
+    displayName,
+    role,
+    department
+  };
+
+  DB.save(DB.KEYS.USERS, users);
+  toast('ユーザー情報を更新しました', 'success');
   hideModal();
   renderUsers();
 }
