@@ -3697,7 +3697,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 月次報告
   $('#filter-report-btn').addEventListener('click', renderReport);
-  $('#generate-report-btn').addEventListener('click', printReport);
+  
+  const genReportBtn = $('#generate-report-btn');
+  if (genReportBtn) genReportBtn.addEventListener('click', printReport);
+
+  const exportReportBtn = $('#export-report-btn');
+  if (exportReportBtn) exportReportBtn.addEventListener('click', exportReportCSV);
 });
 
 // ========================================
@@ -3716,12 +3721,15 @@ function renderReport() {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
+  // 日付文字列を YYYY-MM-DD フォーマットに正規化する共通関数
+  const normDate = (d) => d ? d.replace(/\//g, '-') : '';
+
   // 日付フィルタ (日付文字列比較)
   if (startDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate >= startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= normDate(startDate));
   }
   if (endDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate <= endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= normDate(endDate));
   }
 
   // 不良数集計 (期間内)
@@ -3761,7 +3769,8 @@ function renderReport() {
   // 賃率マップ
   const rateMap = {};
   rates.forEach(r => {
-    rateMap[r.department] = parseFloat(r.rate) || 0;
+    // 部署・係をキーとして分当り賃率をマッピング
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
   });
 
   // 工程→部門マッピング
@@ -4070,6 +4079,87 @@ function renderReport() {
   `;
 
   $('#report-content').innerHTML = html;
+}
+
+function exportReportCSV() {
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const rates = DB.get(DB.KEYS.RATES);
+  const boms = DB.get(DB.KEYS.BOM);
+
+  const normDate = (d) => d ? d.replace(/\//g, '-') : '';
+  let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
+
+  if (startDate) {
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= normDate(startDate));
+  }
+  if (endDate) {
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= normDate(endDate));
+  }
+
+  if (filteredOrders.length === 0) {
+    toast('エクスポートするデータがありません', 'warning');
+    return;
+  }
+
+  const rateMap = {};
+  rates.forEach(r => {
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
+  });
+
+  const processToDept = {
+    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
+    'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
+    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
+  };
+
+  const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
+  let csvContent = headers.join(',') + '\n';
+
+  filteredOrders.forEach(order => {
+    const productBoms = boms.filter(b => b.productName === order.productName);
+    let orderTime = 0;
+    let orderCost = 0;
+
+    productBoms.forEach(bom => {
+      if (bom.processTimes) {
+        Object.entries(bom.processTimes).forEach(([process, time]) => {
+          const dept = processToDept[process] || '加工係';
+          const deptRate = rateMap[dept] || 50;
+          const totalTimeForProcess = time * order.quantity;
+          const costForProcess = totalTimeForProcess * deptRate;
+          orderTime += totalTimeForProcess;
+          orderCost += costForProcess;
+        });
+      }
+    });
+
+    if (orderTime === 0) {
+      orderTime = 60 * order.quantity;
+      orderCost = 25000 * order.quantity;
+    }
+
+    // エスケープ処理
+    const row = [
+      `"${order.projectName.replace(/"/g, '""')}"`,
+      `"${order.productName.replace(/"/g, '""')}"`,
+      normDate(order.dueDate),
+      order.quantity,
+      Math.round(orderCost),
+      Math.round(orderTime)
+    ];
+    csvContent += row.join(',') + '\n';
+  });
+
+  const bomArray = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bomArray, csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = URL.createObjectURL(blob);
+  link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 function printReport() {
