@@ -2942,7 +2942,13 @@ function createBom() {
     return;
   }
 
-  const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+
+  if (processes.length === 0) {
+    if (!confirm('工程が入力されていません。工程がない場合、工程管理画面等のグラフに「完・未」の表示枠が作成されませんが、このまま登録してよろしいですか？')) {
+      return;
+    }
+  }
 
   const boms = DB.get(DB.KEYS.BOM);
   boms.push({
