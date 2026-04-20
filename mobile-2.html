@@ -4806,13 +4806,19 @@ function submitNewOrder() {
     toast(`${productBoms.length}件の部材で登録しました`, 'success');
   }
 
-  const items = productBoms.map((bom, idx) => ({
-    id: idx + 1,
-    bomName: bom.bomName,
-    partCode: bom.partCode,
-    processes: bom.processes || [],
-    completed: []
-  }));
+  const items = productBoms.map((bom, idx) => {
+    let parsedProcesses = Array.isArray(bom.processes) ? bom.processes : [];
+    if (parsedProcesses.length === 0) {
+      parsedProcesses = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包'];
+    }
+    return {
+      id: idx + 1,
+      bomName: bom.bomName,
+      partCode: bom.partCode,
+      processes: parsedProcesses,
+      completed: []
+    };
+  });
 
   // 【デバッグ用】実際に保存されるアイテム数を表示
   // alert(`【デバッグ】保存されるアイテム数: ${items.length}件`);
@@ -9074,7 +9080,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.79</span><br>
+        <span id="app-version-display">v4.80</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10565,7 +10571,7 @@ function refreshCurrentPage() {
 }
 
 </script>
-    <script src="app.js?v=20260421_1"></script>
+    <script src="app.js?v=20260421_2"></script>
     <!-- バージョン表示 -->
 </body>
 
