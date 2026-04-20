@@ -6856,30 +6856,55 @@ function renderReport() {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
-  // 日付文字列を YYYY-MM-DD フォーマットに正規化する共通関数
-  const normDate = (d) => {
-    if (!d) return '';
+  // 日付文字列をDateオブジェクトに変換する堅牢な関数
+  const parseDate = (d) => {
+    if (!d) return null;
     // 全角数字を半角に変換
-    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
     // スラッシュ/ドット/年月日をハイフンに統一
-    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
-    // 空白除去
+    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
     s = s.replace(/\s+/g, '');
-    return s;
+    // YYYY-MM-DD形式かチェック
+    const parts = s.split('-').filter(Boolean);
+    if (parts.length >= 3) {
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      if (y > 1900 && m >= 0 && day > 0) {
+        return new Date(y, m, day);
+      }
+    }
+    // それ以外の場合、Dateコンストラクタで試行
+    const dt = new Date(d);
+    if (!isNaN(dt.getTime())) return dt;
+    return null;
   };
 
-  console.log('[renderReport] startDate:', startDate, '-> norm:', normDate(startDate));
-  console.log('[renderReport] endDate:', endDate, '-> norm:', normDate(endDate));
-  console.log('[renderReport] 完了案件数:', filteredOrders.length);
+  const filterStart = parseDate(startDate);
+  const filterEnd = parseDate(endDate);
 
-  // 日付フィルタ (日付文字列比較)
-  if (normDate(startDate)) {
-    const ns = normDate(startDate);
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
+  console.log('[renderReport] startDate入力:', startDate, '-> parseDate:', filterStart);
+  console.log('[renderReport] endDate入力:', endDate, '-> parseDate:', filterEnd);
+  console.log('[renderReport] 完了案件数:', filteredOrders.length);
+  // デバッグ: 最初の3件のdueDateを表示
+  filteredOrders.slice(0, 3).forEach((o, i) => {
+    console.log('[renderReport] サンプル案件' + i + ': dueDate=' + JSON.stringify(o.dueDate) + ' parseDate=' + parseDate(o.dueDate));
+  });
+
+  // 日付フィルタ (Date型比較)
+  if (filterStart) {
+    filterStart.setHours(0, 0, 0, 0);
+    filteredOrders = filteredOrders.filter(o => {
+      const d = parseDate(o.dueDate);
+      return !d || d >= filterStart; // 日付パース不可なら除外しない
+    });
   }
-  if (normDate(endDate)) {
-    const ne = normDate(endDate);
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
+  if (filterEnd) {
+    filterEnd.setHours(23, 59, 59, 999);
+    filteredOrders = filteredOrders.filter(o => {
+      const d = parseDate(o.dueDate);
+      return !d || d <= filterEnd; // 日付パース不可なら除外しない
+    });
   }
   console.log('[renderReport] フィルタ後の案件数:', filteredOrders.length);
 
@@ -7240,22 +7265,30 @@ function exportReportCSV() {
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
 
-  const normDate = (d) => {
-    if (!d) return '';
-    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+  const parseDate = (d) => {
+    if (!d) return null;
+    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
     s = s.replace(/\s+/g, '');
-    return s;
+    const parts = s.split('-').filter(Boolean);
+    if (parts.length >= 3) {
+      const y = parseInt(parts[0]); const m = parseInt(parts[1]) - 1; const day = parseInt(parts[2]);
+      if (y > 1900 && m >= 0 && day > 0) return new Date(y, m, day);
+    }
+    const dt = new Date(d);
+    if (!isNaN(dt.getTime())) return dt;
+    return null;
   };
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
-
-  if (normDate(startDate)) {
-    const ns = normDate(startDate);
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
+  const filterStart = parseDate(startDate);
+  const filterEnd = parseDate(endDate);
+  if (filterStart) {
+    filterStart.setHours(0, 0, 0, 0);
+    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d >= filterStart; });
   }
-  if (normDate(endDate)) {
-    const ne = normDate(endDate);
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
+  if (filterEnd) {
+    filterEnd.setHours(23, 59, 59, 999);
+    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d <= filterEnd; });
   }
 
   if (filteredOrders.length === 0) {
@@ -7304,7 +7337,7 @@ function exportReportCSV() {
     const row = [
       `"${order.projectName.replace(/"/g, '""')}"`,
       `"${order.productName.replace(/"/g, '""')}"`,
-      normDate(order.dueDate),
+      order.dueDate || '',
       order.quantity,
       Math.round(orderCost),
       Math.round(orderTime)
@@ -7325,14 +7358,12 @@ function exportReportCSV() {
 function printReport() {
   const reportArea = $('#report-print-area');
   if (!reportArea) {
-    // 先に集計を実行してから再度実行
     renderReport();
     const reportArea2 = $('#report-print-area');
     if (!reportArea2) {
       toast('レポートの生成に失敗しました', 'error');
       return;
     }
-    // 再取得後に続行
     doPrintReport(reportArea2);
     return;
   }
@@ -7340,10 +7371,19 @@ function printReport() {
 }
 
 function doPrintReport(reportArea) {
+  // iframeを使った印刷（ポップアップブロッカー回避）
+  let printIframe = document.getElementById('print-iframe');
+  if (!printIframe) {
+    printIframe = document.createElement('iframe');
+    printIframe.id = 'print-iframe';
+    printIframe.style.visibility = 'hidden';
+    printIframe.style.position = 'fixed';
+    printIframe.style.right = '0';
+    printIframe.style.bottom = '0';
+    document.body.appendChild(printIframe);
+  }
 
-  // 印刷用ウィンドウで開く
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
+  const printHTML = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -7377,9 +7417,18 @@ function doPrintReport(reportArea) {
       ${reportArea.innerHTML}
     </body>
     </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
+  `;
+
+  const doc = printIframe.contentDocument || printIframe.contentWindow.document;
+  doc.open();
+  doc.write(printHTML);
+  doc.close();
+
+  // スタイルの読み込み等のために少し待ってからダイアログを表示
+  setTimeout(() => {
+    printIframe.contentWindow.focus();
+    printIframe.contentWindow.print();
+  }, 500);
 }
 
 // ========================================
@@ -9025,7 +9074,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.78</span><br>
+        <span id="app-version-display">v4.79</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10516,7 +10565,7 @@ function refreshCurrentPage() {
 }
 
 </script>
-    <script src="app.js?v=20260420_4"></script>
+    <script src="app.js?v=20260421_1"></script>
     <!-- バージョン表示 -->
 </body>
 
