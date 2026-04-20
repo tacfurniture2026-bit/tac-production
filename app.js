@@ -4111,14 +4111,28 @@ document.addEventListener('DOMContentLoaded', () => {
 // 月次報告
 // ========================================
 
-function renderReport() {
+function renderReport(argStart, argEnd) {
   const startDateEl = document.getElementById('report-start-date');
   const endDateEl = document.getElementById('report-end-date');
-  const startDate = startDateEl ? startDateEl.value.trim() : '';
-  const endDate = endDateEl ? endDateEl.value.trim() : '';
+  
+  // 優先順位: 1.引数 2.DOM 3.フォールバック
+  let startDate = (argStart !== undefined && typeof argStart === 'string') ? argStart.trim() : (startDateEl ? startDateEl.value.trim() : '');
+  let endDate = (argEnd !== undefined && typeof argEnd === 'string') ? argEnd.trim() : (endDateEl ? endDateEl.value.trim() : '');
 
-  console.log('[renderReport] startDateEl found:', !!startDateEl, 'value:', JSON.stringify(startDate));
-  console.log('[renderReport] endDateEl found:', !!endDateEl, 'value:', JSON.stringify(endDate));
+  // 究極のフォールバック: 引数もDOMも空で、ユーザーが「どうしても集計したい」場合のための手入力ダイアログ
+  if (startDate === '' && endDate === '' && argStart === '') {
+    // 引数として空文字が明示的に渡された（ボタンがおされたが値が取れなかった）場合にのみ発動
+    const pStart = window.prompt("期間が自動取得できませんでした。開始日を直接入力してください (例: 2025/01/01)\n※全期間を集計する場合はキャンセルか空のままOKを押してください");
+    if (pStart) {
+      startDate = pStart.trim();
+      const pEnd = window.prompt("終了日を入力してください (例: 2026/12/31)\n※未入力で開始日以降すべて", "2026/12/31");
+      if (pEnd) endDate = pEnd.trim();
+    }
+  }
+
+  console.log('[renderReport] startDateEl found:', !!startDateEl, 'DOM value:', startDateEl ? startDateEl.value : null);
+  console.log('[renderReport] argument argStart:', argStart);
+  console.log('[renderReport] Final startDate:', startDate);
 
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
