@@ -3779,16 +3779,27 @@ function renderReport() {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
-  // 日付文字列を YYYY-MM-DD フォーマットに正規化する共通関数
-  const normDate = (d) => d ? d.replace(/\//g, '-') : '';
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
 
-  // 日付フィルタ (日付文字列比較)
-  if (startDate) {
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= normDate(startDate));
+  console.log('[renderReport] startDate:', startDate, '-> norm:', normDate(startDate));
+  console.log('[renderReport] endDate:', endDate, '-> norm:', normDate(endDate));
+  console.log('[renderReport] 完了案件数:', filteredOrders.length);
+
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (endDate) {
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= normDate(endDate));
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
+  console.log('[renderReport] フィルタ後の案件数:', filteredOrders.length);
 
   // 不良数集計 (期間内)
   let filteredDefects = [];
@@ -4147,14 +4158,22 @@ function exportReportCSV() {
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
 
-  const normDate = (d) => d ? d.replace(/\//g, '-') : '';
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
-  if (startDate) {
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= normDate(startDate));
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (endDate) {
-    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= normDate(endDate));
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
 
   if (filteredOrders.length === 0) {
