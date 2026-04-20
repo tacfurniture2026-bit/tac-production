@@ -25,6 +25,9 @@ def main():
     # Inject App JS (Handle app-mobile.js or app.js ref)
     html = re.sub(r'<script src="app-mobile\.js[^>]*></script>', lambda m: f'<script>\n{app_js_content}\n</script>', html)
     
+    # Remove external app.js reference (already inlined above)
+    html = re.sub(r'<script src="app\.js[^>]*></script>', '<!-- app.js inlined above -->', html)
+    
     # Remove version banner if present in base
     
     # Add Visual Indicator of V4 (Inline)

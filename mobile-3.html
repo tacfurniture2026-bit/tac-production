@@ -6851,8 +6851,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 
 function renderReport() {
-  const startDate = $('#report-start-date').value;
-  const endDate = $('#report-end-date').value;
+  const startDateEl = document.getElementById('report-start-date');
+  const endDateEl = document.getElementById('report-end-date');
+  const startDate = startDateEl ? startDateEl.value.trim() : '';
+  const endDate = endDateEl ? endDateEl.value.trim() : '';
+
+  console.log('[renderReport] startDateEl found:', !!startDateEl, 'value:', JSON.stringify(startDate));
+  console.log('[renderReport] endDateEl found:', !!endDateEl, 'value:', JSON.stringify(endDate));
 
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
@@ -7265,8 +7270,10 @@ function renderReport() {
 }
 
 function exportReportCSV() {
-  const startDate = $('#report-start-date').value;
-  const endDate = $('#report-end-date').value;
+  const startDateEl = document.getElementById('report-start-date');
+  const endDateEl = document.getElementById('report-end-date');
+  const startDate = startDateEl ? startDateEl.value.trim() : '';
+  const endDate = endDateEl ? endDateEl.value.trim() : '';
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
@@ -9080,7 +9087,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.80</span><br>
+        <span id="app-version-display">v4.81</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10571,7 +10578,7 @@ function refreshCurrentPage() {
 }
 
 </script>
-    <script src="app.js?v=20260421_2"></script>
+    <!-- app.js inlined above -->
     <!-- バージョン表示 -->
 </body>
 

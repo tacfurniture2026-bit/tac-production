@@ -4112,8 +4112,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 
 function renderReport() {
-  const startDate = $('#report-start-date').value;
-  const endDate = $('#report-end-date').value;
+  const startDateEl = document.getElementById('report-start-date');
+  const endDateEl = document.getElementById('report-end-date');
+  const startDate = startDateEl ? startDateEl.value.trim() : '';
+  const endDate = endDateEl ? endDateEl.value.trim() : '';
+
+  console.log('[renderReport] startDateEl found:', !!startDateEl, 'value:', JSON.stringify(startDate));
+  console.log('[renderReport] endDateEl found:', !!endDateEl, 'value:', JSON.stringify(endDate));
 
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
@@ -4526,8 +4531,10 @@ function renderReport() {
 }
 
 function exportReportCSV() {
-  const startDate = $('#report-start-date').value;
-  const endDate = $('#report-end-date').value;
+  const startDateEl = document.getElementById('report-start-date');
+  const endDateEl = document.getElementById('report-end-date');
+  const startDate = startDateEl ? startDateEl.value.trim() : '';
+  const endDate = endDateEl ? endDateEl.value.trim() : '';
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
