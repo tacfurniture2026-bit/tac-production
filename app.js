@@ -6,6 +6,63 @@
 DB.init();
 
 // ========================================
+// データマイグレーション (v4.76)
+// ========================================
+function migrateCorruptedData() {
+  let needsBOMSave = false;
+  let needsOrderSave = false;
+
+  const boms = DB.get(DB.KEYS.BOM) || [];
+  boms.forEach(b => {
+    if (b.processes && b.processes.length === 1 && typeof b.processes[0] === 'string') {
+      if (b.processes[0].includes('、') || b.processes[0].includes('，')) {
+        b.processes = b.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+        needsBOMSave = true;
+      }
+    }
+    if (!b.processes || b.processes.length === 0) {
+       // デフォルトの標準工程を付与（完了確認ではなく実際の工程名を使う）
+       b.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+       needsBOMSave = true;
+    }
+  });
+  if (needsBOMSave) DB.save(DB.KEYS.BOM, boms);
+
+  // BOMマップを作成（注文の工程修復に使用）
+  const bomMap = {};
+  boms.forEach(b => {
+    const key = (b.bomName || '') + '|' + (b.partCode || '');
+    bomMap[key] = b.processes;
+  });
+
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  orders.forEach(o => {
+    if (o.items) {
+      o.items.forEach(item => {
+        if (item.processes && item.processes.length === 1 && typeof item.processes[0] === 'string') {
+          if (item.processes[0].includes('、') || item.processes[0].includes('，')) {
+            item.processes = item.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+            needsOrderSave = true;
+          }
+        }
+        if (!item.processes || item.processes.length === 0) {
+           // BOMから工程を復元
+           const key = (item.bomName || '') + '|' + (item.partCode || '');
+           if (bomMap[key] && bomMap[key].length > 0) {
+             item.processes = [...bomMap[key]];
+           } else {
+             item.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+           }
+           needsOrderSave = true;
+        }
+      });
+    }
+  });
+  if (needsOrderSave) DB.save(DB.KEYS.ORDERS, orders);
+}
+migrateCorruptedData();
+
+// ========================================
 // グローバル変数
 // ========================================
 
@@ -1752,9 +1809,7 @@ function renderUsers() {
 function deleteUser(id) {
   if (!confirm('このユーザーを削除しますか？')) return;
 
-  const users = DB.get(DB.KEYS.USERS);
-  const filtered = users.filter(u => u.id !== id);
-  DB.save(DB.KEYS.USERS, filtered);
+  DB.delete(DB.KEYS.USERS, id);
 
   toast('ユーザーを削除しました', 'success');
   renderUsers();
@@ -3847,15 +3902,15 @@ function createUser() {
     return;
   }
 
-  users.push({
+  const newUser = {
     id: DB.nextId(DB.KEYS.USERS),
     username,
     password,
     displayName,
     role,
     department
-  });
-  DB.save(DB.KEYS.USERS, users);
+  };
+  DB.add(DB.KEYS.USERS, newUser);
 
   toast('ユーザーを作成しました', 'success');
   hideModal();
@@ -3915,18 +3970,18 @@ function updateUser() {
   }
 
   const users = DB.get(DB.KEYS.USERS);
-  const index = users.findIndex(u => u.id === id);
-  if (index === -1) return;
+  const userToUpdate = users.find(u => u.id === id);
+  if (!userToUpdate) return;
 
-  users[index] = {
-    ...users[index],
+  const updatedUser = {
+    ...userToUpdate,
     password,
     displayName,
     role,
     department
   };
 
-  DB.save(DB.KEYS.USERS, users);
+  DB.update(DB.KEYS.USERS, id, updatedUser);
   toast('ユーザー情報を更新しました', 'success');
   hideModal();
   renderUsers();
@@ -4162,6 +4217,7 @@ function renderReport() {
       orderTime = 60 * order.quantity;
       orderCost = 25000 * order.quantity;
       orderDeptCosts = { '基材係': orderCost * 0.4, '加工係': orderCost * 0.45, '梱包仕上係': orderCost * 0.15 };
+      orderDeptTimes = { '基材係': orderTime * 0.4, '加工係': orderTime * 0.45, '梱包仕上係': orderTime * 0.15 };
     }
 
     totalCost += orderCost;
@@ -4506,9 +4562,21 @@ function exportReportCSV() {
 function printReport() {
   const reportArea = $('#report-print-area');
   if (!reportArea) {
-    toast('先に集計を実行してください', 'warning');
+    // 先に集計を実行してから再度実行
+    renderReport();
+    const reportArea2 = $('#report-print-area');
+    if (!reportArea2) {
+      toast('レポートの生成に失敗しました', 'error');
+      return;
+    }
+    // 再取得後に続行
+    doPrintReport(reportArea2);
     return;
   }
+  doPrintReport(reportArea);
+}
+
+function doPrintReport(reportArea) {
 
   // 印刷用ウィンドウで開く
   const printWindow = window.open('', '_blank');
