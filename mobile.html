@@ -2745,6 +2745,63 @@ function refreshCurrentPage() {
 DB.init();
 
 // ========================================
+// データマイグレーション (v4.76)
+// ========================================
+function migrateCorruptedData() {
+  let needsBOMSave = false;
+  let needsOrderSave = false;
+
+  const boms = DB.get(DB.KEYS.BOM) || [];
+  boms.forEach(b => {
+    if (b.processes && b.processes.length === 1 && typeof b.processes[0] === 'string') {
+      if (b.processes[0].includes('、') || b.processes[0].includes('，')) {
+        b.processes = b.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+        needsBOMSave = true;
+      }
+    }
+    if (!b.processes || b.processes.length === 0) {
+       // デフォルトの標準工程を付与（完了確認ではなく実際の工程名を使う）
+       b.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+       needsBOMSave = true;
+    }
+  });
+  if (needsBOMSave) DB.save(DB.KEYS.BOM, boms);
+
+  // BOMマップを作成（注文の工程修復に使用）
+  const bomMap = {};
+  boms.forEach(b => {
+    const key = (b.bomName || '') + '|' + (b.partCode || '');
+    bomMap[key] = b.processes;
+  });
+
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  orders.forEach(o => {
+    if (o.items) {
+      o.items.forEach(item => {
+        if (item.processes && item.processes.length === 1 && typeof item.processes[0] === 'string') {
+          if (item.processes[0].includes('、') || item.processes[0].includes('，')) {
+            item.processes = item.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+            needsOrderSave = true;
+          }
+        }
+        if (!item.processes || item.processes.length === 0) {
+           // BOMから工程を復元
+           const key = (item.bomName || '') + '|' + (item.partCode || '');
+           if (bomMap[key] && bomMap[key].length > 0) {
+             item.processes = [...bomMap[key]];
+           } else {
+             item.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+           }
+           needsOrderSave = true;
+        }
+      });
+    }
+  });
+  if (needsOrderSave) DB.save(DB.KEYS.ORDERS, orders);
+}
+migrateCorruptedData();
+
+// ========================================
 // グローバル変数
 // ========================================
 
@@ -4491,9 +4548,7 @@ function renderUsers() {
 function deleteUser(id) {
   if (!confirm('このユーザーを削除しますか？')) return;
 
-  const users = DB.get(DB.KEYS.USERS);
-  const filtered = users.filter(u => u.id !== id);
-  DB.save(DB.KEYS.USERS, filtered);
+  DB.delete(DB.KEYS.USERS, id);
 
   toast('ユーザーを削除しました', 'success');
   renderUsers();
@@ -5681,7 +5736,13 @@ function createBom() {
     return;
   }
 
-  const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+
+  if (processes.length === 0) {
+    if (!confirm('工程が入力されていません。工程がない場合、工程管理画面等のグラフに「完・未」の表示枠が作成されませんが、このまま登録してよろしいですか？')) {
+      return;
+    }
+  }
 
   const boms = DB.get(DB.KEYS.BOM);
   boms.push({
@@ -6580,15 +6641,15 @@ function createUser() {
     return;
   }
 
-  users.push({
+  const newUser = {
     id: DB.nextId(DB.KEYS.USERS),
     username,
     password,
     displayName,
     role,
     department
-  });
-  DB.save(DB.KEYS.USERS, users);
+  };
+  DB.add(DB.KEYS.USERS, newUser);
 
   toast('ユーザーを作成しました', 'success');
   hideModal();
@@ -6648,18 +6709,18 @@ function updateUser() {
   }
 
   const users = DB.get(DB.KEYS.USERS);
-  const index = users.findIndex(u => u.id === id);
-  if (index === -1) return;
+  const userToUpdate = users.find(u => u.id === id);
+  if (!userToUpdate) return;
 
-  users[index] = {
-    ...users[index],
+  const updatedUser = {
+    ...userToUpdate,
     password,
     displayName,
     role,
     department
   };
 
-  DB.save(DB.KEYS.USERS, users);
+  DB.update(DB.KEYS.USERS, id, updatedUser);
   toast('ユーザー情報を更新しました', 'success');
   hideModal();
   renderUsers();
@@ -6774,6 +6835,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const genReportBtn = $('#generate-report-btn');
   if (genReportBtn) genReportBtn.addEventListener('click', printReport);
+
+  const exportReportBtn = $('#export-report-btn');
+  if (exportReportBtn) exportReportBtn.addEventListener('click', exportReportCSV);
 });
 
 // ========================================
@@ -6792,13 +6856,32 @@ function renderReport() {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
+  // 日付文字列を YYYY-MM-DD フォーマットに正規化する共通関数
+  const normDate = (d) => {
+    if (!d) return '';
+    // 全角数字を半角に変換
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    // スラッシュ/ドット/年月日をハイフンに統一
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    // 空白除去
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
+
+  console.log('[renderReport] startDate:', startDate, '-> norm:', normDate(startDate));
+  console.log('[renderReport] endDate:', endDate, '-> norm:', normDate(endDate));
+  console.log('[renderReport] 完了案件数:', filteredOrders.length);
+
   // 日付フィルタ (日付文字列比較)
-  if (startDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate >= startDate);
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (endDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate <= endDate);
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
+  console.log('[renderReport] フィルタ後の案件数:', filteredOrders.length);
 
   // 不良数集計 (期間内)
   let filteredDefects = [];
@@ -6837,7 +6920,8 @@ function renderReport() {
   // 賃率マップ
   const rateMap = {};
   rates.forEach(r => {
-    rateMap[r.department] = parseFloat(r.rate) || 0;
+    // 部署・係をキーとして分当り賃率をマッピング
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
   });
 
   // 工程→部門マッピング
@@ -6888,6 +6972,7 @@ function renderReport() {
       orderTime = 60 * order.quantity;
       orderCost = 25000 * order.quantity;
       orderDeptCosts = { '基材係': orderCost * 0.4, '加工係': orderCost * 0.45, '梱包仕上係': orderCost * 0.15 };
+      orderDeptTimes = { '基材係': orderTime * 0.4, '加工係': orderTime * 0.45, '梱包仕上係': orderTime * 0.15 };
     }
 
     totalCost += orderCost;
@@ -7148,12 +7233,113 @@ function renderReport() {
   $('#report-content').innerHTML = html;
 }
 
+function exportReportCSV() {
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const rates = DB.get(DB.KEYS.RATES);
+  const boms = DB.get(DB.KEYS.BOM);
+
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
+  let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
+
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
+  }
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
+  }
+
+  if (filteredOrders.length === 0) {
+    toast('エクスポートするデータがありません', 'warning');
+    return;
+  }
+
+  const rateMap = {};
+  rates.forEach(r => {
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
+  });
+
+  const processToDept = {
+    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
+    'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
+    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
+  };
+
+  const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
+  let csvContent = headers.join(',') + '\n';
+
+  filteredOrders.forEach(order => {
+    const productBoms = boms.filter(b => b.productName === order.productName);
+    let orderTime = 0;
+    let orderCost = 0;
+
+    productBoms.forEach(bom => {
+      if (bom.processTimes) {
+        Object.entries(bom.processTimes).forEach(([process, time]) => {
+          const dept = processToDept[process] || '加工係';
+          const deptRate = rateMap[dept] || 50;
+          const totalTimeForProcess = time * order.quantity;
+          const costForProcess = totalTimeForProcess * deptRate;
+          orderTime += totalTimeForProcess;
+          orderCost += costForProcess;
+        });
+      }
+    });
+
+    if (orderTime === 0) {
+      orderTime = 60 * order.quantity;
+      orderCost = 25000 * order.quantity;
+    }
+
+    // エスケープ処理
+    const row = [
+      `"${order.projectName.replace(/"/g, '""')}"`,
+      `"${order.productName.replace(/"/g, '""')}"`,
+      normDate(order.dueDate),
+      order.quantity,
+      Math.round(orderCost),
+      Math.round(orderTime)
+    ];
+    csvContent += row.join(',') + '\n';
+  });
+
+  const bomArray = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bomArray, csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = URL.createObjectURL(blob);
+  link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function printReport() {
   const reportArea = $('#report-print-area');
   if (!reportArea) {
-    toast('先に集計を実行してください', 'warning');
+    // 先に集計を実行してから再度実行
+    renderReport();
+    const reportArea2 = $('#report-print-area');
+    if (!reportArea2) {
+      toast('レポートの生成に失敗しました', 'error');
+      return;
+    }
+    // 再取得後に続行
+    doPrintReport(reportArea2);
     return;
   }
+  doPrintReport(reportArea);
+}
+
+function doPrintReport(reportArea) {
 
   // 印刷用ウィンドウで開く
   const printWindow = window.open('', '_blank');
@@ -10054,25 +10240,58 @@ const DB = {
             { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
         ];
 
-        if (this.get(this.KEYS.USERS).length === 0) {
-            this.save(this.KEYS.USERS, [
-                { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
-                { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
-            ]);
-        }
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.USERS)).once('value').then(snap => {
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    this.save(this.KEYS.USERS, [
+                        { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                        { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                    ]);
+                }
+            });
 
-        // 賃率: 空 OR 旧形式なら初期値を設定
-        const rates = this.get(this.KEYS.RATES);
-        const needsInit = rates.length === 0 ||
-            (rates.length > 0 && (
-                rates[0].secondRate === undefined ||
-                rates[0].rate !== undefined ||
-                rates[0].rateCode === 'A01'
-            ));
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.RATES)).once('value').then(snap => {
+                let needsInit = false;
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    needsInit = true;
+                } else {
+                    const data = snap.val();
+                    const rates = Array.isArray(data) ? data : Object.values(data);
+                    if (rates.length > 0 && (
+                        rates[0].secondRate === undefined ||
+                        rates[0].rate !== undefined ||
+                        rates[0].rateCode === 'A01'
+                    )) {
+                        needsInit = true;
+                    }
+                }
 
-        if (needsInit) {
-            console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
-            this.save(this.KEYS.RATES, defaultRates);
+                if (needsInit) {
+                    console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            });
+        } else {
+            if (this.get(this.KEYS.USERS).length === 0) {
+                this.save(this.KEYS.USERS, [
+                    { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                    { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                ]);
+            }
+
+            // 賃率: 空 OR 旧形式なら初期値を設定
+            const rates = this.get(this.KEYS.RATES);
+            const needsInit = rates.length === 0 ||
+                (rates.length > 0 && (
+                    rates[0].secondRate === undefined ||
+                    rates[0].rate !== undefined ||
+                    rates[0].rateCode === 'A01'
+                ));
+
+            if (needsInit) {
+                console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                this.save(this.KEYS.RATES, defaultRates);
+            }
         }
     },
 

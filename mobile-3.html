@@ -2067,6 +2067,11 @@ body.dark-mode .summary-value {
     z-index: 5;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
+
+    /* Mobile Overrides injected by build script */
+    #version-banner { display: none !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
+    
 </style>
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
@@ -2154,14 +2159,583 @@ body.dark-mode .summary-value {
         .gantt-container-mono.is-fullscreen .matrix-container {
             max-height: 95vh !important;
         }
-    </style>
+    
+    /* Mobile Overrides injected by build script */
+    #version-banner { display: none !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
+    
+</style>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
-    <script src="firebase-config.js"></script>
-    <script src="data.js?v=20260420_3"></script>
+    <script>
+// =====================================================
+// Firebase 設定ファイル
+// =====================================================
+// 
+// 【設定手順】
+// 1. Firebase Console (https://console.firebase.google.com) にアクセス
+// 2. プロジェクトを作成
+// 3. Realtime Database を有効化
+// 4. プロジェクト設定 > マイアプリ > ウェブ でアプリを登録
+// 5. 表示される設定値を下記に貼り付け
+// 
+// =====================================================
+
+// Firebase設定
+const firebaseConfig = {
+    apiKey: "AIzaSyAtXI3uz70l5P6UF26OC1Tru1fte35343g",
+    authDomain: "tac-production-bfd08.firebaseapp.com",
+    databaseURL: "https://tac-production-bfd08-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "tac-production-bfd08",
+    storageBucket: "tac-production-bfd08.firebasestorage.app",
+    messagingSenderId: "299994554225",
+    appId: "1:299994554225:web:33f0de3f5f9e53f21de0d0"
+};
+
+// =====================================================
+// Firebase初期化（設定が有効な場合のみ）
+// =====================================================
+
+let firebaseApp = null;
+let firebaseDB = null;
+let useFirebase = false;
+
+// Firebase設定が有効かチェック
+function isFirebaseConfigured() {
+    return firebaseConfig.apiKey !== "YOUR_API_KEY" &&
+        firebaseConfig.databaseURL !== "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app";
+}
+
+// Firebase初期化
+if (typeof firebase !== 'undefined' && isFirebaseConfigured()) {
+    try {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        firebaseDB = firebase.database();
+        useFirebase = true;
+        console.log('✅ Firebase 接続成功！リアルタイム同期が有効です。');
+    } catch (error) {
+        console.warn('⚠️ Firebase 初期化エラー:', error.message);
+        useFirebase = false;
+    }
+} else {
+    console.log('ℹ️ Firebase未設定：ローカルストレージモードで動作します。');
+    console.log('   リアルタイム共有を有効にするには、firebase-config.js を設定してください。');
+}
+
+</script>
+    <script>
+// ========================================
+// データストレージ（LocalStorage + Firebase対応）
+// ========================================
+
+const DB = {
+    // キー名
+    KEYS: {
+        USERS: 'pms_users',
+        BOM: 'pms_bom',
+        ORDERS: 'pms_orders',
+        RATES: 'pms_rates',
+        DEFECTS: 'pms_defects',
+        PROGRESS_HISTORY: 'pms_progress_history',
+        CURRENT_USER: 'pms_current_user',
+        // 在庫管理
+        INV_PRODUCTS: 'pms_inv_products',      // 商品マスタ
+        INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
+        INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
+        // バックアップ
+        BACKUPS: 'pms_backups'                 // バックアップ履歴
+    },
+
+    // Firebaseキーへの変換（pms_プレフィックスを除去）
+    toFirebaseKey(key) {
+        return key.replace('pms_', '');
+    },
+
+    // キャッシュ（Firebase用）
+    _cache: {},
+    _listeners: {},
+
+    // 初期データ
+    init() {
+        // Firebase接続時はリスナーを設定
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            this.initFirebase();
+            return;
+        }
+
+        // Firebase未設定時はローカルストレージで初期化
+        this.initLocalStorage();
+    },
+
+    // LocalStorage初期化
+    initLocalStorage() {
+        console.log('📦 ローカルストレージモードで起動');
+
+        // ユーザーに通知（Firebaseが設定されていないことへの注意喚起）
+        setTimeout(() => {
+            toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
+        }, 2000);
+
+        // ユーザー
+        if (!localStorage.getItem(this.KEYS.USERS)) {
+            this.save(this.KEYS.USERS, [
+                { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+            ]);
+        }
+
+        // BOM（サンプル）
+        if (!localStorage.getItem(this.KEYS.BOM)) {
+            this.save(this.KEYS.BOM, [
+                {
+                    id: 1,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(正面)',
+                    partCode: 'FR1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
+                },
+                {
+                    id: 2,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(側面L)',
+                    partCode: 'SL1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+                },
+                {
+                    id: 3,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(側面R)',
+                    partCode: 'SR1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+                }
+            ]);
+        }
+
+        // 指示書（サンプル）
+        if (!localStorage.getItem(this.KEYS.ORDERS)) {
+            const today = new Date().toISOString().split('T')[0];
+            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            this.save(this.KEYS.ORDERS, [
+                {
+                    id: 1,
+                    orderNo: 'TK-2026-001',
+                    projectName: '○○ビル改装工事',
+                    productName: 'PAO1012BL',
+                    quantity: 5,
+                    startDate: today,
+                    dueDate: nextWeek,
+                    color: 'ホワイト',
+                    items: [
+                        { id: 1, bomName: 'PaO1012BL(正面)', partCode: 'FR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'], completed: [] },
+                        { id: 2, bomName: 'PaO1012BL(側面L)', partCode: 'SL1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] },
+                        { id: 3, bomName: 'PaO1012BL(側面R)', partCode: 'SR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] }
+                    ]
+                }
+            ]);
+        }
+
+        // 賃率（localStorageモードのみ。Firebaseモードは ensureInitialData で処理）
+        const isFirebaseMode = typeof useFirebase !== 'undefined' && useFirebase;
+        if (!isFirebaseMode) {
+            const defaultRates = [
+                { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+                { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+                { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+            ];
+            const existingRates = localStorage.getItem(this.KEYS.RATES);
+            if (!existingRates) {
+                this.save(this.KEYS.RATES, defaultRates);
+            } else {
+                try {
+                    const parsed = JSON.parse(existingRates);
+                    const isOldFormat = Array.isArray(parsed) && parsed.length > 0 &&
+                        (parsed[0].rate !== undefined ||
+                            parsed[0].secondRate === undefined ||
+                            parsed[0].rateCode === 'A01');
+                    if (isOldFormat) {
+                        console.log('🔄 賃率データをマイグレーション: 旧形式 → 新形式');
+                        this.save(this.KEYS.RATES, defaultRates);
+                    }
+                } catch (e) {
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            }
+        }
+
+        // 不良品
+        if (!localStorage.getItem(this.KEYS.DEFECTS)) {
+            this.save(this.KEYS.DEFECTS, []);
+        }
+
+        // 進捗履歴
+        if (!localStorage.getItem(this.KEYS.PROGRESS_HISTORY)) {
+            this.save(this.KEYS.PROGRESS_HISTORY, []);
+        }
+
+        // 在庫：商品マスタ（サンプル）
+        if (!localStorage.getItem(this.KEYS.INV_PRODUCTS)) {
+            this.save(this.KEYS.INV_PRODUCTS, [
+                { id: 'N01000000001', name: 'パーティクルボード 18mm', category: '01', price: 3500, isFixed: false },
+                { id: 'N02000000001', name: 'メラミン化粧板 白', category: '02', price: 2800, isFixed: false },
+                { id: 'N05000000001', name: 'スライド丁番', category: '05', price: 150, isFixed: false }
+            ]);
+        }
+
+        // 在庫：棚卸ログ
+        if (!localStorage.getItem(this.KEYS.INV_LOGS)) {
+            this.save(this.KEYS.INV_LOGS, []);
+        }
+
+        // 在庫：月次データ
+        if (!localStorage.getItem(this.KEYS.INV_MONTHLY)) {
+            this.save(this.KEYS.INV_MONTHLY, []);
+        }
+    },
+
+    // Firebase初期化
+    initFirebase() {
+        console.log('🔥 Firebaseモードで起動');
+
+        // 接続状態監視
+        firebaseDB.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true) {
+                console.log('✅ Firebase接続完了');
+                toast('☁️ サーバーに接続しました（共有有効）', 'success');
+            } else {
+                console.warn('⚠️ Firebase未接続');
+                // 切断時（または初期接続失敗時）
+                // toast('⚠️ サーバー接続が切れています', 'warning');
+            }
+        });
+
+        // 各データタイプにリスナーを設定
+        const dataKeys = [
+            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
+            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
+            this.KEYS.BACKUPS
+        ];
+
+        dataKeys.forEach(key => {
+            const fbKey = this.toFirebaseKey(key);
+
+            // リアルタイムリスナー
+            firebaseDB.ref(fbKey).on('value', (snapshot) => {
+                const data = snapshot.val();
+                this._cache[key] = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
+
+                // UI更新（定義されている場合）
+                if (typeof refreshCurrentPage === 'function') {
+                    refreshCurrentPage();
+                }
+            }, (error) => {
+                console.error(`❌ ${fbKey} 読み込みエラー:`, error);
+            });
+        });
+
+        // 初期データがない場合は作成
+        setTimeout(() => {
+            this.ensureInitialData();
+        }, 2000);
+
+        // 自動バックアップチェック（データ読み込み後）
+        setTimeout(() => {
+            this.checkAutoBackup();
+        }, 5000);
+    },
+
+    // Firebase初期データ確認
+    ensureInitialData() {
+        const defaultRates = [
+            { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+            { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+            { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+        ];
+
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.USERS)).once('value').then(snap => {
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    this.save(this.KEYS.USERS, [
+                        { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                        { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                    ]);
+                }
+            });
+
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.RATES)).once('value').then(snap => {
+                let needsInit = false;
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    needsInit = true;
+                } else {
+                    const data = snap.val();
+                    const rates = Array.isArray(data) ? data : Object.values(data);
+                    if (rates.length > 0 && (
+                        rates[0].secondRate === undefined ||
+                        rates[0].rate !== undefined ||
+                        rates[0].rateCode === 'A01'
+                    )) {
+                        needsInit = true;
+                    }
+                }
+
+                if (needsInit) {
+                    console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            });
+        } else {
+            if (this.get(this.KEYS.USERS).length === 0) {
+                this.save(this.KEYS.USERS, [
+                    { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                    { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                ]);
+            }
+
+            // 賃率: 空 OR 旧形式なら初期値を設定
+            const rates = this.get(this.KEYS.RATES);
+            const needsInit = rates.length === 0 ||
+                (rates.length > 0 && (
+                    rates[0].secondRate === undefined ||
+                    rates[0].rate !== undefined ||
+                    rates[0].rateCode === 'A01'
+                ));
+
+            if (needsInit) {
+                console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                this.save(this.KEYS.RATES, defaultRates);
+            }
+        }
+    },
+
+    // 保存（全置換 - 初期化時など限定）
+    save(key, data) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).set(data)
+                .then(() => console.log(`💾 ${fbKey} 保存完了`))
+                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
+            this._cache[key] = data;
+        } else {
+            localStorage.setItem(key, JSON.stringify(data));
+            if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+        }
+    },
+
+    // 追加（競合回避：トランザクション使用）
+    add(key, newItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (currentData === null) return [newItem];
+                if (Array.isArray(currentData)) {
+                    if (newItem.id && currentData.some(d => d.id === newItem.id)) return; // ID重複防止
+                    currentData.push(newItem);
+                    return currentData;
+                }
+                return currentData;
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Add failed:', error);
+                    toast('追加に失敗しました', 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            data.push(newItem);
+            this.save(key, data);
+        }
+    },
+
+    // 更新（競合回避：トランザクション使用）
+    update(key, id, updatedItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (!currentData) return;
+                if (Array.isArray(currentData)) {
+                    const index = currentData.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        currentData[index] = updatedItem;
+                    }
+                    return currentData;
+                }
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Update failed:', error);
+                    toast('更新に失敗しました: ' + error.message, 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            const index = data.findIndex(item => item.id === id);
+            if (index !== -1) {
+                data[index] = updatedItem;
+                this.save(key, data);
+            }
+        }
+    },
+
+    // 取得
+    get(key) {
+        // Firebase使用時（キャッシュから取得）
+        if (typeof useFirebase !== 'undefined' && useFirebase && key !== this.KEYS.CURRENT_USER) {
+            return this._cache[key] || [];
+        }
+        // ローカルストレージ
+        const data = localStorage.getItem(key);
+        try {
+            const parsed = data ? JSON.parse(data) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('DB Parse Error:', key, e);
+            return [];
+        }
+    },
+
+    // 次のID
+    nextId(key) {
+        const data = this.get(key);
+        return data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
+    },
+
+    // ========================================
+    // バックアップ機能
+    // ========================================
+
+    // バックアップ対象のキー一覧
+    _backupTargetKeys() {
+        return [
+            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
+            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
+        ];
+    },
+
+    // バックアップ作成
+    createBackup(label) {
+        const snapshot = {};
+        let totalRecords = 0;
+        this._backupTargetKeys().forEach(key => {
+            const data = this.get(key);
+            snapshot[key] = data;
+            totalRecords += data.length;
+        });
+
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = {
+            id: Date.now(),
+            label: label || '手動バックアップ',
+            createdAt: new Date().toISOString(),
+            totalRecords,
+            dataSize: JSON.stringify(snapshot).length,
+            snapshot
+        };
+        backups.push(backup);
+        this.save(this.KEYS.BACKUPS, backups);
+        localStorage.setItem('pms_last_backup_date', new Date().toISOString());
+        return backup;
+    },
+
+    // バックアップから復元
+    restoreBackup(backupId) {
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = backups.find(b => b.id === backupId);
+        if (!backup || !backup.snapshot) return false;
+
+        this._backupTargetKeys().forEach(key => {
+            if (backup.snapshot[key] !== undefined) {
+                this.save(key, backup.snapshot[key]);
+            }
+        });
+        return true;
+    },
+
+    // バックアップ削除
+    deleteBackupById(backupId) {
+        let backups = this.get(this.KEYS.BACKUPS);
+        backups = backups.filter(b => b.id !== backupId);
+        this.save(this.KEYS.BACKUPS, backups);
+    },
+
+    // バックアップ一覧取得(スナップショットなし=軽量)
+    getBackupList() {
+        const backups = this.get(this.KEYS.BACKUPS);
+        return backups.map(b => ({
+            id: b.id,
+            label: b.label,
+            createdAt: b.createdAt,
+            totalRecords: b.totalRecords,
+            dataSize: b.dataSize
+        }));
+    },
+
+    // 自動バックアップチェック（月1回・日曜日）
+    checkAutoBackup() {
+        const now = new Date();
+        // 日曜日（0）でなければスキップ
+        if (now.getDay() !== 0) return;
+
+        const lastBackup = localStorage.getItem('pms_last_backup_date');
+        if (lastBackup) {
+            const lastDate = new Date(lastBackup);
+            const daysSince = (now - lastDate) / (1000 * 60 * 60 * 24);
+            if (daysSince < 28) return; // 28日未満ならスキップ
+        }
+
+        // 自動バックアップ実行
+        console.log('💾 自動バックアップを実行中...');
+        const backup = this.createBackup('自動バックアップ（月次）');
+        console.log(`✅ 自動バックアップ完了: ${backup.totalRecords}件`);
+        if (typeof toast === 'function') {
+            toast(`💾 月次自動バックアップを作成しました（${backup.totalRecords}件）`, 'success');
+        }
+
+        // 古いバックアップを整理（最新6件のみ保持）
+        let backups = this.get(this.KEYS.BACKUPS);
+        if (backups.length > 6) {
+            backups.sort((a, b) => b.id - a.id);
+            backups = backups.slice(0, 6);
+            this.save(this.KEYS.BACKUPS, backups);
+        }
+    }
+};
+
+// 標準工程リスト
+const STANDARD_PROCESSES = [
+    '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー',
+    'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包', 'フロア加工',
+    'アクリルBOX作成', '扉面材くり抜き'
+];
+
+// 現在のページを更新（Firebase用）
+function refreshCurrentPage() {
+    // 現在表示中のページを再描画
+    const activePage = document.querySelector('.page.active');
+    if (activePage) {
+        const pageId = activePage.id.replace('page-', '');
+        if (typeof navigateTo === 'function') {
+            // ナビゲーション状態は変えずに再描画のみ
+            switch (pageId) {
+                case 'dashboard': if (typeof renderDashboard === 'function') renderDashboard(); break;
+                case 'gantt': if (typeof renderGantt === 'function') renderGantt(); break;
+                case 'orders': if (typeof renderOrders === 'function') renderOrders(); break;
+                case 'bom': if (typeof renderBom === 'function') renderBom(); break;
+            }
+        }
+    }
+}
+
+</script>
     <script>
 // ========================================
 // 生産管理システム - メインアプリケーション
@@ -2169,6 +2743,63 @@ body.dark-mode .summary-value {
 
 // 初期化
 DB.init();
+
+// ========================================
+// データマイグレーション (v4.76)
+// ========================================
+function migrateCorruptedData() {
+  let needsBOMSave = false;
+  let needsOrderSave = false;
+
+  const boms = DB.get(DB.KEYS.BOM) || [];
+  boms.forEach(b => {
+    if (b.processes && b.processes.length === 1 && typeof b.processes[0] === 'string') {
+      if (b.processes[0].includes('、') || b.processes[0].includes('，')) {
+        b.processes = b.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+        needsBOMSave = true;
+      }
+    }
+    if (!b.processes || b.processes.length === 0) {
+       // デフォルトの標準工程を付与（完了確認ではなく実際の工程名を使う）
+       b.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+       needsBOMSave = true;
+    }
+  });
+  if (needsBOMSave) DB.save(DB.KEYS.BOM, boms);
+
+  // BOMマップを作成（注文の工程修復に使用）
+  const bomMap = {};
+  boms.forEach(b => {
+    const key = (b.bomName || '') + '|' + (b.partCode || '');
+    bomMap[key] = b.processes;
+  });
+
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  orders.forEach(o => {
+    if (o.items) {
+      o.items.forEach(item => {
+        if (item.processes && item.processes.length === 1 && typeof item.processes[0] === 'string') {
+          if (item.processes[0].includes('、') || item.processes[0].includes('，')) {
+            item.processes = item.processes[0].split(/[,、，]/).map(x => x.trim()).filter(Boolean);
+            needsOrderSave = true;
+          }
+        }
+        if (!item.processes || item.processes.length === 0) {
+           // BOMから工程を復元
+           const key = (item.bomName || '') + '|' + (item.partCode || '');
+           if (bomMap[key] && bomMap[key].length > 0) {
+             item.processes = [...bomMap[key]];
+           } else {
+             item.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
+           }
+           needsOrderSave = true;
+        }
+      });
+    }
+  });
+  if (needsOrderSave) DB.save(DB.KEYS.ORDERS, orders);
+}
+migrateCorruptedData();
 
 // ========================================
 // グローバル変数
@@ -2313,6 +2944,29 @@ function showMainScreen() {
   }
 }
 
+// 現在表示中のページを再描画する（Firebaseデータ同期時のUI更新用）
+window.refreshCurrentPage = function () {
+  const activePage = localStorage.getItem('lastPage') || 'dashboard';
+
+  switch (activePage) {
+    case 'dashboard': renderDashboard(); break;
+    case 'gantt': renderGantt(); break;
+    case 'qr': renderQrPage(); break;
+    case 'defects': renderDefects(); break;
+    case 'orders': renderOrders(); break;
+    case 'bom': renderBom(); break;
+    case 'rates': renderRates(); break;
+    case 'users': renderUsers(); break;
+    case 'report': renderReport(); break;
+    case 'backup': renderBackupPage(); break;
+    case 'inv-scan': renderInvScanPage(); break;
+    case 'inv-search': renderInvSearchPage(); break;
+    case 'inv-products': renderInvProductsPage(); break;
+    case 'inv-adjust': renderInvAdjustPage(); break;
+    case 'inv-monthly': renderInvMonthlyPage(); break;
+  }
+};
+
 function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
@@ -2363,6 +3017,9 @@ function navigateTo(pageName) {
       break;
     case 'report':
       renderReport();
+      break;
+    case 'backup':
+      renderBackupPage();
       break;
     // 在庫管理
     case 'inv-scan':
@@ -2878,145 +3535,200 @@ function stopQrScanner() {
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
-function onQrCodeScanned(decodedText) {
-  // スキャン成功時の処理
-  stopQrScanner();
-
-  const resultDiv = $('#qr-scan-result');
-  const dataDiv = $('#qr-scan-data');
-
-  if (resultDiv) resultDiv.style.display = 'block';
-
-  // QRコードのフォーマットを柔軟にパース
-  let projectName = '';
-  let productName = '';
-  let bomName = '';
-  let parsed = false;
-
-  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
+function onQrCodeScanned(decodedText, decodedResult) {
   try {
-    const json = JSON.parse(decodedText);
-    if (json.project || json.projectName) {
-      projectName = (json.project || json.projectName || '').trim();
-      productName = (json.product || json.productName || '').trim();
-      bomName = (json.bom || json.bomName || json.item || '').trim();
-      parsed = true;
-    }
-  } catch (e) { /* not JSON */ }
+    // Define safeSet helper early
+    const safeSet = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
 
-  // 2. デリミタ形式 (パイプ、カンマ、タブ)
-  if (!parsed) {
-    const parts = decodedText.split(/[|\t]/);
-    if (parts.length >= 3) {
-      projectName = parts[0].trim();
-      productName = parts[1].trim();
-      bomName = parts[2].trim();
-      parsed = true;
-    } else {
-      // カンマ区切りの場合(3つ以上)
-      const commaParts = decodedText.split(',');
-      if (commaParts.length >= 3) {
-        projectName = commaParts[0].trim();
-        productName = commaParts[1].trim();
-        bomName = commaParts[2].trim();
+    console.log('Force Raw Data:', decodedText);
+    safeSet('qr-raw-data', decodedText);
+    console.log(`QR Scanned: ${decodedText}`);
+    // Debug toast
+    const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
+    toast(`読取成功: ${debugMsg}`, 'success');
+
+    // Stop scanner
+    stopQrScanner();
+
+    const resultDiv = document.getElementById('qr-scan-result');
+    const dataDiv = document.getElementById('qr-scan-data');
+    if (resultDiv) resultDiv.style.display = 'block';
+
+    // Parse
+    let projectName = '';
+    let productName = '';
+    let bomName = '';
+    let parsed = false;
+
+    // 1. JSON
+    try {
+      const json = JSON.parse(decodedText);
+      if (json.project || json.projectName) {
+        projectName = (json.project || json.projectName || '').trim();
+        productName = (json.product || json.productName || '').trim();
+        bomName = (json.bom || json.bomName || json.item || '').trim();
+        parsed = true;
+      }
+    } catch (e) { }
+
+    // 2. Delimiter
+    if (!parsed) {
+      const parts = decodedText.split(/[|\t_]/);
+      if (parts.length >= 3) {
+        projectName = parts[0].trim();
+        productName = parts[1].trim();
+        bomName = parts[2].trim();
+        parsed = true;
+      } else {
+        const commaParts = decodedText.split(',');
+        if (commaParts.length >= 3) {
+          projectName = commaParts[0].trim();
+          productName = commaParts[1].trim();
+          bomName = commaParts[2].trim();
+          parsed = true;
+        }
+      }
+    }
+
+    // 3. Two parts
+    if (!parsed) {
+      const parts2 = decodedText.split(/[|,\t_]/);
+      if (parts2.length === 2) {
+        productName = parts2[0].trim();
+        bomName = parts2[1].trim();
         parsed = true;
       }
     }
-  }
 
-  // 3. 2パート: "品名|部材" または "現場|品名"
-  if (!parsed) {
-    const parts2 = decodedText.split(/[|,\t]/);
-    if (parts2.length === 2) {
-      // 品名と部材として扱う
-      productName = parts2[0].trim();
-      bomName = parts2[1].trim();
-      parsed = true;
-    }
-  }
+    // 4. Single string search
+    if (!parsed) {
+      const orders = DB.get(DB.KEYS.ORDERS) || [];
+      const searchText = decodedText.trim();
+      const matchOrder = orders.find(o =>
+        o.orderNo === searchText ||
+        o.projectName === searchText ||
+        o.productName === searchText ||
+        (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+      );
 
-  // 4. 単一文字列: オーダーデータから検索
-  if (!parsed) {
-    const orders = DB.get(DB.KEYS.ORDERS);
-    const searchText = decodedText.trim();
-
-    // orderNo, projectName, productName, bomNameのいずれかに一致するか検索
-    const matchOrder = orders.find(o =>
-      o.orderNo === searchText ||
-      o.projectName === searchText ||
-      o.productName === searchText ||
-      (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
-    );
-
-    if (matchOrder) {
-      projectName = matchOrder.projectName;
-      productName = matchOrder.productName;
-
-      // 部材まで一致した場合
-      const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
-      if (matchItem) {
-        bomName = matchItem.bomName;
+      if (matchOrder) {
+        projectName = matchOrder.projectName;
+        productName = matchOrder.productName;
+        const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+        if (matchItem) bomName = matchItem.bomName;
+        parsed = true;
       }
-      parsed = true;
     }
-  }
 
-  // スキャン結果を表示
-  if (dataDiv) {
-    if (parsed && (projectName || productName || bomName)) {
-      dataDiv.innerHTML = `
-        ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
-        ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
-        ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
-      `;
+    // Display and Auto Transcription
+    if (dataDiv) {
+      if (parsed && (projectName || productName || bomName)) {
+        dataDiv.innerHTML = `
+            ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+            ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+            ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+          `;
+
+        safeSet('qr-project-name', projectName || '');
+        safeSet('qr-product-name', productName || '');
+        safeSet('qr-bom-name', bomName || '');
+
+      } else {
+        dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+      }
+    }
+
+    // Auto Select
+    if (parsed && (projectName || productName)) {
+      selectFromQrData(projectName, productName, bomName);
     } else {
-      dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+      toast('データが見つかりませんでした (転記不可)', 'warning');
     }
-  }
 
-  // 指示書自動選択
-  if (parsed && (projectName || productName)) {
-    selectFromQrData(projectName, productName, bomName);
-  } else {
-    toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
-  }
+    // Vibrate
+    if (navigator.vibrate) {
+      try { navigator.vibrate(100); } catch (e) { }
+    }
 
-  // 成功音（バイブレーション）
-  if (navigator.vibrate) {
-    navigator.vibrate(100);
+  } catch (e) {
+    console.error('QR Scan Error:', e);
+    alert('エラー: ' + e.message);
+    toast('システムエラー: ' + e.message, 'error');
   }
-  toast('QRコードを読み取りました', 'success');
 }
 
-function selectFromQrData(projectName, productName, bomName) {
-  const orders = DB.get(DB.KEYS.ORDERS);
 
-  // 現場名と品名で指示書を検索
-  const order = orders.find(o =>
+function selectFromQrData(projectName, productName, bomName) {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+
+  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
+
+  const pNameNorm = normalize(projectName);
+  const prodNameNorm = normalize(productName);
+  const bomNameNorm = normalize(bomName);
+
+  // 1. Strict
+  let order = orders.find(o =>
     o.projectName.includes(projectName) && o.productName.includes(productName)
   );
 
+
+  // 2. Fuzzy
   if (!order) {
-    toast(`指示書が見つかりません: ${projectName} - ${productName}`, 'warning');
+    order = orders.find(o =>
+      normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
+    );
+  }
+
+  if (!order) {
+    // Partial check
+    const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
+
+    toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
     return;
   }
 
-  // 指示書を選択
-  const orderSelect = $('#qr-order');
-  orderSelect.value = order.id;
+  // Select Order
+  const orderSelect = document.getElementById('qr-order');
+  if (orderSelect) {
+    // Create option if missing? Be careful.
+    // Check if option exists
+    const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
+    if (!opt) {
+      const newOpt = document.createElement('option');
+      newOpt.value = order.id;
+      newOpt.text = `${order.projectName} - ${order.productName}`;
+      orderSelect.add(newOpt);
+    }
+    orderSelect.value = order.id;
+    // Trigger change event if needed? No, updateQrItemSelect reads value.
+  } else {
+  }
+
   updateQrItemSelect();
 
-  // 部材を検索して選択
+  // Select Item
   setTimeout(() => {
-    const item = order.items?.find(i =>
-      i.bomName.includes(bomName) || i.partCode?.includes(bomName)
+    let item = order.items?.find(i =>
+      i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
     );
 
+    if (!item && bomNameNorm) {
+      item = order.items?.find(i =>
+        normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
+      );
+    }
+
     if (item) {
-      const itemSelect = $('#qr-item');
-      itemSelect.value = item.id;
+      const itemSelect = document.getElementById('qr-item');
+      if (itemSelect) {
+        itemSelect.value = item.id;
+      }
       updateQrProcessSelect();
-      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
+      toast(`指示書と部材を選択しました`, 'success');
     } else {
       toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
@@ -3094,16 +3806,48 @@ function updateQrProcessSelect() {
 
 // 工程ボタン選択
 function selectProcess(btn, processName) {
-  // 他のボタンの選択を解除
+  // 1. UI Feedback (Instant)
   const container = btn.closest('.process-btn-grid');
   if (container) {
     container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
   }
   btn.classList.add('selected');
+  // Add temporary processing state
+  btn.style.opacity = '0.7';
+  btn.innerText = '登録中...';
 
-  // hidden inputに値をセット
-  const processHidden = $('#qr-process');
-  if (processHidden) processHidden.value = processName;
+  // 2. Get Data
+  const orderId = parseInt(document.getElementById('qr-order').value);
+  const itemId = parseInt(document.getElementById('qr-item').value);
+
+  if (!orderId || !itemId) {
+    toast('指示書と部材が選択されていません', 'error');
+    btn.style.opacity = '1';
+    btn.innerText = processName;
+    return;
+  }
+
+  // 3. Register (Async simulation)
+  // registerProgress retrieves from DB and calls save. It is synchronous in this app (localStorage/Firebase shim).
+  // But if Firebase is real, it might take time?
+  // Current app.js registerProgress handles DB.
+
+  const success = registerProgress(orderId, itemId, processName);
+
+  if (success) {
+    toast(`${processName} を完了として登録しました`, 'success');
+    btn.classList.add('completed');
+    btn.innerText = `✓ ${processName}`;
+    btn.disabled = true;
+    btn.style.opacity = '1';
+
+    // Vibrate
+    if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
+  } else {
+    toast('登録に失敗しました', 'error');
+    btn.style.opacity = '1';
+    btn.innerText = processName;
+  }
 }
 
 function registerProgress(orderId, itemId, processName) {
@@ -3746,7 +4490,7 @@ function renderRates() {
   const tbody = $('#rates-body');
 
   if (rates.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
     return;
   }
 
@@ -3759,7 +4503,8 @@ function renderRates() {
       <td class="text-right">${r.monthlyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.dailyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.hourlyRate?.toLocaleString() || 0}</td>
-      <td class="text-right">${r.minuteRate?.toFixed(1) || 0}</td>
+      <td class="text-right">${r.minuteRate?.toFixed(2) || 0}</td>
+      <td class="text-right">${r.secondRate?.toFixed(2) || 0}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})">削除</button></td>
     </tr>
   `).join('');
@@ -3803,9 +4548,7 @@ function renderUsers() {
 function deleteUser(id) {
   if (!confirm('このユーザーを削除しますか？')) return;
 
-  const users = DB.get(DB.KEYS.USERS);
-  const filtered = users.filter(u => u.id !== id);
-  DB.save(DB.KEYS.USERS, filtered);
+  DB.delete(DB.KEYS.USERS, id);
 
   toast('ユーザーを削除しました', 'success');
   renderUsers();
@@ -4993,7 +5736,13 @@ function createBom() {
     return;
   }
 
-  const processes = processesStr ? processesStr.split(',').map(p => p.trim()) : [];
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+
+  if (processes.length === 0) {
+    if (!confirm('工程が入力されていません。工程がない場合、工程管理画面等のグラフに「完・未」の表示枠が作成されませんが、このまま登録してよろしいですか？')) {
+      return;
+    }
+  }
 
   const boms = DB.get(DB.KEYS.BOM);
   boms.push({
@@ -5066,66 +5815,85 @@ function parseBomText(text, separator) {
   if (lines.length === 0) return { boms: [], duplicates: [] };
 
   // ヘッダー解析
-  // Excelからのコピペなどはタブ区切り、CSVアップロードはカンマ区切り
-  // separatorが指定されていればそれを使う
   let headers = lines[0].split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
   let processNames = [];
-  let startIndex = 0; // データ開始行
+  let startIndex = 0;
+  let hasPartCodeCol = true; // 部材CD列の有無
 
-  // 標準的なヘッダーが含まれているか確認
-  // (A:カテゴリ, B:製品名, C:BOM名, D:部材CD ... 以降は工程)
-  // ヘッダー行っぽければ、そこから工程名を抽出する
-  if (headers.includes('製品名') || headers.includes('BOM名') || headers.includes('部材CD')) {
-    startIndex = 1; // 1行目はヘッダー
-    // 4番目以降を工程名として取得 (0:カテゴリ, 1:製品名, 2:BOM名, 3:部材CD)
-    if (headers.length > 4) {
-      processNames = headers.slice(4).filter(h => h && h.length > 0);
+  // ヘッダー判定: 複数のエイリアスに対応
+  const isHeader = (h) => {
+    const candidates = ['カテゴリ', '大分類', '製品名', '品名', 'BOM名', 'BOM', '部材CD', '部材cd',
+      '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー',
+      '仕上・梱包', 'TOYO', 'HOMAG', 'productname', 'bomname', 'partcode', 'category'];
+    return candidates.some(c => h.toLowerCase().includes(c.toLowerCase()));
+  };
+
+  const headerMatch = headers.some(h => isHeader(h));
+
+  if (headerMatch) {
+    startIndex = 1;
+
+    // 部材CD列があるか判定
+    hasPartCodeCol = headers.some(h => h === '部材CD' || h === '部材cd' || h.toLowerCase() === 'partcode');
+    const fixedCols = hasPartCodeCol ? 4 : 3; // 固定列数
+
+    if (headers.length > fixedCols) {
+      processNames = headers.slice(fixedCols).filter(h => h && h.length > 0);
     }
   } else {
-    // ヘッダーなしの場合、工程は取り込めない
     console.warn('No headers detected');
   }
 
   let lastCategory = '';
   let lastProductName = '';
 
+  // 時間値判定 (例: "5分", "10分")
+  const isTimeValue = (val) => /^\d+分$/.test((val || '').trim());
+
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
     const cols = line.split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
-    // 必須列チェック (BOM名, 部材CD)
-    // index: 0=Cat, 1=Prod, 2=BomName, 3=PartCode
     let category = cols[0] || lastCategory;
     let productName = cols[1] || lastProductName;
     let bomName = cols[2];
-    let partCode = cols[3];
+    let partCode = '';
+    let processStartCol = hasPartCodeCol ? 4 : 3;
 
-    // BOM名も部材CDもない行はスキップ（空行など）
-    if (!bomName && !partCode) continue;
-    // 部材CDがない場合はBOM名を入れるなどの補完も考えられるが、一旦必須とする
-    if (!bomName) bomName = partCode;
-    if (!partCode) partCode = bomName;
+    if (hasPartCodeCol) {
+      partCode = cols[3] || '';
+      // GRID行の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無い
+      if (category && category.toUpperCase() === 'GRID' && isTimeValue(partCode)) {
+        // GRID行はpartCode列がなく、col[3]から工程開始
+        processStartCol = 3;
+        partCode = ''; // 後で設定
+      }
+    }
+
+    // BOM名がない行はスキップ
+    if (!bomName) continue;
+
+    // 補完
+    if (!partCode) {
+      if (category && category.toUpperCase() === 'GRID') {
+        partCode = productName; // GRIDルール: partCode = productName
+      } else {
+        partCode = bomName; // デフォルト: partCode = bomName
+      }
+    }
 
     // 継続値更新
     if (cols[0]) lastCategory = cols[0];
     if (cols[1]) lastProductName = cols[1];
 
-    // GRIDルール
-    if (category && category.toUpperCase() === 'GRID') {
-      partCode = productName;
-    }
-
     // 工程解析
     let processes = [];
     if (processNames.length > 0) {
-      // ヘッダーがある場合: 各列をチェック
       processNames.forEach((procName, idx) => {
-        // colsのindexは 4 + idx
-        const val = cols[4 + idx];
-        // 値が '1', 'TRUE', '○', 'ON', 'Yes' などなら採用
-        // Excelで空欄以外（何か書いてあれば）採用とするのが一番汎用的
-        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase())) {
+        const val = cols[processStartCol + idx];
+        // 空欄以外（1, TRUE, ○, 数字+分 など）なら採用
+        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase().trim())) {
           processes.push(procName);
         }
       });
@@ -5144,43 +5912,162 @@ function parseBomText(text, separator) {
 }
 
 function processBomCsv(text) {
-  const existingBoms = DB.get(DB.KEYS.BOM);
-  const { boms: newBomsRaw } = parseBomText(text, ','); // CSV
-
-  if (newBomsRaw.length === 0) {
-    toast('有効なデータが見つかりませんでした', 'warning');
+  // ヘッダー行を解析して形式を自動判定
+  const lines = text.split(/\r\n|\n/).filter(l => l.trim());
+  if (lines.length < 2) {
+    toast('データが含まれていません', 'warning');
     return;
   }
 
-  // 重複・ID付与
-  const newBoms = [];
-  let currentId = DB.nextId(DB.KEYS.BOM);
-  let duplicatesCount = 0;
+  // BOMケア
+  if (lines[0].charCodeAt(0) === 0xFEFF) {
+    lines[0] = lines[0].slice(1);
+  }
 
-  newBomsRaw.forEach(raw => {
-    // 既存チェック (BOM名 + 部材CD + 製品名)
-    const exists = existingBoms.some(e =>
-      e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
-    );
-    if (!exists) {
-      raw.id = currentId++;
-      newBoms.push(raw);
-    } else {
-      duplicatesCount++;
+  const headerRaw = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  const headerLower = headerRaw.map(h => h.toLowerCase());
+
+  // エクスポート形式の判定: id,productName,category,bomName,partCode,processes,note
+  const isExportFormat = headerLower.includes('id') &&
+    (headerLower.includes('productname') || headerLower.includes('品名')) &&
+    (headerLower.includes('processes') || headerLower.includes('工程'));
+
+  if (isExportFormat) {
+    // ========== エクスポート形式パーサー ==========
+    const colMap = {};
+    headerLower.forEach((h, idx) => {
+      if (h === 'id') colMap.id = idx;
+      else if (h === 'productname' || h === '品名' || h === '製品名') colMap.productName = idx;
+      else if (h === 'category' || h === 'カテゴリ') colMap.category = idx;
+      else if (h === 'bomname' || h === 'bom名') colMap.bomName = idx;
+      else if (h === 'partcode' || h === '部材cd') colMap.partCode = idx;
+      else if (h === 'processes' || h === '工程') colMap.processes = idx;
+      else if (h === 'note' || h === '備考') colMap.note = idx;
+    });
+
+    if (colMap.productName === undefined || colMap.bomName === undefined) {
+      toast('CSVヘッダーに必要な列（productName, bomName）が見つかりません', 'error');
+      return;
     }
-  });
 
-  if (newBoms.length === 0) {
-    toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
-    return;
+    const existingBoms = DB.get(DB.KEYS.BOM);
+    let nextId = DB.nextId(DB.KEYS.BOM);
+    let updatedCount = 0;
+    let createdCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      // CSVパース（ダブルクォート内のカンマに対応）
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 3) continue;
+
+      const idVal = colMap.id !== undefined ? parseInt(cols[colMap.id]) : NaN;
+      const productName = (cols[colMap.productName] || '').trim();
+      const category = colMap.category !== undefined ? (cols[colMap.category] || '').trim() : '';
+      const bomName = (cols[colMap.bomName] || '').trim();
+      const partCode = colMap.partCode !== undefined ? (cols[colMap.partCode] || '').trim() : '';
+      const processesRaw = colMap.processes !== undefined ? (cols[colMap.processes] || '').trim() : '';
+      const note = colMap.note !== undefined ? (cols[colMap.note] || '').trim() : '';
+
+      if (!productName || !bomName) continue;
+
+      // パイプ区切りの工程を配列に変換
+      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+
+      // 重複チェック (ID → 品名+BOM名)
+      let existingIdx = -1;
+      if (!isNaN(idVal) && idVal > 0) {
+        existingIdx = existingBoms.findIndex(b => b.id === idVal);
+      }
+      if (existingIdx === -1) {
+        existingIdx = existingBoms.findIndex(b => b.productName === productName && b.bomName === bomName);
+      }
+
+      const newBomData = { productName, category, bomName, partCode, processes, note };
+
+      if (existingIdx !== -1) {
+        existingBoms[existingIdx] = { ...existingBoms[existingIdx], ...newBomData };
+        updatedCount++;
+      } else {
+        existingBoms.push({ id: nextId++, ...newBomData });
+        createdCount++;
+      }
+    }
+
+    DB.save(DB.KEYS.BOM, existingBoms);
+    toast(`BOMインポート完了: 新規${createdCount}件, 更新${updatedCount}件`, 'success');
+    hideModal();
+    renderBom();
+  } else {
+    // ========== テンプレート形式 (カテゴリ,製品名,BOM名,部材CD,...工程) ==========
+    const existingBoms = DB.get(DB.KEYS.BOM);
+    const { boms: newBomsRaw } = parseBomText(text, ',');
+
+    if (newBomsRaw.length === 0) {
+      toast('有効なデータが見つかりませんでした', 'warning');
+      return;
+    }
+
+    let currentId = DB.nextId(DB.KEYS.BOM);
+    let duplicatesCount = 0;
+    const newBoms = [];
+
+    newBomsRaw.forEach(raw => {
+      const exists = existingBoms.some(e =>
+        e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+      );
+      if (!exists) {
+        raw.id = currentId++;
+        newBoms.push(raw);
+      } else {
+        duplicatesCount++;
+      }
+    });
+
+    if (newBoms.length === 0) {
+      toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
+      return;
+    }
+
+    const updatedBoms = [...existingBoms, ...newBoms];
+    DB.save(DB.KEYS.BOM, updatedBoms);
+    toast(`${newBoms.length}件インポートしました`, 'success');
+    hideModal();
+    renderBom();
   }
+}
 
-  // 保存
-  const updatedBoms = [...existingBoms, ...newBoms];
-  DB.save(DB.KEYS.BOM, updatedBoms);
-  toast(`${newBoms.length}件インポートしました`, 'success');
-  hideModal();
-  renderBom();
+// CSV行パーサー（ダブルクォート内のカンマに対応）
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+  result.push(current.trim());
+  return result;
 }
 
 // Paste Import
@@ -5189,20 +6076,44 @@ function showBomPasteImport() {
         <div class="form-group">
             <label>Excelからコピーしたデータを貼り付けてください</label>
             <p class="text-muted" style="font-size:0.8rem;">
-              ※1行目にヘッダー（カテゴリ, 製品名, BOM名, 部材CD, [工程1], [工程2]...）を含めると工程も取り込めます。
+              ※1行目にヘッダーを含めてください。<br>
+              <strong>形式:</strong> 大分類 / 品名 / BOM / 部材CD / [工程1] / [工程2]...<br>
+              ※工程列に値（5分, 1, ○ など）があれば、その工程を登録します。<br>
+              ※GRID行は部材CD列なしでもOKです。
             </p>
-            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="カテゴリ	製品名	BOM名	部材CD	芯材カット..."></textarea>
+            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="大分類\t品名\tBOM\t部材CD\t芯材カット\t面材カット..."></textarea>
             
             <div style="text-align:right; margin-top:0.5rem;">
-               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレートをダウンロード</button>
+               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレート</button>
+               <button class="btn btn-sm btn-outline" onclick="exportBomsToCsv()">📤 現在のBOMをCSV出力</button>
             </div>
         </div>
     `;
   const footer = `
         <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-        <button class="btn btn-primary" onclick="executeBomPasteImport()">インポート</button>
+        <button class="btn btn-danger" onclick="if(confirm('既存BOMを全て削除して貼り付けデータで置き換えますか？'))executeBomPasteReplace()">全置換</button>
+        <button class="btn btn-primary" onclick="executeBomPasteImport()">追加インポート</button>
     `;
   showModal('BOMペースト登録', body, footer);
+}
+
+// 全置換ペーストインポート
+function executeBomPasteReplace() {
+  const text = document.getElementById('bom-paste-area').value;
+  if (!text.trim()) { toast('データを貼り付けてください', 'warning'); return; }
+
+  const { boms: newBomsRaw } = parseBomText(text, '\t');
+  if (newBomsRaw.length === 0) {
+    toast('データが解析できませんでした', 'warning');
+    return;
+  }
+
+  let id = 1;
+  newBomsRaw.forEach(b => { b.id = id++; });
+  DB.save(DB.KEYS.BOM, newBomsRaw);
+  toast(`${newBomsRaw.length}件のBOMで全置換しました`, 'success');
+  hideModal();
+  renderBom();
 }
 
 function executeBomPasteImport() {
@@ -5307,6 +6218,10 @@ function showAddRateModal() {
       <div class="form-group">
         <label>分給(円)</label>
         <input type="number" id="rate-minute" class="form-input" step="0.1" value="0">
+      </div>
+      <div class="form-group">
+        <label>秒給(円)</label>
+        <input type="number" id="rate-second" class="form-input" step="0.01" value="0">
       </div>
     </div>
   `;
@@ -5458,6 +6373,7 @@ function createRate() {
   const dailyRate = parseInt($('#rate-daily').value) || 0;
   const hourlyRate = parseInt($('#rate-hourly').value) || 0;
   const minuteRate = parseFloat($('#rate-minute').value) || 0;
+  const secondRate = parseFloat($('#rate-second').value) || 0;
 
   if (!rateCode || !department || !section) {
     toast('判定CD、部、課は必須です', 'warning');
@@ -5474,7 +6390,8 @@ function createRate() {
     monthlyRate,
     dailyRate,
     hourlyRate,
-    minuteRate
+    minuteRate,
+    secondRate
   });
   DB.save(DB.KEYS.RATES, rates);
 
@@ -5488,20 +6405,144 @@ function showImportRateModal() {
     <div style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
       <p>スプレッドシートからコピー&ペーストで賃率をインポートできます。</p>
       <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: 4px;">
-        <strong>形式（11列）:</strong><br>
+        <strong>形式A（9列 - 推奨）:</strong><br>
+        判定CD | 部 | 課 | 係 | 月額 | 日額 | 時給 | 分給 | 秒給<br>
+        <br>
+        <strong>形式B（11列 - 旧形式）:</strong><br>
         [A列:名称] [ID] [C列:判定CD] [部] [課] [係] [G列:月給] [日給] [時給] [分給] [秒給]
       </div>
-      <small>※ヘッダー行（3行目）も含めて、A列〜J列（またはK列）をまとめてコピーしてください。</small>
+      <small>※ヘッダー行を含めてもOKです。自動判別します。</small>
     </div>
     <textarea id="import-rate-data" class="form-input" rows="10" placeholder="ここに貼り付けてください..."></textarea>
+    <div style="margin-top: 0.5rem; text-align: right;">
+      <button class="btn btn-sm btn-outline" onclick="exportRatesToClipboard()">📋 現在のデータをコピー（編集用）</button>
+    </div>
   `;
 
   const footer = `
     <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-primary" onclick="importRates()">インポート</button>
+    <button class="btn btn-danger" onclick="if(confirm('既存の賃率を全て削除して、貼り付けデータで置き換えますか？'))importRatesReplace()">全置換インポート</button>
+    <button class="btn btn-primary" onclick="importRates()">追加/更新インポート</button>
   `;
 
   showModal('賃率一括インポート', body, footer);
+}
+
+// 賃率データをクリップボードにコピー（コピペ編集用）
+function exportRatesToClipboard() {
+  const rates = DB.get(DB.KEYS.RATES);
+  if (rates.length === 0) {
+    toast('賃率データがありません', 'warning');
+    return;
+  }
+
+  const header = '判定CD\t部\t課\t係\t月額\t日額\t時給\t分給\t秒給';
+  const rows = rates.map(r =>
+    [r.rateCode, r.department, r.section, r.subsection || '',
+    r.monthlyRate || 0, r.dailyRate || 0, r.hourlyRate || 0,
+    r.minuteRate || 0, r.secondRate || 0].join('\t')
+  );
+
+  const text = [header, ...rows].join('\n');
+
+  // テキストエリアにも表示
+  const ta = document.getElementById('import-rate-data');
+  if (ta) ta.value = text;
+
+  // クリップボードにコピー
+  navigator.clipboard.writeText(text).then(() => {
+    toast('賃率データをクリップボードにコピーしました。編集後に貼り直して再インポートできます。', 'success');
+  }).catch(() => {
+    toast('テキストエリアに出力しました。手動でコピーしてください。', 'info');
+  });
+}
+
+// 全置換インポート
+function importRatesReplace() {
+  const data = $('#import-rate-data').value.trim();
+  if (!data) {
+    toast('データを入力してください', 'warning');
+    return;
+  }
+
+  const parsed = parseRateLines(data);
+  if (parsed.length === 0) {
+    toast('インポートできるデータがありませんでした', 'warning');
+    return;
+  }
+
+  // 全置換
+  let id = 1;
+  parsed.forEach(r => { r.id = id++; });
+  DB.save(DB.KEYS.RATES, parsed);
+  renderRates();
+  hideModal();
+  toast(`${parsed.length}件の賃率を全置換しました`, 'success');
+}
+
+// 賃率行パーサー（9列 or 11列 自動判定）
+function parseRateLines(data) {
+  const lines = data.split('\n');
+  const results = [];
+
+  const parseVal = (val) => {
+    if (!val) return 0;
+    const numStr = val.toString().replace(/[¥,]/g, '').trim();
+    const num = parseFloat(numStr);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const isHeader = (cols) => {
+    const joined = cols.join(' ');
+    return joined.includes('判定CD') || joined.includes('コード') ||
+      joined.includes('労務費率') || joined.includes('月額') ||
+      joined.includes('職種');
+  };
+
+  lines.forEach(line => {
+    if (!line.trim()) return;
+    const cols = line.split('\t');
+
+    if (isHeader(cols)) return;
+
+    let rateCode, department, section, subsection;
+    let monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate;
+
+    if (cols.length >= 10) {
+      // 11列形式: [名称][ID][CD][部][課][係][月][日][時][分][秒]
+      rateCode = (cols[2] || '').trim();
+      department = (cols[3] || '').trim();
+      section = (cols[4] || '').trim();
+      subsection = (cols[5] || '').trim();
+      monthlyRate = parseVal(cols[6]);
+      dailyRate = parseVal(cols[7]);
+      hourlyRate = parseVal(cols[8]);
+      minuteRate = parseVal(cols[9]);
+      secondRate = parseVal(cols[10]);
+    } else if (cols.length >= 5) {
+      // 9列形式: [CD][部][課][係][月][日][時][分][秒]
+      rateCode = (cols[0] || '').trim();
+      department = (cols[1] || '').trim();
+      section = (cols[2] || '').trim();
+      subsection = (cols[3] || '').trim();
+      monthlyRate = parseVal(cols[4]);
+      dailyRate = parseVal(cols[5]);
+      hourlyRate = parseVal(cols[6]);
+      minuteRate = parseVal(cols[7]);
+      secondRate = parseVal(cols[8]);
+    } else {
+      return; // skip
+    }
+
+    if (!rateCode) return;
+
+    results.push({
+      rateCode, department, section, subsection,
+      monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate
+    });
+  });
+
+  return results;
 }
 
 function importRates() {
@@ -5511,86 +6552,15 @@ function importRates() {
     return;
   }
 
-  const lines = data.split('\n');
-  const existingRates = DB.get(DB.KEYS.RATES);
-  const newRates = [];
-  let skipCount = 0;
-  let errorDetails = [];
-
-  console.log(`Starting import of ${lines.length} lines...`);
-
-  lines.forEach((line, index) => {
-    // 空行はスキップ
-    if (!line.trim()) return;
-
-    // タブ区切り以外（例えばExcelからのコピペでスペース変換されてしまった場合など）も考慮したいが、
-    // 基本はタブ区切りを想定。
-    const cols = line.split('\t');
-
-    // 列数チェック緩和: 最低限 コード(2), 部門(3), 月給(6) くらいがあれば許可
-    if (cols.length < 7) {
-      console.warn(`Line ${index + 1} skipped: Not enough columns (${cols.length})`, line);
-      skipCount++;
-      return;
-    }
-
-    // ヘッダー判定（C列が空、または "コード" などの文字列）
-    const col2 = (cols[2] || '').trim();
-    if (col2 === 'コード' || col2 === '職種・役職CD' || !col2) {
-      console.log(`Line ${index + 1} skipped: Header or empty code`);
-      skipCount++;
-      return;
-    }
-
-    // 数値パース（カンマ除去）
-    const parseVal = (val) => {
-      if (!val) return 0;
-      // 円マークやカンマを除去
-      const numStr = val.toString().replace(/[¥,]/g, '').trim();
-      const num = parseFloat(numStr);
-      return isNaN(num) ? 0 : num;
-    };
-
-    // データマッピング (A=0, Start from C=2)
-    // C=Code, D=Dept, E=Section, F=SubSection
-    // G=Monthly, H=Daily, I=Hourly, J=Minute
-
-    const rateCode = col2;
-    const department = (cols[3] || '').trim();
-    const section = (cols[4] || '').trim();
-    const subsection = (cols[5] || '').trim();
-
-    const monthlyRate = parseVal(cols[6]);
-    const dailyRate = parseVal(cols[7]);
-    const hourlyRate = parseVal(cols[8]);
-    const minuteRate = parseVal(cols[9]); // J列がなくても0になる
-
-    if (!rateCode || !department) {
-      console.warn(`Line ${index + 1} skipped: Missing code or dept`);
-      skipCount++;
-      return;
-    }
-
-    newRates.push({
-      // IDは後で採番
-      rateCode,
-      department,
-      section,
-      subsection,
-      monthlyRate,
-      dailyRate,
-      hourlyRate,
-      minuteRate
-    });
-  });
+  const newRates = parseRateLines(data);
 
   if (newRates.length === 0) {
-    console.error('No valid rates parsed');
     toast('インポートできるデータがありませんでした。\n形式を確認してください（タブ区切り）', 'warning');
     return;
   }
 
   // 既存データとマージ
+  const existingRates = DB.get(DB.KEYS.RATES);
   let addedCount = 0;
   let updatedCount = 0;
 
@@ -5613,8 +6583,7 @@ function importRates() {
   renderRates();
   hideModal();
 
-  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件 (スキップ ${skipCount}行)`;
-  console.log(msg);
+  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件`;
   toast(msg, 'success');
 }
 
@@ -5672,15 +6641,15 @@ function createUser() {
     return;
   }
 
-  users.push({
+  const newUser = {
     id: DB.nextId(DB.KEYS.USERS),
     username,
     password,
     displayName,
     role,
     department
-  });
-  DB.save(DB.KEYS.USERS, users);
+  };
+  DB.add(DB.KEYS.USERS, newUser);
 
   toast('ユーザーを作成しました', 'success');
   hideModal();
@@ -5740,18 +6709,18 @@ function updateUser() {
   }
 
   const users = DB.get(DB.KEYS.USERS);
-  const index = users.findIndex(u => u.id === id);
-  if (index === -1) return;
+  const userToUpdate = users.find(u => u.id === id);
+  if (!userToUpdate) return;
 
-  users[index] = {
-    ...users[index],
+  const updatedUser = {
+    ...userToUpdate,
     password,
     displayName,
     role,
     department
   };
 
-  DB.save(DB.KEYS.USERS, users);
+  DB.update(DB.KEYS.USERS, id, updatedUser);
   toast('ユーザー情報を更新しました', 'success');
   hideModal();
   renderUsers();
@@ -5848,21 +6817,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSelBtn = $('#delete-selected-bom-btn');
   if (deleteSelBtn) deleteSelBtn.addEventListener('click', deleteSelectedBoms);
 
-  $('#import-bom-btn').addEventListener('click', showImportBomModal);
-  $('#add-rate-btn').addEventListener('click', showAddRateModal);
-  $('#import-rates-btn').addEventListener('click', showImportRateModal);
-  $('#add-user-btn').addEventListener('click', showAddUserModal);
+  // ボタン登録（null安全）
+  const importBomBtn = $('#import-bom-btn');
+  if (importBomBtn) importBomBtn.addEventListener('click', showImportBomModal);
 
-  // 賃率管理
-  const addRateBtn = document.getElementById('add-rate-btn');
+  const addRateBtn = $('#add-rate-btn');
   if (addRateBtn) addRateBtn.addEventListener('click', showAddRateModal);
 
-  const importRateBtn = document.getElementById('import-rates-btn');
-  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal); // 一括インポートボタンも同じモーダルを開く（中にインポート機能があるため）
+  const importRateBtn = $('#import-rates-btn');
+  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal);
 
-  // 月次報告
-  $('#filter-report-btn').addEventListener('click', renderReport);
-  $('#generate-report-btn').addEventListener('click', printReport);
+  const addUserBtn = $('#add-user-btn');
+  if (addUserBtn) addUserBtn.addEventListener('click', showAddUserModal);
+
+  const filterReportBtn = $('#filter-report-btn');
+  if (filterReportBtn) filterReportBtn.addEventListener('click', renderReport);
+
+  const genReportBtn = $('#generate-report-btn');
+  if (genReportBtn) genReportBtn.addEventListener('click', printReport);
+
+  const exportReportBtn = $('#export-report-btn');
+  if (exportReportBtn) exportReportBtn.addEventListener('click', exportReportCSV);
 });
 
 // ========================================
@@ -5881,13 +6856,32 @@ function renderReport() {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
+  // 日付文字列を YYYY-MM-DD フォーマットに正規化する共通関数
+  const normDate = (d) => {
+    if (!d) return '';
+    // 全角数字を半角に変換
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    // スラッシュ/ドット/年月日をハイフンに統一
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    // 空白除去
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
+
+  console.log('[renderReport] startDate:', startDate, '-> norm:', normDate(startDate));
+  console.log('[renderReport] endDate:', endDate, '-> norm:', normDate(endDate));
+  console.log('[renderReport] 完了案件数:', filteredOrders.length);
+
   // 日付フィルタ (日付文字列比較)
-  if (startDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate >= startDate);
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (endDate) {
-    filteredOrders = filteredOrders.filter(o => o.dueDate <= endDate);
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
+  console.log('[renderReport] フィルタ後の案件数:', filteredOrders.length);
 
   // 不良数集計 (期間内)
   let filteredDefects = [];
@@ -5926,7 +6920,8 @@ function renderReport() {
   // 賃率マップ
   const rateMap = {};
   rates.forEach(r => {
-    rateMap[r.department] = parseFloat(r.rate) || 0;
+    // 部署・係をキーとして分当り賃率をマッピング
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
   });
 
   // 工程→部門マッピング
@@ -5977,6 +6972,7 @@ function renderReport() {
       orderTime = 60 * order.quantity;
       orderCost = 25000 * order.quantity;
       orderDeptCosts = { '基材係': orderCost * 0.4, '加工係': orderCost * 0.45, '梱包仕上係': orderCost * 0.15 };
+      orderDeptTimes = { '基材係': orderTime * 0.4, '加工係': orderTime * 0.45, '梱包仕上係': orderTime * 0.15 };
     }
 
     totalCost += orderCost;
@@ -6237,12 +7233,113 @@ function renderReport() {
   $('#report-content').innerHTML = html;
 }
 
+function exportReportCSV() {
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const rates = DB.get(DB.KEYS.RATES);
+  const boms = DB.get(DB.KEYS.BOM);
+
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
+  let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
+
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
+  }
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
+  }
+
+  if (filteredOrders.length === 0) {
+    toast('エクスポートするデータがありません', 'warning');
+    return;
+  }
+
+  const rateMap = {};
+  rates.forEach(r => {
+    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
+  });
+
+  const processToDept = {
+    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
+    'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
+    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
+  };
+
+  const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
+  let csvContent = headers.join(',') + '\n';
+
+  filteredOrders.forEach(order => {
+    const productBoms = boms.filter(b => b.productName === order.productName);
+    let orderTime = 0;
+    let orderCost = 0;
+
+    productBoms.forEach(bom => {
+      if (bom.processTimes) {
+        Object.entries(bom.processTimes).forEach(([process, time]) => {
+          const dept = processToDept[process] || '加工係';
+          const deptRate = rateMap[dept] || 50;
+          const totalTimeForProcess = time * order.quantity;
+          const costForProcess = totalTimeForProcess * deptRate;
+          orderTime += totalTimeForProcess;
+          orderCost += costForProcess;
+        });
+      }
+    });
+
+    if (orderTime === 0) {
+      orderTime = 60 * order.quantity;
+      orderCost = 25000 * order.quantity;
+    }
+
+    // エスケープ処理
+    const row = [
+      `"${order.projectName.replace(/"/g, '""')}"`,
+      `"${order.productName.replace(/"/g, '""')}"`,
+      normDate(order.dueDate),
+      order.quantity,
+      Math.round(orderCost),
+      Math.round(orderTime)
+    ];
+    csvContent += row.join(',') + '\n';
+  });
+
+  const bomArray = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bomArray, csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = URL.createObjectURL(blob);
+  link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function printReport() {
   const reportArea = $('#report-print-area');
   if (!reportArea) {
-    toast('先に集計を実行してください', 'warning');
+    // 先に集計を実行してから再度実行
+    renderReport();
+    const reportArea2 = $('#report-print-area');
+    if (!reportArea2) {
+      toast('レポートの生成に失敗しました', 'error');
+      return;
+    }
+    // 再取得後に続行
+    doPrintReport(reportArea2);
     return;
   }
+  doPrintReport(reportArea);
+}
+
+function doPrintReport(reportArea) {
 
   // 印刷用ウィンドウで開く
   const printWindow = window.open('', '_blank');
@@ -6269,12 +7366,14 @@ function printReport() {
         .dept-name { font-size: 0.875rem; color: #6B7280; }
         .dept-cost { font-size: 1rem; font-weight: bold; }
         @media print { body { padding: 0; } }
-      </style>
+      
+    /* Mobile Overrides injected by build script */
+    #version-banner { display: none !important; }
+    .theme-switch-wrapper { position: fixed !important; top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; }
+    
+</style>
     </head>
     <body>
-    <div style="position:fixed; top:0; left:0; width:100%; height:5px; background:red; z-index:100000; pointer-events:none;"></div>
-    <div style="position:fixed; top:5px; left:50%; transform:translateX(-50%); background:red; color:white; padding:2px 8px; border-radius:0 0 4px 4px; font-size:10px; z-index:100000; font-weight:bold;">V3 (FORCE)</div>
-    
       ${reportArea.innerHTML}
     </body>
     </html>
@@ -7627,6 +8726,11 @@ document.addEventListener('DOMContentLoaded', () => {
       fontFamily: 'sans-serif'
     });
 
+    // モバイルの場合は非表示
+    if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      indicator.style.display = 'none';
+    }
+
     // Firebase接続状態チェック
     const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
 
@@ -7731,6 +8835,170 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
   }
 };
 
+// ========================================
+// バックアップ管理
+// ========================================
+
+function renderBackupPage() {
+  const container = document.getElementById('backup-list');
+  if (!container) return;
+
+  const backups = DB.getBackupList().sort((a, b) => b.id - a.id);
+  const lastBackup = localStorage.getItem('pms_last_backup_date');
+
+  let nextAutoText = '未定';
+  if (lastBackup) {
+    const nextDate = new Date(new Date(lastBackup).getTime() + 28 * 24 * 60 * 60 * 1000);
+    // 次の日曜日を計算
+    while (nextDate.getDay() !== 0) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
+    nextAutoText = nextDate.toLocaleDateString('ja-JP');
+  }
+
+  let html = `
+    <div class="card" style="margin-bottom: 1rem;">
+      <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <strong>📅 自動バックアップ設定</strong><br>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">
+            毎月1回・日曜日に自動実行 ｜ 最新6件を保持 ｜
+            最終バックアップ: ${lastBackup ? new Date(lastBackup).toLocaleString('ja-JP') : 'なし'} ｜
+            次回予定: ${nextAutoText}
+          </span>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="downloadAllBackupJson()">📥 全データJSON出力</button>
+      </div>
+    </div>
+  `;
+
+  if (backups.length === 0) {
+    html += `
+      <div class="card" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+        <p style="font-size: 1.2rem;">💾 バックアップはまだありません</p>
+        <p>「今すぐバックアップ」ボタンで手動バックアップを作成できます。</p>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>種類</th>
+              <th>レコード数</th>
+              <th>サイズ</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    backups.forEach(b => {
+      const date = new Date(b.createdAt).toLocaleString('ja-JP');
+      const sizeKB = (b.dataSize / 1024).toFixed(1);
+      const isAuto = b.label.includes('自動');
+      const labelClass = isAuto ? 'badge badge-info' : 'badge badge-success';
+
+      html += `
+        <tr>
+          <td>${date}</td>
+          <td><span class="${labelClass}">${b.label}</span></td>
+          <td>${b.totalRecords.toLocaleString()}件</td>
+          <td>${sizeKB} KB</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="restoreFromBackup(${b.id})" title="このバックアップから復元">🔄 復元</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadBackup(${b.id})" title="JSONダウンロード">📥</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBackupItem(${b.id})" title="削除">🗑</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// 手動バックアップ
+function createManualBackup() {
+  try {
+    const backup = DB.createBackup('手動バックアップ');
+    toast(`💾 バックアップを作成しました（${backup.totalRecords}件, ${(backup.dataSize / 1024).toFixed(1)}KB）`, 'success');
+    renderBackupPage();
+  } catch (e) {
+    toast('バックアップの作成に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// バックアップから復元
+function restoreFromBackup(backupId) {
+  if (!confirm('このバックアップからデータを復元しますか？\n\n現在のデータは全て上書きされます。\n（復元前に自動バックアップを作成します）')) return;
+
+  try {
+    // 復元前に自動でバックアップ
+    DB.createBackup('復元前の自動バックアップ');
+
+    const success = DB.restoreBackup(backupId);
+    if (success) {
+      toast('✅ バックアップから復元しました。ページをリロードします。', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      toast('復元に失敗しました。バックアップデータが見つかりません。', 'error');
+    }
+  } catch (e) {
+    toast('復元に失敗しました: ' + e.message, 'error');
+  }
+}
+
+// バックアップ削除
+function deleteBackupItem(backupId) {
+  if (!confirm('このバックアップを削除しますか？')) return;
+  DB.deleteBackupById(backupId);
+  toast('バックアップを削除しました', 'info');
+  renderBackupPage();
+}
+
+// バックアップJSONダウンロード
+function downloadBackup(backupId) {
+  const backups = DB.get(DB.KEYS.BACKUPS);
+  const backup = backups.find(b => b.id === backupId);
+  if (!backup) { toast('バックアップが見つかりません', 'error'); return; }
+
+  const json = JSON.stringify(backup.snapshot, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `backup_${new Date(backup.createdAt).toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('バックアップをダウンロードしました', 'success');
+}
+
+// 全データJSON出力（復元用）
+function downloadAllBackupJson() {
+  const snapshot = {};
+  DB._backupTargetKeys().forEach(key => {
+    snapshot[key] = DB.get(key);
+  });
+  const json = JSON.stringify(snapshot, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `full_backup_${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('全データをJSONファイルとしてダウンロードしました', 'success');
+}
+
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -7755,9 +9023,6 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
 </head>
 
 <body>
-    <div style="position:fixed; top:0; left:0; width:100%; height:5px; background:red; z-index:100000; pointer-events:none;"></div>
-    <div style="position:fixed; top:5px; left:50%; transform:translateX(-50%); background:red; color:white; padding:2px 8px; border-radius:0 0 4px 4px; font-size:10px; z-index:100000; font-weight:bold;">V3 (FORCE)</div>
-    
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
         <span id="app-version-display">v4.77</span><br>
@@ -8058,7 +9323,40 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
                         </div>
                         <div class="card-body">
                             <p class="text-muted mb-4">QRスキャンまたは手動で選択して登録</p>
+                            <!-- Debug Log -->
+                            <div id="debug-log"
+                                style="font-size: 0.7rem; color: #dc3545; background: #fff5f5; padding: 5px; margin-bottom: 10px; border: 1px solid #ffc107; display: none;">
+                            </div>
                             <form id="qr-form">
+                                <!-- 自動転記エリア -->
+                                <div class="form-group"
+                                    style="padding: 10px; background: #f1f5f9; border-radius: 6px; margin-bottom: 1rem;">
+                                    <label style="font-size: 0.75rem; color: #64748b; font-weight: bold;">読み取りデータ
+                                        (自動転記)</label>
+                                    <div
+                                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+                                        <div style="grid-column: span 2;">
+                                            <span style="font-size: 0.7rem; color: #475569;">生データ (確認用)</span>
+                                            <input type="text" id="qr-raw-data" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 4px; background: #f8fafc; color: #64748b;">
+                                        </div>
+                                        <div>
+                                            <span style="font-size: 0.7rem; color: #475569;">現場名</span>
+                                            <input type="text" id="qr-project-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: #e2e8f0; height: auto;">
+                                        </div>
+                                        <div>
+                                            <span style="font-size: 0.7rem; color: #475569;">品名</span>
+                                            <input type="text" id="qr-product-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: #e2e8f0; height: auto;">
+                                        </div>
+                                        <div style="grid-column: span 2;">
+                                            <span style="font-size: 0.7rem; color: #475569;">部材名</span>
+                                            <input type="text" id="qr-bom-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: #e2e8f0; height: auto;">
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label>指示書（現場名 - 品名）</label>
                                     <select id="qr-order" class="form-input" required>
@@ -8708,7 +10006,516 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         </div>
     </div>
 
-    <script src="data.js"></script>
+    <script>
+// ========================================
+// データストレージ（LocalStorage + Firebase対応）
+// ========================================
+
+const DB = {
+    // キー名
+    KEYS: {
+        USERS: 'pms_users',
+        BOM: 'pms_bom',
+        ORDERS: 'pms_orders',
+        RATES: 'pms_rates',
+        DEFECTS: 'pms_defects',
+        PROGRESS_HISTORY: 'pms_progress_history',
+        CURRENT_USER: 'pms_current_user',
+        // 在庫管理
+        INV_PRODUCTS: 'pms_inv_products',      // 商品マスタ
+        INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
+        INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
+        // バックアップ
+        BACKUPS: 'pms_backups'                 // バックアップ履歴
+    },
+
+    // Firebaseキーへの変換（pms_プレフィックスを除去）
+    toFirebaseKey(key) {
+        return key.replace('pms_', '');
+    },
+
+    // キャッシュ（Firebase用）
+    _cache: {},
+    _listeners: {},
+
+    // 初期データ
+    init() {
+        // Firebase接続時はリスナーを設定
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            this.initFirebase();
+            return;
+        }
+
+        // Firebase未設定時はローカルストレージで初期化
+        this.initLocalStorage();
+    },
+
+    // LocalStorage初期化
+    initLocalStorage() {
+        console.log('📦 ローカルストレージモードで起動');
+
+        // ユーザーに通知（Firebaseが設定されていないことへの注意喚起）
+        setTimeout(() => {
+            toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
+        }, 2000);
+
+        // ユーザー
+        if (!localStorage.getItem(this.KEYS.USERS)) {
+            this.save(this.KEYS.USERS, [
+                { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+            ]);
+        }
+
+        // BOM（サンプル）
+        if (!localStorage.getItem(this.KEYS.BOM)) {
+            this.save(this.KEYS.BOM, [
+                {
+                    id: 1,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(正面)',
+                    partCode: 'FR1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
+                },
+                {
+                    id: 2,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(側面L)',
+                    partCode: 'SL1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+                },
+                {
+                    id: 3,
+                    category: 'PAO',
+                    productName: 'PAO1012BL',
+                    bomName: 'PaO1012BL(側面R)',
+                    partCode: 'SR1012BL',
+                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
+                }
+            ]);
+        }
+
+        // 指示書（サンプル）
+        if (!localStorage.getItem(this.KEYS.ORDERS)) {
+            const today = new Date().toISOString().split('T')[0];
+            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            this.save(this.KEYS.ORDERS, [
+                {
+                    id: 1,
+                    orderNo: 'TK-2026-001',
+                    projectName: '○○ビル改装工事',
+                    productName: 'PAO1012BL',
+                    quantity: 5,
+                    startDate: today,
+                    dueDate: nextWeek,
+                    color: 'ホワイト',
+                    items: [
+                        { id: 1, bomName: 'PaO1012BL(正面)', partCode: 'FR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'], completed: [] },
+                        { id: 2, bomName: 'PaO1012BL(側面L)', partCode: 'SL1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] },
+                        { id: 3, bomName: 'PaO1012BL(側面R)', partCode: 'SR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] }
+                    ]
+                }
+            ]);
+        }
+
+        // 賃率（localStorageモードのみ。Firebaseモードは ensureInitialData で処理）
+        const isFirebaseMode = typeof useFirebase !== 'undefined' && useFirebase;
+        if (!isFirebaseMode) {
+            const defaultRates = [
+                { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+                { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+                { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+            ];
+            const existingRates = localStorage.getItem(this.KEYS.RATES);
+            if (!existingRates) {
+                this.save(this.KEYS.RATES, defaultRates);
+            } else {
+                try {
+                    const parsed = JSON.parse(existingRates);
+                    const isOldFormat = Array.isArray(parsed) && parsed.length > 0 &&
+                        (parsed[0].rate !== undefined ||
+                            parsed[0].secondRate === undefined ||
+                            parsed[0].rateCode === 'A01');
+                    if (isOldFormat) {
+                        console.log('🔄 賃率データをマイグレーション: 旧形式 → 新形式');
+                        this.save(this.KEYS.RATES, defaultRates);
+                    }
+                } catch (e) {
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            }
+        }
+
+        // 不良品
+        if (!localStorage.getItem(this.KEYS.DEFECTS)) {
+            this.save(this.KEYS.DEFECTS, []);
+        }
+
+        // 進捗履歴
+        if (!localStorage.getItem(this.KEYS.PROGRESS_HISTORY)) {
+            this.save(this.KEYS.PROGRESS_HISTORY, []);
+        }
+
+        // 在庫：商品マスタ（サンプル）
+        if (!localStorage.getItem(this.KEYS.INV_PRODUCTS)) {
+            this.save(this.KEYS.INV_PRODUCTS, [
+                { id: 'N01000000001', name: 'パーティクルボード 18mm', category: '01', price: 3500, isFixed: false },
+                { id: 'N02000000001', name: 'メラミン化粧板 白', category: '02', price: 2800, isFixed: false },
+                { id: 'N05000000001', name: 'スライド丁番', category: '05', price: 150, isFixed: false }
+            ]);
+        }
+
+        // 在庫：棚卸ログ
+        if (!localStorage.getItem(this.KEYS.INV_LOGS)) {
+            this.save(this.KEYS.INV_LOGS, []);
+        }
+
+        // 在庫：月次データ
+        if (!localStorage.getItem(this.KEYS.INV_MONTHLY)) {
+            this.save(this.KEYS.INV_MONTHLY, []);
+        }
+    },
+
+    // Firebase初期化
+    initFirebase() {
+        console.log('🔥 Firebaseモードで起動');
+
+        // 接続状態監視
+        firebaseDB.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true) {
+                console.log('✅ Firebase接続完了');
+                toast('☁️ サーバーに接続しました（共有有効）', 'success');
+            } else {
+                console.warn('⚠️ Firebase未接続');
+                // 切断時（または初期接続失敗時）
+                // toast('⚠️ サーバー接続が切れています', 'warning');
+            }
+        });
+
+        // 各データタイプにリスナーを設定
+        const dataKeys = [
+            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
+            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
+            this.KEYS.BACKUPS
+        ];
+
+        dataKeys.forEach(key => {
+            const fbKey = this.toFirebaseKey(key);
+
+            // リアルタイムリスナー
+            firebaseDB.ref(fbKey).on('value', (snapshot) => {
+                const data = snapshot.val();
+                this._cache[key] = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
+
+                // UI更新（定義されている場合）
+                if (typeof refreshCurrentPage === 'function') {
+                    refreshCurrentPage();
+                }
+            }, (error) => {
+                console.error(`❌ ${fbKey} 読み込みエラー:`, error);
+            });
+        });
+
+        // 初期データがない場合は作成
+        setTimeout(() => {
+            this.ensureInitialData();
+        }, 2000);
+
+        // 自動バックアップチェック（データ読み込み後）
+        setTimeout(() => {
+            this.checkAutoBackup();
+        }, 5000);
+    },
+
+    // Firebase初期データ確認
+    ensureInitialData() {
+        const defaultRates = [
+            { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
+            { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
+            { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
+        ];
+
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.USERS)).once('value').then(snap => {
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    this.save(this.KEYS.USERS, [
+                        { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                        { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                    ]);
+                }
+            });
+
+            firebaseDB.ref(this.toFirebaseKey(this.KEYS.RATES)).once('value').then(snap => {
+                let needsInit = false;
+                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
+                    needsInit = true;
+                } else {
+                    const data = snap.val();
+                    const rates = Array.isArray(data) ? data : Object.values(data);
+                    if (rates.length > 0 && (
+                        rates[0].secondRate === undefined ||
+                        rates[0].rate !== undefined ||
+                        rates[0].rateCode === 'A01'
+                    )) {
+                        needsInit = true;
+                    }
+                }
+
+                if (needsInit) {
+                    console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                    this.save(this.KEYS.RATES, defaultRates);
+                }
+            });
+        } else {
+            if (this.get(this.KEYS.USERS).length === 0) {
+                this.save(this.KEYS.USERS, [
+                    { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
+                    { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
+                ]);
+            }
+
+            // 賃率: 空 OR 旧形式なら初期値を設定
+            const rates = this.get(this.KEYS.RATES);
+            const needsInit = rates.length === 0 ||
+                (rates.length > 0 && (
+                    rates[0].secondRate === undefined ||
+                    rates[0].rate !== undefined ||
+                    rates[0].rateCode === 'A01'
+                ));
+
+            if (needsInit) {
+                console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
+                this.save(this.KEYS.RATES, defaultRates);
+            }
+        }
+    },
+
+    // 保存（全置換 - 初期化時など限定）
+    save(key, data) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).set(data)
+                .then(() => console.log(`💾 ${fbKey} 保存完了`))
+                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
+            this._cache[key] = data;
+        } else {
+            localStorage.setItem(key, JSON.stringify(data));
+            if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+        }
+    },
+
+    // 追加（競合回避：トランザクション使用）
+    add(key, newItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (currentData === null) return [newItem];
+                if (Array.isArray(currentData)) {
+                    if (newItem.id && currentData.some(d => d.id === newItem.id)) return; // ID重複防止
+                    currentData.push(newItem);
+                    return currentData;
+                }
+                return currentData;
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Add failed:', error);
+                    toast('追加に失敗しました', 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            data.push(newItem);
+            this.save(key, data);
+        }
+    },
+
+    // 更新（競合回避：トランザクション使用）
+    update(key, id, updatedItem) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (!currentData) return;
+                if (Array.isArray(currentData)) {
+                    const index = currentData.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        currentData[index] = updatedItem;
+                    }
+                    return currentData;
+                }
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Update failed:', error);
+                    toast('更新に失敗しました: ' + error.message, 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            const index = data.findIndex(item => item.id === id);
+            if (index !== -1) {
+                data[index] = updatedItem;
+                this.save(key, data);
+            }
+        }
+    },
+
+    // 取得
+    get(key) {
+        // Firebase使用時（キャッシュから取得）
+        if (typeof useFirebase !== 'undefined' && useFirebase && key !== this.KEYS.CURRENT_USER) {
+            return this._cache[key] || [];
+        }
+        // ローカルストレージ
+        const data = localStorage.getItem(key);
+        try {
+            const parsed = data ? JSON.parse(data) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('DB Parse Error:', key, e);
+            return [];
+        }
+    },
+
+    // 次のID
+    nextId(key) {
+        const data = this.get(key);
+        return data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
+    },
+
+    // ========================================
+    // バックアップ機能
+    // ========================================
+
+    // バックアップ対象のキー一覧
+    _backupTargetKeys() {
+        return [
+            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
+            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
+        ];
+    },
+
+    // バックアップ作成
+    createBackup(label) {
+        const snapshot = {};
+        let totalRecords = 0;
+        this._backupTargetKeys().forEach(key => {
+            const data = this.get(key);
+            snapshot[key] = data;
+            totalRecords += data.length;
+        });
+
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = {
+            id: Date.now(),
+            label: label || '手動バックアップ',
+            createdAt: new Date().toISOString(),
+            totalRecords,
+            dataSize: JSON.stringify(snapshot).length,
+            snapshot
+        };
+        backups.push(backup);
+        this.save(this.KEYS.BACKUPS, backups);
+        localStorage.setItem('pms_last_backup_date', new Date().toISOString());
+        return backup;
+    },
+
+    // バックアップから復元
+    restoreBackup(backupId) {
+        const backups = this.get(this.KEYS.BACKUPS);
+        const backup = backups.find(b => b.id === backupId);
+        if (!backup || !backup.snapshot) return false;
+
+        this._backupTargetKeys().forEach(key => {
+            if (backup.snapshot[key] !== undefined) {
+                this.save(key, backup.snapshot[key]);
+            }
+        });
+        return true;
+    },
+
+    // バックアップ削除
+    deleteBackupById(backupId) {
+        let backups = this.get(this.KEYS.BACKUPS);
+        backups = backups.filter(b => b.id !== backupId);
+        this.save(this.KEYS.BACKUPS, backups);
+    },
+
+    // バックアップ一覧取得(スナップショットなし=軽量)
+    getBackupList() {
+        const backups = this.get(this.KEYS.BACKUPS);
+        return backups.map(b => ({
+            id: b.id,
+            label: b.label,
+            createdAt: b.createdAt,
+            totalRecords: b.totalRecords,
+            dataSize: b.dataSize
+        }));
+    },
+
+    // 自動バックアップチェック（月1回・日曜日）
+    checkAutoBackup() {
+        const now = new Date();
+        // 日曜日（0）でなければスキップ
+        if (now.getDay() !== 0) return;
+
+        const lastBackup = localStorage.getItem('pms_last_backup_date');
+        if (lastBackup) {
+            const lastDate = new Date(lastBackup);
+            const daysSince = (now - lastDate) / (1000 * 60 * 60 * 24);
+            if (daysSince < 28) return; // 28日未満ならスキップ
+        }
+
+        // 自動バックアップ実行
+        console.log('💾 自動バックアップを実行中...');
+        const backup = this.createBackup('自動バックアップ（月次）');
+        console.log(`✅ 自動バックアップ完了: ${backup.totalRecords}件`);
+        if (typeof toast === 'function') {
+            toast(`💾 月次自動バックアップを作成しました（${backup.totalRecords}件）`, 'success');
+        }
+
+        // 古いバックアップを整理（最新6件のみ保持）
+        let backups = this.get(this.KEYS.BACKUPS);
+        if (backups.length > 6) {
+            backups.sort((a, b) => b.id - a.id);
+            backups = backups.slice(0, 6);
+            this.save(this.KEYS.BACKUPS, backups);
+        }
+    }
+};
+
+// 標準工程リスト
+const STANDARD_PROCESSES = [
+    '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー',
+    'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包', 'フロア加工',
+    'アクリルBOX作成', '扉面材くり抜き'
+];
+
+// 現在のページを更新（Firebase用）
+function refreshCurrentPage() {
+    // 現在表示中のページを再描画
+    const activePage = document.querySelector('.page.active');
+    if (activePage) {
+        const pageId = activePage.id.replace('page-', '');
+        if (typeof navigateTo === 'function') {
+            // ナビゲーション状態は変えずに再描画のみ
+            switch (pageId) {
+                case 'dashboard': if (typeof renderDashboard === 'function') renderDashboard(); break;
+                case 'gantt': if (typeof renderGantt === 'function') renderGantt(); break;
+                case 'orders': if (typeof renderOrders === 'function') renderOrders(); break;
+                case 'bom': if (typeof renderBom === 'function') renderBom(); break;
+            }
+        }
+    }
+}
+
+</script>
     <script src="app.js?v=20260420_3"></script>
     <!-- バージョン表示 -->
 </body>
