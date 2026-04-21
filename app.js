@@ -4402,6 +4402,9 @@ function renderReport(argStart, argEnd) {
     `;
   }).join('');
 
+  const avgCostPerUnit = totalQuantity > 0 ? Math.round(totalCost / totalQuantity) : 0;
+  const totalDays = (totalTime / 480).toFixed(1); // 1日=8時間換算
+
   const html = `
     <div class="report-print" id="report-print-area">
       <div class="report-title">★月次・製造原価報告書 (${dateRangeText})</div>
@@ -4419,8 +4422,12 @@ function renderReport(argStart, argEnd) {
             <span class="summary-value">${totalCost.toLocaleString()} 円</span>
           </div>
           <div class="summary-item">
+            <span class="summary-label">1台当たり平均</span>
+            <span class="summary-value">${avgCostPerUnit.toLocaleString()} 円/台</span>
+          </div>
+          <div class="summary-item">
             <span class="summary-label">総生産時間</span>
-            <span class="summary-value">${totalTime.toLocaleString()} 分</span>
+            <span class="summary-value">${totalTime.toLocaleString()} 分 (${totalDays}日)</span>
           </div>
           <div class="summary-item">
             <span class="summary-label" style="color:var(--color-danger);">不良発生数</span>
