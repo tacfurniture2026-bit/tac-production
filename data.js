@@ -306,12 +306,10 @@ const DB = {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).transaction((currentData) => {
                 if (currentData === null) return [newItem];
-                if (Array.isArray(currentData)) {
-                    if (newItem.id && currentData.some(d => d.id === newItem.id)) return; // ID重複防止
-                    currentData.push(newItem);
-                    return currentData;
-                }
-                return currentData;
+                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
+                if (newItem.id && dataArray.some(d => d.id === newItem.id)) return; // ID重複防止
+                dataArray.push(newItem);
+                return dataArray;
             }, (error, committed) => {
                 if (error) {
                     console.error('Add failed:', error);
@@ -332,13 +330,12 @@ const DB = {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).transaction((currentData) => {
                 if (!currentData) return;
-                if (Array.isArray(currentData)) {
-                    const index = currentData.findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        currentData[index] = updatedItem;
-                    }
-                    return currentData;
+                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
+                const index = dataArray.findIndex(item => item && item.id === id);
+                if (index !== -1) {
+                    dataArray[index] = updatedItem;
                 }
+                return dataArray;
             }, (error, committed) => {
                 if (error) {
                     console.error('Update failed:', error);
@@ -353,6 +350,29 @@ const DB = {
                 data[index] = updatedItem;
                 this.save(key, data);
             }
+        }
+    },
+
+    // 削除（競合回避：トランザクション使用）
+    delete(key, id) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            firebaseDB.ref(fbKey).transaction((currentData) => {
+                if (!currentData) return;
+                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
+                const filteredData = dataArray.filter(item => item && item.id !== id);
+                return filteredData;
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Delete failed:', error);
+                    toast('削除に失敗しました: ' + error.message, 'error');
+                }
+            });
+        } else {
+            // ローカルストレージ
+            const data = this.get(key);
+            const filteredData = data.filter(item => item && item.id !== id);
+            this.save(key, filteredData);
         }
     },
 
