@@ -7683,9 +7683,17 @@ function setupInvExcelImport() {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
         
-        // 「提出書類」シートを探す
+        // ファイル拡張子が .csv の場合は Shift-JIS としてテキストデコードしてからパース
+        let workbook;
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const text = new TextDecoder('shift-jis').decode(data);
+          workbook = XLSX.read(text, { type: 'string' });
+        } else {
+          workbook = XLSX.read(data, { type: 'array' });
+        }
+        
+        // 「提出書類」シートを探す、見つからなければ最初のシート
         const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         
@@ -9965,7 +9973,7 @@ function downloadAllBackupJson() {
                         </div>
                         <div class="card-body">
                             <p class="text-muted" style="margin-bottom: 8px;">「提出書類」シートのS列（数量）を自動で読み込みます。</p>
-                            <input type="file" id="inv-excel-upload" accept=".xlsx, .xls" class="form-input" style="margin-bottom: 8px;">
+                            <input type="file" id="inv-excel-upload" accept=".xlsx, .xls, .csv" class="form-input" style="margin-bottom: 8px;">
                             <button type="button" class="btn btn-secondary btn-full" id="inv-excel-import-btn">取込プレビューを表示</button>
                             <div id="inv-excel-preview" style="margin-top: 16px; display: none;">
                                 <div class="table-container" style="max-height: 200px; overflow-y: auto;">

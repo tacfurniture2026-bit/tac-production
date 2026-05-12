@@ -4917,9 +4917,17 @@ function setupInvExcelImport() {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
         
-        // 「提出書類」シートを探す
+        // ファイル拡張子が .csv の場合は Shift-JIS としてテキストデコードしてからパース
+        let workbook;
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const text = new TextDecoder('shift-jis').decode(data);
+          workbook = XLSX.read(text, { type: 'string' });
+        } else {
+          workbook = XLSX.read(data, { type: 'array' });
+        }
+        
+        // 「提出書類」シートを探す、見つからなければ最初のシート
         const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         
