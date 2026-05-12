@@ -200,7 +200,8 @@ const DB = {
             // リアルタイムリスナー
             firebaseDB.ref(fbKey).on('value', (snapshot) => {
                 const data = snapshot.val();
-                this._cache[key] = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+                this._cache[key] = parsedData.filter(item => item !== null);
                 console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
 
                 // UI更新（定義されている場合）
@@ -386,7 +387,8 @@ const DB = {
         const data = localStorage.getItem(key);
         try {
             const parsed = data ? JSON.parse(data) : [];
-            return Array.isArray(parsed) ? parsed : [];
+            const parsedArray = Array.isArray(parsed) ? parsed : [];
+            return parsedArray.filter(item => item !== null);
         } catch (e) {
             console.error('DB Parse Error:', key, e);
             return [];
