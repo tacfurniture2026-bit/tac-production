@@ -4878,12 +4878,186 @@ function renderInvScanPage() {
   // 本日の棚卸履歴を表示
   renderTodayInvLogs();
 
+  // ExcelインポートUIの初期化
+  setupInvExcelImport();
+
   // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
   /*
   if (isMobileDevice()) {
     setTimeout(() => startInvScanner(), 500);
   }
   */
+}
+
+function setupInvExcelImport() {
+  const fileInput = $('#inv-excel-upload');
+  const importBtn = $('#inv-excel-import-btn');
+  const confirmBtn = $('#inv-excel-confirm-btn');
+  const previewDiv = $('#inv-excel-preview');
+  const tbody = $('#inv-excel-preview-body');
+  const monthInput = $('#inv-excel-month');
+
+  if (!fileInput || !importBtn) return;
+
+  let parsedItems = [];
+
+  importBtn.onclick = () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      toast('Excelファイルを選択してください', 'error');
+      return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+      toast('Excel解析ライブラリが読み込まれていません', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // 「提出書類」シートを探す
+        const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        
+        // ヘッダーなしの2次元配列としてパース
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        const products = DB.get(DB.KEYS.INV_PRODUCTS);
+        parsedItems = [];
+
+        rows.forEach((row, rowIndex) => {
+          // S列はインデックス18
+          const sColValue = row[18];
+          if (sColValue === undefined || sColValue === null || sColValue === '') return;
+          
+          const quantity = parseInt(sColValue, 10);
+          if (isNaN(quantity)) return; // 数字でない場合はスキップ
+
+          // 行内のすべてのテキストセルを連結して、どの商品に該当するか探す
+          const rowText = row.map(v => String(v || '')).join(' ');
+          
+          // マスタから部分一致または完全一致する商品を探す
+          let matchedProduct = null;
+          for (const p of products) {
+            // 品番または品名が含まれていればマッチと判定
+            if (rowText.includes(p.id) || rowText.includes(p.name)) {
+              // 複数の商品がマッチする可能性を減らすため、最も長い名前を優先する等の工夫も可能だが、一旦最初に見つけたもの
+              matchedProduct = p;
+              break;
+            }
+          }
+
+          if (matchedProduct) {
+            parsedItems.push({
+              product: matchedProduct,
+              quantity: quantity,
+              rowStr: rowText.substring(0, 20) + '...'
+            });
+          }
+        });
+
+        if (parsedItems.length === 0) {
+          toast('取り込み対象のデータが見つかりませんでした', 'warning');
+          return;
+        }
+
+        // プレビュー表示
+        tbody.innerHTML = parsedItems.map(item => `
+          <tr>
+            <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.product.name}">
+              ${item.product.name}
+            </td>
+            <td style="text-align:center; font-weight:bold;">${item.quantity}</td>
+            <td style="color:var(--color-success);">一致</td>
+          </tr>
+        `).join('');
+
+        previewDiv.style.display = 'block';
+        toast(`${parsedItems.length}件のデータを読み込みました`, 'success');
+
+      } catch (err) {
+        console.error(err);
+        toast('Excelの解析に失敗しました', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  if (confirmBtn) {
+    confirmBtn.onclick = () => {
+      if (parsedItems.length === 0) return;
+
+      const targetMonth = monthInput ? monthInput.value : '';
+      // targetMonth がある場合はその月末日時をタイムスタンプにする、ない場合は現在日時
+      let timestamp = new Date().toISOString();
+      if (targetMonth) {
+        // 対象月の末日を作成 (例: "2026-04" -> 2026-04-30 23:59:59)
+        const [y, m] = targetMonth.split('-');
+        const lastDay = new Date(y, m, 0, 23, 59, 59);
+        timestamp = lastDay.toISOString();
+      }
+
+      const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const logs = DB.get(DB.KEYS.INV_LOGS);
+
+      parsedItems.forEach(item => {
+        const newLog = {
+          id: DB.nextId(DB.KEYS.INV_LOGS),
+          productId: item.product.id,
+          type: 'count', // 棚卸
+          quantity: item.quantity,
+          note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
+          user: currentUser.displayName,
+          timestamp: timestamp
+        };
+        DB.add(DB.KEYS.INV_LOGS, newLog);
+      });
+
+      toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
+      
+      // 自動締め処理
+      if (targetMonth) {
+        const monthlyResult = calculateInvMonthly(targetMonth);
+        saveInvMonthlyClosing(targetMonth, monthlyResult);
+        toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+      }
+
+      // 初期化
+      parsedItems = [];
+      previewDiv.style.display = 'none';
+      if (fileInput) fileInput.value = '';
+      if (monthInput) monthInput.value = '';
+      
+      renderTodayInvLogs();
+    };
+  }
+}
+
+// 締め処理保存用のヘルパー関数（既存ロジック分離）
+function saveInvMonthlyClosing(month, result) {
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const existingIndex = monthly.findIndex(m => m.month === month);
+
+  const closingData = {
+    month: month,
+    items: result.items,
+    summary: result.summary,
+    total: result.total,
+    fixedTotal: result.summary['fixed']?.amount || 0,
+    closedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    monthly[existingIndex] = closingData;
+  } else {
+    monthly.push(closingData);
+  }
+  
+  DB.save(DB.KEYS.INV_MONTHLY, monthly);
 }
 
 function displayProductInfo(productId) {
