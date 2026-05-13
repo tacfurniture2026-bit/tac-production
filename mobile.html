@@ -2554,37 +2554,59 @@ const DB = {
         }
     },
 
-    // 一括追加（Promise対応）
+    // 一括追加（Promise対応・Firebase非同期対応）
     addBulk(key, newItems) {
         if (!newItems || newItems.length === 0) return Promise.resolve(true);
         
-        try {
-            // 現在のデータを取得してローカルで結合
-            const currentData = this.get(key);
-            
-            // 最大IDを算出（数値IDのみ対象）
-            let maxId = 0;
-            currentData.forEach(item => {
+        console.log(`📦 addBulk開始: key=${key}, 件数=${newItems.length}`);
+        
+        // 現在のデータを取得してローカルで結合
+        const currentData = this.get(key);
+        console.log(`📦 addBulk: 既存データ ${currentData.length}件`);
+        
+        // 最大IDを算出（数値IDのみ対象）
+        let maxId = 0;
+        currentData.forEach(item => {
+            if (item && item.id) {
                 const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
                 if (!isNaN(numId) && numId > maxId) maxId = numId;
-            });
-            
-            // 新アイテムにIDを付与してコピー
-            const itemsToAdd = newItems.map(item => {
-                maxId++;
-                return Object.assign({}, item, { id: maxId });
-            });
-            
-            // 結合して保存
-            const merged = currentData.concat(itemsToAdd);
-            this.save(key, merged);
-            
-            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
-            return Promise.resolve(true);
-        } catch (err) {
-            console.error('addBulk error:', err);
-            toast('一括追加に失敗しました', 'error');
-            return Promise.reject(err);
+            }
+        });
+        console.log(`📦 addBulk: 現在の最大ID=${maxId}`);
+        
+        // 新アイテムにIDを付与してコピー（元データを変更しない）
+        const itemsToAdd = newItems.map(item => {
+            maxId++;
+            return Object.assign({}, item, { id: maxId });
+        });
+        
+        // 結合
+        const merged = currentData.concat(itemsToAdd);
+        console.log(`📦 addBulk: 結合後 ${merged.length}件, Firebase=${typeof useFirebase !== 'undefined' && useFirebase}`);
+        
+        // Firebase使用時は直接setして完了を待つ
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            this._cache[key] = merged;
+            return firebaseDB.ref(fbKey).set(merged)
+                .then(() => {
+                    console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
+                    return true;
+                })
+                .catch(err => {
+                    console.error(`❌ addBulk Firebase保存エラー:`, err);
+                    throw err;
+                });
+        } else {
+            // ローカルストレージ
+            try {
+                localStorage.setItem(key, JSON.stringify(merged));
+                console.log(`✅ addBulk ローカル保存完了: ${itemsToAdd.length}件追加`);
+                return Promise.resolve(true);
+            } catch (err) {
+                console.error('addBulk ローカル保存エラー:', err);
+                return Promise.reject(err);
+            }
         }
     },
 
@@ -7797,7 +7819,10 @@ function setupInvExcelImport() {
 
   if (confirmBtn) {
     confirmBtn.onclick = () => {
-      if (parsedItems.length === 0) return;
+      if (parsedItems.length === 0) {
+        toast('取り込みデータがありません', 'warning');
+        return;
+      }
 
       const targetMonth = monthInput ? monthInput.value : '';
       // targetMonth がある場合はその月末日時をタイムスタンプにする、ない場合は現在日時
@@ -7810,6 +7835,7 @@ function setupInvExcelImport() {
       }
 
       const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const itemCount = parsedItems.length; // 件数を先に保存
 
       const newLogs = parsedItems.map(item => ({
         productId: item.product.id,
@@ -7820,14 +7846,27 @@ function setupInvExcelImport() {
         timestamp: timestamp
       }));
 
+      console.log('🔄 Excel取込: 登録開始', newLogs.length, '件');
+      console.log('🔄 サンプルデータ:', JSON.stringify(newLogs[0]));
+
+      // ボタン無効化（二重クリック防止）
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '登録中...';
+
       DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
-        toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
+        console.log('✅ Excel取込: 登録完了');
+        toast(`${itemCount}件の棚卸を登録しました`, 'success');
         
         // 自動締め処理
         if (targetMonth) {
-          const monthlyResult = calculateInvMonthly(targetMonth);
-          saveInvMonthlyClosing(targetMonth, monthlyResult);
-          toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+          try {
+            const monthlyResult = calculateInvMonthly(targetMonth);
+            saveInvMonthlyClosing(targetMonth, monthlyResult);
+            toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+          } catch (closeErr) {
+            console.error('月次締め処理エラー:', closeErr);
+            toast('月次締め処理でエラーが発生しました', 'warning');
+          }
         }
 
         // 初期化
@@ -7839,7 +7878,10 @@ function setupInvExcelImport() {
         renderTodayInvLogs();
       }).catch(err => {
         console.error("Bulk add error:", err);
-        toast("登録処理に失敗しました", "error");
+        toast("登録処理に失敗しました: " + (err.message || err), "error");
+      }).finally(() => {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '確定して登録';
       });
     };
   }
@@ -9348,7 +9390,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.87</span><br>
+        <span id="app-version-display">v4.88</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10682,37 +10724,59 @@ const DB = {
         }
     },
 
-    // 一括追加（Promise対応）
+    // 一括追加（Promise対応・Firebase非同期対応）
     addBulk(key, newItems) {
         if (!newItems || newItems.length === 0) return Promise.resolve(true);
         
-        try {
-            // 現在のデータを取得してローカルで結合
-            const currentData = this.get(key);
-            
-            // 最大IDを算出（数値IDのみ対象）
-            let maxId = 0;
-            currentData.forEach(item => {
+        console.log(`📦 addBulk開始: key=${key}, 件数=${newItems.length}`);
+        
+        // 現在のデータを取得してローカルで結合
+        const currentData = this.get(key);
+        console.log(`📦 addBulk: 既存データ ${currentData.length}件`);
+        
+        // 最大IDを算出（数値IDのみ対象）
+        let maxId = 0;
+        currentData.forEach(item => {
+            if (item && item.id) {
                 const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
                 if (!isNaN(numId) && numId > maxId) maxId = numId;
-            });
-            
-            // 新アイテムにIDを付与してコピー
-            const itemsToAdd = newItems.map(item => {
-                maxId++;
-                return Object.assign({}, item, { id: maxId });
-            });
-            
-            // 結合して保存
-            const merged = currentData.concat(itemsToAdd);
-            this.save(key, merged);
-            
-            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
-            return Promise.resolve(true);
-        } catch (err) {
-            console.error('addBulk error:', err);
-            toast('一括追加に失敗しました', 'error');
-            return Promise.reject(err);
+            }
+        });
+        console.log(`📦 addBulk: 現在の最大ID=${maxId}`);
+        
+        // 新アイテムにIDを付与してコピー（元データを変更しない）
+        const itemsToAdd = newItems.map(item => {
+            maxId++;
+            return Object.assign({}, item, { id: maxId });
+        });
+        
+        // 結合
+        const merged = currentData.concat(itemsToAdd);
+        console.log(`📦 addBulk: 結合後 ${merged.length}件, Firebase=${typeof useFirebase !== 'undefined' && useFirebase}`);
+        
+        // Firebase使用時は直接setして完了を待つ
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            this._cache[key] = merged;
+            return firebaseDB.ref(fbKey).set(merged)
+                .then(() => {
+                    console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
+                    return true;
+                })
+                .catch(err => {
+                    console.error(`❌ addBulk Firebase保存エラー:`, err);
+                    throw err;
+                });
+        } else {
+            // ローカルストレージ
+            try {
+                localStorage.setItem(key, JSON.stringify(merged));
+                console.log(`✅ addBulk ローカル保存完了: ${itemsToAdd.length}件追加`);
+                return Promise.resolve(true);
+            } catch (err) {
+                console.error('addBulk ローカル保存エラー:', err);
+                return Promise.reject(err);
+            }
         }
     },
 

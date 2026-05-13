@@ -4997,7 +4997,10 @@ function setupInvExcelImport() {
 
   if (confirmBtn) {
     confirmBtn.onclick = () => {
-      if (parsedItems.length === 0) return;
+      if (parsedItems.length === 0) {
+        toast('取り込みデータがありません', 'warning');
+        return;
+      }
 
       const targetMonth = monthInput ? monthInput.value : '';
       // targetMonth がある場合はその月末日時をタイムスタンプにする、ない場合は現在日時
@@ -5010,6 +5013,7 @@ function setupInvExcelImport() {
       }
 
       const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const itemCount = parsedItems.length; // 件数を先に保存
 
       const newLogs = parsedItems.map(item => ({
         productId: item.product.id,
@@ -5020,14 +5024,27 @@ function setupInvExcelImport() {
         timestamp: timestamp
       }));
 
+      console.log('🔄 Excel取込: 登録開始', newLogs.length, '件');
+      console.log('🔄 サンプルデータ:', JSON.stringify(newLogs[0]));
+
+      // ボタン無効化（二重クリック防止）
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '登録中...';
+
       DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
-        toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
+        console.log('✅ Excel取込: 登録完了');
+        toast(`${itemCount}件の棚卸を登録しました`, 'success');
         
         // 自動締め処理
         if (targetMonth) {
-          const monthlyResult = calculateInvMonthly(targetMonth);
-          saveInvMonthlyClosing(targetMonth, monthlyResult);
-          toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+          try {
+            const monthlyResult = calculateInvMonthly(targetMonth);
+            saveInvMonthlyClosing(targetMonth, monthlyResult);
+            toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+          } catch (closeErr) {
+            console.error('月次締め処理エラー:', closeErr);
+            toast('月次締め処理でエラーが発生しました', 'warning');
+          }
         }
 
         // 初期化
@@ -5039,7 +5056,10 @@ function setupInvExcelImport() {
         renderTodayInvLogs();
       }).catch(err => {
         console.error("Bulk add error:", err);
-        toast("登録処理に失敗しました", "error");
+        toast("登録処理に失敗しました: " + (err.message || err), "error");
+      }).finally(() => {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '確定して登録';
       });
     };
   }

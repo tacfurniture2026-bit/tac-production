@@ -325,37 +325,59 @@ const DB = {
         }
     },
 
-    // 一括追加（Promise対応）
+    // 一括追加（Promise対応・Firebase非同期対応）
     addBulk(key, newItems) {
         if (!newItems || newItems.length === 0) return Promise.resolve(true);
         
-        try {
-            // 現在のデータを取得してローカルで結合
-            const currentData = this.get(key);
-            
-            // 最大IDを算出（数値IDのみ対象）
-            let maxId = 0;
-            currentData.forEach(item => {
+        console.log(`📦 addBulk開始: key=${key}, 件数=${newItems.length}`);
+        
+        // 現在のデータを取得してローカルで結合
+        const currentData = this.get(key);
+        console.log(`📦 addBulk: 既存データ ${currentData.length}件`);
+        
+        // 最大IDを算出（数値IDのみ対象）
+        let maxId = 0;
+        currentData.forEach(item => {
+            if (item && item.id) {
                 const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
                 if (!isNaN(numId) && numId > maxId) maxId = numId;
-            });
-            
-            // 新アイテムにIDを付与してコピー
-            const itemsToAdd = newItems.map(item => {
-                maxId++;
-                return Object.assign({}, item, { id: maxId });
-            });
-            
-            // 結合して保存
-            const merged = currentData.concat(itemsToAdd);
-            this.save(key, merged);
-            
-            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
-            return Promise.resolve(true);
-        } catch (err) {
-            console.error('addBulk error:', err);
-            toast('一括追加に失敗しました', 'error');
-            return Promise.reject(err);
+            }
+        });
+        console.log(`📦 addBulk: 現在の最大ID=${maxId}`);
+        
+        // 新アイテムにIDを付与してコピー（元データを変更しない）
+        const itemsToAdd = newItems.map(item => {
+            maxId++;
+            return Object.assign({}, item, { id: maxId });
+        });
+        
+        // 結合
+        const merged = currentData.concat(itemsToAdd);
+        console.log(`📦 addBulk: 結合後 ${merged.length}件, Firebase=${typeof useFirebase !== 'undefined' && useFirebase}`);
+        
+        // Firebase使用時は直接setして完了を待つ
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            this._cache[key] = merged;
+            return firebaseDB.ref(fbKey).set(merged)
+                .then(() => {
+                    console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
+                    return true;
+                })
+                .catch(err => {
+                    console.error(`❌ addBulk Firebase保存エラー:`, err);
+                    throw err;
+                });
+        } else {
+            // ローカルストレージ
+            try {
+                localStorage.setItem(key, JSON.stringify(merged));
+                console.log(`✅ addBulk ローカル保存完了: ${itemsToAdd.length}件追加`);
+                return Promise.resolve(true);
+            } catch (err) {
+                console.error('addBulk ローカル保存エラー:', err);
+                return Promise.reject(err);
+            }
         }
     },
 
