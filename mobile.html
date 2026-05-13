@@ -7834,7 +7834,8 @@ function setupInvExcelImport() {
         timestamp = lastDay.toISOString();
       }
 
-      const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+      const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
       const itemCount = parsedItems.length; // 件数を先に保存
 
       const newLogs = parsedItems.map(item => ({
@@ -7842,7 +7843,7 @@ function setupInvExcelImport() {
         type: 'count', // 棚卸
         quantity: item.quantity,
         note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-        user: currentUser.displayName,
+        user: userName,
         timestamp: timestamp
       }));
 
@@ -9390,7 +9391,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.88</span><br>
+        <span id="app-version-display">v4.89</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>

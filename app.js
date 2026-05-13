@@ -5012,7 +5012,8 @@ function setupInvExcelImport() {
         timestamp = lastDay.toISOString();
       }
 
-      const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+      const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
       const itemCount = parsedItems.length; // 件数を先に保存
 
       const newLogs = parsedItems.map(item => ({
@@ -5020,7 +5021,7 @@ function setupInvExcelImport() {
         type: 'count', // 棚卸
         quantity: item.quantity,
         note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-        user: currentUser.displayName,
+        user: userName,
         timestamp: timestamp
       }));
 
