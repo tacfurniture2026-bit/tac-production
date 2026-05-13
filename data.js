@@ -325,6 +325,49 @@ const DB = {
         }
     },
 
+    // 一括追加（競合回避：トランザクション使用）
+    addBulk(key, newItems) {
+        if (newItems.length === 0) return Promise.resolve(true);
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            return new Promise((resolve, reject) => {
+                const fbKey = this.toFirebaseKey(key);
+                firebaseDB.ref(fbKey).transaction((currentData) => {
+                    const dataArray = currentData === null ? [] : (Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null));
+                    
+                    let maxId = dataArray.reduce((max, item) => Math.max(max, parseInt(item.id) || 0), 0);
+                    
+                    newItems.forEach(item => {
+                        maxId++;
+                        item.id = maxId;
+                        dataArray.push(item);
+                    });
+                    
+                    return dataArray;
+                }, (error, committed) => {
+                    if (error) {
+                        console.error('Bulk add failed:', error);
+                        toast('一括追加に失敗しました', 'error');
+                        reject(error);
+                    } else {
+                        resolve(committed);
+                    }
+                });
+            });
+        } else {
+            return new Promise((resolve) => {
+                const data = this.get(key);
+                let maxId = data.reduce((max, item) => Math.max(max, parseInt(item.id) || 0), 0);
+                newItems.forEach(item => {
+                    maxId++;
+                    item.id = maxId;
+                    data.push(item);
+                });
+                this.save(key, data);
+                resolve(true);
+            });
+        }
+    },
+
     // 更新（競合回避：トランザクション使用）
     update(key, id, updatedItem) {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {

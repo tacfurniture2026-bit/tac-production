@@ -5010,37 +5010,37 @@ function setupInvExcelImport() {
       }
 
       const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
-      const logs = DB.get(DB.KEYS.INV_LOGS);
 
-      parsedItems.forEach(item => {
-        const newLog = {
-          id: DB.nextId(DB.KEYS.INV_LOGS),
-          productId: item.product.id,
-          type: 'count', // 棚卸
-          quantity: item.quantity,
-          note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-          user: currentUser.displayName,
-          timestamp: timestamp
-        };
-        DB.add(DB.KEYS.INV_LOGS, newLog);
+      const newLogs = parsedItems.map(item => ({
+        productId: item.product.id,
+        type: 'count', // 棚卸
+        quantity: item.quantity,
+        note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
+        user: currentUser.displayName,
+        timestamp: timestamp
+      }));
+
+      DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
+        toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
+        
+        // 自動締め処理
+        if (targetMonth) {
+          const monthlyResult = calculateInvMonthly(targetMonth);
+          saveInvMonthlyClosing(targetMonth, monthlyResult);
+          toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+        }
+
+        // 初期化
+        parsedItems = [];
+        previewDiv.style.display = 'none';
+        if (fileInput) fileInput.value = '';
+        if (monthInput) monthInput.value = '';
+        
+        renderTodayInvLogs();
+      }).catch(err => {
+        console.error("Bulk add error:", err);
+        toast("登録処理に失敗しました", "error");
       });
-
-      toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
-      
-      // 自動締め処理
-      if (targetMonth) {
-        const monthlyResult = calculateInvMonthly(targetMonth);
-        saveInvMonthlyClosing(targetMonth, monthlyResult);
-        toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
-      }
-
-      // 初期化
-      parsedItems = [];
-      previewDiv.style.display = 'none';
-      if (fileInput) fileInput.value = '';
-      if (monthInput) monthInput.value = '';
-      
-      renderTodayInvLogs();
     };
   }
 }
