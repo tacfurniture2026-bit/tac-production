@@ -7111,14 +7111,19 @@ function renderReport(argStart, argEnd) {
       departmentTimes[dept] += orderDeptTimes[dept] || 0;
     });
 
+    const unitCost = Math.round(orderCost / order.quantity);
+    const unitTime = Math.round(orderTime / order.quantity);
+
     return `
       <tr>
         <td>${order.projectName}</td>
         <td>${order.productName}</td>
         <td>${formatDate(order.dueDate)}</td>
-        <td>${order.quantity}</td>
-        <td>${Math.round(orderCost).toLocaleString()}</td>
-        <td>${orderTime.toLocaleString()}</td>
+        <td style="text-align: right;">${order.quantity}</td>
+        <td style="text-align: right;">${unitTime.toLocaleString()} 分</td>
+        <td style="text-align: right;">¥${unitCost.toLocaleString()}</td>
+        <td style="text-align: right;">${orderTime.toLocaleString()} 分</td>
+        <td style="text-align: right;">¥${Math.round(orderCost).toLocaleString()}</td>
       </tr>
     `;
   }).join('');
@@ -7137,32 +7142,46 @@ function renderReport(argStart, argEnd) {
   const invLogs = DB.get(DB.KEYS.INV_LOGS);
   const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
 
-  // 在庫計算（カテゴリ別）
+  // 最新の月次締めデータを取得
+  const latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
+
+  // 在庫計算（月次締めデータから直接取得し、完全一致させる）
   const categoryStocks = {};
-  let totalInvAmount = 0;
+  let totalInvAmount = latestMonthly ? latestMonthly.total : 0;
   let totalFixedAmount = 0;
   let totalNormalAmount = 0;
 
-  invProducts.forEach(product => {
-    const stock = getCurrentStock(product.id, invLogs);
-    const amount = stock * product.price;
-
-    // カテゴリ別集計
-    const catName = INV_CATEGORIES[product.category] || product.category;
-    if (!categoryStocks[catName]) {
-      categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
-    }
-
-    if (product.isFixed) {
-      categoryStocks[catName].fixed += amount;
-      totalFixedAmount += amount;
-    } else {
-      categoryStocks[catName].normal += amount;
-      totalNormalAmount += amount;
-    }
-    categoryStocks[catName].total += amount;
-    totalInvAmount += amount;
-  });
+  if (latestMonthly && latestMonthly.summary) {
+    Object.entries(latestMonthly.summary).forEach(([code, s]) => {
+      const catName = s.name;
+      categoryStocks[catName] = { total: s.amount, normal: 0, fixed: 0 };
+      if (code === 'fixed') {
+         categoryStocks[catName].fixed = s.amount;
+         totalFixedAmount += s.amount;
+      } else {
+         categoryStocks[catName].normal = s.amount;
+         totalNormalAmount += s.amount;
+      }
+    });
+  } else {
+    // 月次締めがない場合のフォールバック（リアルタイム）
+    invProducts.forEach(product => {
+      const stock = getCurrentStock(product.id, invLogs);
+      const amount = stock * product.price;
+      const catName = INV_CATEGORIES[product.category] || product.category;
+      if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
+      
+      if (product.isFixed) {
+        categoryStocks[catName].fixed += amount;
+        totalFixedAmount += amount;
+      } else {
+        categoryStocks[catName].normal += amount;
+        totalNormalAmount += amount;
+      }
+      categoryStocks[catName].total += amount;
+      totalInvAmount += amount;
+    });
+  }
 
   // 月別在庫推移データ（過去6ヶ月）
   const monthlyTrend = [];
@@ -7171,11 +7190,15 @@ function renderReport(argStart, argEnd) {
     const targetDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
     const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
     const monthData = invMonthly.find(m => m.month === monthKey);
+    let fixedTotal = 0;
+    if (monthData && monthData.summary && monthData.summary['fixed']) {
+      fixedTotal = monthData.summary['fixed'].amount;
+    }
     monthlyTrend.push({
       month: monthKey,
       label: `${targetDate.getMonth() + 1}月`,
       total: monthData?.total || 0,
-      fixedTotal: monthData?.fixedTotal || 0
+      fixedTotal: fixedTotal
     });
   }
 
@@ -7187,13 +7210,13 @@ function renderReport(argStart, argEnd) {
       return `
         <div style="margin-bottom: 0.75rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-            <span style="font-size: 0.875rem;">${cat}</span>
-            <span style="font-size: 0.875rem; font-weight: 500;">¥${data.total.toLocaleString()}</span>
+            <span style="font-size: 0.875rem; color: #334155;">${cat}</span>
+            <span style="font-size: 0.875rem; font-weight: 500; color: #1e293b;">¥${data.total.toLocaleString()}</span>
           </div>
-          <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 12px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+          <div style="background: #e2e8f0; border-radius: 4px; height: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #2563eb, #60a5fa); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
             <span>通常: ¥${data.normal.toLocaleString()}</span>
             <span>不動品: ¥${data.fixed.toLocaleString()}</span>
           </div>
@@ -7206,21 +7229,24 @@ function renderReport(argStart, argEnd) {
   const trendBars = monthlyTrend.map(m => {
     const barHeight = Math.round((m.total / maxTrendValue) * 100);
     const fixedHeight = m.total > 0 ? Math.round((m.fixedTotal / m.total) * barHeight) : 0;
+    const minBarHeight = m.total > 0 ? Math.max(barHeight, 5) : 0;
     return `
       <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-        <div style="flex: 1; width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
-          <div style="background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light)); width: 100%; height: ${barHeight}%; border-radius: 4px 4px 0 0; position: relative;">
-            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: var(--color-warning); opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
+        <div style="width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+          <div style="background: linear-gradient(180deg, #2563eb, #60a5fa); width: 100%; height: ${minBarHeight}%; min-height: ${m.total > 0 ? '4px' : '0'}; border-radius: 4px 4px 0 0; position: relative;">
+            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: #f59e0b; opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
           </div>
         </div>
-        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--color-text-muted);">${m.label}</div>
-        <div style="font-size: 0.625rem; color: var(--color-text-muted);">${m.total > 0 ? `¥${Math.round(m.total / 10000)}万` : '-'}</div>
+        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: #64748b;">${m.label}</div>
+        <div style="font-size: 0.625rem; color: #64748b;">${m.total > 0 ? `¥${Math.round(m.total / 10000)}万` : '-'}</div>
       </div>
     `;
   }).join('');
 
   const avgCostPerUnit = totalQuantity > 0 ? Math.round(totalCost / totalQuantity) : 0;
   const totalDays = (totalTime / 480).toFixed(1); // 1日=8時間換算
+  const defectRate = totalQuantity > 0 ? ((totalDefects / totalQuantity) * 100).toFixed(1) : 0;
+  const deadStockRatio = totalInvAmount > 0 ? ((totalFixedAmount / totalInvAmount) * 100).toFixed(1) : 0;
 
   const html = `
     <div class="report-print" id="report-print-area">
@@ -7246,9 +7272,13 @@ function renderReport(argStart, argEnd) {
             <span class="summary-label">総生産時間</span>
             <span class="summary-value">${totalTime.toLocaleString()} 分 (${totalDays}日)</span>
           </div>
-          <div class="summary-item">
-            <span class="summary-label" style="color:var(--color-danger);">不良発生数</span>
-            <span class="summary-value" style="color:var(--color-danger);">${totalDefects.toLocaleString()} 件</span>
+          <div class="summary-item" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 0.5rem;">
+            <span class="summary-label" style="color:#dc2626;">不良率 (歩留まり逆数)</span>
+            <span class="summary-value" style="color:#dc2626;">${defectRate} %</span>
+          </div>
+          <div class="summary-item" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.5rem;">
+            <span class="summary-label" style="color:#d97706;">不動品比率</span>
+            <span class="summary-value" style="color:#d97706;">${deadStockRatio} %</span>
           </div>
         </div>
       </div>
@@ -7282,7 +7312,7 @@ function renderReport(argStart, argEnd) {
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <div class="summary-item">
                     <span class="summary-label">不良総数 (個数ベース)</span>
-                    <span class="summary-value" style="color:var(--color-danger); font-size: 1.5rem;">${totalDefectQty} 個</span>
+                    <span class="summary-value" style="color:#dc2626; font-size: 1.5rem;">${totalDefectQty} 個</span>
                 </div>
                  <div class="summary-item" style="margin-top: 1rem;">
                     <span class="summary-label">発生件数 (レコード数)</span>
@@ -7293,39 +7323,39 @@ function renderReport(argStart, argEnd) {
       </div>
 
       <!-- 在庫金額セクション -->
-      <div class="report-section" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
-        <h3 style="margin-bottom: 1rem;">■在庫金額サマリ</h3>
-        <div class="report-summary" style="margin-bottom: 1.5rem;">
+      <div class="report-section" style="background: #ffffff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        <h3 style="margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; display: inline-block;">■在庫金額サマリ</h3>
+        <div class="report-summary" style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
           <div class="summary-item">
-            <span class="summary-label">在庫金額合計</span>
-            <span class="summary-value" style="color: var(--color-primary);">¥${totalInvAmount.toLocaleString()}</span>
+            <span class="summary-label" style="font-weight: bold; color: #475569;">在庫金額合計</span>
+            <span class="summary-value" style="color: #1e40af; font-size: 2rem; font-weight: 800; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);">¥${totalInvAmount.toLocaleString()}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">通常在庫</span>
-            <span class="summary-value" style="color: var(--color-success);">¥${totalNormalAmount.toLocaleString()}</span>
+            <span class="summary-label" style="font-weight: bold; color: #475569;">通常在庫</span>
+            <span class="summary-value" style="color: #059669; font-size: 1.5rem; font-weight: bold;">¥${totalNormalAmount.toLocaleString()}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">不動品在庫</span>
-            <span class="summary-value" style="color: var(--color-warning);">¥${totalFixedAmount.toLocaleString()}</span>
+            <span class="summary-label" style="font-weight: bold; color: #475569;">不動品在庫</span>
+            <span class="summary-value" style="color: #d97706; font-size: 1.5rem; font-weight: bold;">¥${totalFixedAmount.toLocaleString()}</span>
           </div>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
           <!-- 分類別グラフ -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📊 分類別在庫金額</h4>
-            ${categoryRows || '<p class="text-muted">在庫データがありません</p>'}
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📊 分類別在庫金額</h4>
+            ${categoryRows || '<p style="color: #94a3b8;">在庫データがありません</p>'}
           </div>
           
           <!-- 月別推移グラフ -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📈 月別在庫推移（過去6ヶ月）</h4>
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md);">
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📈 月別在庫推移（過去6ヶ月）</h4>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
               ${trendBars}
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem;">
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-primary); border-radius: 2px;"></span> 通常</span>
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-warning); border-radius: 2px;"></span> 不動品</span>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #2563eb; border-radius: 2px;"></span> 通常</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> 不動品</span>
             </div>
           </div>
         </div>
@@ -7339,13 +7369,15 @@ function renderReport(argStart, argEnd) {
               <th>物件名</th>
               <th>製品名</th>
               <th>納期</th>
-              <th>台数</th>
-              <th>加工費合計</th>
-              <th>時間(分)</th>
+              <th style="text-align: right;">台数</th>
+              <th style="text-align: right;">台/生産時間</th>
+              <th style="text-align: right;">台/加工費</th>
+              <th style="text-align: right;">総生産時間</th>
+              <th style="text-align: right;">総加工費</th>
             </tr>
           </thead>
           <tbody>
-            ${detailRows || '<tr><td colspan="6" class="text-center text-muted">完了案件がありません</td></tr>'}
+            ${detailRows || '<tr><td colspan="8" class="text-center text-muted">完了案件がありません</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -7357,7 +7389,7 @@ function renderReport(argStart, argEnd) {
             <div class="dept-item">
               <span class="dept-name">${dept}</span>
               <span class="dept-cost">${Math.round(cost).toLocaleString()} 円</span>
-              <span class="dept-time" style="font-size: 0.75rem; color: var(--color-text-muted);">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
+              <span class="dept-time" style="font-size: 0.75rem; color: #64748b;">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
             </div>
           `).join('')}
         </div>
@@ -7419,7 +7451,7 @@ function exportReportCSV() {
     '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
   };
 
-  const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
+  const headers = ['物件名', '製品名', '納期', '台数', '台/生産時間(分)', '台/加工費(円)', '総生産時間(分)', '総加工費(円)'];
   let csvContent = headers.join(',') + '\n';
 
   filteredOrders.forEach(order => {
@@ -7445,14 +7477,19 @@ function exportReportCSV() {
       orderCost = 25000 * order.quantity;
     }
 
+    const unitTime = Math.round(orderTime / order.quantity);
+    const unitCost = Math.round(orderCost / order.quantity);
+
     // エスケープ処理
     const row = [
       `"${order.projectName.replace(/"/g, '""')}"`,
       `"${order.productName.replace(/"/g, '""')}"`,
       order.dueDate || '',
       order.quantity,
-      Math.round(orderCost),
-      Math.round(orderTime)
+      unitTime,
+      unitCost,
+      Math.round(orderTime),
+      Math.round(orderCost)
     ];
     csvContent += row.join(',') + '\n';
   });
@@ -7468,15 +7505,23 @@ function exportReportCSV() {
 }
 
 function printReport() {
-  const reportArea = $('#report-print-area');
+  let reportArea = $('#report-print-area');
   if (!reportArea) {
-    renderReport();
-    const reportArea2 = $('#report-print-area');
-    if (!reportArea2) {
-      toast('レポートの生成に失敗しました', 'error');
-      return;
-    }
-    doPrintReport(reportArea2);
+    // レポートが未生成の場合、まずDOMから期間を取得して生成
+    const startDateEl = document.getElementById('report-start-date');
+    const endDateEl = document.getElementById('report-end-date');
+    const startDate = startDateEl ? startDateEl.value.trim() : '';
+    const endDate = endDateEl ? endDateEl.value.trim() : '';
+    renderReport(startDate, endDate);
+    // DOM更新を待ってから印刷
+    setTimeout(() => {
+      reportArea = $('#report-print-area');
+      if (!reportArea) {
+        toast('レポートの生成に失敗しました。先に「集計」ボタンを押してください。', 'error');
+        return;
+      }
+      doPrintReport(reportArea);
+    }, 300);
     return;
   }
   doPrintReport(reportArea);
@@ -7499,25 +7544,32 @@ function doPrintReport(reportArea) {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>月次報告書</title>
+      <title>月次製造原価報告書</title>
       <style>
-        body { font-family: 'Noto Sans JP', sans-serif; padding: 2rem; color: #1F2937; }
-        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .report-meta { color: #6B7280; margin-bottom: 2rem; }
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; padding: 2rem; color: #333; line-height: 1.5; }
+        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 2px solid #1e40af; padding-bottom: 0.5rem; }
+        .report-meta { color: #666; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: right; }
         .report-section { margin-bottom: 2rem; }
-        .report-section h3 { font-size: 1rem; margin-bottom: 1rem; color: #1F2937; }
-        .report-summary { display: flex; gap: 2rem; margin-bottom: 1rem; }
-        .summary-item { display: flex; flex-direction: column; }
-        .summary-label { font-size: 0.875rem; color: #6B7280; }
-        .summary-value { font-size: 1.25rem; font-weight: bold; }
-        .report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .report-table th, .report-table td { border: 1px solid #D1D5DB; padding: 0.5rem; text-align: left; }
-        .report-table th { background: #F3F4F6; font-weight: 600; }
+        .report-section h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1e40af; border-left: 4px solid #1e40af; padding-left: 0.5rem; }
+        .report-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+        .summary-item { display: flex; flex-direction: column; background: #f8fafc; padding: 0.75rem 1rem; border-radius: 4px; border: 1px solid #e2e8f0; min-width: 120px; }
+        .summary-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; font-weight: bold; }
+        .summary-value { font-size: 1.1rem; font-weight: bold; color: #0f172a; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .report-table th, .report-table td { border: 1px solid #cbd5e1; padding: 0.4rem 0.5rem; }
+        .report-table th { background: #f1f5f9; font-weight: bold; text-align: center; }
         .report-departments { display: flex; gap: 2rem; }
         .dept-item { display: flex; flex-direction: column; }
-        .dept-name { font-size: 0.875rem; color: #6B7280; }
-        .dept-cost { font-size: 1rem; font-weight: bold; }
-        @media print { body { padding: 0; } }
+        .dept-name { font-size: 0.875rem; color: #64748b; }
+        .dept-cost { font-size: 1rem; font-weight: bold; color: #0f172a; }
+        @media print { 
+          @page { size: A4 portrait; margin: 10mm; }
+          body { padding: 0; font-size: 9pt; }
+          .report-section { page-break-inside: avoid; }
+          .report-table { font-size: 8pt; }
+          .summary-item { border: 1px solid #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
       
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
@@ -8083,6 +8135,17 @@ function submitInventoryCount() {
     return;
   }
 
+  // 対象月の指定があれば、その月の末日をタイムスタンプとする
+  let targetTimestamp = new Date().toISOString();
+  const monthInput = $('#inv-scan-month');
+  if (monthInput && monthInput.value) {
+    const [y, m] = monthInput.value.split('-');
+    if (y && m) {
+      const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+      targetTimestamp = lastDay.toISOString();
+    }
+  }
+
   // 棚卸ログに追加
   const logs = DB.get(DB.KEYS.INV_LOGS);
   logs.push({
@@ -8091,8 +8154,8 @@ function submitInventoryCount() {
     quantity: quantity,
     type: 'count',
     worker: currentUser.displayName,
-    note: '',
-    timestamp: new Date().toISOString()
+    note: monthInput && monthInput.value ? `対象月: ${monthInput.value}` : '',
+    timestamp: targetTimestamp
   });
   DB.save(DB.KEYS.INV_LOGS, logs);
 
@@ -8479,9 +8542,28 @@ function renderInvMonthlyPage() {
     monthInput.value = new Date().toISOString().substring(0, 7);
   }
 
+  // 年度チェック表の年度デフォルト設定
+  const yearInput = $('#inv-annual-year');
+  if (yearInput && !yearInput.value) {
+    yearInput.value = new Date().getFullYear();
+  }
+
   $('#view-inv-monthly-btn').onclick = viewInvMonthlySummary;
   $('#run-inv-closing-btn').onclick = runInvMonthlyClosing;
+  
+  if ($('#export-inv-monthly-btn')) {
+    $('#export-inv-monthly-btn').onclick = exportInvMonthlyExcel;
+  }
+  if ($('#view-inv-annual-btn')) {
+    $('#view-inv-annual-btn').onclick = viewInvAnnualSummary;
+  }
+  if ($('#export-inv-annual-btn')) {
+    $('#export-inv-annual-btn').onclick = exportInvAnnualExcel;
+  }
 }
+
+// 現在表示中の月次締め結果を保持（Excel出力用）
+let currentMonthlyResult = null;
 
 function viewInvMonthlySummary() {
   const month = $('#inv-closing-month').value;
@@ -8491,13 +8573,101 @@ function viewInvMonthlySummary() {
   }
 
   const result = calculateInvMonthly(month);
+  currentMonthlyResult = result;
   displayInvMonthlyResult(result);
+  
+  if ($('#export-inv-monthly-btn')) {
+    $('#export-inv-monthly-btn').style.display = 'inline-block';
+  }
+}
+
+function exportInvMonthlyExcel() {
+  if (!currentMonthlyResult) {
+    toast('まず集計確認を行ってください', 'warning');
+    return;
+  }
+  
+  if (typeof XLSX === 'undefined') {
+    toast('Excel出力ライブラリが読み込まれていません', 'error');
+    return;
+  }
+  
+  try {
+    const wb = XLSX.utils.book_new();
+    const month = currentMonthlyResult.month;
+    
+    // シート1: 分類別集計
+    const summaryData = [
+      ['資材分類', '分類名', '当月在庫金額', '前月比']
+    ];
+    let summaryTotal = 0, summaryDiff = 0;
+    
+    // カテゴリ順
+    Object.keys(INV_CATEGORIES).forEach(code => {
+      if (currentMonthlyResult.summary[code]) {
+        const s = currentMonthlyResult.summary[code];
+        summaryData.push([code, s.name, s.amount, s.diff]);
+        summaryTotal += s.amount;
+        summaryDiff += s.diff;
+      }
+    });
+    // 不動品
+    if (currentMonthlyResult.summary['fixed']) {
+      const s = currentMonthlyResult.summary['fixed'];
+      summaryData.push(['fixed', '不動品', s.amount, s.diff]);
+      summaryTotal += s.amount;
+      summaryDiff += s.diff;
+    }
+    
+    summaryData.push(['', '合計', summaryTotal, summaryDiff]);
+    summaryData.push(['', '1.01（TAC口銭1%）', Math.round(summaryTotal * 1.01), '']);
+    
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, '月次集計');
+    
+    // シート2: 商品別明細
+    const itemsData = [
+      ['資材ID', '品名', '分類', '単価', '前月在庫', '当月在庫', '差分', '在庫金額']
+    ];
+    
+    // 品番順にソートして出力
+    const sortedItems = [...currentMonthlyResult.items].sort((a, b) => a.productId.localeCompare(b.productId));
+    
+    sortedItems.forEach(i => {
+      itemsData.push([
+        i.productId,
+        i.name,
+        INV_CATEGORIES[i.category] || i.category,
+        i.price,
+        i.prevQty,
+        i.currQty,
+        i.diff,
+        i.amount
+      ]);
+    });
+    
+    const wsItems = XLSX.utils.aoa_to_sheet(itemsData);
+    XLSX.utils.book_append_sheet(wb, wsItems, '商品別明細');
+    
+    // ダウンロード
+    XLSX.writeFile(wb, `棚卸月次集計_${month}.xlsx`);
+    toast('Excelファイルを出力しました', 'success');
+  } catch (err) {
+    console.error('Excel出力エラー:', err);
+    toast('Excel出力に失敗しました', 'error');
+  }
 }
 
 function calculateInvMonthly(month) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS);
   const logs = DB.get(DB.KEYS.INV_LOGS);
   const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+
+  // 前月データを取得
+  const prevDate = new Date(month + '-01');
+  prevDate.setMonth(prevDate.getMonth() - 1);
+  const prevMonth = prevDate.toISOString().substring(0, 7);
+  const prevData = monthly.find(m => m.month === prevMonth);
 
   // 当月のログをフィルタ
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
@@ -8513,11 +8683,9 @@ function calculateInvMonthly(month) {
   
   if (isCsvImport) {
     // === CSV取込モード: ログのamountWithTaxをそのまま使用 ===
-    // 同一productIdの重複がある場合は最後のログを使用
     const productMap = new Map();
     csvLogs.forEach(log => {
       const pid = log.productId;
-      // 同一productIdは最後のログで上書き（再取込時の対応）
       if (!productMap.has(pid)) {
         productMap.set(pid, {
           productId: pid,
@@ -8531,22 +8699,49 @@ function calculateInvMonthly(month) {
           isFixed: false
         });
       } else {
-        // 同一productIdが複数ある場合は金額を加算（例：同じ品番で複数行ある場合）
         const existing = productMap.get(pid);
         existing.currQty += log.quantity || 0;
         existing.diff += log.quantity || 0;
         existing.amount += log.amountWithTax || 0;
       }
     });
+
+    // 前月に存在したが当月のCSVにない商品（在庫0）を追加
+    if (prevData && prevData.items) {
+      prevData.items.forEach(prevItem => {
+        if (!productMap.has(prevItem.productId)) {
+          productMap.set(prevItem.productId, {
+            productId: prevItem.productId,
+            name: prevItem.name,
+            category: prevItem.category,
+            price: prevItem.price,
+            prevQty: prevItem.currQty,
+            currQty: 0,
+            diff: -prevItem.currQty,
+            amount: 0,
+            isFixed: prevItem.isFixed
+          });
+        }
+      });
+    }
     
-    // マスタ情報で補完
+    // マスタ情報と前月在庫情報で補完
     productMap.forEach((item, pid) => {
       const masterProduct = products.find(p => p.id === pid);
       if (masterProduct) {
-        item.name = masterProduct.name;
+        item.name = item.name === pid ? masterProduct.name : item.name;
         item.category = masterProduct.category;
-        item.price = masterProduct.price;
+        item.price = item.price === 0 ? masterProduct.price : item.price;
         item.isFixed = !!masterProduct.isFixed;
+      }
+      
+      // 前月在庫の反映
+      if (prevData && prevData.items) {
+        const prevItem = prevData.items.find(i => i.productId === pid);
+        if (prevItem) {
+          item.prevQty = prevItem.currQty;
+          item.diff = item.currQty - item.prevQty;
+        }
       }
       
       items.push(item);
@@ -8557,25 +8752,43 @@ function calculateInvMonthly(month) {
         summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0 };
       }
       summary[catKey].amount += item.amount;
-      summary[catKey].diff += item.amount; // CSV取込時はdiff=金額
+      summary[catKey].diff += item.diff * item.price; // 差分金額（概算）
     });
     
   } else {
     // === 手動入力/スキャンモード: 従来の計算方式 ===
-    const prevDate = new Date(month + '-01');
-    prevDate.setMonth(prevDate.getMonth() - 1);
-    const prevMonth = prevDate.toISOString().substring(0, 7);
-    const prevData = monthly.find(m => m.month === prevMonth);
-    
-    products.forEach(p => {
+    // 前月にあった商品を確保
+    const productIds = new Set(products.map(p => p.id));
+    if (prevData && prevData.items) {
+      prevData.items.forEach(i => productIds.add(i.productId));
+    }
+
+    productIds.forEach(pid => {
+      const p = products.find(x => x.id === pid) || {
+        id: pid,
+        name: pid,
+        category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
+        price: 0,
+        isFixed: false
+      };
+
       let prevQty = 0;
       if (prevData && prevData.items) {
-        const prevItem = prevData.items.find(i => i.productId === p.id);
-        if (prevItem) prevQty = prevItem.currQty;
+        const prevItem = prevData.items.find(i => i.productId === pid);
+        if (prevItem) {
+          prevQty = prevItem.currQty;
+          // マスタにない商品は前月データから補完
+          if (!products.find(x => x.id === pid)) {
+            p.name = prevItem.name;
+            p.category = prevItem.category;
+            p.price = prevItem.price;
+            p.isFixed = prevItem.isFixed;
+          }
+        }
       }
 
       let currQty = prevQty;
-      const productLogs = monthLogs.filter(l => l.productId === p.id);
+      const productLogs = monthLogs.filter(l => l.productId === pid);
       productLogs.forEach(log => {
         if (log.type === 'count') {
           currQty = log.quantity;
@@ -8594,7 +8807,7 @@ function calculateInvMonthly(month) {
       const amount = currQty * p.price;
 
       items.push({
-        productId: p.id,
+        productId: pid,
         name: p.name,
         category: p.category,
         price: p.price,
@@ -8659,14 +8872,14 @@ function displayInvMonthlyResult(result) {
   const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
   const categoryBars = sortedCategories.map(cat => {
     const barWidth = summaryTotal > 0 ? Math.round((cat.amount / summaryTotal) * 100) : 0;
-    const bgColor = cat.isFixed ? '#ffc107' : 'var(--color-primary)';
+    const bgColor = cat.isFixed ? '#ffc107' : '#2563eb';
     return `
       <div style="margin-bottom: 0.5rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
           <span>${cat.name}</span>
           <span style="font-weight: 500;">¥${cat.amount.toLocaleString()} (${barWidth}%)</span>
         </div>
-        <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 16px; overflow: hidden;">
+        <div style="background: #e2e8f0; border-radius: 4px; height: 16px; overflow: hidden;">
           <div style="background: ${bgColor}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
         </div>
       </div>
@@ -8680,7 +8893,7 @@ function displayInvMonthlyResult(result) {
   container.innerHTML = `
     <!-- サマリーカード -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-      <div class="card" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: white; padding: 1.25rem;">
+      <div class="card" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
       </div>
@@ -8781,7 +8994,152 @@ function displayInvMonthlyResult(result) {
         </div>
       </div>
     </div>
+    </div>
   `;
+}
+
+// 年度別データ保持用
+let currentAnnualResult = null;
+
+function viewInvAnnualSummary() {
+  const year = $('#inv-annual-year').value;
+  if (!year) {
+    toast('表示年度を入力してください', 'warning');
+    return;
+  }
+  
+  const container = $('#inv-annual-result');
+  container.innerHTML = '<p>データ集計中...</p>';
+  container.style.display = 'block';
+  
+  // setTimeoutを使ってUIがブロックされるのを防ぐ
+  setTimeout(() => {
+    try {
+      const monthlyData = [];
+      const productsMap = new Map();
+      
+      // 1〜12月のデータを計算
+      for (let m = 1; m <= 12; m++) {
+        const monthStr = `${year}-${String(m).padStart(2, '0')}`;
+        const result = calculateInvMonthly(monthStr);
+        monthlyData.push(result);
+        
+        result.items.forEach(item => {
+          if (!productsMap.has(item.productId)) {
+            productsMap.set(item.productId, {
+              productId: item.productId,
+              name: item.name,
+              category: item.category,
+              price: item.price,
+              isFixed: item.isFixed,
+              qty: Array(12).fill(null)
+            });
+          }
+          productsMap.get(item.productId).qty[m - 1] = item.currQty;
+        });
+      }
+      
+      // マスタ順にソート
+      const sortedItems = Array.from(productsMap.values()).sort((a, b) => a.productId.localeCompare(b.productId));
+      
+      currentAnnualResult = { year, items: sortedItems };
+      
+      // テーブル生成
+      let tableHTML = `
+        <div class="table-container" style="max-height: 500px; overflow: auto;">
+          <table class="table" style="font-size: 0.8rem; white-space: nowrap;">
+            <thead style="position: sticky; top: 0; background: var(--color-bg-secondary); z-index: 10;">
+              <tr>
+                <th>資材ID</th>
+                <th>品名</th>
+                <th>分類</th>
+                ${Array.from({length: 12}, (_, i) => `<th style="text-align: right;">${i+1}月</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      sortedItems.forEach(item => {
+        let rowHTML = `<tr>
+          <td>${item.productId}</td>
+          <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${item.name}">${item.name}</td>
+          <td>${INV_CATEGORIES[item.category] || item.category}</td>
+        `;
+        
+        for (let i = 0; i < 12; i++) {
+          const currentQty = item.qty[i];
+          const prevQty = i > 0 ? item.qty[i-1] : null;
+          
+          let bgStyle = '';
+          // 異常値チェック（前月比 ±50% 以上、かつ数量が10以上の変動がある場合など）
+          // 今回は単純に ±50% を検知（0の場合は比較不能なので除外）
+          if (currentQty !== null && prevQty !== null && prevQty > 0) {
+             const ratio = currentQty / prevQty;
+             if (ratio >= 1.5 || ratio <= 0.5) {
+               // 極端な増減は赤文字強調
+               bgStyle = 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; font-weight: bold;';
+             }
+          } else if (currentQty !== null && prevQty === 0 && currentQty > 10) {
+             // 0から10以上に増えた場合も一応ハイライト
+             bgStyle = 'background-color: rgba(245, 158, 11, 0.1); color: #d97706; font-weight: bold;';
+          }
+          
+          rowHTML += `<td style="text-align: right; ${bgStyle}">${currentQty !== null ? currentQty.toLocaleString() : '-'}</td>`;
+        }
+        rowHTML += '</tr>';
+        tableHTML += rowHTML;
+      });
+      
+      tableHTML += `</tbody></table></div>`;
+      tableHTML += `<div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">
+        💡 前月比 ±50% 以上の増減があるセルは赤色で強調表示されています。
+      </div>`;
+      
+      container.innerHTML = tableHTML;
+      
+      if ($('#export-inv-annual-btn')) {
+        $('#export-inv-annual-btn').style.display = 'inline-block';
+      }
+      
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `<p style="color: red;">エラーが発生しました: ${err.message}</p>`;
+    }
+  }, 100);
+}
+
+function exportInvAnnualExcel() {
+  if (!currentAnnualResult) return;
+  const { year, items } = currentAnnualResult;
+  
+  if (typeof XLSX === 'undefined') {
+    toast('Excel出力ライブラリが読み込まれていません', 'error');
+    return;
+  }
+  
+  try {
+    const wb = XLSX.utils.book_new();
+    const data = [
+      ['資材ID', '品名', '分類', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    ];
+    
+    items.forEach(item => {
+      data.push([
+        item.productId,
+        item.name,
+        INV_CATEGORIES[item.category] || item.category,
+        ...item.qty
+      ]);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, `${year}年_在庫推移表`);
+    XLSX.writeFile(wb, `棚卸年度推移表_${year}.xlsx`);
+    toast('Excel出力しました', 'success');
+  } catch (err) {
+    console.error('Excel出力エラー:', err);
+    toast('Excel出力に失敗しました', 'error');
+  }
 }
 
 function runInvMonthlyClosing() {
@@ -9502,7 +9860,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.91</span><br>
+        <span id="app-version-display">v4.92</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10132,6 +10490,10 @@ function downloadAllBackupJson() {
                         <div class="card-body">
                             <form id="inv-scan-form">
                                 <div class="form-group">
+                                    <label>対象月 <span style="font-size: 12px; color: #666; font-weight: normal;">(※指定しない場合は当月)</span></label>
+                                    <input type="month" id="inv-scan-month" class="form-input">
+                                </div>
+                                <div class="form-group">
                                     <label>資材ID</label>
                                     <input type="text" id="inv-scan-product-id" class="form-input"
                                         placeholder="QRスキャンまたは手入力" required>
@@ -10368,6 +10730,30 @@ function downloadAllBackupJson() {
                             </div>
                             <button type="button" class="btn btn-secondary" id="view-inv-monthly-btn">📊
                                 集計確認</button>
+                            <button type="button" class="btn btn-secondary" id="export-inv-monthly-btn" style="display: none; background: #10b981;">📥
+                                Excel出力</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 年度チェック表 -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header flex justify-between items-center">
+                        <h3>📅 12ヶ月横並び在庫推移表</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>表示年度</label>
+                                <input type="number" id="inv-annual-year" class="form-input" min="2020" max="2100" style="width: 100px;">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="view-inv-annual-btn">📊
+                                表示</button>
+                            <button type="button" class="btn btn-secondary" id="export-inv-annual-btn" style="display: none; background: #10b981;">📥
+                                Excel出力</button>
+                        </div>
+                        <div id="inv-annual-result" style="margin-top: 1rem; display: none;">
+                            <!-- 12ヶ月推移表がここに入る -->
                         </div>
                     </div>
                 </div>
