@@ -7756,38 +7756,63 @@ function setupInvExcelImport() {
         // ヘッダーなしの2次元配列としてパース
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         
+        // F1セルの合計金額を取得（参考表示用）
+        let f1Total = 0;
+        if (rows.length > 0 && rows[0][5]) {
+          const f1Str = String(rows[0][5]).replace(/[¥\\,\s]/g, '');
+          f1Total = parseFloat(f1Str) || 0;
+        }
+        
         const products = DB.get(DB.KEYS.INV_PRODUCTS);
         parsedItems = [];
 
+        // CSV列マッピング:
+        // E列(idx 4) = 資材コード, G列(idx 6) = 品名, N列(idx 13) = 単価
+        // S列(idx 18) = 数量, T列(idx 19) = 合計金額, U列(idx 20) = 合計金額(1%増し)
         rows.forEach((row, rowIndex) => {
-          // S列はインデックス18
+          if (rowIndex < 2) return; // ヘッダー行スキップ（0:サマリ, 1:列名）
+          
+          // S列（数量）を取得
           const sColValue = row[18];
           if (sColValue === undefined || sColValue === null || sColValue === '') return;
           
           const quantity = parseInt(sColValue, 10);
           if (isNaN(quantity)) return; // 数字でない場合はスキップ
 
-          // 行内のすべてのテキストセルを連結して、どの商品に該当するか探す
-          const rowText = row.map(v => String(v || '')).join(' ');
+          // 各列の値を取得
+          const productCode = row[4] ? String(row[4]).trim() : '';  // E列: 資材コード
+          const productName = row[6] ? String(row[6]).trim() : '';  // G列: 品名
+          const category = row[1] ? String(row[1]).trim() : '99';   // B列: 識別コード分類
+          const unitPriceRaw = row[13];                              // N列: 単価
+          const amountRaw = row[19];                                 // T列: 合計金額
+          const amountWithTaxRaw = row[20];                          // U列: 合計金額(1%増し)
           
-          // マスタから部分一致または完全一致する商品を探す
-          let matchedProduct = null;
-          for (const p of products) {
-            // 品番または品名が含まれていればマッチと判定
-            if (rowText.includes(p.id) || rowText.includes(p.name)) {
-              // 複数の商品がマッチする可能性を減らすため、最も長い名前を優先する等の工夫も可能だが、一旦最初に見つけたもの
-              matchedProduct = p;
-              break;
-            }
-          }
+          const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
+          const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
+          const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,]/g, '')) || 0;
 
-          if (matchedProduct) {
-            parsedItems.push({
-              product: matchedProduct,
-              quantity: quantity,
-              rowStr: rowText.substring(0, 20) + '...'
-            });
-          }
+          if (!productCode && !productName) return; // コードも品名もない行はスキップ
+
+          // マスタから検索
+          let matchedProduct = products.find(p => p.id === productCode);
+          
+          // マスタにない場合は仮情報として保持
+          const productInfo = matchedProduct || {
+            id: productCode || `TEMP_${rowIndex}`,
+            name: productName || `不明品(行${rowIndex + 1})`,
+            category: category,
+            price: unitPrice,
+            isFixed: false
+          };
+
+          parsedItems.push({
+            product: productInfo,
+            quantity: quantity,
+            unitPrice: unitPrice,
+            amount: amount,
+            amountWithTax: amountWithTax,
+            isMatched: !!matchedProduct
+          });
         });
 
         if (parsedItems.length === 0) {
@@ -7795,23 +7820,28 @@ function setupInvExcelImport() {
           return;
         }
 
+        // 集計
+        const totalAmount = parsedItems.reduce((s, i) => s + i.amountWithTax, 0);
+        const matchedCount = parsedItems.filter(i => i.isMatched).length;
+
         // プレビュー表示
-        tbody.innerHTML = parsedItems.map(item => `
+        tbody.innerHTML = parsedItems.slice(0, 50).map(item => `
           <tr>
-            <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.product.name}">
+            <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.product.name}">
               ${item.product.name}
             </td>
-            <td style="text-align:center; font-weight:bold;">${item.quantity}</td>
-            <td style="color:var(--color-success);">一致</td>
+            <td style="text-align:center;">${item.quantity}</td>
+            <td style="text-align:right;">¥${item.amountWithTax.toLocaleString()}</td>
+            <td style="color:${item.isMatched ? 'var(--color-success)' : '#f59e0b'};">${item.isMatched ? 'マスタ一致' : 'CSV直接'}</td>
           </tr>
-        `).join('');
+        `).join('') + (parsedItems.length > 50 ? `<tr><td colspan="4" style="text-align:center; color:#666;">…他${parsedItems.length - 50}件</td></tr>` : '');
 
         previewDiv.style.display = 'block';
-        toast(`${parsedItems.length}件のデータを読み込みました`, 'success');
+        toast(`${parsedItems.length}件読込 (合計: ¥${totalAmount.toLocaleString()}, CSV合計: ¥${f1Total.toLocaleString()})`, 'success');
 
       } catch (err) {
         console.error(err);
-        toast('Excelの解析に失敗しました', 'error');
+        toast('Excelの解析に失敗しました: ' + err.message, 'error');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -7840,8 +7870,12 @@ function setupInvExcelImport() {
 
       const newLogs = parsedItems.map(item => ({
         productId: item.product.id,
+        productName: item.product.name || '',
         type: 'count', // 棚卸
         quantity: item.quantity,
+        unitPrice: item.unitPrice || 0,
+        amount: item.amount || 0,
+        amountWithTax: item.amountWithTax || 0,
         note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
         user: userName,
         timestamp: timestamp
@@ -8448,26 +8482,46 @@ function calculateInvMonthly(month) {
   const prevData = monthly.find(m => m.month === prevMonth);
 
   // 当月のログをフィルタ
-  const monthLogs = logs.filter(l => l.timestamp.startsWith(month));
+  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
 
   // 商品ごとの在庫計算
   const items = [];
   const summary = {};
+  
+  // ① まずログに含まれるすべての productId を収集（マスタにないものも含む）
+  const allProductIds = new Set();
+  products.forEach(p => allProductIds.add(p.id));
+  monthLogs.forEach(l => { if (l.productId) allProductIds.add(l.productId); });
+  // 前月データの商品も追加
+  if (prevData && prevData.items) {
+    prevData.items.forEach(i => allProductIds.add(i.productId));
+  }
 
-  products.forEach(p => {
+  allProductIds.forEach(pid => {
+    // マスタから商品情報を取得
+    const masterProduct = products.find(p => p.id === pid);
+    
     // 前月在庫
     let prevQty = 0;
-    if (prevData) {
-      const prevItem = prevData.items.find(i => i.productId === p.id);
+    if (prevData && prevData.items) {
+      const prevItem = prevData.items.find(i => i.productId === pid);
       if (prevItem) prevQty = prevItem.currQty;
     }
 
+    // 当月のログ
+    const productLogs = monthLogs.filter(l => l.productId === pid);
+    
     // 当月在庫（ログから計算）
     let currQty = prevQty;
-    const productLogs = monthLogs.filter(l => l.productId === p.id);
+    let csvAmount = null; // CSV取込の金額（あれば使用）
+    
     productLogs.forEach(log => {
       if (log.type === 'count') {
         currQty = log.quantity;
+        // CSV取込ログの場合、amountWithTaxがあればそれを使用
+        if (log.amountWithTax !== undefined && log.amountWithTax !== null && log.amountWithTax > 0) {
+          csvAmount = log.amountWithTax;
+        }
       } else if (log.type === 'in') {
         currQty += log.quantity;
       } else if (log.type === 'out') {
@@ -8475,33 +8529,45 @@ function calculateInvMonthly(month) {
       }
     });
 
+    // 商品情報の取得（マスタ or ログから復元）
+    const latestLog = productLogs.length > 0 ? productLogs[productLogs.length - 1] : null;
+    const productName = (masterProduct && masterProduct.name) ? masterProduct.name : 
+                        (latestLog && latestLog.productName) ? latestLog.productName : pid;
+    const productPrice = (masterProduct && masterProduct.price) ? masterProduct.price :
+                         (latestLog && latestLog.unitPrice) ? latestLog.unitPrice : 0;
+    const productCategory = (masterProduct && masterProduct.category) ? masterProduct.category : 
+                            (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99';
+    const isFixed = masterProduct ? !!masterProduct.isFixed : false;
+
     // 不動品の場合、ログがなければ前月在庫を引き継ぐ
-    if (p.isFixed && productLogs.length === 0) {
+    if (isFixed && productLogs.length === 0) {
       currQty = prevQty;
     }
 
     const diff = currQty - prevQty;
-    const amount = currQty * p.price;
+    
+    // 金額計算: CSV金額があればそれを使用、なければ 数量×単価
+    const amount = (csvAmount !== null) ? csvAmount : (currQty * productPrice);
 
     items.push({
-      productId: p.id,
-      name: p.name,
-      category: p.category,
-      price: p.price,
+      productId: pid,
+      name: productName,
+      category: productCategory,
+      price: productPrice,
       prevQty: prevQty,
       currQty: currQty,
       diff: diff,
       amount: amount,
-      isFixed: p.isFixed
+      isFixed: isFixed
     });
 
     // 分類別集計
-    const catKey = p.isFixed ? 'fixed' : p.category;
+    const catKey = isFixed ? 'fixed' : productCategory;
     if (!summary[catKey]) {
-      summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+      summary[catKey] = { name: isFixed ? '不動品' : (INV_CATEGORIES[productCategory] || 'その他'), amount: 0, diff: 0 };
     }
     summary[catKey].amount += amount;
-    summary[catKey].diff += diff * p.price;
+    summary[catKey].diff += diff * productPrice;
   });
 
   const total = items.reduce((sum, i) => sum + i.amount, 0);
@@ -9391,7 +9457,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.89</span><br>
+        <span id="app-version-display">v4.90</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10055,7 +10121,7 @@ function downloadAllBackupJson() {
                             <div id="inv-excel-preview" style="margin-top: 16px; display: none;">
                                 <div class="table-container" style="max-height: 200px; overflow-y: auto;">
                                     <table class="table" style="font-size: 0.8rem;">
-                                        <thead><tr><th>品名</th><th>数量</th><th>状態</th></tr></thead>
+                                        <thead><tr><th>品名</th><th>数量</th><th>金額(税込)</th><th>状態</th></tr></thead>
                                         <tbody id="inv-excel-preview-body"></tbody>
                                     </table>
                                 </div>
