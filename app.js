@@ -650,7 +650,7 @@ function jumpToOrder(orderId) {
         row.style.backgroundColor = '';
       }, 2000);
     }
-  }, 300;
+  }, 300);
 }
 
 function toggleExpand(event, orderId) {
@@ -5540,8 +5540,8 @@ function showAddInvProductModal() {
   `;
   $('#modal-overlay').classList.remove('hidden');
 
-  $('#modal-cancel').onclick = closeModal;
-  $('#modal-close').onclick = closeModal;
+  $('#modal-cancel').onclick = hideModal;
+  $('#modal-close').onclick = hideModal;
   $('#modal-save').onclick = saveNewInvProduct;
 }
 
@@ -5574,7 +5574,7 @@ function saveNewInvProduct() {
   DB.save(DB.KEYS.INV_PRODUCTS, products);
 
   toast(`${name}を登録しました（${newId}）`, 'success');
-  closeModal();
+  hideModal();
   renderInvProductsTable();
 }
 
@@ -5617,8 +5617,8 @@ function editInvProduct(id) {
   `;
   $('#modal-overlay').classList.remove('hidden');
 
-  $('#modal-cancel').onclick = closeModal;
-  $('#modal-close').onclick = closeModal;
+  $('#modal-cancel').onclick = hideModal;
+  $('#modal-close').onclick = hideModal;
   $('#modal-save').onclick = () => updateInvProduct(id);
 }
 
@@ -5634,7 +5634,7 @@ function updateInvProduct(id) {
 
   DB.save(DB.KEYS.INV_PRODUCTS, products);
   toast('更新しました', 'success');
-  closeModal();
+  hideModal();
   renderInvProductsTable();
 }
 
