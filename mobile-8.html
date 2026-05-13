@@ -2554,40 +2554,6 @@ const DB = {
         }
     },
 
-    // 一括追加（Promise対応）
-    addBulk(key, newItems) {
-        if (!newItems || newItems.length === 0) return Promise.resolve(true);
-        
-        try {
-            // 現在のデータを取得してローカルで結合
-            const currentData = this.get(key);
-            
-            // 最大IDを算出（数値IDのみ対象）
-            let maxId = 0;
-            currentData.forEach(item => {
-                const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
-                if (!isNaN(numId) && numId > maxId) maxId = numId;
-            });
-            
-            // 新アイテムにIDを付与してコピー
-            const itemsToAdd = newItems.map(item => {
-                maxId++;
-                return Object.assign({}, item, { id: maxId });
-            });
-            
-            // 結合して保存
-            const merged = currentData.concat(itemsToAdd);
-            this.save(key, merged);
-            
-            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
-            return Promise.resolve(true);
-        } catch (err) {
-            console.error('addBulk error:', err);
-            toast('一括追加に失敗しました', 'error');
-            return Promise.reject(err);
-        }
-    },
-
     // 更新（競合回避：トランザクション使用）
     update(key, id, updatedItem) {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
@@ -7810,37 +7776,37 @@ function setupInvExcelImport() {
       }
 
       const currentUser = DB.get(DB.KEYS.CURRENT_USER) || { displayName: '未設定' };
+      const logs = DB.get(DB.KEYS.INV_LOGS);
 
-      const newLogs = parsedItems.map(item => ({
-        productId: item.product.id,
-        type: 'count', // 棚卸
-        quantity: item.quantity,
-        note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-        user: currentUser.displayName,
-        timestamp: timestamp
-      }));
-
-      DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
-        toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
-        
-        // 自動締め処理
-        if (targetMonth) {
-          const monthlyResult = calculateInvMonthly(targetMonth);
-          saveInvMonthlyClosing(targetMonth, monthlyResult);
-          toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
-        }
-
-        // 初期化
-        parsedItems = [];
-        previewDiv.style.display = 'none';
-        if (fileInput) fileInput.value = '';
-        if (monthInput) monthInput.value = '';
-        
-        renderTodayInvLogs();
-      }).catch(err => {
-        console.error("Bulk add error:", err);
-        toast("登録処理に失敗しました", "error");
+      parsedItems.forEach(item => {
+        const newLog = {
+          id: DB.nextId(DB.KEYS.INV_LOGS),
+          productId: item.product.id,
+          type: 'count', // 棚卸
+          quantity: item.quantity,
+          note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
+          user: currentUser.displayName,
+          timestamp: timestamp
+        };
+        DB.add(DB.KEYS.INV_LOGS, newLog);
       });
+
+      toast(`${parsedItems.length}件の棚卸を登録しました`, 'success');
+      
+      // 自動締め処理
+      if (targetMonth) {
+        const monthlyResult = calculateInvMonthly(targetMonth);
+        saveInvMonthlyClosing(targetMonth, monthlyResult);
+        toast(`${targetMonth}の月次締め処理を自動実行しました`, 'success');
+      }
+
+      // 初期化
+      parsedItems = [];
+      previewDiv.style.display = 'none';
+      if (fileInput) fileInput.value = '';
+      if (monthInput) monthInput.value = '';
+      
+      renderTodayInvLogs();
     };
   }
 }
@@ -9348,7 +9314,7 @@ function downloadAllBackupJson() {
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.87</span><br>
+        <span id="app-version-display">v4.85</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -10679,40 +10645,6 @@ const DB = {
             const data = this.get(key);
             data.push(newItem);
             this.save(key, data);
-        }
-    },
-
-    // 一括追加（Promise対応）
-    addBulk(key, newItems) {
-        if (!newItems || newItems.length === 0) return Promise.resolve(true);
-        
-        try {
-            // 現在のデータを取得してローカルで結合
-            const currentData = this.get(key);
-            
-            // 最大IDを算出（数値IDのみ対象）
-            let maxId = 0;
-            currentData.forEach(item => {
-                const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
-                if (!isNaN(numId) && numId > maxId) maxId = numId;
-            });
-            
-            // 新アイテムにIDを付与してコピー
-            const itemsToAdd = newItems.map(item => {
-                maxId++;
-                return Object.assign({}, item, { id: maxId });
-            });
-            
-            // 結合して保存
-            const merged = currentData.concat(itemsToAdd);
-            this.save(key, merged);
-            
-            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
-            return Promise.resolve(true);
-        } catch (err) {
-            console.error('addBulk error:', err);
-            toast('一括追加に失敗しました', 'error');
-            return Promise.reject(err);
         }
     },
 

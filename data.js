@@ -325,46 +325,37 @@ const DB = {
         }
     },
 
-    // 一括追加（競合回避：トランザクション使用）
+    // 一括追加（Promise対応）
     addBulk(key, newItems) {
-        if (newItems.length === 0) return Promise.resolve(true);
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            return new Promise((resolve, reject) => {
-                const fbKey = this.toFirebaseKey(key);
-                firebaseDB.ref(fbKey).transaction((currentData) => {
-                    const dataArray = currentData === null ? [] : (Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null));
-                    
-                    let maxId = dataArray.reduce((max, item) => Math.max(max, parseInt(item.id) || 0), 0);
-                    
-                    newItems.forEach(item => {
-                        maxId++;
-                        item.id = maxId;
-                        dataArray.push(item);
-                    });
-                    
-                    return dataArray;
-                }, (error, committed) => {
-                    if (error) {
-                        console.error('Bulk add failed:', error);
-                        toast('一括追加に失敗しました', 'error');
-                        reject(error);
-                    } else {
-                        resolve(committed);
-                    }
-                });
+        if (!newItems || newItems.length === 0) return Promise.resolve(true);
+        
+        try {
+            // 現在のデータを取得してローカルで結合
+            const currentData = this.get(key);
+            
+            // 最大IDを算出（数値IDのみ対象）
+            let maxId = 0;
+            currentData.forEach(item => {
+                const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
+                if (!isNaN(numId) && numId > maxId) maxId = numId;
             });
-        } else {
-            return new Promise((resolve) => {
-                const data = this.get(key);
-                let maxId = data.reduce((max, item) => Math.max(max, parseInt(item.id) || 0), 0);
-                newItems.forEach(item => {
-                    maxId++;
-                    item.id = maxId;
-                    data.push(item);
-                });
-                this.save(key, data);
-                resolve(true);
+            
+            // 新アイテムにIDを付与してコピー
+            const itemsToAdd = newItems.map(item => {
+                maxId++;
+                return Object.assign({}, item, { id: maxId });
             });
+            
+            // 結合して保存
+            const merged = currentData.concat(itemsToAdd);
+            this.save(key, merged);
+            
+            console.log(`✅ addBulk: ${itemsToAdd.length}件追加 (合計: ${merged.length}件)`);
+            return Promise.resolve(true);
+        } catch (err) {
+            console.error('addBulk error:', err);
+            toast('一括追加に失敗しました', 'error');
+            return Promise.reject(err);
         }
     },
 
