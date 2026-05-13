@@ -4820,8 +4820,14 @@ const INV_CATEGORIES = {
   '09': 'PAO資材',
   '10': '製品在庫',
   '11': '工場部材',
+  '12': '外注資材',
+  '13': '副資材',
+  '14': '消耗品',
   '15': '外注在庫',
-  '16': '仕掛品'
+  '16': '仕掛品',
+  '17': '設備部品',
+  '24': '特注品',
+  '26': '仕掛在庫'
 };
 
 // 在庫スキャナー用
@@ -5061,10 +5067,28 @@ function setupInvExcelImport() {
 
       console.log('🔄 Excel取込: 登録開始', newLogs.length, '件');
       console.log('🔄 サンプルデータ:', JSON.stringify(newLogs[0]));
+      console.log('🔄 合計金額:', newLogs.reduce((s,l) => s + (l.amountWithTax || 0), 0).toLocaleString());
 
       // ボタン無効化（二重クリック防止）
       confirmBtn.disabled = true;
       confirmBtn.textContent = '登録中...';
+
+      // 同月のExcel取込ログを事前削除（再取込対応）
+      if (targetMonth) {
+        const allLogs = DB.get(DB.KEYS.INV_LOGS);
+        const filteredLogs = allLogs.filter(l => {
+          // 当月のExcel一括取込ログを除外（手動入力・スキャン分は残す）
+          if (l.timestamp && l.timestamp.startsWith(targetMonth) && l.note && l.note.includes('Excel一括取込')) {
+            return false;
+          }
+          return true;
+        });
+        const removedCount = allLogs.length - filteredLogs.length;
+        if (removedCount > 0) {
+          console.log(`🗑️ 同月の既存Excel取込ログ ${removedCount}件を削除`);
+          DB.save(DB.KEYS.INV_LOGS, filteredLogs);
+        }
+      }
 
       DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
         console.log('✅ Excel取込: 登録完了');
@@ -5653,102 +5677,123 @@ function calculateInvMonthly(month) {
   const logs = DB.get(DB.KEYS.INV_LOGS);
   const monthly = DB.get(DB.KEYS.INV_MONTHLY);
 
-  // 前月データを取得
-  const prevDate = new Date(month + '-01');
-  prevDate.setMonth(prevDate.getMonth() - 1);
-  const prevMonth = prevDate.toISOString().substring(0, 7);
-  const prevData = monthly.find(m => m.month === prevMonth);
-
   // 当月のログをフィルタ
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
+  
+  // CSV取込ログかどうか判定（amountWithTax を持つログが1件でもあれば）
+  const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
+  const isCsvImport = csvLogs.length > 0;
+  
+  console.log(`📊 calculateInvMonthly: ${month}, ログ${monthLogs.length}件, CSV取込ログ${csvLogs.length}件`);
 
-  // 商品ごとの在庫計算
   const items = [];
   const summary = {};
   
-  // ① まずログに含まれるすべての productId を収集（マスタにないものも含む）
-  const allProductIds = new Set();
-  products.forEach(p => allProductIds.add(p.id));
-  monthLogs.forEach(l => { if (l.productId) allProductIds.add(l.productId); });
-  // 前月データの商品も追加
-  if (prevData && prevData.items) {
-    prevData.items.forEach(i => allProductIds.add(i.productId));
-  }
-
-  allProductIds.forEach(pid => {
-    // マスタから商品情報を取得
-    const masterProduct = products.find(p => p.id === pid);
-    
-    // 前月在庫
-    let prevQty = 0;
-    if (prevData && prevData.items) {
-      const prevItem = prevData.items.find(i => i.productId === pid);
-      if (prevItem) prevQty = prevItem.currQty;
-    }
-
-    // 当月のログ
-    const productLogs = monthLogs.filter(l => l.productId === pid);
-    
-    // 当月在庫（ログから計算）
-    let currQty = prevQty;
-    let csvAmount = null; // CSV取込の金額（あれば使用）
-    
-    productLogs.forEach(log => {
-      if (log.type === 'count') {
-        currQty = log.quantity;
-        // CSV取込ログの場合、amountWithTaxがあればそれを使用
-        if (log.amountWithTax !== undefined && log.amountWithTax !== null && log.amountWithTax > 0) {
-          csvAmount = log.amountWithTax;
-        }
-      } else if (log.type === 'in') {
-        currQty += log.quantity;
-      } else if (log.type === 'out') {
-        currQty -= log.quantity;
+  if (isCsvImport) {
+    // === CSV取込モード: ログのamountWithTaxをそのまま使用 ===
+    // 同一productIdの重複がある場合は最後のログを使用
+    const productMap = new Map();
+    csvLogs.forEach(log => {
+      const pid = log.productId;
+      // 同一productIdは最後のログで上書き（再取込時の対応）
+      if (!productMap.has(pid)) {
+        productMap.set(pid, {
+          productId: pid,
+          name: log.productName || pid,
+          category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
+          price: log.unitPrice || 0,
+          prevQty: 0,
+          currQty: log.quantity || 0,
+          diff: log.quantity || 0,
+          amount: log.amountWithTax || 0,
+          isFixed: false
+        });
+      } else {
+        // 同一productIdが複数ある場合は金額を加算（例：同じ品番で複数行ある場合）
+        const existing = productMap.get(pid);
+        existing.currQty += log.quantity || 0;
+        existing.diff += log.quantity || 0;
+        existing.amount += log.amountWithTax || 0;
       }
     });
-
-    // 商品情報の取得（マスタ or ログから復元）
-    const latestLog = productLogs.length > 0 ? productLogs[productLogs.length - 1] : null;
-    const productName = (masterProduct && masterProduct.name) ? masterProduct.name : 
-                        (latestLog && latestLog.productName) ? latestLog.productName : pid;
-    const productPrice = (masterProduct && masterProduct.price) ? masterProduct.price :
-                         (latestLog && latestLog.unitPrice) ? latestLog.unitPrice : 0;
-    const productCategory = (masterProduct && masterProduct.category) ? masterProduct.category : 
-                            (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99';
-    const isFixed = masterProduct ? !!masterProduct.isFixed : false;
-
-    // 不動品の場合、ログがなければ前月在庫を引き継ぐ
-    if (isFixed && productLogs.length === 0) {
-      currQty = prevQty;
-    }
-
-    const diff = currQty - prevQty;
     
-    // 金額計算: CSV金額があればそれを使用、なければ 数量×単価
-    const amount = (csvAmount !== null) ? csvAmount : (currQty * productPrice);
-
-    items.push({
-      productId: pid,
-      name: productName,
-      category: productCategory,
-      price: productPrice,
-      prevQty: prevQty,
-      currQty: currQty,
-      diff: diff,
-      amount: amount,
-      isFixed: isFixed
+    // マスタ情報で補完
+    productMap.forEach((item, pid) => {
+      const masterProduct = products.find(p => p.id === pid);
+      if (masterProduct) {
+        item.name = masterProduct.name;
+        item.category = masterProduct.category;
+        item.price = masterProduct.price;
+        item.isFixed = !!masterProduct.isFixed;
+      }
+      
+      items.push(item);
+      
+      // 分類別集計
+      const catKey = item.isFixed ? 'fixed' : item.category;
+      if (!summary[catKey]) {
+        summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0 };
+      }
+      summary[catKey].amount += item.amount;
+      summary[catKey].diff += item.amount; // CSV取込時はdiff=金額
     });
+    
+  } else {
+    // === 手動入力/スキャンモード: 従来の計算方式 ===
+    const prevDate = new Date(month + '-01');
+    prevDate.setMonth(prevDate.getMonth() - 1);
+    const prevMonth = prevDate.toISOString().substring(0, 7);
+    const prevData = monthly.find(m => m.month === prevMonth);
+    
+    products.forEach(p => {
+      let prevQty = 0;
+      if (prevData && prevData.items) {
+        const prevItem = prevData.items.find(i => i.productId === p.id);
+        if (prevItem) prevQty = prevItem.currQty;
+      }
 
-    // 分類別集計
-    const catKey = isFixed ? 'fixed' : productCategory;
-    if (!summary[catKey]) {
-      summary[catKey] = { name: isFixed ? '不動品' : (INV_CATEGORIES[productCategory] || 'その他'), amount: 0, diff: 0 };
-    }
-    summary[catKey].amount += amount;
-    summary[catKey].diff += diff * productPrice;
-  });
+      let currQty = prevQty;
+      const productLogs = monthLogs.filter(l => l.productId === p.id);
+      productLogs.forEach(log => {
+        if (log.type === 'count') {
+          currQty = log.quantity;
+        } else if (log.type === 'in') {
+          currQty += log.quantity;
+        } else if (log.type === 'out') {
+          currQty -= log.quantity;
+        }
+      });
+
+      if (p.isFixed && productLogs.length === 0) {
+        currQty = prevQty;
+      }
+
+      const diff = currQty - prevQty;
+      const amount = currQty * p.price;
+
+      items.push({
+        productId: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        prevQty: prevQty,
+        currQty: currQty,
+        diff: diff,
+        amount: amount,
+        isFixed: p.isFixed
+      });
+
+      const catKey = p.isFixed ? 'fixed' : p.category;
+      if (!summary[catKey]) {
+        summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+      }
+      summary[catKey].amount += amount;
+      summary[catKey].diff += diff * p.price;
+    });
+  }
 
   const total = items.reduce((sum, i) => sum + i.amount, 0);
+  console.log(`📊 calculateInvMonthly完了: 合計 ¥${total.toLocaleString()}, 品目${items.length}件`);
 
   return { month, items, summary, total };
 }
