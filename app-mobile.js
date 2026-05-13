@@ -419,12 +419,7 @@ function renderGantt() {
 
   // フィルタリング
   let filtered = orders;
-  if (ganttFilter === 'progress') {
-    filtered = orders.filter(o => {
-      const p = calculateProgress(o);
-      return p > 0 && p < 100;
-    });
-  } else if (ganttFilter === 'complete') {
+  if (ganttFilter === 'complete') {
     filtered = orders.filter(o => calculateProgress(o) === 100);
   } else if (ganttFilter === 'pending') {
     filtered = orders.filter(o => calculateProgress(o) === 0);
@@ -522,8 +517,8 @@ function renderGantt() {
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
-              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
-              <span style="font-weight:600;">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
+              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">生産指示書 ↗</span>
+              <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
               ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">

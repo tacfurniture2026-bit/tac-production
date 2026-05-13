@@ -551,8 +551,8 @@ function renderGantt() {
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
-              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px;">生産指示書</span>
-              <span style="font-weight:600;">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
+              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">生産指示書 ↗</span>
+              <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
               ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
@@ -633,6 +633,24 @@ function renderGantt() {
     newContainer.scrollTop = savedScrollTop;
     newContainer.scrollLeft = savedScrollLeft;
   }
+}
+
+function jumpToOrder(orderId) {
+  // 指示書ページへ移動
+  navigateTo('orders');
+  
+  // 該当オーダーを強調表示するための処理
+  setTimeout(() => {
+    const row = document.querySelector(`.order-row[data-order-id="${orderId}"]`);
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.style.transition = 'background-color 0.5s';
+      row.style.backgroundColor = '#fef3c7'; // 一時的にハイライト
+      setTimeout(() => {
+        row.style.backgroundColor = '';
+      }, 2000);
+    }
+  }, 300;
 }
 
 function toggleExpand(event, orderId) {
@@ -4683,7 +4701,9 @@ function exportReportCSV() {
   const dateStr = new Date().toISOString().split('T')[0];
   link.href = URL.createObjectURL(blob);
   link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
 
@@ -5846,21 +5866,21 @@ function calculateInvMonthly(month) {
   prevDate.setMonth(prevDate.getMonth() - 1);
   const prevMonth = prevDate.toISOString().substring(0, 7);
   const prevData = monthly.find(m => m.month === prevMonth);
+  
+  // 当月がすでに締め済みか確認
+  const isClosed = monthly.some(m => m.month === month);
 
   // 当月のログをフィルタ
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
   
-  // CSV取込ログかどうか判定（amountWithTax を持つログが1件でもあれば）
+  // CSV取込ログかどうか判定
   const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
   const isCsvImport = csvLogs.length > 0;
   
-  console.log(`📊 calculateInvMonthly: ${month}, ログ${monthLogs.length}件, CSV取込ログ${csvLogs.length}件`);
-
   const items = [];
   const summary = {};
   
   if (isCsvImport) {
-    // === CSV取込モード: ログのamountWithTaxをそのまま使用 ===
     const productMap = new Map();
     csvLogs.forEach(log => {
       const pid = log.productId;
@@ -5873,18 +5893,18 @@ function calculateInvMonthly(month) {
           prevQty: 0,
           currQty: log.quantity || 0,
           diff: log.quantity || 0,
-          amount: log.amountWithTax || 0,
-          isFixed: false
+          amount: Math.round(log.amountWithTax || 0),
+          isFixed: false,
+          prevAmount: 0
         });
       } else {
         const existing = productMap.get(pid);
         existing.currQty += log.quantity || 0;
         existing.diff += log.quantity || 0;
-        existing.amount += log.amountWithTax || 0;
+        existing.amount += Math.round(log.amountWithTax || 0);
       }
     });
 
-    // 前月に存在したが当月のCSVにない商品（在庫0）を追加
     if (prevData && prevData.items) {
       prevData.items.forEach(prevItem => {
         if (!productMap.has(prevItem.productId)) {
@@ -5897,13 +5917,13 @@ function calculateInvMonthly(month) {
             currQty: 0,
             diff: -prevItem.currQty,
             amount: 0,
-            isFixed: prevItem.isFixed
+            isFixed: prevItem.isFixed,
+            prevAmount: Math.round(prevItem.amount || 0)
           });
         }
       });
     }
     
-    // マスタ情報と前月在庫情報で補完
     productMap.forEach((item, pid) => {
       const masterProduct = products.find(p => p.id === pid);
       if (masterProduct) {
@@ -5913,29 +5933,27 @@ function calculateInvMonthly(month) {
         item.isFixed = !!masterProduct.isFixed;
       }
       
-      // 前月在庫の反映
       if (prevData && prevData.items) {
         const prevItem = prevData.items.find(i => i.productId === pid);
         if (prevItem) {
           item.prevQty = prevItem.currQty;
+          item.prevAmount = Math.round(prevItem.amount || 0);
           item.diff = item.currQty - item.prevQty;
         }
       }
       
       items.push(item);
       
-      // 分類別集計
       const catKey = item.isFixed ? 'fixed' : item.category;
       if (!summary[catKey]) {
-        summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0 };
+        summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0, prevAmount: 0 };
       }
       summary[catKey].amount += item.amount;
-      summary[catKey].diff += item.diff * item.price; // 差分金額（概算）
+      summary[catKey].prevAmount += (item.prevAmount || 0);
     });
     
   } else {
-    // === 手動入力/スキャンモード: 従来の計算方式 ===
-    // 前月にあった商品を確保
+    // 手動入力/スキャンモード
     const productIds = new Set(products.map(p => p.id));
     if (prevData && prevData.items) {
       prevData.items.forEach(i => productIds.add(i.productId));
@@ -5951,11 +5969,12 @@ function calculateInvMonthly(month) {
       };
 
       let prevQty = 0;
+      let prevAmount = 0;
       if (prevData && prevData.items) {
         const prevItem = prevData.items.find(i => i.productId === pid);
         if (prevItem) {
           prevQty = prevItem.currQty;
-          // マスタにない商品は前月データから補完
+          prevAmount = Math.round(prevItem.amount || 0);
           if (!products.find(x => x.id === pid)) {
             p.name = prevItem.name;
             p.category = prevItem.category;
@@ -5965,24 +5984,28 @@ function calculateInvMonthly(month) {
         }
       }
 
+      // 未締めかつログなしの場合は0にする（ユーザー要望）
       let currQty = prevQty;
       const productLogs = monthLogs.filter(l => l.productId === pid);
-      productLogs.forEach(log => {
-        if (log.type === 'count') {
-          currQty = log.quantity;
-        } else if (log.type === 'in') {
-          currQty += log.quantity;
-        } else if (log.type === 'out') {
-          currQty -= log.quantity;
-        }
-      });
-
-      if (p.isFixed && productLogs.length === 0) {
-        currQty = prevQty;
+      if (!isClosed && monthLogs.length === 0) {
+          currQty = 0;
+      } else {
+          productLogs.forEach(log => {
+            if (log.type === 'count') {
+              currQty = log.quantity;
+            } else if (log.type === 'in') {
+              currQty += log.quantity;
+            } else if (log.type === 'out') {
+              currQty -= log.quantity;
+            }
+          });
+          if (p.isFixed && productLogs.length === 0) {
+            currQty = prevQty;
+          }
       }
 
       const diff = currQty - prevQty;
-      const amount = currQty * p.price;
+      const amount = Math.round(currQty * p.price);
 
       items.push({
         productId: pid,
@@ -5993,22 +6016,28 @@ function calculateInvMonthly(month) {
         currQty: currQty,
         diff: diff,
         amount: amount,
-        isFixed: p.isFixed
+        isFixed: p.isFixed,
+        prevAmount: prevAmount
       });
 
       const catKey = p.isFixed ? 'fixed' : p.category;
       if (!summary[catKey]) {
-        summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+        summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
       }
       summary[catKey].amount += amount;
-      summary[catKey].diff += diff * p.price;
+      summary[catKey].prevAmount += prevAmount;
     });
   }
 
-  const total = items.reduce((sum, i) => sum + i.amount, 0);
-  console.log(`📊 calculateInvMonthly完了: 合計 ¥${total.toLocaleString()}, 品目${items.length}件`);
+  // 分類別前月比の計算
+  Object.keys(summary).forEach(k => {
+    summary[k].diff = summary[k].amount - summary[k].prevAmount;
+  });
 
-  return { month, items, summary, total };
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  const prevTotal = items.reduce((sum, i) => sum + (i.prevAmount || 0), 0);
+
+  return { month, items, summary, total, prevTotal };
 }
 
 function displayInvMonthlyResult(result) {
@@ -6022,26 +6051,32 @@ function displayInvMonthlyResult(result) {
   // カテゴリデータを収集
   const categoryData = [];
 
-  // カテゴリ順に表示
-  Object.keys(INV_CATEGORIES).forEach(code => {
+  // カテゴリ順にソートしてループ
+  const sortedCodes = Object.keys(INV_CATEGORIES).sort((a, b) => a.localeCompare(b));
+  
+  sortedCodes.forEach(code => {
     if (result.summary[code]) {
       const s = result.summary[code];
-      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
-      summaryTotal += s.amount;
-      summaryDiff += s.diff;
-      normalTotal += s.amount;
-      categoryData.push({ name: s.name, amount: s.amount, isFixed: false });
+      const roundedAmount = Math.round(s.amount);
+      const roundedDiff = Math.round(s.diff);
+      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+      summaryTotal += roundedAmount;
+      summaryDiff += roundedDiff;
+      normalTotal += roundedAmount;
+      categoryData.push({ name: s.name, amount: roundedAmount, isFixed: false });
     }
   });
 
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
-    summaryTotal += s.amount;
-    summaryDiff += s.diff;
-    fixedTotal = s.amount;
-    categoryData.push({ name: '不動品', amount: s.amount, isFixed: true });
+    const roundedAmount = Math.round(s.amount);
+    const roundedDiff = Math.round(s.diff);
+    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+    summaryTotal += roundedAmount;
+    summaryDiff += roundedDiff;
+    fixedTotal = roundedAmount;
+    categoryData.push({ name: '不動品', amount: roundedAmount, isFixed: true });
   }
 
   const tacTotal = Math.round(summaryTotal * 1.01);
@@ -6067,6 +6102,7 @@ function displayInvMonthlyResult(result) {
   // ドーナツ風サマリー
   const normalPercent = summaryTotal > 0 ? Math.round((normalTotal / summaryTotal) * 100) : 0;
   const fixedPercent = summaryTotal > 0 ? Math.round((fixedTotal / summaryTotal) * 100) : 0;
+  const totalDiff = Math.round(result.total - result.prevTotal);
 
   container.innerHTML = `
     <!-- サマリーカード -->
@@ -6074,6 +6110,9 @@ function displayInvMonthlyResult(result) {
       <div class="card" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
+        <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">
+            前月比: <span style="font-weight: bold;">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</span>
+        </div>
       </div>
       <div class="card" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 1.25rem;">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">✓ 通常在庫</div>
@@ -6635,7 +6674,9 @@ function exportInvProductsCsv() {
   const link = document.createElement('a');
   link.href = url;
   link.download = `商品マスタ_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
   toast('CSVをダウンロードしました', 'success');
