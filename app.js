@@ -193,6 +193,17 @@ function showMainScreen() {
   // モバイルナビの初期化
   initMobileNav();
 
+  // 4月期データの同期（一度だけ実行）
+  if (!localStorage.getItem('pms_migrated_april_inv_v2')) {
+    setTimeout(() => {
+        if (typeof syncInventoryToMaster === 'function') {
+            console.log('🚀 4月期データの自動同期を開始します...');
+            syncInventoryToMaster('2026-04');
+            localStorage.setItem('pms_migrated_april_inv_v2', 'true');
+        }
+    }, 3000);
+  }
+
   // ロール別の初期画面（前回開いていたページがあれば復元）
   const lastPage = localStorage.getItem('lastPage');
   if (lastPage) {
@@ -5145,26 +5156,47 @@ function setupInvExcelImport() {
       confirmBtn.disabled = true;
       confirmBtn.textContent = '登録中...';
 
-      // 同月のExcel取込ログを事前削除（再取込対応）
+      // 既存ログの特定月分を除外（再取込対応）
+      const existingLogs = DB.get(DB.KEYS.INV_LOGS);
+      let filteredLogs = existingLogs;
       if (targetMonth) {
-        const allLogs = DB.get(DB.KEYS.INV_LOGS);
-        const filteredLogs = allLogs.filter(l => {
-          // 当月のExcel一括取込ログを除外（手動入力・スキャン分は残す）
-          if (l.timestamp && l.timestamp.startsWith(targetMonth) && l.note && l.note.includes('Excel一括取込')) {
-            return false;
-          }
-          return true;
-        });
-        const removedCount = allLogs.length - filteredLogs.length;
-        if (removedCount > 0) {
-          console.log(`🗑️ 同月の既存Excel取込ログ ${removedCount}件を削除`);
-          DB.save(DB.KEYS.INV_LOGS, filteredLogs);
-        }
+        filteredLogs = existingLogs.filter(l => !l.timestamp.startsWith(targetMonth.substring(0, 7)));
       }
+
+      DB.save(DB.KEYS.INV_LOGS, filteredLogs);
+
+      // 【重要】取り込んだ資材を商品マスタへ反映（新規追加・単価更新）
+      const products = DB.get(DB.KEYS.INV_PRODUCTS);
+      let masterUpdateCount = 0;
+      let masterAddCount = 0;
+
+      parsedItems.forEach(item => {
+        const pData = item.product;
+        const existingIdx = products.findIndex(p => p.id === pData.id);
+        
+        if (existingIdx >= 0) {
+          // 既存の場合は単価のみ更新（または必要情報をマージ）
+          products[existingIdx].price = item.unitPrice;
+          masterUpdateCount++;
+        } else {
+          // 新規の場合は追加
+          products.push({
+            id: pData.id,
+            name: pData.name,
+            category: pData.category || '99',
+            price: item.unitPrice,
+            isFixed: false
+          });
+          masterAddCount++;
+        }
+      });
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      console.log(`✅ 商品マスタ同期完了: 新規${masterAddCount}件、更新${masterUpdateCount}件`);
 
       DB.addBulk(DB.KEYS.INV_LOGS, newLogs).then(() => {
         console.log('✅ Excel取込: 登録完了');
-        toast(`${itemCount}件の棚卸を登録しました`, 'success');
+        
+        toast(`${itemCount}件の棚卸を登録し、マスタを更新しました（新規:${masterAddCount}, 更新:${masterUpdateCount}）`, 'success');
         
         // 自動締め処理
         if (targetMonth) {
@@ -5218,6 +5250,54 @@ function saveInvMonthlyClosing(month, result) {
   
   DB.save(DB.KEYS.INV_MONTHLY, monthly);
 }
+
+/**
+ * 在庫ログから商品マスタへの同期（ユーザー要望: 4月機データ取込用）
+ */
+function syncInventoryToMaster(month) {
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  
+  // 指定された月のログ（Excel取込分）を抽出
+  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
+  
+  if (monthLogs.length === 0) {
+    toast(`${month}のログデータが見つかりません`, 'warning');
+    return;
+  }
+  
+  let addCount = 0;
+  let updateCount = 0;
+  
+  monthLogs.forEach(log => {
+    // IDまたは品名で重複チェック
+    const existing = products.find(p => p.id === log.productId || (log.productName && p.name === log.productName));
+    
+    if (existing) {
+      // 金額は上書き
+      existing.price = log.unitPrice || existing.price;
+      updateCount++;
+    } else {
+      // 新規登録
+      products.push({
+        id: log.productId,
+        name: log.productName || log.productId,
+        category: log.productId.startsWith('N') ? log.productId.substring(1, 3) : '99',
+        price: log.unitPrice || 0,
+        isFixed: false
+      });
+      addCount++;
+    }
+  });
+  
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast(`${month}のデータからマスタを更新しました（新規:${addCount}, 更新:${updateCount}）`, 'success');
+  
+  if (typeof renderInvProductsTable === 'function') renderInvProductsTable();
+}
+
+// グローバルに公開
+window.syncInventoryToMaster = syncInventoryToMaster;
 
 function displayProductInfo(productId) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS);

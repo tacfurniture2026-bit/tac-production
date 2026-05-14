@@ -187,6 +187,17 @@ function showMainScreen() {
     el.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
   });
 
+  // 4月期データの同期（一度だけ実行）
+  if (!localStorage.getItem('pms_migrated_april_inv_v2')) {
+    setTimeout(() => {
+        if (typeof syncInventoryToMaster === 'function') {
+            console.log('🚀 4月期データの自動同期を開始します...');
+            syncInventoryToMaster('2026-04');
+            localStorage.setItem('pms_migrated_april_inv_v2', 'true');
+        }
+    }, 3000);
+  }
+
   // モバイルナビの初期化
   initMobileNav();
 
@@ -4898,6 +4909,35 @@ function renderInvAdjustPage() {
 
   renderInvAdjustLogs();
 }
+
+/**
+ * 在庫ログから商品マスタへの同期
+ */
+function syncInventoryToMaster(month) {
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
+  if (monthLogs.length === 0) return;
+  
+  monthLogs.forEach(log => {
+    const existing = products.find(p => p.id === log.productId || (log.productName && p.name === log.productName));
+    if (existing) {
+      existing.price = log.unitPrice || existing.price;
+    } else {
+      products.push({
+        id: log.productId,
+        name: log.productName || log.productId,
+        category: log.productId.startsWith('N') ? log.productId.substring(1, 3) : '99',
+        price: log.unitPrice || 0,
+        isFixed: false
+      });
+    }
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+}
+
+window.syncInventoryToMaster = syncInventoryToMaster;
+
 
 function submitInvAdjust() {
   const type = $('#inv-adjust-type').value;
