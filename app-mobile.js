@@ -3936,7 +3936,7 @@ function renderReport() {
 
   invProducts.forEach(product => {
     const stock = getCurrentStock(product.id, invLogs);
-    const amount = stock * product.price;
+    const amount = Math.round(stock * product.price);
 
     // カテゴリ別集計
     const catName = INV_CATEGORIES[product.category] || product.category;
@@ -3979,14 +3979,14 @@ function renderReport() {
         <div style="margin-bottom: 0.75rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
             <span style="font-size: 0.875rem;">${cat}</span>
-            <span style="font-size: 0.875rem; font-weight: 500;">¥${data.total.toLocaleString()}</span>
+            <span style="font-size: 0.875rem; font-weight: 500;">¥${Math.round(data.total).toLocaleString()}</span>
           </div>
           <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 12px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem;">
-            <span>通常: ¥${data.normal.toLocaleString()}</span>
-            <span>不動品: ¥${data.fixed.toLocaleString()}</span>
+            <span>通常: ¥${Math.round(data.normal).toLocaleString()}</span>
+            <span>不動品: ¥${Math.round(data.fixed).toLocaleString()}</span>
           </div>
         </div>
       `;
@@ -4024,7 +4024,7 @@ function renderReport() {
           </div>
           <div class="summary-item">
             <span class="summary-label">加工費総額</span>
-            <span class="summary-value">${totalCost.toLocaleString()} 円</span>
+            <span class="summary-value">${Math.round(totalCost).toLocaleString()} 円</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">総生産時間</span>
@@ -4082,15 +4082,15 @@ function renderReport() {
         <div class="report-summary" style="margin-bottom: 1.5rem;">
           <div class="summary-item">
             <span class="summary-label">在庫金額合計</span>
-            <span class="summary-value" style="color: var(--color-primary);">¥${totalInvAmount.toLocaleString()}</span>
+            <span class="summary-value" style="color: var(--color-primary);">¥${Math.round(totalInvAmount).toLocaleString()}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">通常在庫</span>
-            <span class="summary-value" style="color: var(--color-success);">¥${totalNormalAmount.toLocaleString()}</span>
+            <span class="summary-value" style="color: var(--color-success);">¥${Math.round(totalNormalAmount).toLocaleString()}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">不動品在庫</span>
-            <span class="summary-value" style="color: var(--color-warning);">¥${totalFixedAmount.toLocaleString()}</span>
+            <span class="summary-value" style="color: var(--color-warning);">¥${Math.round(totalFixedAmount).toLocaleString()}</span>
           </div>
         </div>
         
