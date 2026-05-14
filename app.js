@@ -5172,7 +5172,7 @@ function setupInvExcelImport() {
 
       parsedItems.forEach(item => {
         const pData = item.product;
-        const existingIdx = products.findIndex(p => p.id === pData.id);
+        const existingIdx = products.findIndex(p => p.id === pData.id || (pData.name && p.name === pData.name));
         
         if (existingIdx >= 0) {
           // 既存の場合は単価のみ更新（または必要情報をマージ）
