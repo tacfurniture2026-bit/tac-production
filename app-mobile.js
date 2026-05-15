@@ -214,6 +214,22 @@ function showMainScreen() {
     // 作業者はQR進捗登録画面を初期表示
     navigateTo('qr');
   }
+
+  // 特定データの修正（Firebase読み込み待ちを考慮して遅延実行）
+  setTimeout(() => {
+    const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    let fixedCount = 0;
+    products.forEach(p => {
+      if (p.id === 'N05000000000184' && (!p.name || p.name.includes('#') || p.name.includes('ERROR'))) {
+        p.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
+        fixedCount++;
+      }
+    });
+    if (fixedCount > 0) {
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      console.log(`✅ 製品名修正完了: N05000000000184 (${fixedCount}件)`);
+    }
+  }, 5000);
 }
 
 function navigateTo(pageName) {
