@@ -145,7 +145,7 @@
 <body>
     <div id="version-banner"
         style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 4px; z-index: 99999; font-size: 11px; text-align: right;">
-        <span id="app-version-display">v4.96</span><br>
+        <span id="app-version-display">v4.97</span><br>
         <a href="#" onclick="window.location.reload(true); return false;"
             style="color: #4ade80; text-decoration: underline;">再読み込み(更新)</a>
     </div>
@@ -250,7 +250,7 @@
             <div class="sidebar-footer">
                 <div class="user-info">
                     <span class="user-name" id="current-user-name">管理者</span>
-                    <span class="user-role" id="current-user-role">v4.96</span>
+                    <span class="user-role" id="current-user-role">v4.97</span>
                 </div>
                 <div
                     style="display:flex; align-items:center; justify-content:space-between; padding: 0.4rem 1rem 0.6rem;">
@@ -872,8 +872,8 @@
                             <h1>▤ 商品マスタ</h1>
                             <p>商品の登録・編集・削除</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn btn-outline" onclick="if(confirm('2026年4月の棚卸データからマスタを更新しますか？')) syncInventoryToMaster('2026-04')">🔄 4月期データ同期</button>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <span id="inv-products-count-display" style="margin-right: 1rem; font-weight: 600; color: var(--color-primary);">登録件数: <span id="inv-products-count">0</span>件</span>
                             <button class="btn btn-secondary" id="import-inv-csv-btn">📥 CSV取込</button>
                             <button class="btn btn-secondary" id="export-inv-csv-btn">📤 CSV出力</button>
                             <button class="btn btn-primary" id="add-inv-product-btn">+ 新規登録</button>
@@ -924,6 +924,7 @@
                                     <th>分類</th>
                                     <th>品名</th>
                                     <th>単価</th>
+                                    <th>基準在庫(参考)</th>
                                     <th>不動</th>
                                     <th>操作</th>
                                 </tr>

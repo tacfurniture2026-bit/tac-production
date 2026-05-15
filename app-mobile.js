@@ -56,6 +56,15 @@ function migrateCorruptedData() {
     }
   });
   if (needsOrderSave) DB.save(DB.KEYS.ORDERS, orders);
+
+  // 特定製品名の修正 (N05000000000184)
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const targetProd = products.find(p => p.id === 'N05000000000184');
+  if (targetProd && targetProd.name !== '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30') {
+    targetProd.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    console.log('✅ 製品名修正: N05000000000184 -> +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30');
+  }
 }
 migrateCorruptedData();
 
@@ -186,17 +195,6 @@ function showMainScreen() {
   $$('.admin-only').forEach(el => {
     el.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
   });
-
-  // 4月期データの同期（一度だけ実行）
-  if (!localStorage.getItem('pms_migrated_april_inv_v2')) {
-    setTimeout(() => {
-        if (typeof syncInventoryToMaster === 'function') {
-            console.log('🚀 4月期データの自動同期を開始します...');
-            syncInventoryToMaster('2026-04');
-            localStorage.setItem('pms_migrated_april_inv_v2', 'true');
-        }
-    }, 3000);
-  }
 
   // モバイルナビの初期化
   initMobileNav();

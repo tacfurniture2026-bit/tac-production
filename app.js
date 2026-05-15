@@ -59,6 +59,15 @@ function migrateCorruptedData() {
     }
   });
   if (needsOrderSave) DB.save(DB.KEYS.ORDERS, orders);
+
+  // 特定製品名の修正 (N05000000000184)
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const targetProd = products.find(p => p.id === 'N05000000000184');
+  if (targetProd && targetProd.name !== '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30') {
+    targetProd.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    console.log('✅ 製品名修正: N05000000000184 -> +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30');
+  }
 }
 migrateCorruptedData();
 
@@ -192,17 +201,6 @@ function showMainScreen() {
 
   // モバイルナビの初期化
   initMobileNav();
-
-  // 4月期データの同期（一度だけ実行）
-  if (!localStorage.getItem('pms_migrated_april_inv_v2')) {
-    setTimeout(() => {
-        if (typeof syncInventoryToMaster === 'function') {
-            console.log('🚀 4月期データの自動同期を開始します...');
-            syncInventoryToMaster('2026-04');
-            localStorage.setItem('pms_migrated_april_inv_v2', 'true');
-        }
-    }, 3000);
-  }
 
   // ロール別の初期画面（前回開いていたページがあれば復元）
   const lastPage = localStorage.getItem('lastPage');
@@ -5574,19 +5572,70 @@ function renderInvProductsTable() {
   });
 
   const tbody = $('#inv-products-body');
-  tbody.innerHTML = filtered.map(p => `
+  const usageStats = calculateUsageStats(); // 基準在庫算出用データ取得
+
+  $('#inv-products-count').textContent = products.length; // 登録件数表示
+
+  tbody.innerHTML = filtered.map(p => {
+    // 基準在庫（参考値）の取得
+    const stat = usageStats[p.id];
+    const suggested = stat ? Math.ceil((stat.totalUsage / stat.months) * 1.5) : '-';
+
+    return `
     <tr class="${p.isFixed ? 'fixed-product-row' : ''}">
       <td>${p.id}</td>
       <td>${INV_CATEGORIES[p.category] || p.category}</td>
       <td>${p.name}</td>
       <td>¥${p.price.toLocaleString()}</td>
+      <td>${suggested.toLocaleString()}</td>
       <td>${p.isFixed ? '✓' : ''}</td>
       <td>
         <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${p.id}')">編集</button>
         <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${p.id}')">削除</button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+/**
+ * 過去の在庫増減から平均的な消費動向を算出
+ */
+function calculateUsageStats() {
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const stats = {}; // { productId: { totalUsage: 0, months: 0 } }
+  
+  if (monthly.length >= 2) {
+    // 月次締めデータがある場合、月ごとの在庫減を算出
+    const sorted = [...monthly].sort((a, b) => a.month.localeCompare(b.month));
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i-1];
+      const curr = sorted[i];
+      curr.items.forEach(item => {
+        const prevItem = prev.items.find(pi => pi.productId === item.productId);
+        if (prevItem) {
+          const usage = Math.max(0, prevItem.currQty - item.currQty);
+          if (usage > 0) {
+            if (!stats[item.productId]) stats[item.productId] = { totalUsage: 0, months: 0 };
+            stats[item.productId].totalUsage += usage;
+            stats[item.productId].months += 1;
+          }
+        }
+      });
+    }
+  }
+
+  // 直近1ヶ月の出庫（out）ログも考慮（月次締めがない場合や最新データの補完）
+  const outLogs = logs.filter(l => l.type === 'out');
+  outLogs.forEach(log => {
+    if (!stats[log.productId]) stats[log.productId] = { totalUsage: 0, months: 0 };
+    stats[log.productId].totalUsage += (log.quantity || 0);
+    // 月次締めがない場合、暫定的に1ヶ月分としてカウント
+    if (stats[log.productId].months === 0) stats[log.productId].months = 1;
+  });
+
+  return stats;
 }
 
 function showAddInvProductModal() {
