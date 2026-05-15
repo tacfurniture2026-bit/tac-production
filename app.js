@@ -62,11 +62,16 @@ function migrateCorruptedData() {
 
   // 特定製品名の修正 (N05000000000184)
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const targetProd = products.find(p => p.id === 'N05000000000184');
-  if (targetProd && targetProd.name !== '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30') {
-    targetProd.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
+  let fixedCount = 0;
+  products.forEach(p => {
+    if (p.id === 'N05000000000184') {
+      p.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
+      fixedCount++;
+    }
+  });
+  if (fixedCount > 0) {
     DB.save(DB.KEYS.INV_PRODUCTS, products);
-    console.log('✅ 製品名修正: N05000000000184 -> +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30');
+    console.log(`✅ 製品名修正: N05000000000184 -> +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30 (${fixedCount}件)`);
   }
 }
 migrateCorruptedData();
