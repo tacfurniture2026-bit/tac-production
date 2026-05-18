@@ -9518,29 +9518,8 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
                             <p>商品の登録・編集・削除</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn btn-secondary" id="import-inv-csv-btn">📥 CSV取込</button>
                             <button class="btn btn-secondary" id="export-inv-csv-btn">📤 CSV出力</button>
                             <button class="btn btn-primary" id="add-inv-product-btn">+ 新規登録</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- CSV取り込みエリア（非表示） -->
-                <div id="csv-import-area" class="card" style="margin-bottom: 1.5rem; display: none;">
-                    <div class="card-header">
-                        <h3>📥 CSV一括取り込み</h3>
-                    </div>
-                    <div class="card-body">
-                        <p style="margin-bottom: 1rem; color: var(--color-text-muted);">
-                            スプレッドシートからCSV形式でダウンロードしたファイルを選択してください。<br>
-                            <strong>必須列：</strong> ID（C列）、資材分類（D列）、品名（E列）、単価（L列）<br>
-                            <strong>オプション列：</strong> 不動（B列）、色/他（F列）、構成（G列）、巾（H列）、長さ（I列）
-                        </p>
-                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                            <input type="file" id="csv-file-input" accept=".csv,.txt" style="flex: 1;">
-                            <button type="button" class="btn btn-primary" id="execute-csv-import-btn">取込実行</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-csv-import-btn">キャンセル</button>
-                        </div>
-                        <div id="csv-import-preview" style="margin-top: 1rem; max-height: 300px; overflow: auto;">
                         </div>
                     </div>
                 </div>
