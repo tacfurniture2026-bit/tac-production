@@ -9,7 +9,7 @@ def read_file(path):
 def main():
     base_html = read_file('mobile_source.html')
     css_content = read_file('styles.css') # Use main styles.css (latest)
-    app_js_content = read_file('app.js') # Use main app.js (latest)
+    app_js_content = read_file('app-mobile.js') # Use mobile app-mobile.js (latest)
     data_js_content = read_file('data.js')
     firebase_config_content = read_file('firebase-config.js')
     

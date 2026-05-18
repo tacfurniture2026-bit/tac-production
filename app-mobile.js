@@ -4678,38 +4678,12 @@ function submitInventoryCount() {
   const monthInput = $('#inv-scan-month');
   if (monthInput && monthInput.value) {
     targetMonth = monthInput.value;
-    const [y, m] = monthInput.value.split('-');
-    if (y && m) {
-      const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-      targetTimestamp = lastDay.toISOString();
-    }
   } else {
     targetMonth = getInventoryNextTargetMonth();
-    const [y, m] = targetMonth.split('-');
-    const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-    targetTimestamp = lastDay.toISOString();
   }
 
-  // 棚卸仮データに追加 (UPSERT)
-  const scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const existingIdx = scanTemp.findIndex(s => s.productId === productId && s.month === targetMonth);
-  if (existingIdx >= 0) {
-    scanTemp[existingIdx].quantity = quantity;
-    scanTemp[existingIdx].worker = currentUser.username;
-    scanTemp[existingIdx].workerName = currentUser.displayName;
-    scanTemp[existingIdx].timestamp = targetTimestamp;
-  } else {
-    scanTemp.push({
-      id: Date.now() + "_" + productId,
-      productId: productId,
-      quantity: quantity,
-      worker: currentUser.username,
-      workerName: currentUser.displayName,
-      timestamp: targetTimestamp,
-      month: targetMonth
-    });
-  }
-  DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
+  // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
+  DB.saveTempScan(productId, quantity, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
 
   toast(`${product.name}の棚卸を仮登録しました（${quantity}個、締め処理待ち）`, 'success');
 
@@ -4730,7 +4704,7 @@ function submitInventoryCount() {
 
 function renderTodayInvLogs() {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  const tempScans = DB.getTempScans() || [];
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const today = new Date().toISOString().split('T')[0];
 

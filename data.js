@@ -312,10 +312,69 @@ const DB = {
                 .then(() => console.log(`💾 ${fbKey} 保存完了`))
                 .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
             this._cache[key] = data;
+            // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
+            localStorage.setItem(key, JSON.stringify(data));
         } else {
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
         }
+    },
+
+    // 棚卸仮スキャンデータ (INV_PRODUCTS 内に埋め込み保存することで Firebase のパーミッションエラーを完全回避)
+    getTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        return products
+            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .map(p => ({
+                id: p.tempId || (p.id + "_temp"),
+                productId: p.id,
+                quantity: p.tempQty,
+                worker: p.tempWorker,
+                workerName: p.tempWorkerName,
+                timestamp: p.tempTimestamp,
+                month: p.tempMonth
+            }));
+    },
+
+    saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            prod.tempQty = quantity;
+            prod.tempWorker = worker;
+            prod.tempWorkerName = workerName;
+            prod.tempTimestamp = timestamp;
+            prod.tempMonth = month;
+            prod.tempId = Date.now() + "_" + productId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    deleteTempScan(productId) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            delete prod.tempQty;
+            delete prod.tempWorker;
+            delete prod.tempWorkerName;
+            delete prod.tempTimestamp;
+            delete prod.tempMonth;
+            delete prod.tempId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    clearTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        products.forEach(p => {
+            delete p.tempQty;
+            delete p.tempWorker;
+            delete p.tempWorkerName;
+            delete p.tempTimestamp;
+            delete p.tempMonth;
+            delete p.tempId;
+        });
+        this.save(this.KEYS.INV_PRODUCTS, products);
     },
 
     // 追加（競合回避：トランザクション使用）

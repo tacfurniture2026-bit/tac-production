@@ -2541,10 +2541,69 @@ const DB = {
                 .then(() => console.log(`💾 ${fbKey} 保存完了`))
                 .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
             this._cache[key] = data;
+            // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
+            localStorage.setItem(key, JSON.stringify(data));
         } else {
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
         }
+    },
+
+    // 棚卸仮スキャンデータ (INV_PRODUCTS 内に埋め込み保存することで Firebase のパーミッションエラーを完全回避)
+    getTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        return products
+            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .map(p => ({
+                id: p.tempId || (p.id + "_temp"),
+                productId: p.id,
+                quantity: p.tempQty,
+                worker: p.tempWorker,
+                workerName: p.tempWorkerName,
+                timestamp: p.tempTimestamp,
+                month: p.tempMonth
+            }));
+    },
+
+    saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            prod.tempQty = quantity;
+            prod.tempWorker = worker;
+            prod.tempWorkerName = workerName;
+            prod.tempTimestamp = timestamp;
+            prod.tempMonth = month;
+            prod.tempId = Date.now() + "_" + productId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    deleteTempScan(productId) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            delete prod.tempQty;
+            delete prod.tempWorker;
+            delete prod.tempWorkerName;
+            delete prod.tempTimestamp;
+            delete prod.tempMonth;
+            delete prod.tempId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    clearTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        products.forEach(p => {
+            delete p.tempQty;
+            delete p.tempWorker;
+            delete p.tempWorkerName;
+            delete p.tempTimestamp;
+            delete p.tempMonth;
+            delete p.tempId;
+        });
+        this.save(this.KEYS.INV_PRODUCTS, products);
     },
 
     // 追加（競合回避：トランザクション使用）
@@ -2855,14 +2914,12 @@ function migrateCorruptedData() {
       }
     }
     if (!b.processes || b.processes.length === 0) {
-       // デフォルトの標準工程を付与（完了確認ではなく実際の工程名を使う）
        b.processes = ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'];
        needsBOMSave = true;
     }
   });
   if (needsBOMSave) DB.save(DB.KEYS.BOM, boms);
 
-  // BOMマップを作成（注文の工程修復に使用）
   const bomMap = {};
   boms.forEach(b => {
     const key = (b.bomName || '') + '|' + (b.partCode || '');
@@ -2880,7 +2937,6 @@ function migrateCorruptedData() {
           }
         }
         if (!item.processes || item.processes.length === 0) {
-           // BOMから工程を復元
            const key = (item.bomName || '') + '|' + (item.partCode || '');
            if (bomMap[key] && bomMap[key].length > 0) {
              item.processes = [...bomMap[key]];
@@ -3056,11 +3112,9 @@ function showMainScreen() {
   setTimeout(() => {
     emergencyRestoreProductsFromLogs(); // 緊急復元チェック
     
-    console.log('🔍 データメンテナンス実行中...');
     const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
     let fixedCount = 0;
     products.forEach(p => {
-      // ID一致かつ名称が不正（#ERROR!等）な場合に修正
       if (p.id === 'N05000000000184') {
         p.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
         fixedCount++;
@@ -3069,10 +3123,6 @@ function showMainScreen() {
     if (fixedCount > 0) {
       DB.save(DB.KEYS.INV_PRODUCTS, products);
       console.log(`✅ 製品名修正完了: N05000000000184 (${fixedCount}件)`);
-      if (typeof toast === 'function') toast('資材データを修正・復元しました', 'success');
-      if (typeof currentActivePage !== 'undefined' && currentActivePage === 'inv-products') {
-        renderInvProductsTable();
-      }
     }
   }, 5000);
 }
@@ -3091,7 +3141,6 @@ function emergencyRestoreProductsFromLogs() {
     return;
   }
 
-  const newProducts = [];
   const productMap = new Map();
 
   // ログを日付順（古い順）に走査してマスタを構築
@@ -3109,7 +3158,6 @@ function emergencyRestoreProductsFromLogs() {
         isFixed: false
       });
     } else {
-      // すでに存在する場合、名前や価格を最新のログで更新
       const p = productMap.get(log.productId);
       if (log.productName && !log.productName.includes('#')) p.name = log.productName;
       if (log.unitPrice) p.price = log.unitPrice;
@@ -3118,42 +3166,14 @@ function emergencyRestoreProductsFromLogs() {
 
   const restoredList = Array.from(productMap.values());
   if (restoredList.length > 0) {
-    // 保護を一時解除して強制保存（またはフラグを確認）
     if (DB._loaded[DB.KEYS.INV_PRODUCTS]) {
         DB.save(DB.KEYS.INV_PRODUCTS, restoredList);
         console.log(`✅ 商品マスタを ${restoredList.length} 件復元しました`);
-        toast(`消失した商品マスタを ${restoredList.length} 件復元しました`, 'success');
-        if (typeof renderInvProductsTable === 'function') renderInvProductsTable();
     } else {
-        console.warn('⚠️ マスタの同期が完了していないため復元保存を待機します');
         setTimeout(emergencyRestoreProductsFromLogs, 2000);
     }
   }
 }
-
-// 現在表示中のページを再描画する（Firebaseデータ同期時のUI更新用）
-window.refreshCurrentPage = function () {
-  const activePage = localStorage.getItem('lastPage') || 'dashboard';
-
-  switch (activePage) {
-    case 'dashboard': renderDashboard(); break;
-    case 'gantt': renderGantt(); break;
-    case 'qr': renderQrPage(); break;
-    case 'defects': renderDefects(); break;
-    case 'orders': renderOrders(); break;
-    case 'bom': renderBom(); break;
-    case 'rates': renderRates(); break;
-    case 'users': renderUsers(); break;
-    case 'report': renderReport(); break;
-    case 'backup': renderBackupPage(); break;
-    case 'inv-scan': renderInvScanPage(); break;
-    case 'inv-search': renderInvSearchPage(); break;
-    case 'inv-products': renderInvProductsPage(); break;
-    case 'inv-check': renderInvCheckPage(); break; // ← ADDED
-    case 'inv-adjust': renderInvAdjustPage(); break;
-    case 'inv-monthly': renderInvMonthlyPage(); break;
-  }
-};
 
 function navigateTo(pageName) {
   // ページ状態を保存
@@ -3206,9 +3226,6 @@ function navigateTo(pageName) {
     case 'report':
       renderReport();
       break;
-    case 'backup':
-      renderBackupPage();
-      break;
     // 在庫管理
     case 'inv-scan':
       renderInvScanPage();
@@ -3221,9 +3238,6 @@ function navigateTo(pageName) {
       break;
     case 'inv-adjust':
       renderInvAdjustPage();
-      break;
-    case 'inv-check':
-      renderInvCheckPage();
       break;
     case 'inv-monthly':
       renderInvMonthlyPage();
@@ -3378,12 +3392,7 @@ function renderGantt() {
 
   // フィルタリング
   let filtered = orders;
-  if (ganttFilter === 'progress') {
-    filtered = orders.filter(o => {
-      const p = calculateProgress(o);
-      return p > 0 && p < 100;
-    });
-  } else if (ganttFilter === 'complete') {
+  if (ganttFilter === 'complete') {
     filtered = orders.filter(o => calculateProgress(o) === 100);
   } else if (ganttFilter === 'pending') {
     filtered = orders.filter(o => calculateProgress(o) === 0);
@@ -3481,8 +3490,8 @@ function renderGantt() {
           <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
-              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">生産指示書 ↗</span>
-              <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
+              <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">生産指示書 ↗</span>
+              <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
               ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
@@ -3563,24 +3572,6 @@ function renderGantt() {
     newContainer.scrollTop = savedScrollTop;
     newContainer.scrollLeft = savedScrollLeft;
   }
-}
-
-function jumpToOrder(orderId) {
-  // 指示書ページへ移動
-  navigateTo('orders');
-  
-  // 該当オーダーを強調表示するための処理
-  setTimeout(() => {
-    const row = document.querySelector(`.order-row[data-order-id="${orderId}"]`);
-    if (row) {
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      row.style.transition = 'background-color 0.5s';
-      row.style.backgroundColor = '#fef3c7'; // 一時的にハイライト
-      setTimeout(() => {
-        row.style.backgroundColor = '';
-      }, 2000);
-    }
-  }, 300);
 }
 
 function toggleExpand(event, orderId) {
@@ -3744,200 +3735,145 @@ function stopQrScanner() {
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
-function onQrCodeScanned(decodedText, decodedResult) {
+function onQrCodeScanned(decodedText) {
+  // スキャン成功時の処理
+  stopQrScanner();
+
+  const resultDiv = $('#qr-scan-result');
+  const dataDiv = $('#qr-scan-data');
+
+  if (resultDiv) resultDiv.style.display = 'block';
+
+  // QRコードのフォーマットを柔軟にパース
+  let projectName = '';
+  let productName = '';
+  let bomName = '';
+  let parsed = false;
+
+  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
   try {
-    // Define safeSet helper early
-    const safeSet = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val;
-    };
-
-    console.log('Force Raw Data:', decodedText);
-    safeSet('qr-raw-data', decodedText);
-    console.log(`QR Scanned: ${decodedText}`);
-    // Debug toast
-    const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
-    toast(`読取成功: ${debugMsg}`, 'success');
-
-    // Stop scanner
-    stopQrScanner();
-
-    const resultDiv = document.getElementById('qr-scan-result');
-    const dataDiv = document.getElementById('qr-scan-data');
-    if (resultDiv) resultDiv.style.display = 'block';
-
-    // Parse
-    let projectName = '';
-    let productName = '';
-    let bomName = '';
-    let parsed = false;
-
-    // 1. JSON
-    try {
-      const json = JSON.parse(decodedText);
-      if (json.project || json.projectName) {
-        projectName = (json.project || json.projectName || '').trim();
-        productName = (json.product || json.productName || '').trim();
-        bomName = (json.bom || json.bomName || json.item || '').trim();
-        parsed = true;
-      }
-    } catch (e) { }
-
-    // 2. Delimiter
-    if (!parsed) {
-      const parts = decodedText.split(/[|\t_]/);
-      if (parts.length >= 3) {
-        projectName = parts[0].trim();
-        productName = parts[1].trim();
-        bomName = parts[2].trim();
-        parsed = true;
-      } else {
-        const commaParts = decodedText.split(',');
-        if (commaParts.length >= 3) {
-          projectName = commaParts[0].trim();
-          productName = commaParts[1].trim();
-          bomName = commaParts[2].trim();
-          parsed = true;
-        }
-      }
+    const json = JSON.parse(decodedText);
+    if (json.project || json.projectName) {
+      projectName = (json.project || json.projectName || '').trim();
+      productName = (json.product || json.productName || '').trim();
+      bomName = (json.bom || json.bomName || json.item || '').trim();
+      parsed = true;
     }
+  } catch (e) { /* not JSON */ }
 
-    // 3. Two parts
-    if (!parsed) {
-      const parts2 = decodedText.split(/[|,\t_]/);
-      if (parts2.length === 2) {
-        productName = parts2[0].trim();
-        bomName = parts2[1].trim();
-        parsed = true;
-      }
-    }
-
-    // 4. Single string search
-    if (!parsed) {
-      const orders = DB.get(DB.KEYS.ORDERS) || [];
-      const searchText = decodedText.trim();
-      const matchOrder = orders.find(o =>
-        o.orderNo === searchText ||
-        o.projectName === searchText ||
-        o.productName === searchText ||
-        (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
-      );
-
-      if (matchOrder) {
-        projectName = matchOrder.projectName;
-        productName = matchOrder.productName;
-        const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
-        if (matchItem) bomName = matchItem.bomName;
-        parsed = true;
-      }
-    }
-
-    // Display and Auto Transcription
-    if (dataDiv) {
-      if (parsed && (projectName || productName || bomName)) {
-        dataDiv.innerHTML = `
-            ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
-            ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
-            ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
-          `;
-
-        safeSet('qr-project-name', projectName || '');
-        safeSet('qr-product-name', productName || '');
-        safeSet('qr-bom-name', bomName || '');
-
-      } else {
-        dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
-      }
-    }
-
-    // Auto Select
-    if (parsed && (projectName || productName)) {
-      selectFromQrData(projectName, productName, bomName);
+  // 2. デリミタ形式 (パイプ、カンマ、タブ)
+  if (!parsed) {
+    const parts = decodedText.split(/[|\t]/);
+    if (parts.length >= 3) {
+      projectName = parts[0].trim();
+      productName = parts[1].trim();
+      bomName = parts[2].trim();
+      parsed = true;
     } else {
-      toast('データが見つかりませんでした (転記不可)', 'warning');
+      // カンマ区切りの場合(3つ以上)
+      const commaParts = decodedText.split(',');
+      if (commaParts.length >= 3) {
+        projectName = commaParts[0].trim();
+        productName = commaParts[1].trim();
+        bomName = commaParts[2].trim();
+        parsed = true;
+      }
     }
-
-    // Vibrate
-    if (navigator.vibrate) {
-      try { navigator.vibrate(100); } catch (e) { }
-    }
-
-  } catch (e) {
-    console.error('QR Scan Error:', e);
-    alert('エラー: ' + e.message);
-    toast('システムエラー: ' + e.message, 'error');
   }
+
+  // 3. 2パート: "品名|部材" または "現場|品名"
+  if (!parsed) {
+    const parts2 = decodedText.split(/[|,\t]/);
+    if (parts2.length === 2) {
+      // 品名と部材として扱う
+      productName = parts2[0].trim();
+      bomName = parts2[1].trim();
+      parsed = true;
+    }
+  }
+
+  // 4. 単一文字列: オーダーデータから検索
+  if (!parsed) {
+    const orders = DB.get(DB.KEYS.ORDERS);
+    const searchText = decodedText.trim();
+
+    // orderNo, projectName, productName, bomNameのいずれかに一致するか検索
+    const matchOrder = orders.find(o =>
+      o.orderNo === searchText ||
+      o.projectName === searchText ||
+      o.productName === searchText ||
+      (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+    );
+
+    if (matchOrder) {
+      projectName = matchOrder.projectName;
+      productName = matchOrder.productName;
+
+      // 部材まで一致した場合
+      const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+      if (matchItem) {
+        bomName = matchItem.bomName;
+      }
+      parsed = true;
+    }
+  }
+
+  // スキャン結果を表示
+  if (dataDiv) {
+    if (parsed && (projectName || productName || bomName)) {
+      dataDiv.innerHTML = `
+        ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+        ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+        ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+      `;
+    } else {
+      dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+    }
+  }
+
+  // 指示書自動選択
+  if (parsed && (projectName || productName)) {
+    selectFromQrData(projectName, productName, bomName);
+  } else {
+    toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
+  }
+
+  // 成功音（バイブレーション）
+  if (navigator.vibrate) {
+    navigator.vibrate(100);
+  }
+  toast('QRコードを読み取りました', 'success');
 }
 
-
 function selectFromQrData(projectName, productName, bomName) {
-  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const orders = DB.get(DB.KEYS.ORDERS);
 
-  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
-
-  const pNameNorm = normalize(projectName);
-  const prodNameNorm = normalize(productName);
-  const bomNameNorm = normalize(bomName);
-
-  // 1. Strict
-  let order = orders.find(o =>
+  // 現場名と品名で指示書を検索
+  const order = orders.find(o =>
     o.projectName.includes(projectName) && o.productName.includes(productName)
   );
 
-
-  // 2. Fuzzy
   if (!order) {
-    order = orders.find(o =>
-      normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
-    );
-  }
-
-  if (!order) {
-    // Partial check
-    const pMatch = orders.find(o => normalize(o.projectName).includes(pNameNorm));
-
-    toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
+    toast(`指示書が見つかりません: ${projectName} - ${productName}`, 'warning');
     return;
   }
 
-  // Select Order
-  const orderSelect = document.getElementById('qr-order');
-  if (orderSelect) {
-    // Create option if missing? Be careful.
-    // Check if option exists
-    const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
-    if (!opt) {
-      const newOpt = document.createElement('option');
-      newOpt.value = order.id;
-      newOpt.text = `${order.projectName} - ${order.productName}`;
-      orderSelect.add(newOpt);
-    }
-    orderSelect.value = order.id;
-    // Trigger change event if needed? No, updateQrItemSelect reads value.
-  } else {
-  }
-
+  // 指示書を選択
+  const orderSelect = $('#qr-order');
+  orderSelect.value = order.id;
   updateQrItemSelect();
 
-  // Select Item
+  // 部材を検索して選択
   setTimeout(() => {
-    let item = order.items?.find(i =>
-      i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
+    const item = order.items?.find(i =>
+      i.bomName.includes(bomName) || i.partCode?.includes(bomName)
     );
 
-    if (!item && bomNameNorm) {
-      item = order.items?.find(i =>
-        normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
-      );
-    }
-
     if (item) {
-      const itemSelect = document.getElementById('qr-item');
-      if (itemSelect) {
-        itemSelect.value = item.id;
-      }
+      const itemSelect = $('#qr-item');
+      itemSelect.value = item.id;
       updateQrProcessSelect();
-      toast(`指示書と部材を選択しました`, 'success');
+      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
     } else {
       toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
@@ -4015,48 +3951,16 @@ function updateQrProcessSelect() {
 
 // 工程ボタン選択
 function selectProcess(btn, processName) {
-  // 1. UI Feedback (Instant)
+  // 他のボタンの選択を解除
   const container = btn.closest('.process-btn-grid');
   if (container) {
     container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
   }
   btn.classList.add('selected');
-  // Add temporary processing state
-  btn.style.opacity = '0.7';
-  btn.innerText = '登録中...';
 
-  // 2. Get Data
-  const orderId = parseInt(document.getElementById('qr-order').value);
-  const itemId = parseInt(document.getElementById('qr-item').value);
-
-  if (!orderId || !itemId) {
-    toast('指示書と部材が選択されていません', 'error');
-    btn.style.opacity = '1';
-    btn.innerText = processName;
-    return;
-  }
-
-  // 3. Register (Async simulation)
-  // registerProgress retrieves from DB and calls save. It is synchronous in this app (localStorage/Firebase shim).
-  // But if Firebase is real, it might take time?
-  // Current app.js registerProgress handles DB.
-
-  const success = registerProgress(orderId, itemId, processName);
-
-  if (success) {
-    toast(`${processName} を完了として登録しました`, 'success');
-    btn.classList.add('completed');
-    btn.innerText = `✓ ${processName}`;
-    btn.disabled = true;
-    btn.style.opacity = '1';
-
-    // Vibrate
-    if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
-  } else {
-    toast('登録に失敗しました', 'error');
-    btn.style.opacity = '1';
-    btn.innerText = processName;
-  }
+  // hidden inputに値をセット
+  const processHidden = $('#qr-process');
+  if (processHidden) processHidden.value = processName;
 }
 
 function registerProgress(orderId, itemId, processName) {
@@ -4699,7 +4603,7 @@ function renderRates() {
   const tbody = $('#rates-body');
 
   if (rates.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">賃率が登録されていません</td></tr>';
     return;
   }
 
@@ -4712,8 +4616,7 @@ function renderRates() {
       <td class="text-right">${r.monthlyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.dailyRate?.toLocaleString() || 0}</td>
       <td class="text-right">${r.hourlyRate?.toLocaleString() || 0}</td>
-      <td class="text-right">${r.minuteRate?.toFixed(2) || 0}</td>
-      <td class="text-right">${r.secondRate?.toFixed(2) || 0}</td>
+      <td class="text-right">${r.minuteRate?.toFixed(1) || 0}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})">削除</button></td>
     </tr>
   `).join('');
@@ -6030,85 +5933,66 @@ function parseBomText(text, separator) {
   if (lines.length === 0) return { boms: [], duplicates: [] };
 
   // ヘッダー解析
+  // Excelからのコピペなどはタブ区切り、CSVアップロードはカンマ区切り
+  // separatorが指定されていればそれを使う
   let headers = lines[0].split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
   let processNames = [];
-  let startIndex = 0;
-  let hasPartCodeCol = true; // 部材CD列の有無
+  let startIndex = 0; // データ開始行
 
-  // ヘッダー判定: 複数のエイリアスに対応
-  const isHeader = (h) => {
-    const candidates = ['カテゴリ', '大分類', '製品名', '品名', 'BOM名', 'BOM', '部材CD', '部材cd',
-      '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー',
-      '仕上・梱包', 'TOYO', 'HOMAG', 'productname', 'bomname', 'partcode', 'category'];
-    return candidates.some(c => h.toLowerCase().includes(c.toLowerCase()));
-  };
-
-  const headerMatch = headers.some(h => isHeader(h));
-
-  if (headerMatch) {
-    startIndex = 1;
-
-    // 部材CD列があるか判定
-    hasPartCodeCol = headers.some(h => h === '部材CD' || h === '部材cd' || h.toLowerCase() === 'partcode');
-    const fixedCols = hasPartCodeCol ? 4 : 3; // 固定列数
-
-    if (headers.length > fixedCols) {
-      processNames = headers.slice(fixedCols).filter(h => h && h.length > 0);
+  // 標準的なヘッダーが含まれているか確認
+  // (A:カテゴリ, B:製品名, C:BOM名, D:部材CD ... 以降は工程)
+  // ヘッダー行っぽければ、そこから工程名を抽出する
+  if (headers.includes('製品名') || headers.includes('BOM名') || headers.includes('部材CD')) {
+    startIndex = 1; // 1行目はヘッダー
+    // 4番目以降を工程名として取得 (0:カテゴリ, 1:製品名, 2:BOM名, 3:部材CD)
+    if (headers.length > 4) {
+      processNames = headers.slice(4).filter(h => h && h.length > 0);
     }
   } else {
+    // ヘッダーなしの場合、工程は取り込めない
     console.warn('No headers detected');
   }
 
   let lastCategory = '';
   let lastProductName = '';
 
-  // 時間値判定 (例: "5分", "10分")
-  const isTimeValue = (val) => /^\d+分$/.test((val || '').trim());
-
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
     const cols = line.split(separator).map(c => c.replace(/^"|"$/g, '').trim());
 
+    // 必須列チェック (BOM名, 部材CD)
+    // index: 0=Cat, 1=Prod, 2=BomName, 3=PartCode
     let category = cols[0] || lastCategory;
     let productName = cols[1] || lastProductName;
     let bomName = cols[2];
-    let partCode = '';
-    let processStartCol = hasPartCodeCol ? 4 : 3;
+    let partCode = cols[3];
 
-    if (hasPartCodeCol) {
-      partCode = cols[3] || '';
-      // GRID行の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無い
-      if (category && category.toUpperCase() === 'GRID' && isTimeValue(partCode)) {
-        // GRID行はpartCode列がなく、col[3]から工程開始
-        processStartCol = 3;
-        partCode = ''; // 後で設定
-      }
-    }
-
-    // BOM名がない行はスキップ
-    if (!bomName) continue;
-
-    // 補完
-    if (!partCode) {
-      if (category && category.toUpperCase() === 'GRID') {
-        partCode = productName; // GRIDルール: partCode = productName
-      } else {
-        partCode = bomName; // デフォルト: partCode = bomName
-      }
-    }
+    // BOM名も部材CDもない行はスキップ（空行など）
+    if (!bomName && !partCode) continue;
+    // 部材CDがない場合はBOM名を入れるなどの補完も考えられるが、一旦必須とする
+    if (!bomName) bomName = partCode;
+    if (!partCode) partCode = bomName;
 
     // 継続値更新
     if (cols[0]) lastCategory = cols[0];
     if (cols[1]) lastProductName = cols[1];
 
+    // GRIDルール
+    if (category && category.toUpperCase() === 'GRID') {
+      partCode = productName;
+    }
+
     // 工程解析
     let processes = [];
     if (processNames.length > 0) {
+      // ヘッダーがある場合: 各列をチェック
       processNames.forEach((procName, idx) => {
-        const val = cols[processStartCol + idx];
-        // 空欄以外（1, TRUE, ○, 数字+分 など）なら採用
-        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase().trim())) {
+        // colsのindexは 4 + idx
+        const val = cols[4 + idx];
+        // 値が '1', 'TRUE', '○', 'ON', 'Yes' などなら採用
+        // Excelで空欄以外（何か書いてあれば）採用とするのが一番汎用的
+        if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase())) {
           processes.push(procName);
         }
       });
@@ -6127,162 +6011,43 @@ function parseBomText(text, separator) {
 }
 
 function processBomCsv(text) {
-  // ヘッダー行を解析して形式を自動判定
-  const lines = text.split(/\r\n|\n/).filter(l => l.trim());
-  if (lines.length < 2) {
-    toast('データが含まれていません', 'warning');
+  const existingBoms = DB.get(DB.KEYS.BOM);
+  const { boms: newBomsRaw } = parseBomText(text, ','); // CSV
+
+  if (newBomsRaw.length === 0) {
+    toast('有効なデータが見つかりませんでした', 'warning');
     return;
   }
 
-  // BOMケア
-  if (lines[0].charCodeAt(0) === 0xFEFF) {
-    lines[0] = lines[0].slice(1);
-  }
+  // 重複・ID付与
+  const newBoms = [];
+  let currentId = DB.nextId(DB.KEYS.BOM);
+  let duplicatesCount = 0;
 
-  const headerRaw = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-  const headerLower = headerRaw.map(h => h.toLowerCase());
-
-  // エクスポート形式の判定: id,productName,category,bomName,partCode,processes,note
-  const isExportFormat = headerLower.includes('id') &&
-    (headerLower.includes('productname') || headerLower.includes('品名')) &&
-    (headerLower.includes('processes') || headerLower.includes('工程'));
-
-  if (isExportFormat) {
-    // ========== エクスポート形式パーサー ==========
-    const colMap = {};
-    headerLower.forEach((h, idx) => {
-      if (h === 'id') colMap.id = idx;
-      else if (h === 'productname' || h === '品名' || h === '製品名') colMap.productName = idx;
-      else if (h === 'category' || h === 'カテゴリ') colMap.category = idx;
-      else if (h === 'bomname' || h === 'bom名') colMap.bomName = idx;
-      else if (h === 'partcode' || h === '部材cd') colMap.partCode = idx;
-      else if (h === 'processes' || h === '工程') colMap.processes = idx;
-      else if (h === 'note' || h === '備考') colMap.note = idx;
-    });
-
-    if (colMap.productName === undefined || colMap.bomName === undefined) {
-      toast('CSVヘッダーに必要な列（productName, bomName）が見つかりません', 'error');
-      return;
-    }
-
-    const existingBoms = DB.get(DB.KEYS.BOM);
-    let nextId = DB.nextId(DB.KEYS.BOM);
-    let updatedCount = 0;
-    let createdCount = 0;
-
-    for (let i = 1; i < lines.length; i++) {
-      // CSVパース（ダブルクォート内のカンマに対応）
-      const cols = parseCSVLine(lines[i]);
-      if (cols.length < 3) continue;
-
-      const idVal = colMap.id !== undefined ? parseInt(cols[colMap.id]) : NaN;
-      const productName = (cols[colMap.productName] || '').trim();
-      const category = colMap.category !== undefined ? (cols[colMap.category] || '').trim() : '';
-      const bomName = (cols[colMap.bomName] || '').trim();
-      const partCode = colMap.partCode !== undefined ? (cols[colMap.partCode] || '').trim() : '';
-      const processesRaw = colMap.processes !== undefined ? (cols[colMap.processes] || '').trim() : '';
-      const note = colMap.note !== undefined ? (cols[colMap.note] || '').trim() : '';
-
-      if (!productName || !bomName) continue;
-
-      // パイプ区切りの工程を配列に変換
-      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
-
-      // 重複チェック (ID → 品名+BOM名)
-      let existingIdx = -1;
-      if (!isNaN(idVal) && idVal > 0) {
-        existingIdx = existingBoms.findIndex(b => b.id === idVal);
-      }
-      if (existingIdx === -1) {
-        existingIdx = existingBoms.findIndex(b => b.productName === productName && b.bomName === bomName);
-      }
-
-      const newBomData = { productName, category, bomName, partCode, processes, note };
-
-      if (existingIdx !== -1) {
-        existingBoms[existingIdx] = { ...existingBoms[existingIdx], ...newBomData };
-        updatedCount++;
-      } else {
-        existingBoms.push({ id: nextId++, ...newBomData });
-        createdCount++;
-      }
-    }
-
-    DB.save(DB.KEYS.BOM, existingBoms);
-    toast(`BOMインポート完了: 新規${createdCount}件, 更新${updatedCount}件`, 'success');
-    hideModal();
-    renderBom();
-  } else {
-    // ========== テンプレート形式 (カテゴリ,製品名,BOM名,部材CD,...工程) ==========
-    const existingBoms = DB.get(DB.KEYS.BOM);
-    const { boms: newBomsRaw } = parseBomText(text, ',');
-
-    if (newBomsRaw.length === 0) {
-      toast('有効なデータが見つかりませんでした', 'warning');
-      return;
-    }
-
-    let currentId = DB.nextId(DB.KEYS.BOM);
-    let duplicatesCount = 0;
-    const newBoms = [];
-
-    newBomsRaw.forEach(raw => {
-      const exists = existingBoms.some(e =>
-        e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
-      );
-      if (!exists) {
-        raw.id = currentId++;
-        newBoms.push(raw);
-      } else {
-        duplicatesCount++;
-      }
-    });
-
-    if (newBoms.length === 0) {
-      toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
-      return;
-    }
-
-    const updatedBoms = [...existingBoms, ...newBoms];
-    DB.save(DB.KEYS.BOM, updatedBoms);
-    toast(`${newBoms.length}件インポートしました`, 'success');
-    hideModal();
-    renderBom();
-  }
-}
-
-// CSV行パーサー（ダブルクォート内のカンマに対応）
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"';
-          i++; // skip escaped quote
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += ch;
-      }
+  newBomsRaw.forEach(raw => {
+    // 既存チェック (BOM名 + 部材CD + 製品名)
+    const exists = existingBoms.some(e =>
+      e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+    );
+    if (!exists) {
+      raw.id = currentId++;
+      newBoms.push(raw);
     } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ',') {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += ch;
-      }
+      duplicatesCount++;
     }
+  });
+
+  if (newBoms.length === 0) {
+    toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
+    return;
   }
-  result.push(current.trim());
-  return result;
+
+  // 保存
+  const updatedBoms = [...existingBoms, ...newBoms];
+  DB.save(DB.KEYS.BOM, updatedBoms);
+  toast(`${newBoms.length}件インポートしました`, 'success');
+  hideModal();
+  renderBom();
 }
 
 // Paste Import
@@ -6291,44 +6056,20 @@ function showBomPasteImport() {
         <div class="form-group">
             <label>Excelからコピーしたデータを貼り付けてください</label>
             <p class="text-muted" style="font-size:0.8rem;">
-              ※1行目にヘッダーを含めてください。<br>
-              <strong>形式:</strong> 大分類 / 品名 / BOM / 部材CD / [工程1] / [工程2]...<br>
-              ※工程列に値（5分, 1, ○ など）があれば、その工程を登録します。<br>
-              ※GRID行は部材CD列なしでもOKです。
+              ※1行目にヘッダー（カテゴリ, 製品名, BOM名, 部材CD, [工程1], [工程2]...）を含めると工程も取り込めます。
             </p>
-            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="大分類\t品名\tBOM\t部材CD\t芯材カット\t面材カット..."></textarea>
+            <textarea id="bom-paste-area" class="form-input" style="height: 200px; font-family: monospace;" placeholder="カテゴリ	製品名	BOM名	部材CD	芯材カット..."></textarea>
             
             <div style="text-align:right; margin-top:0.5rem;">
-               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレート</button>
-               <button class="btn btn-sm btn-outline" onclick="exportBomsToCsv()">📤 現在のBOMをCSV出力</button>
+               <button class="btn btn-sm btn-outline" onclick="downloadBomCsvTemplate()">📥 CSVテンプレートをダウンロード</button>
             </div>
         </div>
     `;
   const footer = `
         <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-        <button class="btn btn-danger" onclick="if(confirm('既存BOMを全て削除して貼り付けデータで置き換えますか？'))executeBomPasteReplace()">全置換</button>
-        <button class="btn btn-primary" onclick="executeBomPasteImport()">追加インポート</button>
+        <button class="btn btn-primary" onclick="executeBomPasteImport()">インポート</button>
     `;
   showModal('BOMペースト登録', body, footer);
-}
-
-// 全置換ペーストインポート
-function executeBomPasteReplace() {
-  const text = document.getElementById('bom-paste-area').value;
-  if (!text.trim()) { toast('データを貼り付けてください', 'warning'); return; }
-
-  const { boms: newBomsRaw } = parseBomText(text, '\t');
-  if (newBomsRaw.length === 0) {
-    toast('データが解析できませんでした', 'warning');
-    return;
-  }
-
-  let id = 1;
-  newBomsRaw.forEach(b => { b.id = id++; });
-  DB.save(DB.KEYS.BOM, newBomsRaw);
-  toast(`${newBomsRaw.length}件のBOMで全置換しました`, 'success');
-  hideModal();
-  renderBom();
 }
 
 function executeBomPasteImport() {
@@ -6433,10 +6174,6 @@ function showAddRateModal() {
       <div class="form-group">
         <label>分給(円)</label>
         <input type="number" id="rate-minute" class="form-input" step="0.1" value="0">
-      </div>
-      <div class="form-group">
-        <label>秒給(円)</label>
-        <input type="number" id="rate-second" class="form-input" step="0.01" value="0">
       </div>
     </div>
   `;
@@ -6588,7 +6325,6 @@ function createRate() {
   const dailyRate = parseInt($('#rate-daily').value) || 0;
   const hourlyRate = parseInt($('#rate-hourly').value) || 0;
   const minuteRate = parseFloat($('#rate-minute').value) || 0;
-  const secondRate = parseFloat($('#rate-second').value) || 0;
 
   if (!rateCode || !department || !section) {
     toast('判定CD、部、課は必須です', 'warning');
@@ -6605,8 +6341,7 @@ function createRate() {
     monthlyRate,
     dailyRate,
     hourlyRate,
-    minuteRate,
-    secondRate
+    minuteRate
   });
   DB.save(DB.KEYS.RATES, rates);
 
@@ -6620,144 +6355,20 @@ function showImportRateModal() {
     <div style="margin-bottom: 1rem; color: var(--color-text-secondary); font-size: 0.875rem;">
       <p>スプレッドシートからコピー&ペーストで賃率をインポートできます。</p>
       <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: 4px;">
-        <strong>形式A（9列 - 推奨）:</strong><br>
-        判定CD | 部 | 課 | 係 | 月額 | 日額 | 時給 | 分給 | 秒給<br>
-        <br>
-        <strong>形式B（11列 - 旧形式）:</strong><br>
+        <strong>形式（11列）:</strong><br>
         [A列:名称] [ID] [C列:判定CD] [部] [課] [係] [G列:月給] [日給] [時給] [分給] [秒給]
       </div>
-      <small>※ヘッダー行を含めてもOKです。自動判別します。</small>
+      <small>※ヘッダー行（3行目）も含めて、A列〜J列（またはK列）をまとめてコピーしてください。</small>
     </div>
     <textarea id="import-rate-data" class="form-input" rows="10" placeholder="ここに貼り付けてください..."></textarea>
-    <div style="margin-top: 0.5rem; text-align: right;">
-      <button class="btn btn-sm btn-outline" onclick="exportRatesToClipboard()">📋 現在のデータをコピー（編集用）</button>
-    </div>
   `;
 
   const footer = `
     <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
-    <button class="btn btn-danger" onclick="if(confirm('既存の賃率を全て削除して、貼り付けデータで置き換えますか？'))importRatesReplace()">全置換インポート</button>
-    <button class="btn btn-primary" onclick="importRates()">追加/更新インポート</button>
+    <button class="btn btn-primary" onclick="importRates()">インポート</button>
   `;
 
   showModal('賃率一括インポート', body, footer);
-}
-
-// 賃率データをクリップボードにコピー（コピペ編集用）
-function exportRatesToClipboard() {
-  const rates = DB.get(DB.KEYS.RATES);
-  if (rates.length === 0) {
-    toast('賃率データがありません', 'warning');
-    return;
-  }
-
-  const header = '判定CD\t部\t課\t係\t月額\t日額\t時給\t分給\t秒給';
-  const rows = rates.map(r =>
-    [r.rateCode, r.department, r.section, r.subsection || '',
-    r.monthlyRate || 0, r.dailyRate || 0, r.hourlyRate || 0,
-    r.minuteRate || 0, r.secondRate || 0].join('\t')
-  );
-
-  const text = [header, ...rows].join('\n');
-
-  // テキストエリアにも表示
-  const ta = document.getElementById('import-rate-data');
-  if (ta) ta.value = text;
-
-  // クリップボードにコピー
-  navigator.clipboard.writeText(text).then(() => {
-    toast('賃率データをクリップボードにコピーしました。編集後に貼り直して再インポートできます。', 'success');
-  }).catch(() => {
-    toast('テキストエリアに出力しました。手動でコピーしてください。', 'info');
-  });
-}
-
-// 全置換インポート
-function importRatesReplace() {
-  const data = $('#import-rate-data').value.trim();
-  if (!data) {
-    toast('データを入力してください', 'warning');
-    return;
-  }
-
-  const parsed = parseRateLines(data);
-  if (parsed.length === 0) {
-    toast('インポートできるデータがありませんでした', 'warning');
-    return;
-  }
-
-  // 全置換
-  let id = 1;
-  parsed.forEach(r => { r.id = id++; });
-  DB.save(DB.KEYS.RATES, parsed);
-  renderRates();
-  hideModal();
-  toast(`${parsed.length}件の賃率を全置換しました`, 'success');
-}
-
-// 賃率行パーサー（9列 or 11列 自動判定）
-function parseRateLines(data) {
-  const lines = data.split('\n');
-  const results = [];
-
-  const parseVal = (val) => {
-    if (!val) return 0;
-    const numStr = val.toString().replace(/[¥,]/g, '').trim();
-    const num = parseFloat(numStr);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const isHeader = (cols) => {
-    const joined = cols.join(' ');
-    return joined.includes('判定CD') || joined.includes('コード') ||
-      joined.includes('労務費率') || joined.includes('月額') ||
-      joined.includes('職種');
-  };
-
-  lines.forEach(line => {
-    if (!line.trim()) return;
-    const cols = line.split('\t');
-
-    if (isHeader(cols)) return;
-
-    let rateCode, department, section, subsection;
-    let monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate;
-
-    if (cols.length >= 10) {
-      // 11列形式: [名称][ID][CD][部][課][係][月][日][時][分][秒]
-      rateCode = (cols[2] || '').trim();
-      department = (cols[3] || '').trim();
-      section = (cols[4] || '').trim();
-      subsection = (cols[5] || '').trim();
-      monthlyRate = parseVal(cols[6]);
-      dailyRate = parseVal(cols[7]);
-      hourlyRate = parseVal(cols[8]);
-      minuteRate = parseVal(cols[9]);
-      secondRate = parseVal(cols[10]);
-    } else if (cols.length >= 5) {
-      // 9列形式: [CD][部][課][係][月][日][時][分][秒]
-      rateCode = (cols[0] || '').trim();
-      department = (cols[1] || '').trim();
-      section = (cols[2] || '').trim();
-      subsection = (cols[3] || '').trim();
-      monthlyRate = parseVal(cols[4]);
-      dailyRate = parseVal(cols[5]);
-      hourlyRate = parseVal(cols[6]);
-      minuteRate = parseVal(cols[7]);
-      secondRate = parseVal(cols[8]);
-    } else {
-      return; // skip
-    }
-
-    if (!rateCode) return;
-
-    results.push({
-      rateCode, department, section, subsection,
-      monthlyRate, dailyRate, hourlyRate, minuteRate, secondRate
-    });
-  });
-
-  return results;
 }
 
 function importRates() {
@@ -6767,15 +6378,86 @@ function importRates() {
     return;
   }
 
-  const newRates = parseRateLines(data);
+  const lines = data.split('\n');
+  const existingRates = DB.get(DB.KEYS.RATES);
+  const newRates = [];
+  let skipCount = 0;
+  let errorDetails = [];
+
+  console.log(`Starting import of ${lines.length} lines...`);
+
+  lines.forEach((line, index) => {
+    // 空行はスキップ
+    if (!line.trim()) return;
+
+    // タブ区切り以外（例えばExcelからのコピペでスペース変換されてしまった場合など）も考慮したいが、
+    // 基本はタブ区切りを想定。
+    const cols = line.split('\t');
+
+    // 列数チェック緩和: 最低限 コード(2), 部門(3), 月給(6) くらいがあれば許可
+    if (cols.length < 7) {
+      console.warn(`Line ${index + 1} skipped: Not enough columns (${cols.length})`, line);
+      skipCount++;
+      return;
+    }
+
+    // ヘッダー判定（C列が空、または "コード" などの文字列）
+    const col2 = (cols[2] || '').trim();
+    if (col2 === 'コード' || col2 === '職種・役職CD' || !col2) {
+      console.log(`Line ${index + 1} skipped: Header or empty code`);
+      skipCount++;
+      return;
+    }
+
+    // 数値パース（カンマ除去）
+    const parseVal = (val) => {
+      if (!val) return 0;
+      // 円マークやカンマを除去
+      const numStr = val.toString().replace(/[¥,]/g, '').trim();
+      const num = parseFloat(numStr);
+      return isNaN(num) ? 0 : num;
+    };
+
+    // データマッピング (A=0, Start from C=2)
+    // C=Code, D=Dept, E=Section, F=SubSection
+    // G=Monthly, H=Daily, I=Hourly, J=Minute
+
+    const rateCode = col2;
+    const department = (cols[3] || '').trim();
+    const section = (cols[4] || '').trim();
+    const subsection = (cols[5] || '').trim();
+
+    const monthlyRate = parseVal(cols[6]);
+    const dailyRate = parseVal(cols[7]);
+    const hourlyRate = parseVal(cols[8]);
+    const minuteRate = parseVal(cols[9]); // J列がなくても0になる
+
+    if (!rateCode || !department) {
+      console.warn(`Line ${index + 1} skipped: Missing code or dept`);
+      skipCount++;
+      return;
+    }
+
+    newRates.push({
+      // IDは後で採番
+      rateCode,
+      department,
+      section,
+      subsection,
+      monthlyRate,
+      dailyRate,
+      hourlyRate,
+      minuteRate
+    });
+  });
 
   if (newRates.length === 0) {
+    console.error('No valid rates parsed');
     toast('インポートできるデータがありませんでした。\n形式を確認してください（タブ区切り）', 'warning');
     return;
   }
 
   // 既存データとマージ
-  const existingRates = DB.get(DB.KEYS.RATES);
   let addedCount = 0;
   let updatedCount = 0;
 
@@ -6798,7 +6480,8 @@ function importRates() {
   renderRates();
   hideModal();
 
-  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件`;
+  const msg = `インポート完了: 追加 ${addedCount}件, 更新 ${updatedCount}件 (スキップ ${skipCount}行)`;
+  console.log(msg);
   toast(msg, 'success');
 }
 
@@ -7032,22 +6715,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSelBtn = $('#delete-selected-bom-btn');
   if (deleteSelBtn) deleteSelBtn.addEventListener('click', deleteSelectedBoms);
 
-  // ボタン登録（null安全）
-  const importBomBtn = $('#import-bom-btn');
-  if (importBomBtn) importBomBtn.addEventListener('click', showImportBomModal);
+  $('#import-bom-btn').addEventListener('click', showImportBomModal);
+  $('#add-rate-btn').addEventListener('click', showAddRateModal);
+  $('#import-rates-btn').addEventListener('click', showImportRateModal);
+  $('#add-user-btn').addEventListener('click', showAddUserModal);
 
-  const addRateBtn = $('#add-rate-btn');
+  // 賃率管理
+  const addRateBtn = document.getElementById('add-rate-btn');
   if (addRateBtn) addRateBtn.addEventListener('click', showAddRateModal);
 
-  const importRateBtn = $('#import-rates-btn');
-  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal);
+  const importRateBtn = document.getElementById('import-rates-btn');
+  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal); // 一括インポートボタンも同じモーダルを開く（中にインポート機能があるため）
 
-  const addUserBtn = $('#add-user-btn');
-  if (addUserBtn) addUserBtn.addEventListener('click', showAddUserModal);
-
-  const filterReportBtn = $('#filter-report-btn');
-  if (filterReportBtn) filterReportBtn.addEventListener('click', renderReport);
-
+  // 月次報告
+  $('#filter-report-btn').addEventListener('click', renderReport);
+  
   const genReportBtn = $('#generate-report-btn');
   if (genReportBtn) genReportBtn.addEventListener('click', printReport);
 
@@ -7059,28 +6741,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // 月次報告
 // ========================================
 
-function renderReport(argStart, argEnd) {
-  const startDateEl = document.getElementById('report-start-date');
-  const endDateEl = document.getElementById('report-end-date');
-  
-  // 優先順位: 1.引数 2.DOM 3.フォールバック
-  let startDate = (argStart !== undefined && typeof argStart === 'string') ? argStart.trim() : (startDateEl ? startDateEl.value.trim() : '');
-  let endDate = (argEnd !== undefined && typeof argEnd === 'string') ? argEnd.trim() : (endDateEl ? endDateEl.value.trim() : '');
-
-  // 究極のフォールバック: 引数もDOMも空で、ユーザーが「どうしても集計したい」場合のための手入力ダイアログ
-  if (startDate === '' && endDate === '' && argStart === '') {
-    // 引数として空文字が明示的に渡された（ボタンがおされたが値が取れなかった）場合にのみ発動
-    const pStart = window.prompt("期間が自動取得できませんでした。開始日を直接入力してください (例: 2025/01/01)\n※全期間を集計する場合はキャンセルか空のままOKを押してください");
-    if (pStart) {
-      startDate = pStart.trim();
-      const pEnd = window.prompt("終了日を入力してください (例: 2026/12/31)\n※未入力で開始日以降すべて", "2026/12/31");
-      if (pEnd) endDate = pEnd.trim();
-    }
-  }
-
-  console.log('[renderReport] startDateEl found:', !!startDateEl, 'DOM value:', startDateEl ? startDateEl.value : null);
-  console.log('[renderReport] argument argStart:', argStart);
-  console.log('[renderReport] Final startDate:', startDate);
+function renderReport() {
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
 
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
@@ -7090,55 +6753,25 @@ function renderReport(argStart, argEnd) {
   // 完了案件をフィルタ
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
 
-  // 日付文字列をDateオブジェクトに変換する堅牢な関数
-  const parseDate = (d) => {
-    if (!d) return null;
-    // 全角数字を半角に変換
-    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-    // スラッシュ/ドット/年月日をハイフンに統一
-    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
     s = s.replace(/\s+/g, '');
-    // YYYY-MM-DD形式かチェック
-    const parts = s.split('-').filter(Boolean);
-    if (parts.length >= 3) {
-      const y = parseInt(parts[0]);
-      const m = parseInt(parts[1]) - 1;
-      const day = parseInt(parts[2]);
-      if (y > 1900 && m >= 0 && day > 0) {
-        return new Date(y, m, day);
-      }
-    }
-    // それ以外の場合、Dateコンストラクタで試行
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt;
-    return null;
+    return s;
   };
 
-  const filterStart = parseDate(startDate);
-  const filterEnd = parseDate(endDate);
-
-  console.log('[renderReport] startDate入力:', startDate, '-> parseDate:', filterStart);
-  console.log('[renderReport] endDate入力:', endDate, '-> parseDate:', filterEnd);
+  console.log('[renderReport] startDate:', startDate, '-> norm:', normDate(startDate));
+  console.log('[renderReport] endDate:', endDate, '-> norm:', normDate(endDate));
   console.log('[renderReport] 完了案件数:', filteredOrders.length);
-  // デバッグ: 最初の3件のdueDateを表示
-  filteredOrders.slice(0, 3).forEach((o, i) => {
-    console.log('[renderReport] サンプル案件' + i + ': dueDate=' + JSON.stringify(o.dueDate) + ' parseDate=' + parseDate(o.dueDate));
-  });
 
-  // 日付フィルタ (Date型比較)
-  if (filterStart) {
-    filterStart.setHours(0, 0, 0, 0);
-    filteredOrders = filteredOrders.filter(o => {
-      const d = parseDate(o.dueDate);
-      return !d || d >= filterStart; // 日付パース不可なら除外しない
-    });
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (filterEnd) {
-    filterEnd.setHours(23, 59, 59, 999);
-    filteredOrders = filteredOrders.filter(o => {
-      const d = parseDate(o.dueDate);
-      return !d || d <= filterEnd; // 日付パース不可なら除外しない
-    });
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
   console.log('[renderReport] フィルタ後の案件数:', filteredOrders.length);
 
@@ -7242,19 +6875,14 @@ function renderReport(argStart, argEnd) {
       departmentTimes[dept] += orderDeptTimes[dept] || 0;
     });
 
-    const unitCost = Math.round(orderCost / order.quantity);
-    const unitTime = Math.round(orderTime / order.quantity);
-
     return `
       <tr>
         <td>${order.projectName}</td>
         <td>${order.productName}</td>
         <td>${formatDate(order.dueDate)}</td>
-        <td style="text-align: right;">${order.quantity}</td>
-        <td style="text-align: right;">${unitTime.toLocaleString()} 分</td>
-        <td style="text-align: right;">¥${unitCost.toLocaleString()}</td>
-        <td style="text-align: right;">${orderTime.toLocaleString()} 分</td>
-        <td style="text-align: right;">¥${Math.round(orderCost).toLocaleString()}</td>
+        <td>${order.quantity}</td>
+        <td>${Math.round(orderCost).toLocaleString()}</td>
+        <td>${orderTime.toLocaleString()}</td>
       </tr>
     `;
   }).join('');
@@ -7273,46 +6901,32 @@ function renderReport(argStart, argEnd) {
   const invLogs = DB.get(DB.KEYS.INV_LOGS);
   const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
 
-  // 最新の月次締めデータを取得
-  const latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
-
-  // 在庫計算（月次締めデータから直接取得し、完全一致させる）
+  // 在庫計算（カテゴリ別）
   const categoryStocks = {};
-  let totalInvAmount = latestMonthly ? latestMonthly.total : 0;
+  let totalInvAmount = 0;
   let totalFixedAmount = 0;
   let totalNormalAmount = 0;
 
-  if (latestMonthly && latestMonthly.summary) {
-    Object.entries(latestMonthly.summary).forEach(([code, s]) => {
-      const catName = s.name;
-      categoryStocks[catName] = { total: s.amount, normal: 0, fixed: 0 };
-      if (code === 'fixed') {
-         categoryStocks[catName].fixed = s.amount;
-         totalFixedAmount += s.amount;
-      } else {
-         categoryStocks[catName].normal = s.amount;
-         totalNormalAmount += s.amount;
-      }
-    });
-  } else {
-    // 月次締めがない場合のフォールバック（リアルタイム）
-    invProducts.forEach(product => {
-      const stock = getCurrentStock(product.id, invLogs);
-      const amount = Math.round(stock * product.price);
-      const catName = INV_CATEGORIES[product.category] || product.category;
-      if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
-      
-      if (product.isFixed) {
-        categoryStocks[catName].fixed += amount;
-        totalFixedAmount += amount;
-      } else {
-        categoryStocks[catName].normal += amount;
-        totalNormalAmount += amount;
-      }
-      categoryStocks[catName].total += amount;
-      totalInvAmount += amount;
-    });
-  }
+  invProducts.forEach(product => {
+    const stock = getCurrentStock(product.id, invLogs);
+    const amount = Math.round(stock * product.price);
+
+    // カテゴリ別集計
+    const catName = INV_CATEGORIES[product.category] || product.category;
+    if (!categoryStocks[catName]) {
+      categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
+    }
+
+    if (product.isFixed) {
+      categoryStocks[catName].fixed += amount;
+      totalFixedAmount += amount;
+    } else {
+      categoryStocks[catName].normal += amount;
+      totalNormalAmount += amount;
+    }
+    categoryStocks[catName].total += amount;
+    totalInvAmount += amount;
+  });
 
   // 月別在庫推移データ（過去6ヶ月）
   const monthlyTrend = [];
@@ -7321,15 +6935,11 @@ function renderReport(argStart, argEnd) {
     const targetDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
     const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
     const monthData = invMonthly.find(m => m.month === monthKey);
-    let fixedTotal = 0;
-    if (monthData && monthData.summary && monthData.summary['fixed']) {
-      fixedTotal = monthData.summary['fixed'].amount;
-    }
     monthlyTrend.push({
       month: monthKey,
       label: `${targetDate.getMonth() + 1}月`,
       total: monthData?.total || 0,
-      fixedTotal: fixedTotal
+      fixedTotal: monthData?.fixedTotal || 0
     });
   }
 
@@ -7341,13 +6951,13 @@ function renderReport(argStart, argEnd) {
       return `
         <div style="margin-bottom: 0.75rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-            <span style="font-size: 0.875rem; color: #334155;">${cat}</span>
-            <span style="font-size: 0.875rem; font-weight: 500; color: #1e293b;">¥${Math.round(data.total).toLocaleString()}</span>
+            <span style="font-size: 0.875rem;">${cat}</span>
+            <span style="font-size: 0.875rem; font-weight: 500;">¥${Math.round(data.total).toLocaleString()}</span>
           </div>
-          <div style="background: #e2e8f0; border-radius: 4px; height: 12px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #2563eb, #60a5fa); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+          <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light)); height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem;">
             <span>通常: ¥${Math.round(data.normal).toLocaleString()}</span>
             <span>不動品: ¥${Math.round(data.fixed).toLocaleString()}</span>
           </div>
@@ -7360,24 +6970,18 @@ function renderReport(argStart, argEnd) {
   const trendBars = monthlyTrend.map(m => {
     const barHeight = Math.round((m.total / maxTrendValue) * 100);
     const fixedHeight = m.total > 0 ? Math.round((m.fixedTotal / m.total) * barHeight) : 0;
-    const minBarHeight = m.total > 0 ? Math.max(barHeight, 5) : 0;
     return `
       <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-        <div style="width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
-          <div style="background: linear-gradient(180deg, #2563eb, #60a5fa); width: 100%; height: ${minBarHeight}%; min-height: ${m.total > 0 ? '4px' : '0'}; border-radius: 4px 4px 0 0; position: relative;">
-            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: #f59e0b; opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
+        <div style="flex: 1; width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+          <div style="background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light)); width: 100%; height: ${barHeight}%; border-radius: 4px 4px 0 0; position: relative;">
+            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: var(--color-warning); opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
           </div>
         </div>
-        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: #64748b;">${m.label}</div>
-        <div style="font-size: 0.625rem; color: #64748b;">${m.total > 0 ? `¥${Math.round(m.total / 10000)}万` : '-'}</div>
+        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--color-text-muted);">${m.label}</div>
+        <div style="font-size: 0.625rem; color: var(--color-text-muted);">${m.total > 0 ? `¥${Math.round(m.total / 10000)}万` : '-'}</div>
       </div>
     `;
   }).join('');
-
-  const avgCostPerUnit = totalQuantity > 0 ? Math.round(totalCost / totalQuantity) : 0;
-  const totalDays = (totalTime / 480).toFixed(1); // 1日=8時間換算
-  const defectRate = totalQuantity > 0 ? ((totalDefects / totalQuantity) * 100).toFixed(1) : 0;
-  const deadStockRatio = totalInvAmount > 0 ? ((totalFixedAmount / totalInvAmount) * 100).toFixed(1) : 0;
 
   const html = `
     <div class="report-print" id="report-print-area">
@@ -7396,20 +7000,12 @@ function renderReport(argStart, argEnd) {
             <span class="summary-value">${Math.round(totalCost).toLocaleString()} 円</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">1台当たり平均</span>
-            <span class="summary-value">${avgCostPerUnit.toLocaleString()} 円/台</span>
+            <span class="summary-label">総生産時間</span>
+            <span class="summary-value">${totalTime.toLocaleString()} 分</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">総生産時間</span>
-            <span class="summary-value">${totalTime.toLocaleString()} 分 (${totalDays}日)</span>
-          </div>
-          <div class="summary-item" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 0.5rem;">
-            <span class="summary-label" style="color:#dc2626;">不良率 (歩留まり逆数)</span>
-            <span class="summary-value" style="color:#dc2626;">${defectRate} %</span>
-          </div>
-          <div class="summary-item" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.5rem;">
-            <span class="summary-label" style="color:#d97706;">不動品比率</span>
-            <span class="summary-value" style="color:#d97706;">${deadStockRatio} %</span>
+            <span class="summary-label" style="color:var(--color-danger);">不良発生数</span>
+            <span class="summary-value" style="color:var(--color-danger);">${totalDefects.toLocaleString()} 件</span>
           </div>
         </div>
       </div>
@@ -7443,7 +7039,7 @@ function renderReport(argStart, argEnd) {
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <div class="summary-item">
                     <span class="summary-label">不良総数 (個数ベース)</span>
-                    <span class="summary-value" style="color:#dc2626; font-size: 1.5rem;">${totalDefectQty} 個</span>
+                    <span class="summary-value" style="color:var(--color-danger); font-size: 1.5rem;">${totalDefectQty} 個</span>
                 </div>
                  <div class="summary-item" style="margin-top: 1rem;">
                     <span class="summary-label">発生件数 (レコード数)</span>
@@ -7454,39 +7050,39 @@ function renderReport(argStart, argEnd) {
       </div>
 
       <!-- 在庫金額セクション -->
-      <div class="report-section" style="background: #ffffff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-        <h3 style="margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; display: inline-block;">■在庫金額サマリ</h3>
-        <div class="report-summary" style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+      <div class="report-section" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem;">■在庫金額サマリ</h3>
+        <div class="report-summary" style="margin-bottom: 1.5rem;">
           <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">在庫金額合計</span>
-            <span class="summary-value" style="color: #1e40af; font-size: 2rem; font-weight: 800; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);">¥${Math.round(totalInvAmount).toLocaleString()}</span>
+            <span class="summary-label">在庫金額合計</span>
+            <span class="summary-value" style="color: var(--color-primary);">¥${Math.round(totalInvAmount).toLocaleString()}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">通常在庫</span>
-            <span class="summary-value" style="color: #059669; font-size: 1.5rem; font-weight: bold;">¥${Math.round(totalNormalAmount).toLocaleString()}</span>
+            <span class="summary-label">通常在庫</span>
+            <span class="summary-value" style="color: var(--color-success);">¥${Math.round(totalNormalAmount).toLocaleString()}</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">不動品在庫</span>
-            <span class="summary-value" style="color: #d97706; font-size: 1.5rem; font-weight: bold;">¥${Math.round(totalFixedAmount).toLocaleString()}</span>
+            <span class="summary-label">不動品在庫</span>
+            <span class="summary-value" style="color: var(--color-warning);">¥${Math.round(totalFixedAmount).toLocaleString()}</span>
           </div>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
           <!-- 分類別グラフ -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📊 分類別在庫金額</h4>
-            ${categoryRows || '<p style="color: #94a3b8;">在庫データがありません</p>'}
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📊 分類別在庫金額</h4>
+            ${categoryRows || '<p class="text-muted">在庫データがありません</p>'}
           </div>
           
           <!-- 月別推移グラフ -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📈 月別在庫推移（過去6ヶ月）</h4>
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📈 月別在庫推移（過去6ヶ月）</h4>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md);">
               ${trendBars}
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #2563eb; border-radius: 2px;"></span> 通常</span>
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> 不動品</span>
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem;">
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-primary); border-radius: 2px;"></span> 通常</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: var(--color-warning); border-radius: 2px;"></span> 不動品</span>
             </div>
           </div>
         </div>
@@ -7500,15 +7096,13 @@ function renderReport(argStart, argEnd) {
               <th>物件名</th>
               <th>製品名</th>
               <th>納期</th>
-              <th style="text-align: right;">台数</th>
-              <th style="text-align: right;">台/生産時間</th>
-              <th style="text-align: right;">台/加工費</th>
-              <th style="text-align: right;">総生産時間</th>
-              <th style="text-align: right;">総加工費</th>
+              <th>台数</th>
+              <th>加工費合計</th>
+              <th>時間(分)</th>
             </tr>
           </thead>
           <tbody>
-            ${detailRows || '<tr><td colspan="8" class="text-center text-muted">完了案件がありません</td></tr>'}
+            ${detailRows || '<tr><td colspan="6" class="text-center text-muted">完了案件がありません</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -7520,7 +7114,7 @@ function renderReport(argStart, argEnd) {
             <div class="dept-item">
               <span class="dept-name">${dept}</span>
               <span class="dept-cost">${Math.round(cost).toLocaleString()} 円</span>
-              <span class="dept-time" style="font-size: 0.75rem; color: #64748b;">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
+              <span class="dept-time" style="font-size: 0.75rem; color: var(--color-text-muted);">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
             </div>
           `).join('')}
         </div>
@@ -7532,38 +7126,28 @@ function renderReport(argStart, argEnd) {
 }
 
 function exportReportCSV() {
-  const startDateEl = document.getElementById('report-start-date');
-  const endDateEl = document.getElementById('report-end-date');
-  const startDate = startDateEl ? startDateEl.value.trim() : '';
-  const endDate = endDateEl ? endDateEl.value.trim() : '';
+  const startDate = $('#report-start-date').value;
+  const endDate = $('#report-end-date').value;
   const orders = DB.get(DB.KEYS.ORDERS);
   const rates = DB.get(DB.KEYS.RATES);
   const boms = DB.get(DB.KEYS.BOM);
 
-  const parseDate = (d) => {
-    if (!d) return null;
-    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
+  const normDate = (d) => {
+    if (!d) return '';
+    let s = d.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/[\/.\u5e74\u6708]/g, '-').replace(/\u65e5/g, '').trim();
     s = s.replace(/\s+/g, '');
-    const parts = s.split('-').filter(Boolean);
-    if (parts.length >= 3) {
-      const y = parseInt(parts[0]); const m = parseInt(parts[1]) - 1; const day = parseInt(parts[2]);
-      if (y > 1900 && m >= 0 && day > 0) return new Date(y, m, day);
-    }
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt;
-    return null;
+    return s;
   };
   let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
-  const filterStart = parseDate(startDate);
-  const filterEnd = parseDate(endDate);
-  if (filterStart) {
-    filterStart.setHours(0, 0, 0, 0);
-    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d >= filterStart; });
+
+  if (normDate(startDate)) {
+    const ns = normDate(startDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) >= ns);
   }
-  if (filterEnd) {
-    filterEnd.setHours(23, 59, 59, 999);
-    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d <= filterEnd; });
+  if (normDate(endDate)) {
+    const ne = normDate(endDate);
+    filteredOrders = filteredOrders.filter(o => normDate(o.dueDate) <= ne);
   }
 
   if (filteredOrders.length === 0) {
@@ -7582,7 +7166,7 @@ function exportReportCSV() {
     '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
   };
 
-  const headers = ['物件名', '製品名', '納期', '台数', '台/生産時間(分)', '台/加工費(円)', '総生産時間(分)', '総加工費(円)'];
+  const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
   let csvContent = headers.join(',') + '\n';
 
   filteredOrders.forEach(order => {
@@ -7608,19 +7192,14 @@ function exportReportCSV() {
       orderCost = 25000 * order.quantity;
     }
 
-    const unitTime = Math.round(orderTime / order.quantity);
-    const unitCost = Math.round(orderCost / order.quantity);
-
     // エスケープ処理
     const row = [
       `"${order.projectName.replace(/"/g, '""')}"`,
       `"${order.productName.replace(/"/g, '""')}"`,
-      order.dueDate || '',
+      normDate(order.dueDate),
       order.quantity,
-      unitTime,
-      unitCost,
-      Math.round(orderTime),
-      Math.round(orderCost)
+      Math.round(orderCost),
+      Math.round(orderTime)
     ];
     csvContent += row.join(',') + '\n';
   });
@@ -7631,78 +7210,52 @@ function exportReportCSV() {
   const dateStr = new Date().toISOString().split('T')[0];
   link.href = URL.createObjectURL(blob);
   link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
-  document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
 
 function printReport() {
-  let reportArea = $('#report-print-area');
+  const reportArea = $('#report-print-area');
   if (!reportArea) {
-    // レポートが未生成の場合、まずDOMから期間を取得して生成
-    const startDateEl = document.getElementById('report-start-date');
-    const endDateEl = document.getElementById('report-end-date');
-    const startDate = startDateEl ? startDateEl.value.trim() : '';
-    const endDate = endDateEl ? endDateEl.value.trim() : '';
-    renderReport(startDate, endDate);
-    // DOM更新を待ってから印刷
-    setTimeout(() => {
-      reportArea = $('#report-print-area');
-      if (!reportArea) {
-        toast('レポートの生成に失敗しました。先に「集計」ボタンを押してください。', 'error');
-        return;
-      }
-      doPrintReport(reportArea);
-    }, 300);
+    renderReport();
+    const reportArea2 = $('#report-print-area');
+    if (!reportArea2) {
+      toast('レポートの生成に失敗しました', 'error');
+      return;
+    }
+    doPrintReport(reportArea2);
     return;
   }
   doPrintReport(reportArea);
 }
 
 function doPrintReport(reportArea) {
-  // iframeを使った印刷（ポップアップブロッカー回避）
-  let printIframe = document.getElementById('print-iframe');
-  if (!printIframe) {
-    printIframe = document.createElement('iframe');
-    printIframe.id = 'print-iframe';
-    printIframe.style.visibility = 'hidden';
-    printIframe.style.position = 'fixed';
-    printIframe.style.right = '0';
-    printIframe.style.bottom = '0';
-    document.body.appendChild(printIframe);
-  }
 
-  const printHTML = `
+  // 印刷用ウィンドウで開く
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>月次製造原価報告書</title>
+      <title>月次報告書</title>
       <style>
-        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; padding: 2rem; color: #333; line-height: 1.5; }
-        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 2px solid #1e40af; padding-bottom: 0.5rem; }
-        .report-meta { color: #666; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: right; }
+        body { font-family: 'Noto Sans JP', sans-serif; padding: 2rem; color: #1F2937; }
+        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .report-meta { color: #6B7280; margin-bottom: 2rem; }
         .report-section { margin-bottom: 2rem; }
-        .report-section h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1e40af; border-left: 4px solid #1e40af; padding-left: 0.5rem; }
-        .report-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
-        .summary-item { display: flex; flex-direction: column; background: #f8fafc; padding: 0.75rem 1rem; border-radius: 4px; border: 1px solid #e2e8f0; min-width: 120px; }
-        .summary-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; font-weight: bold; }
-        .summary-value { font-size: 1.1rem; font-weight: bold; color: #0f172a; }
-        .report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        .report-table th, .report-table td { border: 1px solid #cbd5e1; padding: 0.4rem 0.5rem; }
-        .report-table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+        .report-section h3 { font-size: 1rem; margin-bottom: 1rem; color: #1F2937; }
+        .report-summary { display: flex; gap: 2rem; margin-bottom: 1rem; }
+        .summary-item { display: flex; flex-direction: column; }
+        .summary-label { font-size: 0.875rem; color: #6B7280; }
+        .summary-value { font-size: 1.25rem; font-weight: bold; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .report-table th, .report-table td { border: 1px solid #D1D5DB; padding: 0.5rem; text-align: left; }
+        .report-table th { background: #F3F4F6; font-weight: 600; }
         .report-departments { display: flex; gap: 2rem; }
         .dept-item { display: flex; flex-direction: column; }
-        .dept-name { font-size: 0.875rem; color: #64748b; }
-        .dept-cost { font-size: 1rem; font-weight: bold; color: #0f172a; }
-        @media print { 
-          @page { size: A4 portrait; margin: 10mm; }
-          body { padding: 0; font-size: 9pt; }
-          .report-section { page-break-inside: avoid; }
-          .report-table { font-size: 8pt; }
-          .summary-item { border: 1px solid #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
+        .dept-name { font-size: 0.875rem; color: #6B7280; }
+        .dept-cost { font-size: 1rem; font-weight: bold; }
+        @media print { body { padding: 0; } }
       
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
@@ -7714,18 +7267,9 @@ function doPrintReport(reportArea) {
       ${reportArea.innerHTML}
     </body>
     </html>
-  `;
-
-  const doc = printIframe.contentDocument || printIframe.contentWindow.document;
-  doc.open();
-  doc.write(printHTML);
-  doc.close();
-
-  // スタイルの読み込み等のために少し待ってからダイアログを表示
-  setTimeout(() => {
-    printIframe.contentWindow.focus();
-    printIframe.contentWindow.print();
-  }, 500);
+  `);
+  printWindow.document.close();
+  printWindow.print();
 }
 
 // ========================================
@@ -7827,14 +7371,8 @@ const INV_CATEGORIES = {
   '09': 'PAO資材',
   '10': '製品在庫',
   '11': '工場部材',
-  '12': '外注資材',
-  '13': '副資材',
-  '14': '消耗品',
   '15': '外注在庫',
-  '16': '仕掛品',
-  '17': '設備部品',
-  '24': '特注品',
-  '26': '仕掛在庫'
+  '16': '仕掛品'
 };
 
 // 在庫スキャナー用
@@ -7911,9 +7449,6 @@ function renderInvScanPage() {
   // 本日の棚卸履歴を表示
   renderTodayInvLogs();
 
-  // ExcelインポートUIの初期化
-  setupInvExcelImport();
-
   // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
   /*
   if (isMobileDevice()) {
@@ -7921,323 +7456,6 @@ function renderInvScanPage() {
   }
   */
 }
-
-function setupInvExcelImport() {
-  const fileInput = $('#inv-excel-upload');
-  const importBtn = $('#inv-excel-import-btn');
-  const confirmBtn = $('#inv-excel-confirm-btn');
-  const previewDiv = $('#inv-excel-preview');
-  const tbody = $('#inv-excel-preview-body');
-  const monthInput = $('#inv-excel-month');
-
-  if (!fileInput || !importBtn) return;
-
-  let parsedItems = [];
-
-  importBtn.onclick = () => {
-    const file = fileInput.files[0];
-    if (!file) {
-      toast('Excelファイルを選択してください', 'error');
-      return;
-    }
-
-    if (typeof XLSX === 'undefined') {
-      toast('Excel解析ライブラリが読み込まれていません', 'error');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        
-        // ファイル拡張子が .csv の場合は Shift-JIS としてテキストデコードしてからパース
-        let workbook;
-        if (file.name.toLowerCase().endsWith('.csv')) {
-          const text = new TextDecoder('shift-jis').decode(data);
-          workbook = XLSX.read(text, { type: 'string' });
-        } else {
-          workbook = XLSX.read(data, { type: 'array' });
-        }
-        
-        // 「提出書類」シートを探す、見つからなければ最初のシート
-        const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        
-        // ヘッダーなしの2次元配列としてパース
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        // F1セルの合計金額を取得（参考表示用）
-        let f1Total = 0;
-        if (rows.length > 0 && rows[0][5]) {
-          const f1Str = String(rows[0][5]).replace(/[¥\\,\s]/g, '');
-          f1Total = parseFloat(f1Str) || 0;
-        }
-        
-        const products = DB.get(DB.KEYS.INV_PRODUCTS);
-        parsedItems = [];
-
-        // CSV列マッピング:
-        // E列(idx 4) = 資材コード, G列(idx 6) = 品名, N列(idx 13) = 単価
-        // S列(idx 18) = 数量, T列(idx 19) = 合計金額, U列(idx 20) = 合計金額(1%増し)
-        rows.forEach((row, rowIndex) => {
-          if (rowIndex < 2) return; // ヘッダー行スキップ（0:サマリ, 1:列名）
-          
-          // S列（数量）を取得
-          const sColValue = row[18];
-          if (sColValue === undefined || sColValue === null || sColValue === '') return;
-          
-          const quantity = parseInt(sColValue, 10);
-          if (isNaN(quantity)) return; // 数字でない場合はスキップ
-
-          // 各列の値を取得
-          const productCode = row[4] ? String(row[4]).trim() : '';  // E列: 資材コード
-          const productName = row[6] ? String(row[6]).trim() : '';  // G列: 品名
-          const category = row[1] ? String(row[1]).trim() : '99';   // B列: 識別コード分類
-          const unitPriceRaw = row[13];                              // N列: 単価
-          const amountRaw = row[19];                                 // T列: 合計金額
-          const amountWithTaxRaw = row[20];                          // U列: 合計金額(1%増し)
-          
-          const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
-          const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
-          const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,]/g, '')) || 0;
-
-          if (!productCode && !productName) return; // コードも品名もない行はスキップ
-
-          // マスタから検索
-          let matchedProduct = products.find(p => p.id === productCode);
-          
-          // マスタにない場合は仮情報として保持
-          const productInfo = matchedProduct || {
-            id: productCode || `TEMP_${rowIndex}`,
-            name: productName || `不明品(行${rowIndex + 1})`,
-            category: category,
-            price: unitPrice,
-            isFixed: false
-          };
-
-          parsedItems.push({
-            product: productInfo,
-            quantity: quantity,
-            unitPrice: unitPrice,
-            amount: amount,
-            amountWithTax: amountWithTax,
-            isMatched: !!matchedProduct
-          });
-        });
-
-        if (parsedItems.length === 0) {
-          toast('取り込み対象のデータが見つかりませんでした', 'warning');
-          return;
-        }
-
-        // 集計
-        const totalAmount = parsedItems.reduce((s, i) => s + i.amountWithTax, 0);
-        const matchedCount = parsedItems.filter(i => i.isMatched).length;
-
-        // プレビュー表示
-        tbody.innerHTML = parsedItems.slice(0, 50).map(item => `
-          <tr>
-            <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.product.name}">
-              ${item.product.name}
-            </td>
-            <td style="text-align:center;">${item.quantity}</td>
-            <td style="text-align:right;">¥${item.amountWithTax.toLocaleString()}</td>
-            <td style="color:${item.isMatched ? 'var(--color-success)' : '#f59e0b'};">${item.isMatched ? 'マスタ一致' : 'CSV直接'}</td>
-          </tr>
-        `).join('') + (parsedItems.length > 50 ? `<tr><td colspan="4" style="text-align:center; color:#666;">…他${parsedItems.length - 50}件</td></tr>` : '');
-
-        previewDiv.style.display = 'block';
-        toast(`${parsedItems.length}件読込 (合計: ¥${totalAmount.toLocaleString()}, CSV合計: ¥${f1Total.toLocaleString()})`, 'success');
-
-      } catch (err) {
-        console.error(err);
-        toast('Excelの解析に失敗しました: ' + err.message, 'error');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  if (confirmBtn) {
-    confirmBtn.onclick = () => {
-      if (parsedItems.length === 0) {
-        toast('取り込みデータがありません', 'warning');
-        return;
-      }
-
-      const targetMonth = monthInput ? monthInput.value : '';
-      // targetMonth がある場合はその月末日時をタイムスタンプにする、ない場合は現在日時
-      let timestamp = new Date().toISOString();
-      if (targetMonth) {
-        // 対象月の末日を作成 (例: "2026-04" -> 2026-04-30 23:59:59)
-        const [y, m] = targetMonth.split('-');
-        const lastDay = new Date(y, m, 0, 23, 59, 59);
-        timestamp = lastDay.toISOString();
-      }
-
-      const currentUser = DB.get(DB.KEYS.CURRENT_USER);
-      const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
-      const itemCount = parsedItems.length; // 件数を先に保存
-
-      const newLogs = parsedItems.map(item => ({
-        productId: item.product.id,
-        productName: item.product.name || '',
-        type: 'count', // 棚卸
-        quantity: item.quantity,
-        unitPrice: item.unitPrice || 0,
-        amount: item.amount || 0,
-        amountWithTax: item.amountWithTax || 0,
-        note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-        user: userName,
-        timestamp: timestamp
-      }));
-
-      console.log('🔄 Excel取込: 登録開始', newLogs.length, '件');
-      console.log('🔄 サンプルデータ:', JSON.stringify(newLogs[0]));
-      console.log('🔄 合計金額:', newLogs.reduce((s,l) => s + (l.amountWithTax || 0), 0).toLocaleString());
-
-      // ボタン無効化（二重クリック防止）
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = '登録中...';
-
-      // 【重要】取り込んだ資材を商品マスタへ反映（新規追加・単価更新）
-      const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-      let masterUpdateCount = 0;
-      let masterAddCount = 0;
-
-      parsedItems.forEach(item => {
-        const pData = item.product;
-        const existingIdx = products.findIndex(p => p.id === pData.id || (pData.name && p.name === pData.name));
-        
-        if (existingIdx >= 0) {
-          products[existingIdx].price = item.unitPrice;
-          masterUpdateCount++;
-        } else {
-          products.push({
-            id: pData.id,
-            name: pData.name,
-            category: pData.category || '99',
-            price: item.unitPrice,
-            isFixed: false
-          });
-          masterAddCount++;
-        }
-      });
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
-      console.log(`✅ 商品マスタ同期完了: 新規${masterAddCount}件、更新${masterUpdateCount}件`);
-
-      // 棚卸仮データに追加 (UPSERT)
-      const scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-      const currentMonth = targetMonth || new Date().toISOString().substring(0, 7);
-
-      parsedItems.forEach(item => {
-        const existingIdx = scanTemp.findIndex(s => s.productId === item.product.id && s.month === currentMonth);
-        if (existingIdx >= 0) {
-          scanTemp[existingIdx].quantity = item.quantity;
-          scanTemp[existingIdx].worker = currentUser.username;
-          scanTemp[existingIdx].workerName = currentUser.displayName;
-          scanTemp[existingIdx].timestamp = timestamp;
-        } else {
-          scanTemp.push({
-            id: Date.now() + "_" + item.product.id + "_" + Math.random().toString(36).substr(2, 4),
-            productId: item.product.id,
-            quantity: item.quantity,
-            worker: currentUser.username,
-            workerName: currentUser.displayName,
-            timestamp: timestamp,
-            month: currentMonth
-          });
-        }
-      });
-      
-      DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
-      console.log('✅ Excel仮取込: 完了');
-      
-      toast(`${itemCount}件の棚卸データを仮登録しました。「棚卸スキャン確認」画面にて確認・確定処理を行ってください（マスタ新規:${masterAddCount}, 更新:${masterUpdateCount}）`, 'success');
-
-      // 初期化
-      parsedItems = [];
-      previewDiv.style.display = 'none';
-      if (fileInput) fileInput.value = '';
-      if (monthInput) monthInput.value = '';
-      
-      renderTodayInvLogs();
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '確定して登録';
-    };
-  }
-}
-
-// 締め処理保存用のヘルパー関数（既存ロジック分離）
-function saveInvMonthlyClosing(month, result) {
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
-  const existingIndex = monthly.findIndex(m => m.month === month);
-
-  const closingData = {
-    month: month,
-    items: result.items,
-    summary: result.summary,
-    total: result.total,
-    fixedTotal: result.summary['fixed']?.amount || 0,
-    closedAt: new Date().toISOString()
-  };
-
-  if (existingIndex >= 0) {
-    monthly[existingIndex] = closingData;
-  } else {
-    monthly.push(closingData);
-  }
-  
-  DB.save(DB.KEYS.INV_MONTHLY, monthly);
-}
-
-/**
- * 在庫ログから商品マスタへの同期（ユーザー要望: 4月機データ取込用）
- */
-function syncInventoryToMaster(month) {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
-  
-  // 指定された月のログ（Excel取込分）を抽出
-  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
-  
-  if (monthLogs.length === 0) {
-    toast(`${month}のログデータが見つかりません`, 'warning');
-    return;
-  }
-  
-  let addCount = 0;
-  let updateCount = 0;
-  
-  monthLogs.forEach(log => {
-    // IDまたは品名で重複チェック
-    const existing = products.find(p => p.id === log.productId || (log.productName && p.name === log.productName));
-    
-    if (existing) {
-      // 金額は上書き
-      existing.price = log.unitPrice || existing.price;
-      updateCount++;
-    } else {
-      // 新規登録
-      products.push({
-        id: log.productId,
-        name: log.productName || log.productId,
-        category: log.productId.startsWith('N') ? log.productId.substring(1, 3) : '99',
-        price: log.unitPrice || 0,
-        isFixed: false
-      });
-      addCount++;
-    }
-  });
-  
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
-  toast(`${month}のデータからマスタを更新しました（新規:${addCount}, 更新:${updateCount}）`, 'success');
-  
-  if (typeof renderInvProductsTable === 'function') renderInvProductsTable();
-}
-
-// グローバルに公開
-window.syncInventoryToMaster = syncInventoryToMaster;
 
 function displayProductInfo(productId) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS);
@@ -8353,42 +7571,17 @@ function submitInventoryCount() {
     return;
   }
 
-  // 対象月の指定があれば、その月の末日をタイムスタンプとする
   let targetTimestamp = new Date().toISOString();
   let targetMonth = '';
   const monthInput = $('#inv-scan-month');
   if (monthInput && monthInput.value) {
     targetMonth = monthInput.value;
-    const [y, m] = monthInput.value.split('-');
-    if (y && m) {
-      const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-      targetTimestamp = lastDay.toISOString();
-    }
   } else {
-    const now = new Date();
-    targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    targetMonth = getInventoryNextTargetMonth();
   }
 
-  // 棚卸仮データに追加 (UPSERT)
-  const scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const existingIdx = scanTemp.findIndex(s => s.productId === productId && s.month === targetMonth);
-  if (existingIdx >= 0) {
-    scanTemp[existingIdx].quantity = quantity;
-    scanTemp[existingIdx].worker = currentUser.username;
-    scanTemp[existingIdx].workerName = currentUser.displayName;
-    scanTemp[existingIdx].timestamp = targetTimestamp;
-  } else {
-    scanTemp.push({
-      id: Date.now() + "_" + productId,
-      productId: productId,
-      quantity: quantity,
-      worker: currentUser.username,
-      workerName: currentUser.displayName,
-      timestamp: targetTimestamp,
-      month: targetMonth
-    });
-  }
-  DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
+  // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
+  DB.saveTempScan(productId, quantity, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
 
   toast(`${product.name}の棚卸を仮登録しました（${quantity}個、締め処理待ち）`, 'success');
 
@@ -8409,7 +7602,7 @@ function submitInventoryCount() {
 
 function renderTodayInvLogs() {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  const tempScans = DB.getTempScans() || [];
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const today = new Date().toISOString().split('T')[0];
 
@@ -8532,70 +7725,19 @@ function renderInvProductsTable() {
   });
 
   const tbody = $('#inv-products-body');
-  const usageStats = calculateUsageStats(); // 基準在庫算出用データ取得
-
-  $('#inv-products-count').textContent = products.length; // 登録件数表示
-
-  tbody.innerHTML = filtered.map(p => {
-    // 基準在庫（参考値）の取得
-    const stat = usageStats[p.id];
-    const suggested = stat ? Math.ceil((stat.totalUsage / stat.months) * 1.5) : '-';
-
-    return `
+  tbody.innerHTML = filtered.map(p => `
     <tr class="${p.isFixed ? 'fixed-product-row' : ''}">
       <td>${p.id}</td>
       <td>${INV_CATEGORIES[p.category] || p.category}</td>
       <td>${p.name}</td>
       <td>¥${p.price.toLocaleString()}</td>
-      <td>${suggested.toLocaleString()}</td>
       <td>${p.isFixed ? '✓' : ''}</td>
       <td>
         <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${p.id}')">編集</button>
         <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${p.id}')">削除</button>
       </td>
     </tr>
-  `;
-  }).join('');
-}
-
-/**
- * 過去の在庫増減から平均的な消費動向を算出
- */
-function calculateUsageStats() {
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  const stats = {}; // { productId: { totalUsage: 0, months: 0 } }
-  
-  if (monthly.length >= 2) {
-    // 月次締めデータがある場合、月ごとの在庫減を算出
-    const sorted = [...monthly].sort((a, b) => a.month.localeCompare(b.month));
-    for (let i = 1; i < sorted.length; i++) {
-      const prev = sorted[i-1];
-      const curr = sorted[i];
-      curr.items.forEach(item => {
-        const prevItem = prev.items.find(pi => pi.productId === item.productId);
-        if (prevItem) {
-          const usage = Math.max(0, prevItem.currQty - item.currQty);
-          if (usage > 0) {
-            if (!stats[item.productId]) stats[item.productId] = { totalUsage: 0, months: 0 };
-            stats[item.productId].totalUsage += usage;
-            stats[item.productId].months += 1;
-          }
-        }
-      });
-    }
-  }
-
-  // 直近1ヶ月の出庫（out）ログも考慮（月次締めがない場合や最新データの補完）
-  const outLogs = logs.filter(l => l.type === 'out');
-  outLogs.forEach(log => {
-    if (!stats[log.productId]) stats[log.productId] = { totalUsage: 0, months: 0 };
-    stats[log.productId].totalUsage += (log.quantity || 0);
-    // 月次締めがない場合、暫定的に1ヶ月分としてカウント
-    if (stats[log.productId].months === 0) stats[log.productId].months = 1;
-  });
-
-  return stats;
+  `).join('');
 }
 
 function showAddInvProductModal() {
@@ -8759,6 +7901,35 @@ function renderInvAdjustPage() {
   renderInvAdjustLogs();
 }
 
+/**
+ * 在庫ログから商品マスタへの同期
+ */
+function syncInventoryToMaster(month) {
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
+  if (monthLogs.length === 0) return;
+  
+  monthLogs.forEach(log => {
+    const existing = products.find(p => p.id === log.productId || (log.productName && p.name === log.productName));
+    if (existing) {
+      existing.price = log.unitPrice || existing.price;
+    } else {
+      products.push({
+        id: log.productId,
+        name: log.productName || log.productId,
+        category: log.productId.startsWith('N') ? log.productId.substring(1, 3) : '99',
+        price: log.unitPrice || 0,
+        isFixed: false
+      });
+    }
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+}
+
+window.syncInventoryToMaster = syncInventoryToMaster;
+
+
 function submitInvAdjust() {
   const type = $('#inv-adjust-type').value;
   const productId = $('#inv-adjust-product').value;
@@ -8829,28 +8000,9 @@ function renderInvMonthlyPage() {
     monthInput.value = new Date().toISOString().substring(0, 7);
   }
 
-  // 年度チェック表の年度デフォルト設定
-  const yearInput = $('#inv-annual-year');
-  if (yearInput && !yearInput.value) {
-    yearInput.value = new Date().getFullYear();
-  }
-
   $('#view-inv-monthly-btn').onclick = viewInvMonthlySummary;
   $('#run-inv-closing-btn').onclick = runInvMonthlyClosing;
-  
-  if ($('#export-inv-monthly-btn')) {
-    $('#export-inv-monthly-btn').onclick = exportInvMonthlyExcel;
-  }
-  if ($('#view-inv-annual-btn')) {
-    $('#view-inv-annual-btn').onclick = viewInvAnnualSummary;
-  }
-  if ($('#export-inv-annual-btn')) {
-    $('#export-inv-annual-btn').onclick = exportInvAnnualExcel;
-  }
 }
-
-// 現在表示中の月次締め結果を保持（Excel出力用）
-let currentMonthlyResult = null;
 
 function viewInvMonthlySummary() {
   const month = $('#inv-closing-month').value;
@@ -8860,89 +8012,7 @@ function viewInvMonthlySummary() {
   }
 
   const result = calculateInvMonthly(month);
-  currentMonthlyResult = result;
   displayInvMonthlyResult(result);
-  
-  if ($('#export-inv-monthly-btn')) {
-    $('#export-inv-monthly-btn').style.display = 'inline-block';
-  }
-}
-
-function exportInvMonthlyExcel() {
-  if (!currentMonthlyResult) {
-    toast('まず集計確認を行ってください', 'warning');
-    return;
-  }
-  
-  if (typeof XLSX === 'undefined') {
-    toast('Excel出力ライブラリが読み込まれていません', 'error');
-    return;
-  }
-  
-  try {
-    const wb = XLSX.utils.book_new();
-    const month = currentMonthlyResult.month;
-    
-    // シート1: 分類別集計
-    const summaryData = [
-      ['資材分類', '分類名', '当月在庫金額', '前月比']
-    ];
-    let summaryTotal = 0, summaryDiff = 0;
-    
-    // カテゴリ順
-    Object.keys(INV_CATEGORIES).forEach(code => {
-      if (currentMonthlyResult.summary[code]) {
-        const s = currentMonthlyResult.summary[code];
-        summaryData.push([code, s.name, s.amount, s.diff]);
-        summaryTotal += s.amount;
-        summaryDiff += s.diff;
-      }
-    });
-    // 不動品
-    if (currentMonthlyResult.summary['fixed']) {
-      const s = currentMonthlyResult.summary['fixed'];
-      summaryData.push(['fixed', '不動品', s.amount, s.diff]);
-      summaryTotal += s.amount;
-      summaryDiff += s.diff;
-    }
-    
-    summaryData.push(['', '合計', summaryTotal, summaryDiff]);
-    summaryData.push(['', '1.01（TAC口銭1%）', Math.round(summaryTotal * 1.01), '']);
-    
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, wsSummary, '月次集計');
-    
-    // シート2: 商品別明細
-    const itemsData = [
-      ['資材ID', '品名', '分類', '単価', '前月在庫', '当月在庫', '差分', '在庫金額']
-    ];
-    
-    // 品番順にソートして出力
-    const sortedItems = [...currentMonthlyResult.items].sort((a, b) => a.productId.localeCompare(b.productId));
-    
-    sortedItems.forEach(i => {
-      itemsData.push([
-        i.productId,
-        i.name,
-        INV_CATEGORIES[i.category] || i.category,
-        i.price,
-        i.prevQty,
-        i.currQty,
-        i.diff,
-        i.amount
-      ]);
-    });
-    
-    const wsItems = XLSX.utils.aoa_to_sheet(itemsData);
-    XLSX.utils.book_append_sheet(wb, wsItems, '商品別明細');
-    
-    // ダウンロード
-    XLSX.writeFile(wb, `棚卸月次集計_${month}.xlsx`);
-    toast('Excelファイルを出力しました', 'success');
-  } catch (err) {
-    console.error('Excel出力エラー:', err);
-    toast('Excel出力に失敗しました', 'error');
-  }
 }
 
 function calculateInvMonthly(month) {
@@ -8955,178 +8025,67 @@ function calculateInvMonthly(month) {
   prevDate.setMonth(prevDate.getMonth() - 1);
   const prevMonth = prevDate.toISOString().substring(0, 7);
   const prevData = monthly.find(m => m.month === prevMonth);
-  
-  // 当月がすでに締め済みか確認
-  const isClosed = monthly.some(m => m.month === month);
 
   // 当月のログをフィルタ
-  const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
-  
-  // CSV取込ログかどうか判定
-  const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
-  const isCsvImport = csvLogs.length > 0;
-  
+  const monthLogs = logs.filter(l => l.timestamp.startsWith(month));
+
+  // 商品ごとの在庫計算
   const items = [];
   const summary = {};
-  
-  if (isCsvImport) {
-    const productMap = new Map();
-    csvLogs.forEach(log => {
-      const pid = log.productId;
-      if (!productMap.has(pid)) {
-        productMap.set(pid, {
-          productId: pid,
-          name: log.productName || pid,
-          category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
-          price: log.unitPrice || 0,
-          prevQty: 0,
-          currQty: log.quantity || 0,
-          diff: log.quantity || 0,
-          amount: Math.round(log.amountWithTax || 0),
-          isFixed: false,
-          prevAmount: 0
-        });
-      } else {
-        const existing = productMap.get(pid);
-        existing.currQty += log.quantity || 0;
-        existing.diff += log.quantity || 0;
-        existing.amount += Math.round(log.amountWithTax || 0);
-      }
-    });
 
-    if (prevData && prevData.items) {
-      prevData.items.forEach(prevItem => {
-        if (!productMap.has(prevItem.productId)) {
-          productMap.set(prevItem.productId, {
-            productId: prevItem.productId,
-            name: prevItem.name,
-            category: prevItem.category,
-            price: prevItem.price,
-            prevQty: prevItem.currQty,
-            currQty: 0,
-            diff: -prevItem.currQty,
-            amount: 0,
-            isFixed: prevItem.isFixed,
-            prevAmount: Math.round(prevItem.amount || 0)
-          });
-        }
-      });
-    }
-    
-    productMap.forEach((item, pid) => {
-      const masterProduct = products.find(p => p.id === pid);
-      if (masterProduct) {
-        item.name = item.name === pid ? masterProduct.name : item.name;
-        item.category = masterProduct.category;
-        item.price = item.price === 0 ? masterProduct.price : item.price;
-        item.isFixed = !!masterProduct.isFixed;
-      }
-      
-      if (prevData && prevData.items) {
-        const prevItem = prevData.items.find(i => i.productId === pid);
-        if (prevItem) {
-          item.prevQty = prevItem.currQty;
-          item.prevAmount = Math.round(prevItem.amount || 0);
-          item.diff = item.currQty - item.prevQty;
-        }
-      }
-      
-      items.push(item);
-      
-      const catKey = item.isFixed ? 'fixed' : item.category;
-      if (!summary[catKey]) {
-        summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0, prevAmount: 0 };
-      }
-      summary[catKey].amount += item.amount;
-      summary[catKey].prevAmount += (item.prevAmount || 0);
-    });
-    
-  } else {
-    // 手動入力/スキャンモード
-    const productIds = new Set(products.map(p => p.id));
-    if (prevData && prevData.items) {
-      prevData.items.forEach(i => productIds.add(i.productId));
+  products.forEach(p => {
+    // 前月在庫
+    let prevQty = 0;
+    if (prevData) {
+      const prevItem = prevData.items.find(i => i.productId === p.id);
+      if (prevItem) prevQty = prevItem.currQty;
     }
 
-    productIds.forEach(pid => {
-      const p = products.find(x => x.id === pid) || {
-        id: pid,
-        name: pid,
-        category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
-        price: 0,
-        isFixed: false
-      };
-
-      let prevQty = 0;
-      let prevAmount = 0;
-      if (prevData && prevData.items) {
-        const prevItem = prevData.items.find(i => i.productId === pid);
-        if (prevItem) {
-          prevQty = prevItem.currQty;
-          prevAmount = Math.round(prevItem.amount || 0);
-          if (!products.find(x => x.id === pid)) {
-            p.name = prevItem.name;
-            p.category = prevItem.category;
-            p.price = prevItem.price;
-            p.isFixed = prevItem.isFixed;
-          }
-        }
+    // 当月在庫（ログから計算）
+    let currQty = prevQty;
+    const productLogs = monthLogs.filter(l => l.productId === p.id);
+    productLogs.forEach(log => {
+      if (log.type === 'count') {
+        currQty = log.quantity;
+      } else if (log.type === 'in') {
+        currQty += log.quantity;
+      } else if (log.type === 'out') {
+        currQty -= log.quantity;
       }
-
-      // 未締めかつログなしの場合は0にする（ユーザー要望）
-      let currQty = prevQty;
-      const productLogs = monthLogs.filter(l => l.productId === pid);
-      if (!isClosed && monthLogs.length === 0) {
-          currQty = 0;
-      } else {
-          productLogs.forEach(log => {
-            if (log.type === 'count') {
-              currQty = log.quantity;
-            } else if (log.type === 'in') {
-              currQty += log.quantity;
-            } else if (log.type === 'out') {
-              currQty -= log.quantity;
-            }
-          });
-          if (p.isFixed && productLogs.length === 0) {
-            currQty = prevQty;
-          }
-      }
-
-      const diff = currQty - prevQty;
-      const amount = Math.round(currQty * p.price);
-
-      items.push({
-        productId: pid,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        prevQty: prevQty,
-        currQty: currQty,
-        diff: diff,
-        amount: amount,
-        isFixed: p.isFixed,
-        prevAmount: prevAmount
-      });
-
-      const catKey = p.isFixed ? 'fixed' : p.category;
-      if (!summary[catKey]) {
-        summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
-      }
-      summary[catKey].amount += amount;
-      summary[catKey].prevAmount += prevAmount;
     });
-  }
 
-  // 分類別前月比の計算
-  Object.keys(summary).forEach(k => {
-    summary[k].diff = summary[k].amount - summary[k].prevAmount;
+    // 不動品の場合、ログがなければ前月在庫を引き継ぐ
+    if (p.isFixed && productLogs.length === 0) {
+      currQty = prevQty;
+    }
+
+    const diff = currQty - prevQty;
+    const amount = currQty * p.price;
+
+    items.push({
+      productId: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      prevQty: prevQty,
+      currQty: currQty,
+      diff: diff,
+      amount: amount,
+      isFixed: p.isFixed
+    });
+
+    // 分類別集計
+    const catKey = p.isFixed ? 'fixed' : p.category;
+    if (!summary[catKey]) {
+      summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+    }
+    summary[catKey].amount += amount;
+    summary[catKey].diff += diff * p.price;
   });
 
   const total = items.reduce((sum, i) => sum + i.amount, 0);
-  const prevTotal = items.reduce((sum, i) => sum + (i.prevAmount || 0), 0);
 
-  return { month, items, summary, total, prevTotal };
+  return { month, items, summary, total };
 }
 
 function displayInvMonthlyResult(result) {
@@ -9140,32 +8099,26 @@ function displayInvMonthlyResult(result) {
   // カテゴリデータを収集
   const categoryData = [];
 
-  // カテゴリ順にソートしてループ
-  const sortedCodes = Object.keys(INV_CATEGORIES).sort((a, b) => a.localeCompare(b));
-  
-  sortedCodes.forEach(code => {
+  // カテゴリ順に表示
+  Object.keys(INV_CATEGORIES).forEach(code => {
     if (result.summary[code]) {
       const s = result.summary[code];
-      const roundedAmount = Math.round(s.amount);
-      const roundedDiff = Math.round(s.diff);
-      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
-      summaryTotal += roundedAmount;
-      summaryDiff += roundedDiff;
-      normalTotal += roundedAmount;
-      categoryData.push({ name: s.name, amount: roundedAmount, isFixed: false });
+      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+      summaryTotal += s.amount;
+      summaryDiff += s.diff;
+      normalTotal += s.amount;
+      categoryData.push({ name: s.name, amount: s.amount, isFixed: false });
     }
   });
 
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    const roundedAmount = Math.round(s.amount);
-    const roundedDiff = Math.round(s.diff);
-    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
-    summaryTotal += roundedAmount;
-    summaryDiff += roundedDiff;
-    fixedTotal = roundedAmount;
-    categoryData.push({ name: '不動品', amount: roundedAmount, isFixed: true });
+    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
+    summaryTotal += s.amount;
+    summaryDiff += s.diff;
+    fixedTotal = s.amount;
+    categoryData.push({ name: '不動品', amount: s.amount, isFixed: true });
   }
 
   const tacTotal = Math.round(summaryTotal * 1.01);
@@ -9174,14 +8127,14 @@ function displayInvMonthlyResult(result) {
   const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
   const categoryBars = sortedCategories.map(cat => {
     const barWidth = summaryTotal > 0 ? Math.round((cat.amount / summaryTotal) * 100) : 0;
-    const bgColor = cat.isFixed ? '#ffc107' : '#2563eb';
+    const bgColor = cat.isFixed ? '#ffc107' : 'var(--color-primary)';
     return `
       <div style="margin-bottom: 0.5rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.875rem;">
           <span>${cat.name}</span>
           <span style="font-weight: 500;">¥${cat.amount.toLocaleString()} (${barWidth}%)</span>
         </div>
-        <div style="background: #e2e8f0; border-radius: 4px; height: 16px; overflow: hidden;">
+        <div style="background: var(--color-bg-tertiary); border-radius: 4px; height: 16px; overflow: hidden;">
           <div style="background: ${bgColor}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
         </div>
       </div>
@@ -9191,17 +8144,13 @@ function displayInvMonthlyResult(result) {
   // ドーナツ風サマリー
   const normalPercent = summaryTotal > 0 ? Math.round((normalTotal / summaryTotal) * 100) : 0;
   const fixedPercent = summaryTotal > 0 ? Math.round((fixedTotal / summaryTotal) * 100) : 0;
-  const totalDiff = Math.round(result.total - result.prevTotal);
 
   container.innerHTML = `
     <!-- サマリーカード -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-      <div class="card" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
+      <div class="card" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: white; padding: 1.25rem;">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
-        <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">
-            前月比: <span style="font-weight: bold;">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</span>
-        </div>
       </div>
       <div class="card" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 1.25rem;">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">✓ 通常在庫</div>
@@ -9300,152 +8249,7 @@ function displayInvMonthlyResult(result) {
         </div>
       </div>
     </div>
-    </div>
   `;
-}
-
-// 年度別データ保持用
-let currentAnnualResult = null;
-
-function viewInvAnnualSummary() {
-  const year = $('#inv-annual-year').value;
-  if (!year) {
-    toast('表示年度を入力してください', 'warning');
-    return;
-  }
-  
-  const container = $('#inv-annual-result');
-  container.innerHTML = '<p>データ集計中...</p>';
-  container.style.display = 'block';
-  
-  // setTimeoutを使ってUIがブロックされるのを防ぐ
-  setTimeout(() => {
-    try {
-      const monthlyData = [];
-      const productsMap = new Map();
-      
-      // 1〜12月のデータを計算
-      for (let m = 1; m <= 12; m++) {
-        const monthStr = `${year}-${String(m).padStart(2, '0')}`;
-        const result = calculateInvMonthly(monthStr);
-        monthlyData.push(result);
-        
-        result.items.forEach(item => {
-          if (!productsMap.has(item.productId)) {
-            productsMap.set(item.productId, {
-              productId: item.productId,
-              name: item.name,
-              category: item.category,
-              price: item.price,
-              isFixed: item.isFixed,
-              qty: Array(12).fill(null)
-            });
-          }
-          productsMap.get(item.productId).qty[m - 1] = item.currQty;
-        });
-      }
-      
-      // マスタ順にソート
-      const sortedItems = Array.from(productsMap.values()).sort((a, b) => a.productId.localeCompare(b.productId));
-      
-      currentAnnualResult = { year, items: sortedItems };
-      
-      // テーブル生成
-      let tableHTML = `
-        <div class="table-container" style="max-height: 500px; overflow: auto;">
-          <table class="table" style="font-size: 0.8rem; white-space: nowrap;">
-            <thead style="position: sticky; top: 0; background: var(--color-bg-secondary); z-index: 10;">
-              <tr>
-                <th>資材ID</th>
-                <th>品名</th>
-                <th>分類</th>
-                ${Array.from({length: 12}, (_, i) => `<th style="text-align: right;">${i+1}月</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-      `;
-      
-      sortedItems.forEach(item => {
-        let rowHTML = `<tr>
-          <td>${item.productId}</td>
-          <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${item.name}">${item.name}</td>
-          <td>${INV_CATEGORIES[item.category] || item.category}</td>
-        `;
-        
-        for (let i = 0; i < 12; i++) {
-          const currentQty = item.qty[i];
-          const prevQty = i > 0 ? item.qty[i-1] : null;
-          
-          let bgStyle = '';
-          // 異常値チェック（前月比 ±50% 以上、かつ数量が10以上の変動がある場合など）
-          // 今回は単純に ±50% を検知（0の場合は比較不能なので除外）
-          if (currentQty !== null && prevQty !== null && prevQty > 0) {
-             const ratio = currentQty / prevQty;
-             if (ratio >= 1.5 || ratio <= 0.5) {
-               // 極端な増減は赤文字強調
-               bgStyle = 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; font-weight: bold;';
-             }
-          } else if (currentQty !== null && prevQty === 0 && currentQty > 10) {
-             // 0から10以上に増えた場合も一応ハイライト
-             bgStyle = 'background-color: rgba(245, 158, 11, 0.1); color: #d97706; font-weight: bold;';
-          }
-          
-          rowHTML += `<td style="text-align: right; ${bgStyle}">${currentQty !== null ? currentQty.toLocaleString() : '-'}</td>`;
-        }
-        rowHTML += '</tr>';
-        tableHTML += rowHTML;
-      });
-      
-      tableHTML += `</tbody></table></div>`;
-      tableHTML += `<div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">
-        💡 前月比 ±50% 以上の増減があるセルは赤色で強調表示されています。
-      </div>`;
-      
-      container.innerHTML = tableHTML;
-      
-      if ($('#export-inv-annual-btn')) {
-        $('#export-inv-annual-btn').style.display = 'inline-block';
-      }
-      
-    } catch (err) {
-      console.error(err);
-      container.innerHTML = `<p style="color: red;">エラーが発生しました: ${err.message}</p>`;
-    }
-  }, 100);
-}
-
-function exportInvAnnualExcel() {
-  if (!currentAnnualResult) return;
-  const { year, items } = currentAnnualResult;
-  
-  if (typeof XLSX === 'undefined') {
-    toast('Excel出力ライブラリが読み込まれていません', 'error');
-    return;
-  }
-  
-  try {
-    const wb = XLSX.utils.book_new();
-    const data = [
-      ['資材ID', '品名', '分類', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-    ];
-    
-    items.forEach(item => {
-      data.push([
-        item.productId,
-        item.name,
-        INV_CATEGORIES[item.category] || item.category,
-        ...item.qty
-      ]);
-    });
-    
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, `${year}年_在庫推移表`);
-    XLSX.writeFile(wb, `棚卸年度推移表_${year}.xlsx`);
-    toast('Excel出力しました', 'success');
-  } catch (err) {
-    console.error('Excel出力エラー:', err);
-    toast('Excel出力に失敗しました', 'error');
-  }
 }
 
 function runInvMonthlyClosing() {
@@ -9481,401 +8285,6 @@ function runInvMonthlyClosing() {
 
   toast(`${month}の月次締めを完了しました`, 'success');
   displayInvMonthlyResult(result);
-}
-
-// ========================================
-// 棚卸スキャン確認画面
-// ========================================
-
-function renderInvCheckPage() {
-  const monthInput = $('#inv-check-month');
-  if (monthInput && !monthInput.value) {
-    monthInput.value = new Date().toISOString().substring(0, 7);
-  }
-
-  // Bind buttons
-  $('#refresh-inv-check-btn').onclick = renderInvCheckPage;
-  $('#confirm-inv-temp-btn').onclick = confirmInvTempData;
-  const exportBtn = $('#export-inv-check-btn');
-  if (exportBtn) {
-    exportBtn.onclick = exportInvCheckToCsv;
-  }
-
-  const selectedMonth = monthInput.value;
-
-  // Calculate previous month
-  const [yearStr, monthStr] = selectedMonth.split('-');
-  const year = parseInt(yearStr);
-  const month = parseInt(monthStr);
-  const prevDate = new Date(year, month - 2, 1);
-  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-
-  // Get previous month closing data
-  const prevClosing = monthly.find(m => m.month === prevMonthKey);
-  const prevStockMap = {};
-  if (prevClosing && prevClosing.items) {
-    prevClosing.items.forEach(item => {
-      prevStockMap[item.productId] = item.currQty || 0;
-    });
-  }
-
-  // Scanned items for this month
-  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
-  const tempScanMap = {};
-  currentTempScans.forEach(s => {
-    tempScanMap[s.productId] = s;
-  });
-
-  // Build unified lists
-  const renderedProductIds = new Set();
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
-  Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
-      renderedProductIds.add(id);
-    }
-  });
-
-  const listItems = Array.from(renderedProductIds).map(pid => {
-    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
-    const scan = tempScanMap[pid];
-    const prevQty = prevStockMap[pid] || 0;
-    const currQty = scan ? scan.quantity : 0;
-    const diff = currQty - prevQty;
-    const isScanned = !!scan;
-
-    return {
-      productId: pid,
-      category: prod.category,
-      name: prod.name,
-      price: prod.price || 0,
-      quantity: currQty,
-      prevQty: prevQty,
-      diff: diff,
-      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
-      workerId: scan ? (scan.worker || '-') : '-',
-      isScanned: isScanned,
-      hasPrevQty: prevQty > 0
-    };
-  });
-
-  // Sort listItems by category, then by ID
-  listItems.sort((a, b) => a.category.localeCompare(b.category) || a.productId.localeCompare(b.productId));
-
-  // Count scan state
-  const totalItems = listItems.length;
-  const scannedCount = listItems.filter(item => item.isScanned).length;
-  const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
-
-  // Summary alerts HTML
-  const summaryAlertsContainer = $('#inv-check-summary-alerts');
-  if (summaryAlertsContainer) {
-    summaryAlertsContainer.innerHTML = `
-      <div style="background: var(--color-bg-secondary); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem;">
-        仮登録: <strong>${scannedCount}</strong> 件
-      </div>
-      ${missingCount > 0 ? `
-      <div style="background: #fee2e2; color: #b91c1c; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
-        ⚠️ 未スキャン漏れ: <strong>${missingCount}</strong> 件
-      </div>
-      ` : `
-      <div style="background: #dcfce7; color: #15803d; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
-        ✓ スキャン漏れなし
-      </div>
-      `}
-    `;
-  }
-
-  // Draw table body
-  const tbody = $('#inv-check-table-body');
-  if (tbody) {
-    if (listItems.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
-            この月の仮登録データはありません。スマホ等でスキャンを行うか、CSVインポートをしてください。
-          </td>
-        </tr>
-      `;
-    } else {
-      tbody.innerHTML = listItems.map(item => {
-        const rowClass = (item.hasPrevQty && !item.isScanned) ? 'style="background-color: #fee2e2; color: #991b1b;"' : '';
-        const statusBadge = (item.hasPrevQty && !item.isScanned)
-          ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
-          : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
-
-        return `
-          <tr ${rowClass}>
-            <td><strong>${item.productId}</strong></td>
-            <td>${INV_CATEGORIES[item.category] || item.category}</td>
-            <td>${item.name}</td>
-            <td>¥${item.price.toLocaleString()}</td>
-            <td style="text-align: center;">
-              <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0">
-            </td>
-            <td>${item.prevQty}</td>
-            <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
-              ${item.diff > 0 ? '+' : ''}${item.diff}
-            </td>
-            <td>
-              ${item.worker} <span style="font-size: 11px; color: #64748b;">(${item.workerId})</span>
-            </td>
-            <td>${statusBadge}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" onclick="saveSingleTempScan('${item.productId}')">保存</button>
-              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-  }
-
-  // Draw banner alert warning if missing scans exist
-  const alertContainer = $('#inv-check-alerts-container');
-  if (alertContainer) {
-    if (missingCount > 0) {
-      alertContainer.innerHTML = `
-        <div style="background: #fee2e2; border-left: 6px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-          <span style="font-size: 24px;">⚠️</span>
-          <div>
-            <div style="font-weight: bold;">棚卸の漏れチェック警告</div>
-            <div style="font-size: 0.875rem;">前月に在庫があった商品で、今月まだ棚卸登録されていない商品が <strong>${missingCount}</strong> 件あります（赤くハイライトされた行）。スキャンを完了させるか、実棚数量を入力して保存してください。</div>
-          </div>
-        </div>
-      `;
-    } else {
-      alertContainer.innerHTML = '';
-    }
-  }
-}
-
-// Global functions for inline actions
-window.saveSingleTempScan = function(productId) {
-  const input = document.getElementById(`inv-check-qty-${productId}`);
-  if (!input) return;
-  const newQty = parseInt(input.value) || 0;
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
-
-  const scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const existingIdx = scanTemp.findIndex(s => s.productId === productId && s.month === selectedMonth);
-
-  // 末日のタイムスタンプ
-  const [y, m] = selectedMonth.split('-');
-  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-  const timestamp = lastDay.toISOString();
-
-  const currentUser = DB.get(DB.KEYS.CURRENT_USER);
-
-  if (existingIdx >= 0) {
-    scanTemp[existingIdx].quantity = newQty;
-    scanTemp[existingIdx].worker = currentUser.username;
-    scanTemp[existingIdx].workerName = currentUser.displayName;
-    scanTemp[existingIdx].timestamp = timestamp;
-  } else {
-    scanTemp.push({
-      id: Date.now() + "_" + productId,
-      productId: productId,
-      quantity: newQty,
-      worker: currentUser.username,
-      workerName: currentUser.displayName,
-      timestamp: timestamp,
-      month: selectedMonth
-    });
-  }
-  DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
-  toast('仮登録数量を保存しました', 'success');
-  renderInvCheckPage();
-};
-
-window.deleteSingleTempScan = function(productId) {
-  if (!confirm('仮スキャンデータを消去しますか？')) return;
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
-  let scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  scanTemp = scanTemp.filter(s => !(s.productId === productId && s.month === selectedMonth));
-  DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
-  toast('仮スキャンデータから削除しました', 'success');
-  renderInvCheckPage();
-};
-
-// Confirm temp data and close month
-function confirmInvTempData() {
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
-  
-  // Calculate missing scans to prompt user
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-
-  const [yearStr, monthStr] = selectedMonth.split('-');
-  const year = parseInt(yearStr);
-  const month = parseInt(monthStr);
-  const prevDate = new Date(year, month - 2, 1);
-  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
-  const prevClosing = monthly.find(m => m.month === prevMonthKey);
-  const prevStockMap = {};
-  if (prevClosing && prevClosing.items) {
-    prevClosing.items.forEach(item => {
-      prevStockMap[item.productId] = item.currQty || 0;
-    });
-  }
-
-  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
-  const missingCount = Object.keys(prevStockMap).filter(pid => prevStockMap[pid] > 0 && !currentTempScans.some(s => s.productId === pid)).length;
-
-  let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
-  if (missingCount > 0) {
-    confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
-  }
-
-  if (!confirm(confirmMsg)) return;
-
-  // Let's perform final closing:
-  // 1. Clean existing type count logs for this month from INV_LOGS
-  let logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  logs = logs.filter(l => !(l.timestamp && l.timestamp.startsWith(selectedMonth) && l.type === 'count'));
-
-  // 2. Commit all listItems as official count logs
-  // (We'll generate counts for ALL items scanned OR with previous stocks)
-  const renderedProductIds = new Set();
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
-  Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
-      renderedProductIds.add(id);
-    }
-  });
-
-  const timestamp = new Date(year, month, 0, 23, 59, 59).toISOString(); // End of target month
-
-  Array.from(renderedProductIds).forEach((pid, index) => {
-    const tempScan = currentTempScans.find(s => s.productId === pid);
-    const qty = tempScan ? tempScan.quantity : 0;
-    const worker = tempScan ? (tempScan.workerName || tempScan.worker) : 'システム自動';
-    
-    logs.push({
-      id: Date.now() + index,
-      productId: pid,
-      quantity: qty,
-      type: 'count',
-      worker: worker,
-      note: `棚卸確定締め(${selectedMonth})`,
-      timestamp: timestamp
-    });
-  });
-
-  // Save official logs
-  DB.save(DB.KEYS.INV_LOGS, logs);
-
-  // 3. Clear temporary scans for this month
-  const updatedTempScans = tempScans.filter(s => s.month !== selectedMonth);
-  DB.save(DB.KEYS.INV_SCAN_TEMP, updatedTempScans);
-
-  // 4. Compute and save monthly closing
-  try {
-    const monthlyResult = calculateInvMonthly(selectedMonth);
-    saveInvMonthlyClosing(selectedMonth, monthlyResult);
-    toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
-  } catch (err) {
-    console.error('月次締め処理エラー:', err);
-    toast('月次締め処理の計算でエラーが発生しました', 'error');
-  }
-
-  // Reload the check page
-  renderInvCheckPage();
-}
-
-function exportInvCheckToCsv() {
-  const monthInput = $('#inv-check-month');
-  const selectedMonth = monthInput ? monthInput.value : new Date().toISOString().substring(0, 7);
-
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-
-  // Calculate previous month
-  const [yearStr, monthStr] = selectedMonth.split('-');
-  const year = parseInt(yearStr);
-  const month = parseInt(monthStr);
-  const prevDate = new Date(year, month - 2, 1);
-  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
-  const prevClosing = monthly.find(m => m.month === prevMonthKey);
-  const prevStockMap = {};
-  if (prevClosing && prevClosing.items) {
-    prevClosing.items.forEach(item => {
-      prevStockMap[item.productId] = item.currQty || 0;
-    });
-  }
-
-  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
-  const tempScanMap = {};
-  currentTempScans.forEach(s => {
-    tempScanMap[s.productId] = s;
-  });
-
-  const renderedProductIds = new Set();
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
-  Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
-      renderedProductIds.add(id);
-    }
-  });
-
-  const listItems = Array.from(renderedProductIds).map(pid => {
-    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
-    const scan = tempScanMap[pid];
-    const prevQty = prevStockMap[pid] || 0;
-    const currQty = scan ? scan.quantity : 0;
-    const diff = currQty - prevQty;
-    const isScanned = !!scan;
-
-    return {
-      productId: pid,
-      categoryName: INV_CATEGORIES[prod.category] || prod.category,
-      name: prod.name,
-      price: prod.price || 0,
-      quantity: currQty,
-      prevQty: prevQty,
-      diff: diff,
-      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
-      status: (prevQty > 0 && !isScanned) ? '未スキャン' : '仮登録済'
-    };
-  });
-
-  // Sort
-  listItems.sort((a, b) => a.productId.localeCompare(b.productId));
-
-  // CSV content
-  const headers = ['資材ID', '分類', '品名', '単価', '実棚数量', '前月在庫', '差分', 'スキャン実行者', '状況'];
-  const rows = listItems.map(item => [
-    item.productId,
-    item.categoryName,
-    item.name,
-    item.price,
-    item.quantity,
-    item.prevQty,
-    item.diff,
-    item.worker,
-    item.status
-  ]);
-
-  const csvContent = [headers.join(','), ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\r\n');
-
-  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 with BOM
-  const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `棚卸チェック表_${selectedMonth}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }
 
 // ========================================
@@ -10158,9 +8567,7 @@ function exportInvProductsCsv() {
   const link = document.createElement('a');
   link.href = url;
   link.download = `商品マスタ_${new Date().toISOString().split('T')[0]}.csv`;
-  document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
   toast('CSVをダウンロードしました', 'success');
@@ -10261,11 +8668,6 @@ document.addEventListener('DOMContentLoaded', () => {
       gap: '6px',
       fontFamily: 'sans-serif'
     });
-
-    // モバイルの場合は非表示
-    if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      indicator.style.display = 'none';
-    }
 
     // Firebase接続状態チェック
     const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
@@ -10370,170 +8772,6 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     alert('エラーが発生しました: ' + e.message);
   }
 };
-
-// ========================================
-// バックアップ管理
-// ========================================
-
-function renderBackupPage() {
-  const container = document.getElementById('backup-list');
-  if (!container) return;
-
-  const backups = DB.getBackupList().sort((a, b) => b.id - a.id);
-  const lastBackup = localStorage.getItem('pms_last_backup_date');
-
-  let nextAutoText = '未定';
-  if (lastBackup) {
-    const nextDate = new Date(new Date(lastBackup).getTime() + 28 * 24 * 60 * 60 * 1000);
-    // 次の日曜日を計算
-    while (nextDate.getDay() !== 0) {
-      nextDate.setDate(nextDate.getDate() + 1);
-    }
-    nextAutoText = nextDate.toLocaleDateString('ja-JP');
-  }
-
-  let html = `
-    <div class="card" style="margin-bottom: 1rem;">
-      <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <div>
-          <strong>📅 自動バックアップ設定</strong><br>
-          <span style="font-size: 0.85rem; color: var(--text-secondary);">
-            毎月1回・日曜日に自動実行 ｜ 最新6件を保持 ｜
-            最終バックアップ: ${lastBackup ? new Date(lastBackup).toLocaleString('ja-JP') : 'なし'} ｜
-            次回予定: ${nextAutoText}
-          </span>
-        </div>
-        <button class="btn btn-sm btn-outline" onclick="downloadAllBackupJson()">📥 全データJSON出力</button>
-      </div>
-    </div>
-  `;
-
-  if (backups.length === 0) {
-    html += `
-      <div class="card" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-        <p style="font-size: 1.2rem;">💾 バックアップはまだありません</p>
-        <p>「今すぐバックアップ」ボタンで手動バックアップを作成できます。</p>
-      </div>
-    `;
-  } else {
-    html += `
-      <div class="card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>日時</th>
-              <th>種類</th>
-              <th>レコード数</th>
-              <th>サイズ</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
-    backups.forEach(b => {
-      const date = new Date(b.createdAt).toLocaleString('ja-JP');
-      const sizeKB = (b.dataSize / 1024).toFixed(1);
-      const isAuto = b.label.includes('自動');
-      const labelClass = isAuto ? 'badge badge-info' : 'badge badge-success';
-
-      html += `
-        <tr>
-          <td>${date}</td>
-          <td><span class="${labelClass}">${b.label}</span></td>
-          <td>${b.totalRecords.toLocaleString()}件</td>
-          <td>${sizeKB} KB</td>
-          <td>
-            <button class="btn btn-sm btn-primary" onclick="restoreFromBackup(${b.id})" title="このバックアップから復元">🔄 復元</button>
-            <button class="btn btn-sm btn-outline" onclick="downloadBackup(${b.id})" title="JSONダウンロード">📥</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteBackupItem(${b.id})" title="削除">🗑</button>
-          </td>
-        </tr>
-      `;
-    });
-
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-
-  container.innerHTML = html;
-}
-
-// 手動バックアップ
-function createManualBackup() {
-  try {
-    const backup = DB.createBackup('手動バックアップ');
-    toast(`💾 バックアップを作成しました（${backup.totalRecords}件, ${(backup.dataSize / 1024).toFixed(1)}KB）`, 'success');
-    renderBackupPage();
-  } catch (e) {
-    toast('バックアップの作成に失敗しました: ' + e.message, 'error');
-  }
-}
-
-// バックアップから復元
-function restoreFromBackup(backupId) {
-  if (!confirm('このバックアップからデータを復元しますか？\n\n現在のデータは全て上書きされます。\n（復元前に自動バックアップを作成します）')) return;
-
-  try {
-    // 復元前に自動でバックアップ
-    DB.createBackup('復元前の自動バックアップ');
-
-    const success = DB.restoreBackup(backupId);
-    if (success) {
-      toast('✅ バックアップから復元しました。ページをリロードします。', 'success');
-      setTimeout(() => location.reload(), 1500);
-    } else {
-      toast('復元に失敗しました。バックアップデータが見つかりません。', 'error');
-    }
-  } catch (e) {
-    toast('復元に失敗しました: ' + e.message, 'error');
-  }
-}
-
-// バックアップ削除
-function deleteBackupItem(backupId) {
-  if (!confirm('このバックアップを削除しますか？')) return;
-  DB.deleteBackupById(backupId);
-  toast('バックアップを削除しました', 'info');
-  renderBackupPage();
-}
-
-// バックアップJSONダウンロード
-function downloadBackup(backupId) {
-  const backups = DB.get(DB.KEYS.BACKUPS);
-  const backup = backups.find(b => b.id === backupId);
-  if (!backup) { toast('バックアップが見つかりません', 'error'); return; }
-
-  const json = JSON.stringify(backup.snapshot, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `backup_${new Date(backup.createdAt).toISOString().split('T')[0]}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  toast('バックアップをダウンロードしました', 'success');
-}
-
-// 全データJSON出力（復元用）
-function downloadAllBackupJson() {
-  const snapshot = {};
-  DB._backupTargetKeys().forEach(key => {
-    snapshot[key] = DB.get(key);
-  });
-  const json = JSON.stringify(snapshot, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `full_backup_${new Date().toISOString().split('T')[0]}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  toast('全データをJSONファイルとしてダウンロードしました', 'success');
-}
 
 </script>
     <script>
@@ -11221,31 +9459,6 @@ function downloadAllBackupJson() {
                                 <button type="submit" class="btn btn-primary btn-full"
                                     style="font-size: 18px; padding: 16px;">✓ 棚卸登録</button>
                             </form>
-                        </div>
-                    </div>
-                    <!-- Excel一括取込 -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>📁 Excel一括取込</h3>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted" style="margin-bottom: 8px;">「提出書類」シートのS列（数量）を自動で読み込みます。</p>
-                            <input type="file" id="inv-excel-upload" accept=".xlsx, .xls, .csv" class="form-input" style="margin-bottom: 8px;">
-                            <button type="button" class="btn btn-secondary btn-full" id="inv-excel-import-btn">取込プレビューを表示</button>
-                            <div id="inv-excel-preview" style="margin-top: 16px; display: none;">
-                                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
-                                    <table class="table" style="font-size: 0.8rem;">
-                                        <thead><tr><th>品名</th><th>数量</th><th>金額(税込)</th><th>状態</th></tr></thead>
-                                        <tbody id="inv-excel-preview-body"></tbody>
-                                    </table>
-                                </div>
-                                <div class="form-group" style="margin-top: 16px;">
-                                    <label>取込対象月 (過去データ登録用)</label>
-                                    <input type="month" id="inv-excel-month" class="form-input" placeholder="指定しない場合は本日">
-                                    <p class="text-muted" style="font-size: 0.75rem;">※指定した場合、取込後に自動でその月の締め処理を実行します</p>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-full" id="inv-excel-confirm-btn">確定して登録</button>
-                            </div>
                         </div>
                     </div>
                     <!-- 本日の棚卸履歴 -->
@@ -11982,10 +10195,69 @@ const DB = {
                 .then(() => console.log(`💾 ${fbKey} 保存完了`))
                 .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
             this._cache[key] = data;
+            // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
+            localStorage.setItem(key, JSON.stringify(data));
         } else {
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
         }
+    },
+
+    // 棚卸仮スキャンデータ (INV_PRODUCTS 内に埋め込み保存することで Firebase のパーミッションエラーを完全回避)
+    getTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        return products
+            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .map(p => ({
+                id: p.tempId || (p.id + "_temp"),
+                productId: p.id,
+                quantity: p.tempQty,
+                worker: p.tempWorker,
+                workerName: p.tempWorkerName,
+                timestamp: p.tempTimestamp,
+                month: p.tempMonth
+            }));
+    },
+
+    saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            prod.tempQty = quantity;
+            prod.tempWorker = worker;
+            prod.tempWorkerName = workerName;
+            prod.tempTimestamp = timestamp;
+            prod.tempMonth = month;
+            prod.tempId = Date.now() + "_" + productId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    deleteTempScan(productId) {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+            delete prod.tempQty;
+            delete prod.tempWorker;
+            delete prod.tempWorkerName;
+            delete prod.tempTimestamp;
+            delete prod.tempMonth;
+            delete prod.tempId;
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
+    },
+
+    clearTempScans() {
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        products.forEach(p => {
+            delete p.tempQty;
+            delete p.tempWorker;
+            delete p.tempWorkerName;
+            delete p.tempTimestamp;
+            delete p.tempMonth;
+            delete p.tempId;
+        });
+        this.save(this.KEYS.INV_PRODUCTS, products);
     },
 
     // 追加（競合回避：トランザクション使用）

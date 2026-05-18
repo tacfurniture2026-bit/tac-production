@@ -804,31 +804,6 @@
                             </form>
                         </div>
                     </div>
-                    <!-- Excel一括取込 -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>📁 Excel一括取込</h3>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted" style="margin-bottom: 8px;">「提出書類」シートのS列（数量）を自動で読み込みます。</p>
-                            <input type="file" id="inv-excel-upload" accept=".xlsx, .xls, .csv" class="form-input" style="margin-bottom: 8px;">
-                            <button type="button" class="btn btn-secondary btn-full" id="inv-excel-import-btn">取込プレビューを表示</button>
-                            <div id="inv-excel-preview" style="margin-top: 16px; display: none;">
-                                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
-                                    <table class="table" style="font-size: 0.8rem;">
-                                        <thead><tr><th>品名</th><th>数量</th><th>金額(税込)</th><th>状態</th></tr></thead>
-                                        <tbody id="inv-excel-preview-body"></tbody>
-                                    </table>
-                                </div>
-                                <div class="form-group" style="margin-top: 16px;">
-                                    <label>取込対象月 (過去データ登録用)</label>
-                                    <input type="month" id="inv-excel-month" class="form-input" placeholder="指定しない場合は本日">
-                                    <p class="text-muted" style="font-size: 0.75rem;">※指定した場合、取込後に自動でその月の締め処理を実行します</p>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-full" id="inv-excel-confirm-btn">確定して登録</button>
-                            </div>
-                        </div>
-                    </div>
                     <!-- 本日の棚卸履歴 -->
                     <div class="card">
                         <div class="card-header">
