@@ -16,6 +16,7 @@ const DB = {
         INV_PRODUCTS: 'pms_inv_products',      // 商品マスタ
         INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
         INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
+        INV_SCAN_TEMP: 'pms_inv_scan_temp',    // 棚卸仮スキャンデータ
         // バックアップ
         BACKUPS: 'pms_backups'                 // バックアップ履歴
     },
@@ -28,6 +29,7 @@ const DB = {
     // キャッシュ（Firebase用）
     _cache: {},
     _listeners: {},
+    _loaded: {}, // Firebaseからの初回読み込み完了フラグ
 
     // 初期データ
     init() {
@@ -168,6 +170,11 @@ const DB = {
         if (!localStorage.getItem(this.KEYS.INV_MONTHLY)) {
             this.save(this.KEYS.INV_MONTHLY, []);
         }
+
+        // 在庫：棚卸仮スキャンデータ
+        if (!localStorage.getItem(this.KEYS.INV_SCAN_TEMP)) {
+            this.save(this.KEYS.INV_SCAN_TEMP, []);
+        }
     },
 
     // Firebase初期化
@@ -191,6 +198,7 @@ const DB = {
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
             this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
+            this.KEYS.INV_SCAN_TEMP,
             this.KEYS.BACKUPS
         ];
 
@@ -202,6 +210,7 @@ const DB = {
                 const data = snapshot.val();
                 let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
                 this._cache[key] = parsedData.filter(item => item !== null);
+                this._loaded[key] = true; // 同期完了フラグをセット
                 console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
 
                 // UI更新（定義されている場合）
@@ -210,6 +219,8 @@ const DB = {
                 }
             }, (error) => {
                 console.error(`❌ ${fbKey} 読み込みエラー:`, error);
+                // エラー時もロックを解除してローカルキャッシュで動作可能にする
+                this._loaded[key] = true;
             });
         });
 
@@ -289,6 +300,12 @@ const DB = {
 
     // 保存（全置換 - 初期化時など限定）
     save(key, data) {
+        // Firebase同期前の空データ上書きを防止
+        if (typeof useFirebase !== 'undefined' && useFirebase && !this._loaded[key]) {
+            console.warn(`⚠️ ${key} の保存をスキップ: Firebaseからの初回読み込みが未完了です`);
+            return;
+        }
+
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).set(data)

@@ -217,10 +217,12 @@ function showMainScreen() {
 
   // 特定データの修正（Firebase読み込み待ちを考慮して遅延実行）
   setTimeout(() => {
+    emergencyRestoreProductsFromLogs(); // 緊急復元チェック
+    
     const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
     let fixedCount = 0;
     products.forEach(p => {
-      if (p.id === 'N05000000000184' && (!p.name || p.name.includes('#') || p.name.includes('ERROR'))) {
+      if (p.id === 'N05000000000184') {
         p.name = '+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30';
         fixedCount++;
       }
@@ -230,6 +232,54 @@ function showMainScreen() {
       console.log(`✅ 製品名修正完了: N05000000000184 (${fixedCount}件)`);
     }
   }, 5000);
+}
+
+/**
+ * 在庫ログから商品マスタを緊急復元する（データ消失対策）
+ */
+function emergencyRestoreProductsFromLogs() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  if (products.length > 0) return; // すでにデータがある場合は何もしない
+
+  console.log('🚨 商品マスタが空のため、在庫ログから復元を試みます...');
+  const logs = DB.get(DB.KEYS.INV_LOGS);
+  if (logs.length === 0) {
+    console.warn('⚠️ 復元対象の在庫ログも見つかりません');
+    return;
+  }
+
+  const productMap = new Map();
+
+  // ログを日付順（古い順）に走査してマスタを構築
+  const sortedLogs = [...logs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  
+  sortedLogs.forEach(log => {
+    if (!log.productId) return;
+    
+    if (!productMap.has(log.productId)) {
+      productMap.set(log.productId, {
+        id: log.productId,
+        name: log.productName || log.productId,
+        category: log.productId.startsWith('N') ? log.productId.substring(1, 3) : '99',
+        price: log.unitPrice || 0,
+        isFixed: false
+      });
+    } else {
+      const p = productMap.get(log.productId);
+      if (log.productName && !log.productName.includes('#')) p.name = log.productName;
+      if (log.unitPrice) p.price = log.unitPrice;
+    }
+  });
+
+  const restoredList = Array.from(productMap.values());
+  if (restoredList.length > 0) {
+    if (DB._loaded[DB.KEYS.INV_PRODUCTS]) {
+        DB.save(DB.KEYS.INV_PRODUCTS, restoredList);
+        console.log(`✅ 商品マスタを ${restoredList.length} 件復元しました`);
+    } else {
+        setTimeout(emergencyRestoreProductsFromLogs, 2000);
+    }
+  }
 }
 
 function navigateTo(pageName) {
@@ -4452,7 +4502,27 @@ function getCurrentStock(productId) {
 // 棚卸スキャン画面
 // ========================================
 
+function getInventoryNextTargetMonth() {
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  if (monthly.length > 0) {
+    // Copy and sort descending
+    const sorted = [...monthly].sort((a, b) => b.month.localeCompare(a.month));
+    const latestMonthStr = sorted[0].month; // YYYY-MM
+    const [y, m] = latestMonthStr.split('-');
+    const nextDate = new Date(parseInt(y), parseInt(m), 1);
+    return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function renderInvScanPage() {
+  // 締め状況に基づきデフォルト月を設定
+  const monthInput = $('#inv-scan-month');
+  if (monthInput && !monthInput.value) {
+    monthInput.value = getInventoryNextTargetMonth();
+  }
+
   // イベント設定
   const startBtn = $('#inv-start-scan-btn');
   const stopBtn = $('#inv-stop-scan-btn');
@@ -4603,20 +4673,45 @@ function submitInventoryCount() {
     return;
   }
 
-  // 棚卸ログに追加
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  logs.push({
-    id: Date.now(),
-    productId: productId,
-    quantity: quantity,
-    type: 'count',
-    worker: currentUser.displayName,
-    note: '',
-    timestamp: new Date().toISOString()
-  });
-  DB.save(DB.KEYS.INV_LOGS, logs);
+  let targetTimestamp = new Date().toISOString();
+  let targetMonth = '';
+  const monthInput = $('#inv-scan-month');
+  if (monthInput && monthInput.value) {
+    targetMonth = monthInput.value;
+    const [y, m] = monthInput.value.split('-');
+    if (y && m) {
+      const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+      targetTimestamp = lastDay.toISOString();
+    }
+  } else {
+    targetMonth = getInventoryNextTargetMonth();
+    const [y, m] = targetMonth.split('-');
+    const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+    targetTimestamp = lastDay.toISOString();
+  }
 
-  toast(`${product.name}の棚卸を登録しました（${quantity}個）`, 'success');
+  // 棚卸仮データに追加 (UPSERT)
+  const scanTemp = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  const existingIdx = scanTemp.findIndex(s => s.productId === productId && s.month === targetMonth);
+  if (existingIdx >= 0) {
+    scanTemp[existingIdx].quantity = quantity;
+    scanTemp[existingIdx].worker = currentUser.username;
+    scanTemp[existingIdx].workerName = currentUser.displayName;
+    scanTemp[existingIdx].timestamp = targetTimestamp;
+  } else {
+    scanTemp.push({
+      id: Date.now() + "_" + productId,
+      productId: productId,
+      quantity: quantity,
+      worker: currentUser.username,
+      workerName: currentUser.displayName,
+      timestamp: targetTimestamp,
+      month: targetMonth
+    });
+  }
+  DB.save(DB.KEYS.INV_SCAN_TEMP, scanTemp);
+
+  toast(`${product.name}の棚卸を仮登録しました（${quantity}個、締め処理待ち）`, 'success');
 
   // フォームリセット
   $('#inv-scan-product-id').value = '';
@@ -4634,11 +4729,16 @@ function submitInventoryCount() {
 }
 
 function renderTodayInvLogs() {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const today = new Date().toISOString().split('T')[0];
 
-  const todayLogs = logs.filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 10);
+  const todayLogs = [
+    ...tempScans.map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
+    ...logs
+  ].filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 10);
+  
   const container = $('#inv-today-logs');
 
   if (todayLogs.length === 0) {
@@ -4648,7 +4748,7 @@ function renderTodayInvLogs() {
 
   container.innerHTML = todayLogs.map(log => {
     const product = products.find(p => p.id === log.productId);
-    const typeLabel = log.type === 'count' ? '棚卸' : log.type === 'in' ? '入庫' : '出庫';
+    const typeLabel = log.type === 'count_temp' ? '棚卸(仮)' : log.type === 'count' ? '棚卸' : log.type === 'in' ? '入庫' : '出庫';
     const time = new Date(log.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
     return `
       <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
