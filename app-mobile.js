@@ -193,8 +193,12 @@ function showMainScreen() {
   $('#main-screen').classList.add('active');
 
   // ユーザー情報を表示
-  $('#current-user-name').textContent = currentUser.displayName;
-  $('#current-user-role').textContent = currentUser.role === 'admin' ? '管理者' : '作業者';
+  if ($('#current-user-name')) {
+    $('#current-user-name').textContent = currentUser.displayName;
+  }
+  if ($('#current-user-role')) {
+    $('#current-user-role').textContent = currentUser.role === 'admin' ? '管理者' : '作業者';
+  }
 
   // 管理者メニューの表示/非表示
   $$('.admin-only').forEach(el => {
