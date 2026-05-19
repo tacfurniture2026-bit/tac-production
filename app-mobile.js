@@ -4364,23 +4364,21 @@ function renderReport() {
     // 部署・係をキーとして分当り賃率をマッピング
     rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
   });
-
   // 工程→部門マッピング
   const processToDept = {
     '芯材カット': '基材係',
     '面材カット': '基材係',
     '芯組': '基材係',
-    'フラッシュ': '加工係',
+    'フラッシュ': '基材係',
     'ランニングソー': '加工係',
     'エッヂバンダー': '加工係',
     'TOYO': '加工係',
     'HOMAG': '加工係',
     '仕上・梱包': '梱包仕上係',
     'フロア加工': '加工係',
-    'アクリルBOX作成': '加工係',
+    'アクリルBOX作成': '基材係',
     '扉面材くり抜き': '加工係'
   };
-
   const detailRows = filteredOrders.map(order => {
     totalQuantity += order.quantity;
 
@@ -4708,13 +4706,11 @@ function exportReportCSV() {
   rates.forEach(r => {
     rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
   });
-
   const processToDept = {
-    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '加工係',
+    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
     'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
-    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '加工係', '扉面材くり抜き': '加工係'
+    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
   };
-
   const headers = ['物件名', '製品名', '納期', '台数', '加工費合計', '時間(分)'];
   let csvContent = headers.join(',') + '\n';
 
