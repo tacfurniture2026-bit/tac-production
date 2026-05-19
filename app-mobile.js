@@ -5761,42 +5761,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 認証状態チェック (ログイン画面/メイン画面の切り替え)
   checkAuth();
 
-  // リアルタイム同期インジケータ
   setTimeout(() => {
-    const indicator = document.createElement('div');
-    Object.assign(indicator.style, {
-      position: 'fixed',
-      bottom: '10px',
-      right: '10px',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      zIndex: '9999',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      fontFamily: 'sans-serif'
-    });
-
-    // Firebase接続状態チェック
-    const isOnline = (typeof firebase !== 'undefined' && typeof firebase.apps !== 'undefined' && firebase.apps.length > 0);
-
-    if (isOnline) {
-      indicator.style.background = '#ECFDF5';
-      indicator.style.color = '#047857';
-      indicator.style.border = '1px solid #A7F3D0';
-      indicator.innerHTML = '<span style="width:8px; height:8px; background:#10B981; border-radius:50%;"></span> リアルタイム同期: ON';
-    } else {
-      indicator.style.background = '#FEF2F2';
-      indicator.style.color = '#B91C1C';
-      indicator.style.border = '1px solid #FECACA';
-      indicator.innerHTML = '<span style="width:8px; height:8px; background:#EF4444; border-radius:50%;"></span> リアルタイム同期: OFF';
-    }
-
-    document.body.appendChild(indicator);
     // フルスクリーン切り替え
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     if (fullscreenBtn) {
@@ -5977,6 +5942,8 @@ function renderInvCheckPage() {
     filteredItems = listItems.filter(item => item.isScanned);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
+  } else if (filterStatus === 'unpriced') {
+    filteredItems = listItems.filter(item => item.price <= 0);
   }
 
   // Count scan state (always based on unfiltered monthly list)
@@ -6016,10 +5983,20 @@ function renderInvCheckPage() {
       `;
     } else {
       tbody.innerHTML = filteredItems.map(item => {
-        const rowClass = (item.hasPrevQty && !item.isScanned) ? 'style="background-color: #fee2e2; color: #991b1b;"' : '';
-        const statusBadge = (item.hasPrevQty && !item.isScanned)
+        let rowClass = '';
+        if (item.hasPrevQty && !item.isScanned) {
+          rowClass = 'style="background-color: #fee2e2; color: #991b1b;"';
+        } else if (item.price <= 0) {
+          rowClass = 'style="background-color: #fff3cd; color: #856404;"';
+        }
+
+        let statusBadge = (item.hasPrevQty && !item.isScanned)
           ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
           : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+
+        if (item.price <= 0) {
+          statusBadge += ' <span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px;">⚠️ 単価未登録</span>';
+        }
 
         return `
           <tr ${rowClass}>
@@ -6091,6 +6068,87 @@ window.deleteSingleTempScan = function(productId) {
   renderInvCheckPage();
 };
 
+// 単価未登録商品の価格設定モーダル
+function showPriceRegisterModal(unpricedItems, onSaveCallback) {
+  const rowsHtml = unpricedItems.map(item => `
+    <tr>
+      <td><strong>${item.productId}</strong></td>
+      <td>${item.name}</td>
+      <td>
+        <input type="number" class="form-input quick-price-input" 
+               data-product-id="${item.productId}" value="0" min="1" 
+               style="width:120px; font-weight:bold; font-size:1.1rem; text-align:right;"> 円
+      </td>
+    </tr>
+  `).join('');
+
+  const body = `
+    <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
+      <p style="margin-bottom: 1rem; color: #b91c1c; font-weight: 600; font-size: 0.95rem; line-height: 1.5;">
+        ⚠️ 以下の商品の単価が未登録です。価格未登録のまま締め処理を実行することはできません。<br>
+        すべての商品の単価を入力してください（1円以上）。
+      </p>
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>資材ID</th>
+            <th>品名</th>
+            <th style="width: 150px;">単価</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" id="quick-price-submit-btn">単価を登録して締め処理を実行</button>
+  `;
+
+  showModal('⚠️ 単価未登録商品の価格設定', body, footer);
+
+  const submitBtn = document.getElementById('quick-price-submit-btn');
+  if (submitBtn) {
+    submitBtn.onclick = function() {
+      const inputs = document.querySelectorAll('.quick-price-input');
+      const priceUpdates = {};
+      let allValid = true;
+
+      inputs.forEach(input => {
+        const pid = input.dataset.productId;
+        const price = parseInt(input.value) || 0;
+        if (price <= 0) {
+          allValid = false;
+        }
+        priceUpdates[pid] = price;
+      });
+
+      if (!allValid) {
+        alert('すべての商品に1円以上の単価を入力してください。');
+        return;
+      }
+
+      // マスタ（INV_PRODUCTS）更新
+      const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+      products.forEach(p => {
+        if (priceUpdates[p.id] !== undefined) {
+          p.price = priceUpdates[p.id];
+        }
+      });
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+      toast('単価をマスタに登録しました', 'success');
+      hideModal();
+
+      // 締め処理の続行
+      onSaveCallback();
+    };
+  }
+}
+
 // Confirm temp data and close month
 function confirmInvTempData() {
   const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
@@ -6114,6 +6172,33 @@ function confirmInvTempData() {
   }
 
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+
+  // 価格未登録チェック用の checkProductIds 構築
+  const checkProductIds = new Set();
+  currentTempScans.forEach(s => checkProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      checkProductIds.add(id);
+    }
+  });
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const unpricedItems = Array.from(checkProductIds).map(pid => {
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    return {
+      productId: pid,
+      name: prod.name,
+      price: prod.price || 0
+    };
+  }).filter(item => item.price <= 0);
+
+  if (unpricedItems.length > 0) {
+    showPriceRegisterModal(unpricedItems, () => {
+      confirmInvTempData();
+    });
+    return;
+  }
+
   const missingCount = Object.keys(prevStockMap).filter(pid => prevStockMap[pid] > 0 && !currentTempScans.some(s => s.productId === pid)).length;
 
   let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
@@ -6159,7 +6244,6 @@ function confirmInvTempData() {
   DB.save(DB.KEYS.INV_LOGS, logs);
 
   // 3. Clear temporary scans for this month
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   products.forEach(p => {
     if (p.tempMonth === selectedMonth) {
       delete p.tempQty;
