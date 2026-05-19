@@ -7576,7 +7576,7 @@ function submitInventoryCount() {
   const product = products.find(p => p.id === productId);
 
   if (!product) {
-    toast('商品が見つかりません', 'error');
+    showQuickProductRegisterModal(productId, quantity, true);
     return;
   }
 
@@ -8792,8 +8792,11 @@ function renderInvCheckPage() {
     monthInput.value = new Date().toISOString().substring(0, 7);
   }
 
-  // Bind buttons
-  $('#refresh-inv-check-btn').onclick = renderInvCheckPage;
+  // Bind buttons & selectors
+  const statusFilter = $('#inv-check-filter-status');
+  if (statusFilter) {
+    statusFilter.onchange = renderInvCheckPage;
+  }
   $('#confirm-inv-temp-btn').onclick = confirmInvTempData;
   const exportBtn = $('#export-inv-check-btn');
   if (exportBtn) {
@@ -8864,7 +8867,16 @@ function renderInvCheckPage() {
   // Sort listItems by category, then by ID
   listItems.sort((a, b) => a.category.localeCompare(b.category) || a.productId.localeCompare(b.productId));
 
-  // Count scan state
+  // Filter based on selected status
+  const filterStatus = (statusFilter ? statusFilter.value : 'all') || 'all';
+  let filteredItems = listItems;
+  if (filterStatus === 'scanned') {
+    filteredItems = listItems.filter(item => item.isScanned);
+  } else if (filterStatus === 'missing') {
+    filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
+  }
+
+  // Count scan state (always based on unfiltered monthly list)
   const totalItems = listItems.length;
   const scannedCount = listItems.filter(item => item.isScanned).length;
   const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
@@ -8891,16 +8903,16 @@ function renderInvCheckPage() {
   // Draw table body
   const tbody = $('#inv-check-table-body');
   if (tbody) {
-    if (listItems.length === 0) {
+    if (filteredItems.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
-            この月の仮登録データはありません。スマホ等でスキャンを行うか、CSVインポートをしてください。
+            表示対象の棚卸仮登録データはありません。
           </td>
         </tr>
       `;
     } else {
-      tbody.innerHTML = listItems.map(item => {
+      tbody.innerHTML = filteredItems.map(item => {
         const rowClass = (item.hasPrevQty && !item.isScanned) ? 'style="background-color: #fee2e2; color: #991b1b;"' : '';
         const statusBadge = (item.hasPrevQty && !item.isScanned)
           ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
@@ -8914,7 +8926,7 @@ function renderInvCheckPage() {
             <td>¥${item.price.toLocaleString()}</td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0">
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId}')">
             </td>
             <td>${item.prevQty}</td>
             <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
@@ -8925,7 +8937,6 @@ function renderInvCheckPage() {
             </td>
             <td>${statusBadge}</td>
             <td>
-              <button class="btn btn-sm btn-primary" onclick="saveSingleTempScan('${item.productId}')">保存</button>
               ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
             </td>
           </tr>
@@ -9183,6 +9194,129 @@ function exportInvCheckToCsv() {
   link.click();
   document.body.removeChild(link);
 }
+
+// ========================================
+// 未登録資材のクイック登録モーダル
+// ========================================
+function showQuickProductRegisterModal(productId, quantity = 0, isMobile = false) {
+  const categoriesHtml = Object.entries(INV_CATEGORIES)
+    .map(([key, name]) => `<option value="${key}">${name}</option>`)
+    .join('');
+
+  const body = `
+    <div style="padding: 1rem;">
+      <p style="margin-bottom: 1.5rem; color: #b91c1c; font-weight: 600; font-size: 0.95rem; line-height: 1.5;">
+        ⚠️ 資材ID <strong>${productId}</strong> は商品マスタに存在しません。<br>
+        棚卸登録と同時に、商品マスタにクイック新規登録できます。
+      </p>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.875rem;">資材ID (スキャン値)</label>
+        <input type="text" class="form-input" id="quick-prod-id" value="${productId}" readonly style="background: var(--color-bg-secondary); font-weight: bold;">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.875rem;">品名 <span style="color:red;">*</span></label>
+        <input type="text" class="form-input" id="quick-prod-name" placeholder="例: スプルース小割無垢" required style="font-size: 0.95rem;">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.875rem;">分類 <span style="color:red;">*</span></label>
+        <select class="form-input" id="quick-prod-category" style="font-size: 0.95rem;">
+          ${categoriesHtml}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.875rem;">単価 (参考円)</label>
+        <input type="number" class="form-input" id="quick-prod-price" value="0" min="0" style="font-size: 0.95rem;">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.875rem;">今回の棚卸数量</label>
+        <input type="number" class="form-input" id="quick-prod-qty" value="${quantity}" min="0" style="font-size: 1.1rem; font-weight: bold; text-align: center; color: var(--color-primary);">
+      </div>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="submitQuickProductRegister('${productId}', ${isMobile})">マスタ登録して棚卸に追加</button>
+  `;
+
+  showModal('⚠️ 未登録資材のクイック登録', body, footer);
+}
+
+window.submitQuickProductRegister = function(productId, isMobile) {
+  const name = $('#quick-prod-name').value.trim();
+  const category = $('#quick-prod-category').value;
+  const price = parseInt($('#quick-prod-price').value) || 0;
+  const qty = parseInt($('#quick-prod-qty').value) || 0;
+
+  if (!name) {
+    alert('品名を入力してください');
+    return;
+  }
+
+  // 1. Add to product master
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  
+  // Calculate max numeric ID
+  let maxId = 0;
+  products.forEach(p => {
+    const numId = parseInt(p.idStr || p.id, 10);
+    if (!isNaN(numId) && numId > maxId) maxId = numId;
+  });
+  const newIdNum = maxId + 1;
+
+  const newProduct = {
+    id: productId,
+    name: name,
+    category: category,
+    price: price,
+    unit: '本',
+    idStr: String(newIdNum)
+  };
+
+  products.push(newProduct);
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+  // 2. Perform inventory scan submission
+  const targetTimestamp = new Date().toISOString();
+  let targetMonth = '';
+  const monthInput = $('#inv-scan-month');
+  if (monthInput && monthInput.value) {
+    targetMonth = monthInput.value;
+  } else {
+    const now = new Date();
+    targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  DB.saveTempScan(productId, qty, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
+
+  toast(`新資材「${name}」をマスタ登録し、棚卸に ${qty}個 仮登録しました！`, 'success');
+  hideModal();
+
+  // Reset inputs and refresh history logs
+  if (isMobile) {
+    const scanIdInput = $('#inv-scan-id') || $('#inv-scan-product-id');
+    if (scanIdInput) scanIdInput.value = '';
+    const scanQtyInput = $('#inv-scan-qty') || $('#inv-scan-quantity');
+    if (scanQtyInput) scanQtyInput.value = '';
+    const resultEl = $('#inv-scan-result');
+    if (resultEl) resultEl.style.display = 'none';
+    const infoEl = $('#inv-product-info');
+    if (infoEl) infoEl.style.display = 'none';
+
+    if (window.renderTodayInvLogs) renderTodayInvLogs();
+  } else {
+    const scanIdInput = $('#inv-scan-product-id');
+    if (scanIdInput) scanIdInput.value = '';
+    const scanQtyInput = $('#inv-scan-quantity');
+    if (scanQtyInput) scanQtyInput.value = '';
+    const resultEl = $('#inv-scan-result');
+    if (resultEl) resultEl.style.display = 'none';
+    const infoEl = $('#inv-product-info');
+    if (infoEl) infoEl.style.display = 'none';
+
+    if (window.renderTodayInvLogs) renderTodayInvLogs();
+  }
+};
 
 </script>
     <script>
@@ -10024,12 +10158,19 @@ function exportInvCheckToCsv() {
                     </div>
                     <div class="card-body">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: space-between;">
-                            <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <label>対象年月</label>
                                     <input type="month" id="inv-check-month" class="form-input">
                                 </div>
-                                <button type="button" class="btn btn-secondary" id="refresh-inv-check-btn" style="margin-top: 1.25rem;">🔄 表示更新</button>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>状況フィルター</label>
+                                    <select id="inv-check-filter-status" class="form-input" style="width: auto;">
+                                        <option value="all">すべて</option>
+                                        <option value="scanned">✓ 仮登録済</option>
+                                        <option value="missing">⚠️ 未スキャン(漏れ)</option>
+                                    </select>
+                                </div>
                                 <button type="button" class="btn btn-secondary" id="export-inv-check-btn" style="margin-top: 1.25rem;">⬇ CSV出力</button>
                             </div>
                             <div id="inv-check-summary-alerts" style="display: flex; gap: 1rem;">
