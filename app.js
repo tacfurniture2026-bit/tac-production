@@ -1493,8 +1493,11 @@ function renderOrders() {
             <td>${o.startDate || '-'}</td>
             <td style="${dueDateStyle}">${o.dueDate || '-'}</td>
             <td>
-              <div class="progress-bar-container" title="${Math.round(progress)}%">
-                <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%"></div>
+              <div class="progress-cell">
+                <div class="progress-bar">
+                  <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%"></div>
+                </div>
+                <span class="progress-text">${Math.round(progress)}%</span>
               </div>
             </td>
             <td>
@@ -1629,14 +1632,32 @@ function deleteOrder(id) {
 function renderBom() {
   const boms = DB.get(DB.KEYS.BOM);
   const container = $('#bom-list');
+  const searchInput = $('#bom-search-input');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
   if (boms.length === 0) {
     container.innerHTML = '<div class="card p-4 text-center text-muted">BOMが登録されていません</div>';
     return;
   }
 
+  // 検索クエリでフィルタリング
+  let filteredBoms = boms;
+  if (query) {
+    filteredBoms = boms.filter(b => 
+      (b.productName && b.productName.toLowerCase().includes(query)) ||
+      (b.partCode && b.partCode.toLowerCase().includes(query)) ||
+      (b.bomName && b.bomName.toLowerCase().includes(query)) ||
+      (b.category && b.category.toLowerCase().includes(query))
+    );
+  }
+
+  if (filteredBoms.length === 0) {
+    container.innerHTML = '<div class="card p-4 text-center text-muted">該当するBOMはありません</div>';
+    return;
+  }
+
   // 製品別にグループ化
-  const grouped = boms.reduce((acc, bom) => {
+  const grouped = filteredBoms.reduce((acc, bom) => {
     if (!acc[bom.productName]) acc[bom.productName] = [];
     acc[bom.productName].push(bom);
     return acc;
@@ -1666,7 +1687,10 @@ function renderBom() {
                 <td>${b.bomName}</td>
                 <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px;">${b.partCode}</code></td>
                 <td>${b.processes?.length || 0}工程</td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteBom(${b.id})">削除</button></td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" onclick="showEditBomModal(${b.id})" style="margin-right: 0.25rem;">編集</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteBom(${b.id})">削除</button>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -2869,6 +2893,8 @@ function renderBom() {
     if (!list) return;
 
     const boms = DB.get(DB.KEYS.BOM);
+    const searchInput = document.getElementById('bom-search-input');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
     if (!Array.isArray(boms)) {
       console.warn('BOM data is not an array:', boms);
@@ -2881,12 +2907,28 @@ function renderBom() {
       return;
     }
 
+    // 検索クエリでフィルタリング
+    let filteredBoms = boms;
+    if (query) {
+      filteredBoms = boms.filter(b => 
+        (b.productName && b.productName.toLowerCase().includes(query)) ||
+        (b.partCode && b.partCode.toLowerCase().includes(query)) ||
+        (b.bomName && b.bomName.toLowerCase().includes(query)) ||
+        (b.category && b.category.toLowerCase().includes(query))
+      );
+    }
+
+    if (filteredBoms.length === 0) {
+      list.innerHTML = '<p class="text-muted">該当するBOMはありません</p>';
+      return;
+    }
+
     // Debug: データ確認
-    console.log('Rendering BOMs:', boms.length);
+    console.log('Rendering BOMs:', filteredBoms.length);
 
     // カテゴリごとにグループ化
     const grouped = {};
-    boms.forEach(b => {
+    filteredBoms.forEach(b => {
       if (!b) return;
       const cat = b.category || '未分類';
       if (!grouped[cat]) grouped[cat] = [];
@@ -2927,10 +2969,11 @@ function renderBom() {
                   <td>${b.partCode || ''}</td>
                   <td>
                     ${safeProcesses.length > 0 ?
-            safeProcesses.map(p => `<span class="badge badge-primary">${p}</span>`).join('') :
+            safeProcesses.map(p => `<span class="badge badge-primary" style="margin-right: 0.25rem;">${p}</span>`).join('') :
             '<span class="text-muted">なし</span>'}
                   </td>
                   <td>
+                    <button class="btn btn-sm btn-secondary" onclick="showEditBomModal(${b.id})" style="margin-right: 0.25rem;">編集</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
                   </td>
                 </tr>
@@ -3069,7 +3112,13 @@ function showAddBomModal() {
     </div>
     <div class="form-group">
       <label>工程（カンマ区切り）</label>
-      <input type="text" id="bom-processes" class="form-input" placeholder="例: 芯材カット,面材カット,芯組,フラッシュ">
+      <input type="text" id="bom-processes" class="form-input" placeholder="例: 芯材カット,面材カット,芯組,フラッシュ" oninput="updateAddBomProcessTimes()">
+    </div>
+    <div class="form-group">
+      <label>工程別の生産時間（分）</label>
+      <div id="add-bom-process-times-container" style="max-height: 200px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary);">
+        <span class="text-muted" style="font-size: 0.875rem;">工程が設定されていません</span>
+      </div>
     </div>
   `;
 
@@ -3081,28 +3130,34 @@ function showAddBomModal() {
   showModal('新規BOM登録', body, footer);
 }
 
-function toggleBomChecks(catCheck, catName) {
-  const checks = document.querySelectorAll(`.bom-check[data-cat="${catName}"]`);
-  checks.forEach(c => c.checked = catCheck.checked);
-}
+window.updateAddBomProcessTimes = function() {
+  const processesStr = $('#bom-processes').value;
+  const container = $('#add-bom-process-times-container');
+  if (!container) return;
 
-function deleteSelectedBoms() {
-  const checks = document.querySelectorAll('.bom-check:checked');
-  if (checks.length === 0) {
-    toast('削除するBOMを選択してください', 'warning');
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+  
+  const tempTimes = {};
+  document.querySelectorAll('.add-process-time').forEach(input => {
+    tempTimes[input.dataset.process] = parseInt(input.value) || 0;
+  });
+
+  if (processes.length === 0) {
+    container.innerHTML = '<span class="text-muted" style="font-size: 0.875rem;">工程が設定されていません</span>';
     return;
   }
 
-  if (!confirm(`選択された${checks.length}件のBOMを削除しますか？`)) return;
-
-  const ids = Array.from(checks).map(c => parseInt(c.value));
-  let boms = DB.get(DB.KEYS.BOM);
-  boms = boms.filter(b => !ids.includes(b.id)); // ID is number
-
-  DB.save(DB.KEYS.BOM, boms);
-  toast(`${checks.length}件削除しました`, 'success');
-  renderBom();
-}
+  container.innerHTML = processes.map(p => {
+    const time = tempTimes[p] || 0;
+    return `
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="width: 120px; font-size: 0.875rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${p}</span>
+        <input type="number" class="form-input add-process-time" data-process="${p}" value="${time}" min="0" style="width: 80px; padding: 2px 6px;">
+        <span style="font-size: 0.875rem;">分</span>
+      </div>
+    `;
+  }).join('');
+};
 
 function createBom() {
   const category = $('#bom-category').value;
@@ -3111,7 +3166,6 @@ function createBom() {
   let partCode = $('#bom-code').value;
   const processesStr = $('#bom-processes').value;
 
-  // GRIDロジック: カテゴリがGRIDの場合、不整合を防ぐため強制的に 部材CD = 製品名 とする
   if (category && category.toUpperCase() === 'GRID') {
     partCode = productName;
   }
@@ -3129,6 +3183,13 @@ function createBom() {
     }
   }
 
+  const processTimes = {};
+  document.querySelectorAll('.add-process-time').forEach(input => {
+    const p = input.dataset.process;
+    const t = parseInt(input.value) || 0;
+    processTimes[p] = t;
+  });
+
   const boms = DB.get(DB.KEYS.BOM);
   boms.push({
     id: DB.nextId(DB.KEYS.BOM),
@@ -3136,13 +3197,155 @@ function createBom() {
     productName,
     bomName,
     partCode,
-    processes
+    processes,
+    processTimes
   });
   DB.save(DB.KEYS.BOM, boms);
 
   toast('BOMを登録しました', 'success');
   hideModal();
   renderBom();
+}
+
+function showEditBomModal(id) {
+  const boms = DB.get(DB.KEYS.BOM);
+  const bom = boms.find(b => b.id === id);
+  if (!bom) {
+    toast('BOMが見つかりません', 'error');
+    return;
+  }
+
+  const processes = bom.processes || [];
+  const processTimes = bom.processTimes || {};
+
+  const processRowsHtml = processes.map(p => {
+    const time = processTimes[p] || 0;
+    return `
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="width: 120px; font-size: 0.875rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${p}</span>
+        <input type="number" class="form-input edit-process-time" data-process="${p}" value="${time}" min="0" style="width: 80px; padding: 2px 6px;">
+        <span style="font-size: 0.875rem;">分</span>
+      </div>
+    `;
+  }).join('');
+
+  const body = `
+    <input type="hidden" id="edit-bom-id" value="${bom.id}">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>カテゴリ</label>
+        <input type="text" id="edit-bom-category" class="form-input" value="${bom.category || ''}">
+      </div>
+      <div class="form-group">
+        <label>製品名 *</label>
+        <input type="text" id="edit-bom-product" class="form-input" value="${bom.productName || ''}" required>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label>BOM名 *</label>
+        <input type="text" id="edit-bom-name" class="form-input" value="${bom.bomName || ''}" required>
+      </div>
+      <div class="form-group">
+        <label>部材CD *</label>
+        <input type="text" id="edit-bom-code" class="form-input" value="${bom.partCode || ''}" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>工程（カンマ区切り）</label>
+      <input type="text" id="edit-bom-processes" class="form-input" value="${processes.join(',')}" placeholder="例: 芯材カット,面材カット,芯組" oninput="updateEditBomProcessTimes()">
+    </div>
+    <div class="form-group">
+      <label>工程別の生産時間（分）</label>
+      <div id="edit-bom-process-times-container" style="max-height: 200px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-secondary);">
+        ${processRowsHtml || '<span class="text-muted" style="font-size: 0.875rem;">工程が設定されていません</span>'}
+      </div>
+    </div>
+  `;
+
+  const footer = `
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="updateBom()">保存</button>
+  `;
+
+  showModal('BOMの編集', body, footer);
+}
+
+window.updateEditBomProcessTimes = function() {
+  const processesStr = $('#edit-bom-processes').value;
+  const container = $('#edit-bom-process-times-container');
+  if (!container) return;
+
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+  
+  const tempTimes = {};
+  document.querySelectorAll('.edit-process-time').forEach(input => {
+    tempTimes[input.dataset.process] = parseInt(input.value) || 0;
+  });
+
+  if (processes.length === 0) {
+    container.innerHTML = '<span class="text-muted" style="font-size: 0.875rem;">工程が設定されていません</span>';
+    return;
+  }
+
+  container.innerHTML = processes.map(p => {
+    const time = tempTimes[p] || 0;
+    return `
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="width: 120px; font-size: 0.875rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${p}</span>
+        <input type="number" class="form-input edit-process-time" data-process="${p}" value="${time}" min="0" style="width: 80px; padding: 2px 6px;">
+        <span style="font-size: 0.875rem;">分</span>
+      </div>
+    `;
+  }).join('');
+};
+
+function updateBom() {
+  const id = parseInt($('#edit-bom-id').value);
+  const category = $('#edit-bom-category').value;
+  const productName = $('#edit-bom-product').value;
+  const bomName = $('#edit-bom-name').value;
+  let partCode = $('#edit-bom-code').value;
+  const processesStr = $('#edit-bom-processes').value;
+
+  if (category && category.toUpperCase() === 'GRID') {
+    partCode = productName;
+  }
+
+  if (!productName || !bomName || !partCode) {
+    toast('製品名、BOM名、部材CDは必須です', 'warning');
+    return;
+  }
+
+  const processes = processesStr ? processesStr.split(/[,、，]/).map(p => p.trim()).filter(Boolean) : [];
+
+  const processTimes = {};
+  document.querySelectorAll('.edit-process-time').forEach(input => {
+    const p = input.dataset.process;
+    const t = parseInt(input.value) || 0;
+    processTimes[p] = t;
+  });
+
+  const boms = DB.get(DB.KEYS.BOM);
+  const idx = boms.findIndex(b => b.id === id);
+  if (idx !== -1) {
+    boms[idx] = {
+      ...boms[idx],
+      category,
+      productName,
+      bomName,
+      partCode,
+      processes,
+      processTimes
+    };
+    DB.save(DB.KEYS.BOM, boms);
+    toast('BOMを更新しました', 'success');
+    hideModal();
+    renderBom();
+    if (typeof renderGantt === 'function') renderGantt();
+  } else {
+    toast('更新に失敗しました', 'error');
+  }
 }
 
 // ========================================
@@ -4358,14 +4561,14 @@ function renderReport(argStart, argEnd) {
     '芯材カット': '基材係',
     '面材カット': '基材係',
     '芯組': '基材係',
-    'フラッシュ': '基材係',
+    'フラッシュ': '加工係',
     'ランニングソー': '加工係',
     'エッヂバンダー': '加工係',
     'TOYO': '加工係',
     'HOMAG': '加工係',
     '仕上・梱包': '梱包仕上係',
     'フロア加工': '加工係',
-    'アクリルBOX作成': '基材係',
+    'アクリルBOX作成': '加工係',
     '扉面材くり抜き': '加工係'
   };
 
@@ -4747,9 +4950,9 @@ function exportReportCSV() {
   });
 
   const processToDept = {
-    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
+    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '加工係',
     'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
-    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
+    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '加工係', '扉面材くり抜き': '加工係'
   };
 
   const headers = ['物件名', '製品名', '納期', '台数', '台/生産時間(分)', '台/加工費(円)', '総生産時間(分)', '総加工費(円)'];
