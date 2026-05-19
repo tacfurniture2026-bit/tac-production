@@ -2427,7 +2427,6 @@ const DB = {
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
             this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
-            this.KEYS.INV_SCAN_TEMP,
             this.KEYS.BACKUPS
         ];
 
@@ -3175,6 +3174,29 @@ function emergencyRestoreProductsFromLogs() {
   }
 }
 
+// 現在表示中のページを再描画する（Firebaseデータ同期時のUI更新用）
+window.refreshCurrentPage = function () {
+  const activePage = localStorage.getItem('lastPage') || 'dashboard';
+
+  switch (activePage) {
+    case 'dashboard': renderDashboard(); break;
+    case 'gantt': renderGantt(); break;
+    case 'qr': renderQrPage(); break;
+    case 'defects': renderDefects(); break;
+    case 'orders': renderOrders(); break;
+    case 'bom': renderBom(); break;
+    case 'rates': renderRates(); break;
+    case 'users': renderUsers(); break;
+    case 'report': renderReport(); break;
+    case 'inv-scan': renderInvScanPage(); break;
+    case 'inv-search': renderInvSearchPage(); break;
+    case 'inv-products': renderInvProductsPage(); break;
+    case 'inv-check': renderInvCheckPage(); break;
+    case 'inv-adjust': renderInvAdjustPage(); break;
+    case 'inv-monthly': renderInvMonthlyPage(); break;
+  }
+};
+
 function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
@@ -3235,6 +3257,9 @@ function navigateTo(pageName) {
       break;
     case 'inv-products':
       renderInvProductsPage();
+      break;
+    case 'inv-check':
+      renderInvCheckPage();
       break;
     case 'inv-adjust':
       renderInvAdjustPage();
@@ -5772,14 +5797,6 @@ function restoreSampleBom() {
 
 function showAddBomModal() {
   const body = `
-    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
-      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
-      <div style="display:flex; gap:1rem;">
-        <button class="btn btn-sm btn-secondary" onclick="showBomPasteImport()">📋 Excelからコピペ登録</button>
-        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('bom-csv-upload').click()">📂 CSVインポート</button>
-        <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;" onchange="importBomsFromCsv(this)">
-      </div>
-    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
       <div class="form-group">
         <label>カテゴリ</label>
@@ -6132,14 +6149,6 @@ function downloadBomCsvTemplate() {
 
 function showAddRateModal() {
   const body = `
-    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
-      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
-      <div style="display:flex; gap:1rem;">
-        <button class="btn btn-sm btn-secondary" onclick="showRatePasteImport()">📋 Excelからコピペ登録</button>
-        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('rate-csv-upload').click()">📂 CSVインポート</button>
-        <input type="file" id="rate-csv-upload" accept=".csv" style="display: none;" onchange="importRatesFromCsv(this)">
-      </div>
-    </div>
     <div class="form-group">
       <label>判定CD *</label>
       <input type="text" id="rate-code" class="form-input" required>
@@ -8773,6 +8782,408 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
   }
 };
 
+// ========================================
+// 棚卸スキャン確認画面
+// ========================================
+
+function renderInvCheckPage() {
+  const monthInput = $('#inv-check-month');
+  if (monthInput && !monthInput.value) {
+    monthInput.value = new Date().toISOString().substring(0, 7);
+  }
+
+  // Bind buttons
+  $('#refresh-inv-check-btn').onclick = renderInvCheckPage;
+  $('#confirm-inv-temp-btn').onclick = confirmInvTempData;
+  const exportBtn = $('#export-inv-check-btn');
+  if (exportBtn) {
+    exportBtn.onclick = exportInvCheckToCsv;
+  }
+
+  const selectedMonth = monthInput.value;
+
+  // Calculate previous month
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  // Get previous month closing data
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  // Scanned items for this month
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const tempScanMap = {};
+  currentTempScans.forEach(s => {
+    tempScanMap[s.productId] = s;
+  });
+
+  // Build unified lists
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const listItems = Array.from(renderedProductIds).map(pid => {
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const scan = tempScanMap[pid];
+    const prevQty = prevStockMap[pid] || 0;
+    const currQty = scan ? scan.quantity : 0;
+    const diff = currQty - prevQty;
+    const isScanned = !!scan;
+
+    return {
+      productId: pid,
+      category: prod.category,
+      name: prod.name,
+      price: prod.price || 0,
+      quantity: currQty,
+      prevQty: prevQty,
+      diff: diff,
+      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
+      workerId: scan ? (scan.worker || '-') : '-',
+      isScanned: isScanned,
+      hasPrevQty: prevQty > 0
+    };
+  });
+
+  // Sort listItems by category, then by ID
+  listItems.sort((a, b) => a.category.localeCompare(b.category) || a.productId.localeCompare(b.productId));
+
+  // Count scan state
+  const totalItems = listItems.length;
+  const scannedCount = listItems.filter(item => item.isScanned).length;
+  const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
+
+  // Summary alerts HTML
+  const summaryAlertsContainer = $('#inv-check-summary-alerts');
+  if (summaryAlertsContainer) {
+    summaryAlertsContainer.innerHTML = `
+      <div style="background: var(--color-bg-secondary); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+        仮登録: <strong>${scannedCount}</strong> 件
+      </div>
+      ${missingCount > 0 ? `
+      <div style="background: #fee2e2; color: #b91c1c; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ⚠️ 未スキャン漏れ: <strong>${missingCount}</strong> 件
+      </div>
+      ` : `
+      <div style="background: #dcfce7; color: #15803d; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ✓ スキャン漏れなし
+      </div>
+      `}
+    `;
+  }
+
+  // Draw table body
+  const tbody = $('#inv-check-table-body');
+  if (tbody) {
+    if (listItems.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
+            この月の仮登録データはありません。スマホ等でスキャンを行うか、CSVインポートをしてください。
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = listItems.map(item => {
+        const rowClass = (item.hasPrevQty && !item.isScanned) ? 'style="background-color: #fee2e2; color: #991b1b;"' : '';
+        const statusBadge = (item.hasPrevQty && !item.isScanned)
+          ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
+          : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+
+        return `
+          <tr ${rowClass}>
+            <td><strong>${item.productId}</strong></td>
+            <td>${INV_CATEGORIES[item.category] || item.category}</td>
+            <td>${item.name}</td>
+            <td>¥${item.price.toLocaleString()}</td>
+            <td style="text-align: center;">
+              <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0">
+            </td>
+            <td>${item.prevQty}</td>
+            <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
+              ${item.diff > 0 ? '+' : ''}${item.diff}
+            </td>
+            <td>
+              ${item.worker} <span style="font-size: 11px; color: #64748b;">(${item.workerId})</span>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="saveSingleTempScan('${item.productId}')">保存</button>
+              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  // Draw banner alert warning if missing scans exist
+  const alertContainer = $('#inv-check-alerts-container');
+  if (alertContainer) {
+    if (missingCount > 0) {
+      alertContainer.innerHTML = `
+        <div style="background: #fee2e2; border-left: 6px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 24px;">⚠️</span>
+          <div>
+            <div style="font-weight: bold;">棚卸の漏れチェック警告</div>
+            <div style="font-size: 0.875rem;">前月に在庫があった商品で、今月まだ棚卸登録されていない商品が <strong>${missingCount}</strong> 件あります（赤くハイライトされた行）。スキャンを完了させるか、実棚数量を入力して保存してください。</div>
+          </div>
+        </div>
+      `;
+    } else {
+      alertContainer.innerHTML = '';
+    }
+  }
+}
+
+// Global functions for inline actions
+window.saveSingleTempScan = function(productId) {
+  const input = document.getElementById(`inv-check-qty-${productId}`);
+  if (!input) return;
+  const newQty = parseInt(input.value) || 0;
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+
+  // 末日のタイムスタンプ
+  const [y, m] = selectedMonth.split('-');
+  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+  const timestamp = lastDay.toISOString();
+
+  DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  toast('仮登録数量を保存しました', 'success');
+  renderInvCheckPage();
+};
+
+window.deleteSingleTempScan = function(productId) {
+  if (!confirm('仮スキャンデータを消去しますか？')) return;
+  DB.deleteTempScan(productId);
+  toast('仮スキャンデータから削除しました', 'success');
+  renderInvCheckPage();
+};
+
+// Confirm temp data and close month
+function confirmInvTempData() {
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+  
+  // Calculate missing scans to prompt user
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const missingCount = Object.keys(prevStockMap).filter(pid => prevStockMap[pid] > 0 && !currentTempScans.some(s => s.productId === pid)).length;
+
+  let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
+  if (missingCount > 0) {
+    confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  // Let's perform final closing:
+  // 1. Clean existing type count logs for this month from INV_LOGS
+  let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  logs = logs.filter(l => !(l.timestamp && l.timestamp.startsWith(selectedMonth) && l.type === 'count'));
+
+  // 2. Commit all listItems as official count logs
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const timestamp = new Date(year, month, 0, 23, 59, 59).toISOString(); // End of target month
+
+  Array.from(renderedProductIds).forEach((pid, index) => {
+    const tempScan = currentTempScans.find(s => s.productId === pid);
+    const qty = tempScan ? tempScan.quantity : 0;
+    const worker = tempScan ? (tempScan.workerName || tempScan.worker) : 'システム自動';
+    
+    logs.push({
+      id: Date.now() + index,
+      productId: pid,
+      quantity: qty,
+      type: 'count',
+      worker: worker,
+      note: `棚卸確定締め(${selectedMonth})`,
+      timestamp: timestamp
+    });
+  });
+
+  // Save official logs
+  DB.save(DB.KEYS.INV_LOGS, logs);
+
+  // 3. Clear temporary scans for this month
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  products.forEach(p => {
+    if (p.tempMonth === selectedMonth) {
+      delete p.tempQty;
+      delete p.tempWorker;
+      delete p.tempWorkerName;
+      delete p.tempTimestamp;
+      delete p.tempMonth;
+      delete p.tempId;
+    }
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+  // 4. Compute and save monthly closing
+  try {
+    const monthlyResult = calculateInvMonthly(selectedMonth);
+    saveInvMonthlyClosing(selectedMonth, monthlyResult);
+    toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
+  } catch (err) {
+    console.error('月次締め処理エラー:', err);
+    toast('月次締め処理の計算でエラーが発生しました', 'error');
+  }
+
+  // Reload the check page
+  renderInvCheckPage();
+}
+
+// 締め処理保存用のヘルパー関数
+function saveInvMonthlyClosing(month, result) {
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const existingIndex = monthly.findIndex(m => m.month === month);
+
+  const closingData = {
+    month: month,
+    items: result.items,
+    summary: result.summary,
+    total: result.total,
+    fixedTotal: result.summary['fixed']?.amount || 0,
+    closedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    monthly[existingIndex] = closingData;
+  } else {
+    monthly.push(closingData);
+  }
+  
+  DB.save(DB.KEYS.INV_MONTHLY, monthly);
+}
+
+function exportInvCheckToCsv() {
+  const monthInput = $('#inv-check-month');
+  const selectedMonth = monthInput ? monthInput.value : new Date().toISOString().substring(0, 7);
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  // Calculate previous month
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const tempScanMap = {};
+  currentTempScans.forEach(s => {
+    tempScanMap[s.productId] = s;
+  });
+
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const listItems = Array.from(renderedProductIds).map(pid => {
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const scan = tempScanMap[pid];
+    const prevQty = prevStockMap[pid] || 0;
+    const currQty = scan ? scan.quantity : 0;
+    const diff = currQty - prevQty;
+    const isScanned = !!scan;
+
+    return {
+      productId: pid,
+      categoryName: INV_CATEGORIES[prod.category] || prod.category,
+      name: prod.name,
+      price: prod.price || 0,
+      quantity: currQty,
+      prevQty: prevQty,
+      diff: diff,
+      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
+      status: (prevQty > 0 && !isScanned) ? '未スキャン' : '仮登録済'
+    };
+  });
+
+  // Sort
+  listItems.sort((a, b) => a.productId.localeCompare(b.productId));
+
+  // CSV content
+  const headers = ['資材ID', '分類', '品名', '単価', '実棚数量', '前月在庫', '差分', 'スキャン実行者', '状況'];
+  const rows = listItems.map(item => [
+    item.productId,
+    item.categoryName,
+    item.name,
+    item.price,
+    item.quantity,
+    item.prevQty,
+    item.diff,
+    item.worker,
+    item.status
+  ]);
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\r\n');
+
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 with BOM
+  const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `棚卸チェック表_${selectedMonth}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -9223,14 +9634,8 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
                         <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
                         <button class="btn btn-sm btn-secondary" onclick="copySelectedOrders()">❏ 選択を複製</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteSelectedOrders()">🗑 選択を削除</button>
-                        <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
-                        <button class="btn btn-sm btn-secondary" onclick="downloadCsvTemplate()">⬇ テンプレート</button>
-                        <button class="btn btn-sm btn-primary" onclick="document.getElementById('csv-upload').click()">⬆
-                            CSV取込</button>
                         <button class="btn btn-sm btn-outline" onclick="exportOrdersToCsv()" title="現在のリストをCSV出力">⬇
                             CSV出力</button>
-                        <input type="file" id="csv-upload" accept=".csv" style="display: none;"
-                            onchange="importOrdersFromCsv(this)">
                     </div>
                     <label style="display: flex; align-items: center; font-size: 0.875rem; cursor: pointer;">
                         <input type="checkbox" id="show-completed-check" onchange="toggleShowCompleted()"
@@ -9271,10 +9676,6 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
                         <div class="btn-group">
                             <button class="btn btn-secondary" onclick="exportBomsToCsv()"
                                 style="margin-right: 0.5rem;">CSV出力</button>
-                            <label class="btn btn-secondary" style="margin-right: 0.5rem; cursor: pointer;">
-                                CSV取込 <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;"
-                                    onchange="importBomsFromCsv(this)">
-                            </label>
                             <button class="btn btn-secondary" onclick="restoreSampleBom()"
                                 style="font-size: 0.8rem; margin-right: 0.5rem;" title="データが消えた場合に押してください">🔄
                                 初期データ復元</button>
@@ -9295,7 +9696,6 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
                             <p>部門別労務費率の管理</p>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-secondary" onclick="showAddRateModal()">一括インポート</button>
                             <button class="btn btn-primary" onclick="showAddRateModal()">+ 新規作成</button>
                         </div>
                     </div>
@@ -9859,671 +10259,6 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         </div>
     </div>
 
-    <script>
-// ========================================
-// データストレージ（LocalStorage + Firebase対応）
-// ========================================
-
-const DB = {
-    // キー名
-    KEYS: {
-        USERS: 'pms_users',
-        BOM: 'pms_bom',
-        ORDERS: 'pms_orders',
-        RATES: 'pms_rates',
-        DEFECTS: 'pms_defects',
-        PROGRESS_HISTORY: 'pms_progress_history',
-        CURRENT_USER: 'pms_current_user',
-        // 在庫管理
-        INV_PRODUCTS: 'pms_inv_products',      // 商品マスタ
-        INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
-        INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
-        INV_SCAN_TEMP: 'pms_inv_scan_temp',    // 棚卸仮スキャンデータ
-        // バックアップ
-        BACKUPS: 'pms_backups'                 // バックアップ履歴
-    },
-
-    // Firebaseキーへの変換（pms_プレフィックスを除去）
-    toFirebaseKey(key) {
-        return key.replace('pms_', '');
-    },
-
-    // キャッシュ（Firebase用）
-    _cache: {},
-    _listeners: {},
-    _loaded: {}, // Firebaseからの初回読み込み完了フラグ
-
-    // 初期データ
-    init() {
-        // Firebase接続時はリスナーを設定
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
-            this.initFirebase();
-            return;
-        }
-
-        // Firebase未設定時はローカルストレージで初期化
-        this.initLocalStorage();
-    },
-
-    // LocalStorage初期化
-    initLocalStorage() {
-        console.log('📦 ローカルストレージモードで起動');
-
-        // ユーザーに通知（Firebaseが設定されていないことへの注意喚起）
-        setTimeout(() => {
-            toast('⚠️ 現在オフラインモード（自分のみ）です。<br>共有するには設定が必要です。', 'warning', 10000);
-        }, 2000);
-
-        // ユーザー
-        if (!localStorage.getItem(this.KEYS.USERS)) {
-            this.save(this.KEYS.USERS, [
-                { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
-                { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
-            ]);
-        }
-
-        // BOM（サンプル）
-        if (!localStorage.getItem(this.KEYS.BOM)) {
-            this.save(this.KEYS.BOM, [
-                {
-                    id: 1,
-                    category: 'PAO',
-                    productName: 'PAO1012BL',
-                    bomName: 'PaO1012BL(正面)',
-                    partCode: 'FR1012BL',
-                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包']
-                },
-                {
-                    id: 2,
-                    category: 'PAO',
-                    productName: 'PAO1012BL',
-                    bomName: 'PaO1012BL(側面L)',
-                    partCode: 'SL1012BL',
-                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-                },
-                {
-                    id: 3,
-                    category: 'PAO',
-                    productName: 'PAO1012BL',
-                    bomName: 'PaO1012BL(側面R)',
-                    partCode: 'SR1012BL',
-                    processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包']
-                }
-            ]);
-        }
-
-        // 指示書（サンプル）
-        if (!localStorage.getItem(this.KEYS.ORDERS)) {
-            const today = new Date().toISOString().split('T')[0];
-            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-            this.save(this.KEYS.ORDERS, [
-                {
-                    id: 1,
-                    orderNo: 'TK-2026-001',
-                    projectName: '○○ビル改装工事',
-                    productName: 'PAO1012BL',
-                    quantity: 5,
-                    startDate: today,
-                    dueDate: nextWeek,
-                    color: 'ホワイト',
-                    items: [
-                        { id: 1, bomName: 'PaO1012BL(正面)', partCode: 'FR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', 'エッヂバンダー', '仕上・梱包'], completed: [] },
-                        { id: 2, bomName: 'PaO1012BL(側面L)', partCode: 'SL1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] },
-                        { id: 3, bomName: 'PaO1012BL(側面R)', partCode: 'SR1012BL', processes: ['芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー', '仕上・梱包'], completed: [] }
-                    ]
-                }
-            ]);
-        }
-
-        // 賃率（localStorageモードのみ。Firebaseモードは ensureInitialData で処理）
-        const isFirebaseMode = typeof useFirebase !== 'undefined' && useFirebase;
-        if (!isFirebaseMode) {
-            const defaultRates = [
-                { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
-                { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
-                { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
-            ];
-            const existingRates = localStorage.getItem(this.KEYS.RATES);
-            if (!existingRates) {
-                this.save(this.KEYS.RATES, defaultRates);
-            } else {
-                try {
-                    const parsed = JSON.parse(existingRates);
-                    const isOldFormat = Array.isArray(parsed) && parsed.length > 0 &&
-                        (parsed[0].rate !== undefined ||
-                            parsed[0].secondRate === undefined ||
-                            parsed[0].rateCode === 'A01');
-                    if (isOldFormat) {
-                        console.log('🔄 賃率データをマイグレーション: 旧形式 → 新形式');
-                        this.save(this.KEYS.RATES, defaultRates);
-                    }
-                } catch (e) {
-                    this.save(this.KEYS.RATES, defaultRates);
-                }
-            }
-        }
-
-        // 不良品
-        if (!localStorage.getItem(this.KEYS.DEFECTS)) {
-            this.save(this.KEYS.DEFECTS, []);
-        }
-
-        // 進捗履歴
-        if (!localStorage.getItem(this.KEYS.PROGRESS_HISTORY)) {
-            this.save(this.KEYS.PROGRESS_HISTORY, []);
-        }
-
-        // 在庫：商品マスタ（サンプル）
-        if (!localStorage.getItem(this.KEYS.INV_PRODUCTS)) {
-            this.save(this.KEYS.INV_PRODUCTS, [
-                { id: 'N01000000001', name: 'パーティクルボード 18mm', category: '01', price: 3500, isFixed: false },
-                { id: 'N02000000001', name: 'メラミン化粧板 白', category: '02', price: 2800, isFixed: false },
-                { id: 'N05000000001', name: 'スライド丁番', category: '05', price: 150, isFixed: false }
-            ]);
-        }
-
-        // 在庫：棚卸ログ
-        if (!localStorage.getItem(this.KEYS.INV_LOGS)) {
-            this.save(this.KEYS.INV_LOGS, []);
-        }
-
-        // 在庫：月次データ
-        if (!localStorage.getItem(this.KEYS.INV_MONTHLY)) {
-            this.save(this.KEYS.INV_MONTHLY, []);
-        }
-
-        // 在庫：棚卸仮スキャンデータ
-        if (!localStorage.getItem(this.KEYS.INV_SCAN_TEMP)) {
-            this.save(this.KEYS.INV_SCAN_TEMP, []);
-        }
-    },
-
-    // Firebase初期化
-    initFirebase() {
-        console.log('🔥 Firebaseモードで起動');
-
-        // 接続状態監視
-        firebaseDB.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true) {
-                console.log('✅ Firebase接続完了');
-                toast('☁️ サーバーに接続しました（共有有効）', 'success');
-            } else {
-                console.warn('⚠️ Firebase未接続');
-                // 切断時（または初期接続失敗時）
-                // toast('⚠️ サーバー接続が切れています', 'warning');
-            }
-        });
-
-        // 各データタイプにリスナーを設定
-        const dataKeys = [
-            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
-            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
-            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
-            this.KEYS.INV_SCAN_TEMP,
-            this.KEYS.BACKUPS
-        ];
-
-        dataKeys.forEach(key => {
-            const fbKey = this.toFirebaseKey(key);
-
-            // リアルタイムリスナー
-            firebaseDB.ref(fbKey).on('value', (snapshot) => {
-                const data = snapshot.val();
-                let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
-                this._cache[key] = parsedData.filter(item => item !== null);
-                this._loaded[key] = true; // 同期完了フラグをセット
-                console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
-
-                // UI更新（定義されている場合）
-                if (typeof refreshCurrentPage === 'function') {
-                    refreshCurrentPage();
-                }
-            }, (error) => {
-                console.error(`❌ ${fbKey} 読み込みエラー:`, error);
-                // エラー時もロックを解除してローカルキャッシュで動作可能にする
-                this._loaded[key] = true;
-            });
-        });
-
-        // 初期データがない場合は作成
-        setTimeout(() => {
-            this.ensureInitialData();
-        }, 2000);
-
-        // 自動バックアップチェック（データ読み込み後）
-        setTimeout(() => {
-            this.checkAutoBackup();
-        }, 5000);
-    },
-
-    // Firebase初期データ確認
-    ensureInitialData() {
-        const defaultRates = [
-            { id: 1, rateCode: '第二製造課基材係', department: '製造部', section: '第二製造課', subsection: '基材係', monthlyRate: 480855, dailyRate: 22898, hourlyRate: 2862, minuteRate: 47.7, secondRate: 0.8 },
-            { id: 2, rateCode: '第二製造課加工係', department: '製造部', section: '第二製造課', subsection: '加工係', monthlyRate: 487041, dailyRate: 23192, hourlyRate: 2899, minuteRate: 48.3, secondRate: 0.8 },
-            { id: 3, rateCode: '第二製造課梱包仕上係', department: '製造部', section: '第二製造課', subsection: '梱包仕上係', monthlyRate: 360695, dailyRate: 17176, hourlyRate: 2147, minuteRate: 35.8, secondRate: 0.6 }
-        ];
-
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB) {
-            firebaseDB.ref(this.toFirebaseKey(this.KEYS.USERS)).once('value').then(snap => {
-                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
-                    this.save(this.KEYS.USERS, [
-                        { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
-                        { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
-                    ]);
-                }
-            });
-
-            firebaseDB.ref(this.toFirebaseKey(this.KEYS.RATES)).once('value').then(snap => {
-                let needsInit = false;
-                if (!snap.exists() || !snap.val() || Object.keys(snap.val()).length === 0) {
-                    needsInit = true;
-                } else {
-                    const data = snap.val();
-                    const rates = Array.isArray(data) ? data : Object.values(data);
-                    if (rates.length > 0 && (
-                        rates[0].secondRate === undefined ||
-                        rates[0].rate !== undefined ||
-                        rates[0].rateCode === 'A01'
-                    )) {
-                        needsInit = true;
-                    }
-                }
-
-                if (needsInit) {
-                    console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
-                    this.save(this.KEYS.RATES, defaultRates);
-                }
-            });
-        } else {
-            if (this.get(this.KEYS.USERS).length === 0) {
-                this.save(this.KEYS.USERS, [
-                    { id: 1, username: 'admin', password: 'admin123', displayName: '管理者', role: 'admin', department: '管理部' },
-                    { id: 2, username: 'worker', password: 'worker123', displayName: '作業者A', role: 'worker', department: '製造部' }
-                ]);
-            }
-
-            // 賃率: 空 OR 旧形式なら初期値を設定
-            const rates = this.get(this.KEYS.RATES);
-            const needsInit = rates.length === 0 ||
-                (rates.length > 0 && (
-                    rates[0].secondRate === undefined ||
-                    rates[0].rate !== undefined ||
-                    rates[0].rateCode === 'A01'
-                ));
-
-            if (needsInit) {
-                console.log('🔄 ensureInitialData: 賃率データを初期化/マイグレーション');
-                this.save(this.KEYS.RATES, defaultRates);
-            }
-        }
-    },
-
-    // 保存（全置換 - 初期化時など限定）
-    save(key, data) {
-        // Firebase同期前の空データ上書きを防止
-        if (typeof useFirebase !== 'undefined' && useFirebase && !this._loaded[key]) {
-            console.warn(`⚠️ ${key} の保存をスキップ: Firebaseからの初回読み込みが未完了です`);
-            return;
-        }
-
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).set(data)
-                .then(() => console.log(`💾 ${fbKey} 保存完了`))
-                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
-            this._cache[key] = data;
-            // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
-            localStorage.setItem(key, JSON.stringify(data));
-        } else {
-            localStorage.setItem(key, JSON.stringify(data));
-            if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
-        }
-    },
-
-    // 棚卸仮スキャンデータ (INV_PRODUCTS 内に埋め込み保存することで Firebase のパーミッションエラーを完全回避)
-    getTempScans() {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        return products
-            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
-            .map(p => ({
-                id: p.tempId || (p.id + "_temp"),
-                productId: p.id,
-                quantity: p.tempQty,
-                worker: p.tempWorker,
-                workerName: p.tempWorkerName,
-                timestamp: p.tempTimestamp,
-                month: p.tempMonth
-            }));
-    },
-
-    saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const prod = products.find(p => p.id === productId);
-        if (prod) {
-            prod.tempQty = quantity;
-            prod.tempWorker = worker;
-            prod.tempWorkerName = workerName;
-            prod.tempTimestamp = timestamp;
-            prod.tempMonth = month;
-            prod.tempId = Date.now() + "_" + productId;
-            this.save(this.KEYS.INV_PRODUCTS, products);
-        }
-    },
-
-    deleteTempScan(productId) {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const prod = products.find(p => p.id === productId);
-        if (prod) {
-            delete prod.tempQty;
-            delete prod.tempWorker;
-            delete prod.tempWorkerName;
-            delete prod.tempTimestamp;
-            delete prod.tempMonth;
-            delete prod.tempId;
-            this.save(this.KEYS.INV_PRODUCTS, products);
-        }
-    },
-
-    clearTempScans() {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        products.forEach(p => {
-            delete p.tempQty;
-            delete p.tempWorker;
-            delete p.tempWorkerName;
-            delete p.tempTimestamp;
-            delete p.tempMonth;
-            delete p.tempId;
-        });
-        this.save(this.KEYS.INV_PRODUCTS, products);
-    },
-
-    // 追加（競合回避：トランザクション使用）
-    add(key, newItem) {
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (currentData === null) return [newItem];
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                if (newItem.id && dataArray.some(d => d.id === newItem.id)) return; // ID重複防止
-                dataArray.push(newItem);
-                return dataArray;
-            }, (error, committed) => {
-                if (error) {
-                    console.error('Add failed:', error);
-                    toast('追加に失敗しました', 'error');
-                }
-            });
-        } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            data.push(newItem);
-            this.save(key, data);
-        }
-    },
-
-    // 一括追加（Promise対応・Firebase非同期対応）
-    addBulk(key, newItems) {
-        if (!newItems || newItems.length === 0) return Promise.resolve(true);
-        
-        console.log(`📦 addBulk開始: key=${key}, 件数=${newItems.length}`);
-        
-        // 現在のデータを取得してローカルで結合
-        const currentData = this.get(key);
-        console.log(`📦 addBulk: 既存データ ${currentData.length}件`);
-        
-        // 最大IDを算出（数値IDのみ対象）
-        let maxId = 0;
-        currentData.forEach(item => {
-            if (item && item.id) {
-                const numId = typeof item.id === 'number' ? item.id : parseInt(item.id, 10);
-                if (!isNaN(numId) && numId > maxId) maxId = numId;
-            }
-        });
-        console.log(`📦 addBulk: 現在の最大ID=${maxId}`);
-        
-        // 新アイテムにIDを付与してコピー（元データを変更しない）
-        const itemsToAdd = newItems.map(item => {
-            maxId++;
-            return Object.assign({}, item, { id: maxId });
-        });
-        
-        // 結合
-        const merged = currentData.concat(itemsToAdd);
-        console.log(`📦 addBulk: 結合後 ${merged.length}件, Firebase=${typeof useFirebase !== 'undefined' && useFirebase}`);
-        
-        // Firebase使用時は直接setして完了を待つ
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            this._cache[key] = merged;
-            return firebaseDB.ref(fbKey).set(merged)
-                .then(() => {
-                    console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
-                    return true;
-                })
-                .catch(err => {
-                    console.error(`❌ addBulk Firebase保存エラー:`, err);
-                    throw err;
-                });
-        } else {
-            // ローカルストレージ
-            try {
-                localStorage.setItem(key, JSON.stringify(merged));
-                console.log(`✅ addBulk ローカル保存完了: ${itemsToAdd.length}件追加`);
-                return Promise.resolve(true);
-            } catch (err) {
-                console.error('addBulk ローカル保存エラー:', err);
-                return Promise.reject(err);
-            }
-        }
-    },
-
-    // 更新（競合回避：トランザクション使用）
-    update(key, id, updatedItem) {
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (!currentData) return;
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                const index = dataArray.findIndex(item => item && item.id === id);
-                if (index !== -1) {
-                    dataArray[index] = updatedItem;
-                }
-                return dataArray;
-            }, (error, committed) => {
-                if (error) {
-                    console.error('Update failed:', error);
-                    toast('更新に失敗しました: ' + error.message, 'error');
-                }
-            });
-        } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            const index = data.findIndex(item => item.id === id);
-            if (index !== -1) {
-                data[index] = updatedItem;
-                this.save(key, data);
-            }
-        }
-    },
-
-    // 削除（競合回避：トランザクション使用）
-    delete(key, id) {
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (!currentData) return;
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                const filteredData = dataArray.filter(item => item && item.id !== id);
-                return filteredData;
-            }, (error, committed) => {
-                if (error) {
-                    console.error('Delete failed:', error);
-                    toast('削除に失敗しました: ' + error.message, 'error');
-                }
-            });
-        } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            const filteredData = data.filter(item => item && item.id !== id);
-            this.save(key, filteredData);
-        }
-    },
-
-    // 取得
-    get(key) {
-        // Firebase使用時（キャッシュから取得）
-        if (typeof useFirebase !== 'undefined' && useFirebase && key !== this.KEYS.CURRENT_USER) {
-            return this._cache[key] || [];
-        }
-        // ローカルストレージ
-        const data = localStorage.getItem(key);
-        try {
-            const parsed = data ? JSON.parse(data) : [];
-            const parsedArray = Array.isArray(parsed) ? parsed : [];
-            return parsedArray.filter(item => item !== null);
-        } catch (e) {
-            console.error('DB Parse Error:', key, e);
-            return [];
-        }
-    },
-
-    // 次のID
-    nextId(key) {
-        const data = this.get(key);
-        return data.length > 0 ? Math.max(...data.map(d => d.id || 0)) + 1 : 1;
-    },
-
-    // ========================================
-    // バックアップ機能
-    // ========================================
-
-    // バックアップ対象のキー一覧
-    _backupTargetKeys() {
-        return [
-            this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
-            this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
-            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
-        ];
-    },
-
-    // バックアップ作成
-    createBackup(label) {
-        const snapshot = {};
-        let totalRecords = 0;
-        this._backupTargetKeys().forEach(key => {
-            const data = this.get(key);
-            snapshot[key] = data;
-            totalRecords += data.length;
-        });
-
-        const backups = this.get(this.KEYS.BACKUPS);
-        const backup = {
-            id: Date.now(),
-            label: label || '手動バックアップ',
-            createdAt: new Date().toISOString(),
-            totalRecords,
-            dataSize: JSON.stringify(snapshot).length,
-            snapshot
-        };
-        backups.push(backup);
-        this.save(this.KEYS.BACKUPS, backups);
-        localStorage.setItem('pms_last_backup_date', new Date().toISOString());
-        return backup;
-    },
-
-    // バックアップから復元
-    restoreBackup(backupId) {
-        const backups = this.get(this.KEYS.BACKUPS);
-        const backup = backups.find(b => b.id === backupId);
-        if (!backup || !backup.snapshot) return false;
-
-        this._backupTargetKeys().forEach(key => {
-            if (backup.snapshot[key] !== undefined) {
-                this.save(key, backup.snapshot[key]);
-            }
-        });
-        return true;
-    },
-
-    // バックアップ削除
-    deleteBackupById(backupId) {
-        let backups = this.get(this.KEYS.BACKUPS);
-        backups = backups.filter(b => b.id !== backupId);
-        this.save(this.KEYS.BACKUPS, backups);
-    },
-
-    // バックアップ一覧取得(スナップショットなし=軽量)
-    getBackupList() {
-        const backups = this.get(this.KEYS.BACKUPS);
-        return backups.map(b => ({
-            id: b.id,
-            label: b.label,
-            createdAt: b.createdAt,
-            totalRecords: b.totalRecords,
-            dataSize: b.dataSize
-        }));
-    },
-
-    // 自動バックアップチェック（月1回・日曜日）
-    checkAutoBackup() {
-        const now = new Date();
-        // 日曜日（0）でなければスキップ
-        if (now.getDay() !== 0) return;
-
-        const lastBackup = localStorage.getItem('pms_last_backup_date');
-        if (lastBackup) {
-            const lastDate = new Date(lastBackup);
-            const daysSince = (now - lastDate) / (1000 * 60 * 60 * 24);
-            if (daysSince < 28) return; // 28日未満ならスキップ
-        }
-
-        // 自動バックアップ実行
-        console.log('💾 自動バックアップを実行中...');
-        const backup = this.createBackup('自動バックアップ（月次）');
-        console.log(`✅ 自動バックアップ完了: ${backup.totalRecords}件`);
-        if (typeof toast === 'function') {
-            toast(`💾 月次自動バックアップを作成しました（${backup.totalRecords}件）`, 'success');
-        }
-
-        // 古いバックアップを整理（最新6件のみ保持）
-        let backups = this.get(this.KEYS.BACKUPS);
-        if (backups.length > 6) {
-            backups.sort((a, b) => b.id - a.id);
-            backups = backups.slice(0, 6);
-            this.save(this.KEYS.BACKUPS, backups);
-        }
-    }
-};
-
-// 標準工程リスト
-const STANDARD_PROCESSES = [
-    '芯材カット', '面材カット', '芯組', 'フラッシュ', 'ランニングソー',
-    'エッヂバンダー', 'TOYO', 'HOMAG', '仕上・梱包', 'フロア加工',
-    'アクリルBOX作成', '扉面材くり抜き'
-];
-
-// 現在のページを更新（Firebase用）
-function refreshCurrentPage() {
-    // 現在表示中のページを再描画
-    const activePage = document.querySelector('.page.active');
-    if (activePage) {
-        const pageId = activePage.id.replace('page-', '');
-        if (typeof navigateTo === 'function') {
-            // ナビゲーション状態は変えずに再描画のみ
-            switch (pageId) {
-                case 'dashboard': if (typeof renderDashboard === 'function') renderDashboard(); break;
-                case 'gantt': if (typeof renderGantt === 'function') renderGantt(); break;
-                case 'orders': if (typeof renderOrders === 'function') renderOrders(); break;
-                case 'bom': if (typeof renderBom === 'function') renderBom(); break;
-            }
-        }
-    }
-}
-
-</script>
-    <!-- app.js inlined above -->
     <!-- バージョン表示 -->
 </body>
 

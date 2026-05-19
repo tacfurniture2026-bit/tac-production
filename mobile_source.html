@@ -566,14 +566,8 @@
                         <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
                         <button class="btn btn-sm btn-secondary" onclick="copySelectedOrders()">❏ 選択を複製</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteSelectedOrders()">🗑 選択を削除</button>
-                        <div style="border-left: 1px solid var(--color-border); height: 20px; margin: 0 4px;"></div>
-                        <button class="btn btn-sm btn-secondary" onclick="downloadCsvTemplate()">⬇ テンプレート</button>
-                        <button class="btn btn-sm btn-primary" onclick="document.getElementById('csv-upload').click()">⬆
-                            CSV取込</button>
                         <button class="btn btn-sm btn-outline" onclick="exportOrdersToCsv()" title="現在のリストをCSV出力">⬇
                             CSV出力</button>
-                        <input type="file" id="csv-upload" accept=".csv" style="display: none;"
-                            onchange="importOrdersFromCsv(this)">
                     </div>
                     <label style="display: flex; align-items: center; font-size: 0.875rem; cursor: pointer;">
                         <input type="checkbox" id="show-completed-check" onchange="toggleShowCompleted()"
@@ -614,10 +608,6 @@
                         <div class="btn-group">
                             <button class="btn btn-secondary" onclick="exportBomsToCsv()"
                                 style="margin-right: 0.5rem;">CSV出力</button>
-                            <label class="btn btn-secondary" style="margin-right: 0.5rem; cursor: pointer;">
-                                CSV取込 <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;"
-                                    onchange="importBomsFromCsv(this)">
-                            </label>
                             <button class="btn btn-secondary" onclick="restoreSampleBom()"
                                 style="font-size: 0.8rem; margin-right: 0.5rem;" title="データが消えた場合に押してください">🔄
                                 初期データ復元</button>
@@ -638,7 +628,6 @@
                             <p>部門別労務費率の管理</p>
                         </div>
                         <div class="btn-group">
-                            <button class="btn btn-secondary" onclick="showAddRateModal()">一括インポート</button>
                             <button class="btn btn-primary" onclick="showAddRateModal()">+ 新規作成</button>
                         </div>
                     </div>
@@ -1202,8 +1191,6 @@
         </div>
     </div>
 
-    <script src="data.js"></script>
-    <script src="app.js?v=20260513_2"></script>
     <!-- バージョン表示 -->
 </body>
 

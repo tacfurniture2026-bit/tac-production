@@ -282,6 +282,29 @@ function emergencyRestoreProductsFromLogs() {
   }
 }
 
+// 現在表示中のページを再描画する（Firebaseデータ同期時のUI更新用）
+window.refreshCurrentPage = function () {
+  const activePage = localStorage.getItem('lastPage') || 'dashboard';
+
+  switch (activePage) {
+    case 'dashboard': renderDashboard(); break;
+    case 'gantt': renderGantt(); break;
+    case 'qr': renderQrPage(); break;
+    case 'defects': renderDefects(); break;
+    case 'orders': renderOrders(); break;
+    case 'bom': renderBom(); break;
+    case 'rates': renderRates(); break;
+    case 'users': renderUsers(); break;
+    case 'report': renderReport(); break;
+    case 'inv-scan': renderInvScanPage(); break;
+    case 'inv-search': renderInvSearchPage(); break;
+    case 'inv-products': renderInvProductsPage(); break;
+    case 'inv-check': renderInvCheckPage(); break;
+    case 'inv-adjust': renderInvAdjustPage(); break;
+    case 'inv-monthly': renderInvMonthlyPage(); break;
+  }
+};
+
 function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
@@ -342,6 +365,9 @@ function navigateTo(pageName) {
       break;
     case 'inv-products':
       renderInvProductsPage();
+      break;
+    case 'inv-check':
+      renderInvCheckPage();
       break;
     case 'inv-adjust':
       renderInvAdjustPage();
@@ -2879,14 +2905,6 @@ function restoreSampleBom() {
 
 function showAddBomModal() {
   const body = `
-    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
-      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
-      <div style="display:flex; gap:1rem;">
-        <button class="btn btn-sm btn-secondary" onclick="showBomPasteImport()">📋 Excelからコピペ登録</button>
-        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('bom-csv-upload').click()">📂 CSVインポート</button>
-        <input type="file" id="bom-csv-upload" accept=".csv" style="display: none;" onchange="importBomsFromCsv(this)">
-      </div>
-    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
       <div class="form-group">
         <label>カテゴリ</label>
@@ -3239,14 +3257,6 @@ function downloadBomCsvTemplate() {
 
 function showAddRateModal() {
   const body = `
-    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: 4px;">
-      <h4 style="margin-bottom: 0.5rem;">一括登録オプション</h4>
-      <div style="display:flex; gap:1rem;">
-        <button class="btn btn-sm btn-secondary" onclick="showRatePasteImport()">📋 Excelからコピペ登録</button>
-        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('rate-csv-upload').click()">📂 CSVインポート</button>
-        <input type="file" id="rate-csv-upload" accept=".csv" style="display: none;" onchange="importRatesFromCsv(this)">
-      </div>
-    </div>
     <div class="form-group">
       <label>判定CD *</label>
       <input type="text" id="rate-code" class="form-input" required>
@@ -5874,3 +5884,405 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     alert('エラーが発生しました: ' + e.message);
   }
 };
+
+// ========================================
+// 棚卸スキャン確認画面
+// ========================================
+
+function renderInvCheckPage() {
+  const monthInput = $('#inv-check-month');
+  if (monthInput && !monthInput.value) {
+    monthInput.value = new Date().toISOString().substring(0, 7);
+  }
+
+  // Bind buttons
+  $('#refresh-inv-check-btn').onclick = renderInvCheckPage;
+  $('#confirm-inv-temp-btn').onclick = confirmInvTempData;
+  const exportBtn = $('#export-inv-check-btn');
+  if (exportBtn) {
+    exportBtn.onclick = exportInvCheckToCsv;
+  }
+
+  const selectedMonth = monthInput.value;
+
+  // Calculate previous month
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  // Get previous month closing data
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  // Scanned items for this month
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const tempScanMap = {};
+  currentTempScans.forEach(s => {
+    tempScanMap[s.productId] = s;
+  });
+
+  // Build unified lists
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const listItems = Array.from(renderedProductIds).map(pid => {
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const scan = tempScanMap[pid];
+    const prevQty = prevStockMap[pid] || 0;
+    const currQty = scan ? scan.quantity : 0;
+    const diff = currQty - prevQty;
+    const isScanned = !!scan;
+
+    return {
+      productId: pid,
+      category: prod.category,
+      name: prod.name,
+      price: prod.price || 0,
+      quantity: currQty,
+      prevQty: prevQty,
+      diff: diff,
+      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
+      workerId: scan ? (scan.worker || '-') : '-',
+      isScanned: isScanned,
+      hasPrevQty: prevQty > 0
+    };
+  });
+
+  // Sort listItems by category, then by ID
+  listItems.sort((a, b) => a.category.localeCompare(b.category) || a.productId.localeCompare(b.productId));
+
+  // Count scan state
+  const totalItems = listItems.length;
+  const scannedCount = listItems.filter(item => item.isScanned).length;
+  const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
+
+  // Summary alerts HTML
+  const summaryAlertsContainer = $('#inv-check-summary-alerts');
+  if (summaryAlertsContainer) {
+    summaryAlertsContainer.innerHTML = `
+      <div style="background: var(--color-bg-secondary); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+        仮登録: <strong>${scannedCount}</strong> 件
+      </div>
+      ${missingCount > 0 ? `
+      <div style="background: #fee2e2; color: #b91c1c; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ⚠️ 未スキャン漏れ: <strong>${missingCount}</strong> 件
+      </div>
+      ` : `
+      <div style="background: #dcfce7; color: #15803d; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ✓ スキャン漏れなし
+      </div>
+      `}
+    `;
+  }
+
+  // Draw table body
+  const tbody = $('#inv-check-table-body');
+  if (tbody) {
+    if (listItems.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="text-center text-muted" style="padding: 3rem;">
+            この月の仮登録データはありません。スマホ等でスキャンを行うか、CSVインポートをしてください。
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = listItems.map(item => {
+        const rowClass = (item.hasPrevQty && !item.isScanned) ? 'style="background-color: #fee2e2; color: #991b1b;"' : '';
+        const statusBadge = (item.hasPrevQty && !item.isScanned)
+          ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
+          : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+
+        return `
+          <tr ${rowClass}>
+            <td><strong>${item.productId}</strong></td>
+            <td>${INV_CATEGORIES[item.category] || item.category}</td>
+            <td>${item.name}</td>
+            <td>¥${item.price.toLocaleString()}</td>
+            <td style="text-align: center;">
+              <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0">
+            </td>
+            <td>${item.prevQty}</td>
+            <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
+              ${item.diff > 0 ? '+' : ''}${item.diff}
+            </td>
+            <td>
+              ${item.worker} <span style="font-size: 11px; color: #64748b;">(${item.workerId})</span>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="saveSingleTempScan('${item.productId}')">保存</button>
+              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  // Draw banner alert warning if missing scans exist
+  const alertContainer = $('#inv-check-alerts-container');
+  if (alertContainer) {
+    if (missingCount > 0) {
+      alertContainer.innerHTML = `
+        <div style="background: #fee2e2; border-left: 6px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 24px;">⚠️</span>
+          <div>
+            <div style="font-weight: bold;">棚卸の漏れチェック警告</div>
+            <div style="font-size: 0.875rem;">前月に在庫があった商品で、今月まだ棚卸登録されていない商品が <strong>${missingCount}</strong> 件あります（赤くハイライトされた行）。スキャンを完了させるか、実棚数量を入力して保存してください。</div>
+          </div>
+        </div>
+      `;
+    } else {
+      alertContainer.innerHTML = '';
+    }
+  }
+}
+
+// Global functions for inline actions
+window.saveSingleTempScan = function(productId) {
+  const input = document.getElementById(`inv-check-qty-${productId}`);
+  if (!input) return;
+  const newQty = parseInt(input.value) || 0;
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+
+  // 末日のタイムスタンプ
+  const [y, m] = selectedMonth.split('-');
+  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+  const timestamp = lastDay.toISOString();
+
+  DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  toast('仮登録数量を保存しました', 'success');
+  renderInvCheckPage();
+};
+
+window.deleteSingleTempScan = function(productId) {
+  if (!confirm('仮スキャンデータを消去しますか？')) return;
+  DB.deleteTempScan(productId);
+  toast('仮スキャンデータから削除しました', 'success');
+  renderInvCheckPage();
+};
+
+// Confirm temp data and close month
+function confirmInvTempData() {
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+  
+  // Calculate missing scans to prompt user
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const missingCount = Object.keys(prevStockMap).filter(pid => prevStockMap[pid] > 0 && !currentTempScans.some(s => s.productId === pid)).length;
+
+  let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
+  if (missingCount > 0) {
+    confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  // Let's perform final closing:
+  // 1. Clean existing type count logs for this month from INV_LOGS
+  let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  logs = logs.filter(l => !(l.timestamp && l.timestamp.startsWith(selectedMonth) && l.type === 'count'));
+
+  // 2. Commit all listItems as official count logs
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const timestamp = new Date(year, month, 0, 23, 59, 59).toISOString(); // End of target month
+
+  Array.from(renderedProductIds).forEach((pid, index) => {
+    const tempScan = currentTempScans.find(s => s.productId === pid);
+    const qty = tempScan ? tempScan.quantity : 0;
+    const worker = tempScan ? (tempScan.workerName || tempScan.worker) : 'システム自動';
+    
+    logs.push({
+      id: Date.now() + index,
+      productId: pid,
+      quantity: qty,
+      type: 'count',
+      worker: worker,
+      note: `棚卸確定締め(${selectedMonth})`,
+      timestamp: timestamp
+    });
+  });
+
+  // Save official logs
+  DB.save(DB.KEYS.INV_LOGS, logs);
+
+  // 3. Clear temporary scans for this month
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  products.forEach(p => {
+    if (p.tempMonth === selectedMonth) {
+      delete p.tempQty;
+      delete p.tempWorker;
+      delete p.tempWorkerName;
+      delete p.tempTimestamp;
+      delete p.tempMonth;
+      delete p.tempId;
+    }
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+  // 4. Compute and save monthly closing
+  try {
+    const monthlyResult = calculateInvMonthly(selectedMonth);
+    saveInvMonthlyClosing(selectedMonth, monthlyResult);
+    toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
+  } catch (err) {
+    console.error('月次締め処理エラー:', err);
+    toast('月次締め処理の計算でエラーが発生しました', 'error');
+  }
+
+  // Reload the check page
+  renderInvCheckPage();
+}
+
+// 締め処理保存用のヘルパー関数
+function saveInvMonthlyClosing(month, result) {
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const existingIndex = monthly.findIndex(m => m.month === month);
+
+  const closingData = {
+    month: month,
+    items: result.items,
+    summary: result.summary,
+    total: result.total,
+    fixedTotal: result.summary['fixed']?.amount || 0,
+    closedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    monthly[existingIndex] = closingData;
+  } else {
+    monthly.push(closingData);
+  }
+  
+  DB.save(DB.KEYS.INV_MONTHLY, monthly);
+}
+
+function exportInvCheckToCsv() {
+  const monthInput = $('#inv-check-month');
+  const selectedMonth = monthInput ? monthInput.value : new Date().toISOString().substring(0, 7);
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  // Calculate previous month
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const tempScanMap = {};
+  currentTempScans.forEach(s => {
+    tempScanMap[s.productId] = s;
+  });
+
+  const renderedProductIds = new Set();
+  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  Object.keys(prevStockMap).forEach(id => {
+    if (prevStockMap[id] > 0) {
+      renderedProductIds.add(id);
+    }
+  });
+
+  const listItems = Array.from(renderedProductIds).map(pid => {
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const scan = tempScanMap[pid];
+    const prevQty = prevStockMap[pid] || 0;
+    const currQty = scan ? scan.quantity : 0;
+    const diff = currQty - prevQty;
+    const isScanned = !!scan;
+
+    return {
+      productId: pid,
+      categoryName: INV_CATEGORIES[prod.category] || prod.category,
+      name: prod.name,
+      price: prod.price || 0,
+      quantity: currQty,
+      prevQty: prevQty,
+      diff: diff,
+      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
+      status: (prevQty > 0 && !isScanned) ? '未スキャン' : '仮登録済'
+    };
+  });
+
+  // Sort
+  listItems.sort((a, b) => a.productId.localeCompare(b.productId));
+
+  // CSV content
+  const headers = ['資材ID', '分類', '品名', '単価', '実棚数量', '前月在庫', '差分', 'スキャン実行者', '状況'];
+  const rows = listItems.map(item => [
+    item.productId,
+    item.categoryName,
+    item.name,
+    item.price,
+    item.quantity,
+    item.prevQty,
+    item.diff,
+    item.worker,
+    item.status
+  ]);
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\r\n');
+
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 with BOM
+  const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `棚卸チェック表_${selectedMonth}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

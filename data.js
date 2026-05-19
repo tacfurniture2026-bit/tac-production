@@ -198,7 +198,6 @@ const DB = {
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
             this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
-            this.KEYS.INV_SCAN_TEMP,
             this.KEYS.BACKUPS
         ];
 
