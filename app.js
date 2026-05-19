@@ -1719,10 +1719,15 @@ function exportBomsToCsv() {
   }
 
   // ヘッダー
-  let csvContent = 'id,productName,category,bomName,partCode,processes,note\n';
+  let csvContent = 'id,productName,category,bomName,partCode,processes,processTimes,note\n';
 
   boms.forEach(b => {
     const processes = (b.processes || []).join('|'); // パイプ区切りで工程を結合
+    const processTimesObj = b.processTimes || {};
+    const processTimes = (b.processes || []).map(p => {
+      const time = processTimesObj[p] || 0;
+      return `${p}:${time}`;
+    }).join('|');
     const note = (b.note || '').replace(/"/g, '""'); // ダブルクォートエスケープ
     const row = [
       b.id,
@@ -1731,6 +1736,7 @@ function exportBomsToCsv() {
       `"${b.bomName || ''}"`,
       `"${b.partCode || ''}"`,
       `"${processes}"`,
+      `"${processTimes}"`,
       `"${note}"`
     ].join(',');
     csvContent += row + '\n';
@@ -1804,6 +1810,7 @@ function importBomsFromCsv(input) {
       bomName: header.indexOf('bomname'),
       partCode: header.indexOf('partcode'),
       processes: header.indexOf('processes'),
+      processTimes: header.indexOf('processtimes'),
       note: header.indexOf('note')
     };
 
@@ -1813,6 +1820,9 @@ function importBomsFromCsv(input) {
     if (colMap.bomName === -1) colMap.bomName = header.indexOf('bom名');
     if (colMap.partCode === -1) colMap.partCode = header.indexOf('部材cd');
     if (colMap.processes === -1) colMap.processes = header.indexOf('工程');
+    if (colMap.processTimes === -1) colMap.processTimes = header.indexOf('processtime');
+    if (colMap.processTimes === -1) colMap.processTimes = header.indexOf('工程時間');
+    if (colMap.processTimes === -1) colMap.processTimes = header.indexOf('時間(分)');
     if (colMap.note === -1) colMap.note = header.indexOf('備考');
 
 
@@ -1829,10 +1839,6 @@ function importBomsFromCsv(input) {
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      // 簡易CSVパース (ダブルクォート内のカンマは無視できない簡易版... 実運用ではライブラリ推奨だが既存コードに合わせる)
-      // ここでは importOrdersFromCsv と同じ正規表現置換アプローチを使用
-      // しかし工程カラムにパイプなどが含まれるため、単純splitでOKなケースが多いが、備考にカンマがあるとずれる
-      // 簡易パース: 
       const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
 
       if (cols.length < 3) continue;
@@ -1843,11 +1849,55 @@ function importBomsFromCsv(input) {
       const bomName = cols[colMap.bomName];
       const partCode = colMap.partCode !== -1 ? cols[colMap.partCode] : '';
       const processesRaw = colMap.processes !== -1 ? cols[colMap.processes] : '';
+      const processTimesRaw = colMap.processTimes !== -1 ? cols[colMap.processTimes] : '';
       const note = colMap.note !== -1 ? cols[colMap.note] : '';
 
       if (!productName || !bomName) continue;
 
-      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+      const rawProcesses = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+      const processTimes = {};
+
+      rawProcesses.forEach(p => {
+        processTimes[p] = 0;
+      });
+
+      if (processTimesRaw) {
+        processTimesRaw.split('|').forEach(item => {
+          const parts = item.split(':');
+          if (parts.length >= 2) {
+            const pName = parts[0].trim();
+            const pTime = parseInt(parts[1]) || 0;
+            processTimes[pName] = pTime;
+          }
+        });
+      }
+
+      const cleanedProcesses = [];
+      rawProcesses.forEach(p => {
+        let cleanName = p;
+        let timeVal = 0;
+
+        if (p.includes(':')) {
+          const parts = p.split(':');
+          cleanName = parts[0].trim();
+          timeVal = parseInt(parts[1]) || 0;
+        } else if (p.includes('(') && p.endsWith(')')) {
+          const start = p.indexOf('(');
+          cleanName = p.substring(0, start).trim();
+          timeVal = parseInt(p.substring(start + 1, p.length - 1)) || 0;
+        }
+
+        cleanedProcesses.push(cleanName);
+
+        if (processTimes[p] !== undefined && processTimes[p] !== 0) {
+          processTimes[cleanName] = processTimes[p];
+          if (p !== cleanName) delete processTimes[p];
+        } else if (processTimes[cleanName] !== undefined && processTimes[cleanName] !== 0) {
+          // Keep existing parsed time
+        } else {
+          processTimes[cleanName] = timeVal;
+        }
+      });
 
       // 重複チェック (ID または 品名+BOM名)
       let existingIdx = -1;
@@ -1862,7 +1912,7 @@ function importBomsFromCsv(input) {
       }
 
       const newBomData = {
-        productName, category, bomName, partCode, processes, note
+        productName, category, bomName, partCode, processes: cleanedProcesses, processTimes, note
       };
 
       if (existingIdx !== -1) {
@@ -3477,12 +3527,22 @@ function parseBomText(text, separator) {
 
     // 工程解析
     let processes = [];
+    const processTimes = {};
     if (processNames.length > 0) {
       processNames.forEach((procName, idx) => {
         const val = cols[processStartCol + idx];
         // 空欄以外（1, TRUE, ○, 数字+分 など）なら採用
         if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase().trim())) {
           processes.push(procName);
+
+          // 時間のパース
+          let minutes = 0;
+          const cleanVal = String(val).trim();
+          const match = cleanVal.match(/^(\d+(?:\.\d+)?)/);
+          if (match) {
+            minutes = parseInt(match[1]) || 0;
+          }
+          processTimes[procName] = minutes;
         }
       });
     }
@@ -3492,7 +3552,8 @@ function parseBomText(text, separator) {
       productName: productName || lastProductName || '名称未設定',
       bomName,
       partCode,
-      processes
+      processes,
+      processTimes
     });
   }
 
@@ -3530,6 +3591,7 @@ function processBomCsv(text) {
       else if (h === 'bomname' || h === 'bom名') colMap.bomName = idx;
       else if (h === 'partcode' || h === '部材cd') colMap.partCode = idx;
       else if (h === 'processes' || h === '工程') colMap.processes = idx;
+      else if (h === 'processtimes' || h === 'processtime' || h === '工程時間' || h === '時間(分)') colMap.processTimes = idx;
       else if (h === 'note' || h === '備考') colMap.note = idx;
     });
 
@@ -3554,12 +3616,56 @@ function processBomCsv(text) {
       const bomName = (cols[colMap.bomName] || '').trim();
       const partCode = colMap.partCode !== undefined ? (cols[colMap.partCode] || '').trim() : '';
       const processesRaw = colMap.processes !== undefined ? (cols[colMap.processes] || '').trim() : '';
+      const processTimesRaw = colMap.processTimes !== undefined ? (cols[colMap.processTimes] || '').trim() : '';
       const note = colMap.note !== undefined ? (cols[colMap.note] || '').trim() : '';
 
       if (!productName || !bomName) continue;
 
       // パイプ区切りの工程を配列に変換
-      const processes = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+      const rawProcesses = processesRaw ? processesRaw.split('|').map(p => p.trim()).filter(Boolean) : [];
+      const processTimes = {};
+
+      rawProcesses.forEach(p => {
+        processTimes[p] = 0;
+      });
+
+      if (processTimesRaw) {
+        processTimesRaw.split('|').forEach(item => {
+          const parts = item.split(':');
+          if (parts.length >= 2) {
+            const pName = parts[0].trim();
+            const pTime = parseInt(parts[1]) || 0;
+            processTimes[pName] = pTime;
+          }
+        });
+      }
+
+      const cleanedProcesses = [];
+      rawProcesses.forEach(p => {
+        let cleanName = p;
+        let timeVal = 0;
+
+        if (p.includes(':')) {
+          const parts = p.split(':');
+          cleanName = parts[0].trim();
+          timeVal = parseInt(parts[1]) || 0;
+        } else if (p.includes('(') && p.endsWith(')')) {
+          const start = p.indexOf('(');
+          cleanName = p.substring(0, start).trim();
+          timeVal = parseInt(p.substring(start + 1, p.length - 1)) || 0;
+        }
+
+        cleanedProcesses.push(cleanName);
+
+        if (processTimes[p] !== undefined && processTimes[p] !== 0) {
+          processTimes[cleanName] = processTimes[p];
+          if (p !== cleanName) delete processTimes[p];
+        } else if (processTimes[cleanName] !== undefined && processTimes[cleanName] !== 0) {
+          // Keep existing parsed time
+        } else {
+          processTimes[cleanName] = timeVal;
+        }
+      });
 
       // 重複チェック (ID → 品名+BOM名)
       let existingIdx = -1;
@@ -3570,7 +3676,7 @@ function processBomCsv(text) {
         existingIdx = existingBoms.findIndex(b => b.productName === productName && b.bomName === bomName);
       }
 
-      const newBomData = { productName, category, bomName, partCode, processes, note };
+      const newBomData = { productName, category, bomName, partCode, processes: cleanedProcesses, processTimes, note };
 
       if (existingIdx !== -1) {
         existingBoms[existingIdx] = { ...existingBoms[existingIdx], ...newBomData };
