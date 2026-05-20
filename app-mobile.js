@@ -3127,7 +3127,7 @@ function createBom() {
   let partCode = $('#bom-code').value;
   const processesStr = $('#bom-processes').value;
 
-  if (category && category.toUpperCase() === 'GRID') {
+  if (category && category.toUpperCase() === 'GRID' && !partCode) {
     partCode = productName;
   }
 
@@ -3261,6 +3261,34 @@ window.updateEditBomProcessTimes = function() {
   }).join('');
 };
 
+function syncOrdersWithUpdatedBom(oldProductName, oldBomName, newProductName, newBomName, newPartCode) {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  let updated = false;
+
+  orders.forEach(order => {
+    if (order.productName === oldProductName) {
+      if (newProductName && oldProductName !== newProductName) {
+        order.productName = newProductName;
+        updated = true;
+      }
+      if (order.items) {
+        order.items.forEach(item => {
+          if (item.bomName === oldBomName) {
+            if (newBomName) item.bomName = newBomName;
+            if (newPartCode) item.partCode = newPartCode;
+            updated = true;
+          }
+        });
+      }
+    }
+  });
+
+  if (updated) {
+    DB.save(DB.KEYS.ORDERS, orders);
+    console.log(`Sync orders completed for Product: ${oldProductName}, BOM: ${oldBomName} -> New PartCode: ${newPartCode}`);
+  }
+}
+
 function updateBom() {
   const id = parseInt($('#edit-bom-id').value);
   const category = $('#edit-bom-category').value;
@@ -3269,7 +3297,7 @@ function updateBom() {
   let partCode = $('#edit-bom-code').value;
   const processesStr = $('#edit-bom-processes').value;
 
-  if (category && category.toUpperCase() === 'GRID') {
+  if (category && category.toUpperCase() === 'GRID' && !partCode) {
     partCode = productName;
   }
 
@@ -3290,8 +3318,9 @@ function updateBom() {
   const boms = DB.get(DB.KEYS.BOM);
   const idx = boms.findIndex(b => b.id === id);
   if (idx !== -1) {
-    boms[idx] = {
-      ...boms[idx],
+    const oldBom = boms[idx];
+    const newBom = {
+      ...oldBom,
       category,
       productName,
       bomName,
@@ -3299,7 +3328,12 @@ function updateBom() {
       processes,
       processTimes
     };
+    boms[idx] = newBom;
     DB.save(DB.KEYS.BOM, boms);
+    
+    // 既存指示書の部材CD同期
+    syncOrdersWithUpdatedBom(oldBom.productName, oldBom.bomName, productName, bomName, partCode);
+
     toast('BOMを更新しました', 'success');
     hideModal();
     renderBom();
@@ -3605,7 +3639,10 @@ function processBomCsv(text) {
       const newBomData = { productName, category, bomName, partCode, processes: cleanedProcesses, processTimes, note };
 
       if (existingIdx !== -1) {
-        existingBoms[existingIdx] = { ...existingBoms[existingIdx], ...newBomData };
+        const oldBom = existingBoms[existingIdx];
+        existingBoms[existingIdx] = { ...oldBom, ...newBomData };
+        // エクスポート形式：既存指示書に部材CD変更を同期
+        syncOrdersWithUpdatedBom(oldBom.productName, oldBom.bomName, productName, bomName, partCode);
         updatedCount++;
       } else {
         existingBoms.push({ id: nextId++, ...newBomData });
@@ -3628,29 +3665,36 @@ function processBomCsv(text) {
     }
 
     let currentId = DB.nextId(DB.KEYS.BOM);
-    let duplicatesCount = 0;
+    let updatedCount = 0;
     const newBoms = [];
 
     newBomsRaw.forEach(raw => {
-      const exists = existingBoms.some(e =>
-        e.bomName === raw.bomName && e.partCode === raw.partCode && e.productName === raw.productName
+      // 重複チェックを「品名とBOM名」で行い、存在すれば部材CD・工程等の情報を更新する
+      const existingIdx = existingBoms.findIndex(e =>
+        e.productName === raw.productName && e.bomName === raw.bomName
       );
-      if (!exists) {
+
+      if (existingIdx !== -1) {
+        const oldBom = existingBoms[existingIdx];
+        existingBoms[existingIdx] = {
+          ...oldBom,
+          category: raw.category || oldBom.category,
+          partCode: raw.partCode,
+          processes: raw.processes,
+          processTimes: raw.processTimes
+        };
+        // テンプレート形式：既存指示書に部材CD変更を同期
+        syncOrdersWithUpdatedBom(oldBom.productName, oldBom.bomName, raw.productName, raw.bomName, raw.partCode);
+        updatedCount++;
+      } else {
         raw.id = currentId++;
         newBoms.push(raw);
-      } else {
-        duplicatesCount++;
       }
     });
 
-    if (newBoms.length === 0) {
-      toast(`登録対象がありませんでした（重複: ${duplicatesCount}件）`, 'info');
-      return;
-    }
-
     const updatedBoms = [...existingBoms, ...newBoms];
     DB.save(DB.KEYS.BOM, updatedBoms);
-    toast(`${newBoms.length}件インポートしました`, 'success');
+    toast(`インポート完了: 新規${newBoms.length}件, 更新${updatedCount}件`, 'success');
     hideModal();
     renderBom();
   }
