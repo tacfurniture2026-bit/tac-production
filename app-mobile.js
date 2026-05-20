@@ -380,6 +380,9 @@ function navigateTo(pageName) {
   // カメラ停止（タブ切り替え時にリセット）
   stopQrScanner();
   stopInvScanner();
+  if (typeof stopDefectQrScanner === 'function') {
+    stopDefectQrScanner();
+  }
 
   switch (pageName) {
     case 'dashboard':
@@ -900,8 +903,12 @@ function startQrScanner() {
 
   const config = {
     fps: 10,
-    qrbox: { width: 250, height: 250 },
-    aspectRatio: 1
+    qrbox: (width, height) => {
+      const min = Math.min(width, height);
+      const size = Math.floor(min * 0.7);
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.333333
   };
 
   qrScanner.start(
@@ -1230,8 +1237,12 @@ function startDefectQrScanner() {
 
   const config = {
     fps: 10,
-    qrbox: { width: 250, height: 250 },
-    aspectRatio: 1
+    qrbox: (width, height) => {
+      const min = Math.min(width, height);
+      const size = Math.floor(min * 0.7);
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.333333
   };
 
   defectQrScanner.start(
@@ -5604,9 +5615,19 @@ function startInvScanner() {
 
   invQrScanner = new Html5Qrcode('inv-scanner-preview');
 
+  const config = {
+    fps: 10,
+    qrbox: (width, height) => {
+      const min = Math.min(width, height);
+      const size = Math.floor(min * 0.7);
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.333333
+  };
+
   invQrScanner.start(
     { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
+    config,
     onInvQrScanned,
     () => { }
   ).catch(err => {
