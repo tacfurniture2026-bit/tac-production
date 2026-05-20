@@ -3422,6 +3422,26 @@ function parseBomText(text, separator) {
   let lastCategory = '';
   let lastProductName = '';
 
+  // 時間値またはフラグ判定 (例: "5分", "10", "○", "TRUE")
+  const isTimeOrFlag = (val) => {
+    const clean = (val || '').trim().toUpperCase();
+    if (!clean) return false;
+    return /^\d+(?:\.\d+)?分$/.test(clean) || 
+           /^\d+(?:\.\d+)?$/.test(clean) || 
+           ['○', 'TRUE', '1'].includes(clean);
+  };
+
+  const isPartCodeOmittableCategory = (cat) => {
+    if (!cat) return false;
+    const upper = cat.toUpperCase();
+    return upper.includes('GRID') || 
+           upper.includes('ロッカー') || 
+           upper.includes('パーソナル') || 
+           upper.includes('フリージョイント') || 
+           upper.includes('LOCKER') || 
+           upper.includes('JOINT');
+  };
+
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
     const cols = line.split(separator).map(c => c.replace(/^"|"$/g, '').trim());
@@ -3431,22 +3451,31 @@ function parseBomText(text, separator) {
     let category = cols[0] || lastCategory;
     let productName = cols[1] || lastProductName;
     let bomName = cols[2];
-    let partCode = cols[3];
+    let partCode = cols[3] || '';
+    let processStartCol = 4; // デフォルトは4
+
+    // GRID、パーソナルロッカー、フリージョイントロッカー等の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無いとみなす
+    if (isPartCodeOmittableCategory(category) && isTimeOrFlag(partCode)) {
+      processStartCol = 3;
+      partCode = '';
+    }
 
     // BOM名も部材CDもない行はスキップ（空行など）
     if (!bomName && !partCode) continue;
-    // 部材CDがない場合はBOM名を入れるなどの補完も考えられるが、一旦必須とする
+
+    // 補完ルール
     if (!bomName) bomName = partCode;
-    if (!partCode) partCode = bomName;
+    if (!partCode) {
+      if (category && category.toUpperCase() === 'GRID') {
+        partCode = productName;
+      } else {
+        partCode = bomName;
+      }
+    }
 
     // 継続値更新
     if (cols[0]) lastCategory = cols[0];
     if (cols[1]) lastProductName = cols[1];
-
-    // GRIDルール
-    if (category && category.toUpperCase() === 'GRID') {
-      partCode = productName;
-    }
 
     // 工程解析
     let processes = [];
@@ -3454,8 +3483,8 @@ function parseBomText(text, separator) {
     if (processNames.length > 0) {
       // ヘッダーがある場合: 各列をチェック
       processNames.forEach((procName, idx) => {
-        // colsのindexは 4 + idx
-        const val = cols[4 + idx];
+        // colsのindexは processStartCol + idx
+        const val = cols[processStartCol + idx];
         // 値が '1', 'TRUE', '○', 'ON', 'Yes' などなら採用
         // Excelで空欄以外（何か書いてあれば）採用とするのが一番汎用的
         if (val && !['0', 'FALSE', '-', ''].includes(String(val).toUpperCase())) {

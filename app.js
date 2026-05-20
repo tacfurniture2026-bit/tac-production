@@ -3587,8 +3587,25 @@ function parseBomText(text, separator) {
   let lastCategory = '';
   let lastProductName = '';
 
-  // 時間値判定 (例: "5分", "10分")
-  const isTimeValue = (val) => /^\d+分$/.test((val || '').trim());
+  // 時間値またはフラグ判定 (例: "5分", "10", "○", "TRUE")
+  const isTimeOrFlag = (val) => {
+    const clean = (val || '').trim().toUpperCase();
+    if (!clean) return false;
+    return /^\d+(?:\.\d+)?分$/.test(clean) || 
+           /^\d+(?:\.\d+)?$/.test(clean) || 
+           ['○', 'TRUE', '1'].includes(clean);
+  };
+
+  const isPartCodeOmittableCategory = (cat) => {
+    if (!cat) return false;
+    const upper = cat.toUpperCase();
+    return upper.includes('GRID') || 
+           upper.includes('ロッカー') || 
+           upper.includes('パーソナル') || 
+           upper.includes('フリージョイント') || 
+           upper.includes('LOCKER') || 
+           upper.includes('JOINT');
+  };
 
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
@@ -3602,9 +3619,8 @@ function parseBomText(text, separator) {
 
     if (hasPartCodeCol) {
       partCode = cols[3] || '';
-      // GRID行の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無い
-      if (category && category.toUpperCase() === 'GRID' && isTimeValue(partCode)) {
-        // GRID行はpartCode列がなく、col[3]から工程開始
+      // GRID、パーソナルロッカー、フリージョイントロッカー等の特殊処理: 部材CD列に時間値が入っている場合、部材CD列は無いとみなす
+      if (isPartCodeOmittableCategory(category) && isTimeOrFlag(partCode)) {
         processStartCol = 3;
         partCode = ''; // 後で設定
       }

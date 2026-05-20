@@ -242,6 +242,45 @@ try {
   assert.strictEqual(postImportOrders[0].items[0].partCode, 'PAO-NEW-CODE', 'Orders should sync with imported new code');
   console.log('✅ Test Case 3 passed: CSV import duplicates prevented and changes synced.');
 
+  // Test Case 4: Omittable partCode in Locker/Grid during CSV Import
+  console.log('\n--- Test Case 4: Omittable partCode in Locker/Grid during CSV Import ---');
+  
+  // 4.1. GRIDカテゴリ: 部材CD省略（4列目が数値時間）
+  const gridCsv = 'カテゴリ,製品名,BOM名,部材CD,工程A,工程B\nGRID,GridP,GridB,5,10,20';
+  DB.save(DB.KEYS.BOM, []); // 初期化
+  processBomCsv(gridCsv);
+  const gridResult = DB.get(DB.KEYS.BOM);
+  assert.strictEqual(gridResult.length, 1);
+  assert.strictEqual(gridResult[0].partCode, 'GridP', 'GRID partCode should be productName when omitted');
+  assert.deepStrictEqual(gridResult[0].processes, ['工程A', '工程B'], 'GRID processes should be correct');
+  assert.strictEqual(gridResult[0].processTimes['工程A'], 5, 'GRID process A time should be 5');
+  assert.strictEqual(gridResult[0].processTimes['工程B'], 10, 'GRID process B time should be 10');
+  console.log('✅ Test Case 4.1 (GRID PartCode Omitted) passed.');
+
+  // 4.2. パーソナルロッカーカテゴリ: 部材CD省略（4列目が分付き時間）
+  const lockerCsv = 'カテゴリ,製品名,BOM名,部材CD,工程A,工程B\nパーソナルロッカー,LockerP,LockerB,5分,10分,20分';
+  DB.save(DB.KEYS.BOM, []); // 初期化
+  processBomCsv(lockerCsv);
+  const lockerResult = DB.get(DB.KEYS.BOM);
+  assert.strictEqual(lockerResult.length, 1);
+  assert.strictEqual(lockerResult[0].partCode, 'LockerB', 'Locker partCode should be bomName when omitted');
+  assert.deepStrictEqual(lockerResult[0].processes, ['工程A', '工程B'], 'Locker processes should be correct');
+  assert.strictEqual(lockerResult[0].processTimes['工程A'], 5, 'Locker process A time should be 5');
+  assert.strictEqual(lockerResult[0].processTimes['工程B'], 10, 'Locker process B time should be 10');
+  console.log('✅ Test Case 4.2 (Locker PartCode Omitted) passed.');
+
+  // 4.3. フリージョイントロッカーカテゴリ: 部材CDあり（4列目が非時間値）
+  const lockerWithCdCsv = 'カテゴリ,製品名,BOM名,部材CD,工程A,工程B\nフリージョイントロッカー,FJProd,FJBom,FJCD,10,20';
+  DB.save(DB.KEYS.BOM, []); // 初期化
+  processBomCsv(lockerWithCdCsv);
+  const lockerWithCdResult = DB.get(DB.KEYS.BOM);
+  assert.strictEqual(lockerWithCdResult.length, 1);
+  assert.strictEqual(lockerWithCdResult[0].partCode, 'FJCD', 'Locker partCode should be FJCD when provided');
+  assert.deepStrictEqual(lockerWithCdResult[0].processes, ['工程A', '工程B'], 'Locker processes should be correct');
+  assert.strictEqual(lockerWithCdResult[0].processTimes['工程A'], 10, 'Locker process A time should be 10');
+  assert.strictEqual(lockerWithCdResult[0].processTimes['工程B'], 20, 'Locker process B time should be 20');
+  console.log('✅ Test Case 4.3 (Locker PartCode Provided) passed.');
+
   console.log('\n🎉 ALL AUTOMATED TESTS PASSED SUCCESSFULLY! 🎉');
   process.exit(0);
 
