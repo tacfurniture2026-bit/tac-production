@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>品名QRコード印刷 - TAC製造部</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #0B2D48;
+            --color-text: #1e293b;
+            --color-border: #cbd5e1;
+            --color-bg: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+            padding: 20px;
+        }
+
+        /* 上部ツールバー */
+        .toolbar {
+            max-width: 1040px;
+            margin: 0 auto 20px auto;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toolbar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #164267;
+        }
+
+        /* 印刷コンテナ */
+        .print-container {
+            max-width: 1040px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            min-height: 297mm; /* A4比率の目安 */
+        }
+
+        /* QRグリッド: A4に3列×5行（1ページ15枚）が綺麗に収まる設計 */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12mm 8mm; /* 隣り合うQRの誤読防止用に十分な余白を設定 */
+        }
+
+        /* 各QRコードラベルカード */
+        .qr-card {
+            border: 1px dashed var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 48mm; /* A4内で綺麗に収まる高さ */
+            background-color: white;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .qr-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            padding-right: 8px;
+            overflow: hidden;
+        }
+
+        .category-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            width: fit-content;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .product-name {
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: var(--color-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 6px;
+            height: 35px; /* 高さを固定してアライメントを維持 */
+        }
+
+        .product-id {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            word-break: break-all;
+        }
+
+        .qr-image-container {
+            width: 32mm;
+            height: 32mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #f1f5f9;
+            padding: 4px;
+            border-radius: 6px;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .qr-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* 印刷プレビュー用および印刷時のスタイル */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                color: black;
+            }
+
+            .toolbar {
+                display: none !important;
+            }
+
+            .print-container {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+            }
+
+            /* A4余白の最適化 */
+            @page {
+                size: A4 portrait;
+                margin: 12mm 10mm 12mm 10mm;
+            }
+
+            .qr-grid {
+                gap: 12mm 8mm !important;
+            }
+
+            .qr-card {
+                border: 1px dashed #94a3b8 !important; /* 印刷時にミシン目線が見えるように少し濃くする */
+                background-color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-title">🏭 TAC製造部 - 品名QRコード印刷</div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="window.close()">✕ 閉じる</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ A4サイズで印刷</button>
+        </div>
+    </div>
+
+    <div class="print-container">
+        <div class="qr-grid" id="qr-grid-container">
+            <!-- QRコードカードが動的に生成されます -->
+        </div>
+    </div>
+
+    <!-- ダミーの localStorage 読み込みと互換性確保のための data.js -->
+    <script src="data.js"></script>
+    <script>
+        // 分類コードのマッピング
+        const CATEGORY_NAMES = {
+            '01': '芯材・面材',
+            '02': '仕上げ材',
+            '03': 'アクリル材',
+            '04': 'エッジ材',
+            '05': '金物・部品',
+            '06': '梱包資材',
+            '99': 'その他'
+        };
+
+        window.onload = function() {
+            // sessionStorageから印刷対象の資材ID配列を取得
+            const idsJson = sessionStorage.getItem('print_qr_ids');
+            if (!idsJson) {
+                document.getElementById('qr-grid-container').innerHTML = `
+                    <div style="grid-column: span 3; text-align: center; padding: 40px; color: #ef4444; font-weight: bold;">
+                        印刷対象のデータが選択されていません。在庫管理または棚卸スキャン確認からQR印刷を行ってください。
+                    </div>
+                `;
+                return;
+            }
+
+            const targetIds = JSON.parse(idsJson);
+            if (targetIds.length === 0) {
+                document.getElementById('qr-grid-container').innerHTML = `
+                    <div style="grid-column: span 3; text-align: center; padding: 40px; color: #ef4444; font-weight: bold;">
+                        印刷対象の商品IDが空です。
+                    </div>
+                `;
+                return;
+            }
+
+            // DBから最新の商品マスタを取得
+            // DBはdata.jsで定義されているグローバルオブジェクト
+            const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+
+            const container = document.getElementById('qr-grid-container');
+            container.innerHTML = '';
+
+            targetIds.forEach(id => {
+                // 商品マスタから探す
+                const prod = products.find(p => p.id === id) || {
+                    id: id,
+                    name: `不明な資材 (${id})`,
+                    category: '99'
+                };
+
+                const catName = CATEGORY_NAMES[prod.category] || prod.category;
+                
+                // QRコードAPIのURL（URLエンコードをしっかりと行う）
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(prod.id)}`;
+
+                const cardHtml = `
+                    <div class="qr-card">
+                        <div class="qr-info">
+                            <div>
+                                <div class="category-badge">${catName}</div>
+                                <div class="product-name" title="${prod.name}">${prod.name}</div>
+                            </div>
+                            <div class="product-id">${prod.id}</div>
+                        </div>
+                        <div class="qr-image-container">
+                            <img class="qr-image" src="${qrUrl}" alt="${prod.id}">
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        };
+    </script>
+</body>
+</html>

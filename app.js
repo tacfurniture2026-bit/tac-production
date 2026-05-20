@@ -5948,6 +5948,7 @@ function renderInvProductsPage() {
   // CSV取り込み・エクスポート
   $('#import-inv-csv-btn').onclick = showCsvImportArea;
   $('#export-inv-csv-btn').onclick = exportInvProductsCsv;
+  $('#print-inv-qrs-btn').onclick = printInvProductsQrs;
   $('#execute-csv-import-btn').onclick = executeInvCsvImport;
   $('#cancel-csv-import-btn').onclick = hideCsvImportArea;
   $('#csv-file-input').onchange = previewCsvFile;
@@ -6940,6 +6941,10 @@ function renderInvCheckPage() {
   const exportBtn = $('#export-inv-check-btn');
   if (exportBtn) {
     exportBtn.onclick = exportInvCheckToCsv;
+  }
+  const printQrBtn = $('#print-inv-check-qrs-btn');
+  if (printQrBtn) {
+    printQrBtn.onclick = printInvCheckQrs;
   }
 
   const selectedMonth = monthInput.value;
@@ -8172,3 +8177,90 @@ window.submitQuickProductRegister = function(productId, isMobile) {
     if (window.renderTodayInvLogs) renderTodayInvLogs();
   }
 };
+
+function printInvProductsQrs() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const categoryFilter = $('#inv-products-category-filter').value;
+  const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
+  const fixedOnly = $('#inv-products-fixed-only').checked;
+
+  let filtered = products.filter(p => {
+    if (categoryFilter && p.category !== categoryFilter) return false;
+    if (fixedOnly && !p.isFixed) return false;
+    if (searchKeyword && !p.id.toLowerCase().includes(searchKeyword) && !p.name.toLowerCase().includes(searchKeyword)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    toast('印刷対象の資材がありません', 'warning');
+    return;
+  }
+
+  const ids = filtered.map(p => p.id);
+  sessionStorage.setItem('print_qr_ids', JSON.stringify(ids));
+  window.open('print_qrs.html', '_blank');
+}
+
+function printInvCheckQrs() {
+  const monthInput = $('#inv-check-month');
+  if (!monthInput) return;
+  const selectedMonth = monthInput.value;
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+  const prevDate = new Date(year, month - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.getTempScans() || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  const prevClosing = monthly.find(m => m.month === prevMonthKey);
+  const prevStockMap = {};
+  if (prevClosing && prevClosing.items) {
+    prevClosing.items.forEach(item => {
+      prevStockMap[item.productId] = item.currQty || 0;
+    });
+  }
+
+  const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  const tempScanMap = {};
+  currentTempScans.forEach(s => {
+    tempScanMap[s.productId] = s;
+  });
+
+  const listItems = products.map(prod => {
+    const pid = prod.id;
+    const scan = tempScanMap[pid];
+    const prevQty = prevStockMap[pid] || 0;
+    const currQty = scan ? scan.quantity : 0;
+    const isScanned = !!scan;
+
+    return {
+      productId: pid,
+      price: prod.price || 0,
+      isScanned: isScanned,
+      hasPrevQty: prevQty > 0
+    };
+  });
+
+  const statusFilter = $('#inv-check-filter-status');
+  const filterStatus = (statusFilter ? statusFilter.value : 'all') || 'all';
+  let filteredItems = listItems;
+  if (filterStatus === 'scanned') {
+    filteredItems = listItems.filter(item => item.isScanned);
+  } else if (filterStatus === 'missing') {
+    filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
+  } else if (filterStatus === 'unpriced') {
+    filteredItems = listItems.filter(item => item.price <= 0);
+  }
+
+  if (filteredItems.length === 0) {
+    toast('印刷対象の資材がありません', 'warning');
+    return;
+  }
+
+  const ids = filteredItems.map(item => item.productId);
+  sessionStorage.setItem('print_qr_ids', JSON.stringify(ids));
+  window.open('print_qrs.html', '_blank');
+}
