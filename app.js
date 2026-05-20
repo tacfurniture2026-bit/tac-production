@@ -4469,6 +4469,13 @@ function updateUser() {
   renderUsers();
 }
 
+function safeAddListener(selector, event, callback) {
+  const el = $(selector);
+  if (el) {
+    el.addEventListener(event, callback);
+  }
+}
+
 // ========================================
 // イベントリスナー
 // ========================================
@@ -4481,7 +4488,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
 
   // ログインフォーム
-  $('#login-form').addEventListener('submit', (e) => {
+  safeAddListener('#login-form', 'submit', (e) => {
     e.preventDefault();
     const username = $('#login-username').value;
     const password = $('#login-password').value;
@@ -4495,7 +4502,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ログアウト
-  $('#logout-btn').addEventListener('click', logout);
+  safeAddListener('#logout-btn', 'click', logout);
 
   // ナビゲーション
   $$('.nav-item').forEach(item => {
@@ -4517,73 +4524,65 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ガントチャート展開/折りたたみ
-  $('#expand-all').addEventListener('click', expandAll);
-  $('#collapse-all').addEventListener('click', collapseAll);
+  safeAddListener('#expand-all', 'click', expandAll);
+  safeAddListener('#collapse-all', 'click', collapseAll);
 
   // QRページ
-  $('#qr-order').addEventListener('change', updateQrItemSelect);
-  $('#qr-item').addEventListener('change', updateQrProcessSelect);
+  safeAddListener('#qr-order', 'change', updateQrItemSelect);
+  safeAddListener('#qr-item', 'change', updateQrProcessSelect);
 
-  $('#qr-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const orderId = parseInt($('#qr-order').value);
-    const itemId = parseInt($('#qr-item').value);
-    const processName = $('#qr-process').value;
+  const qrForm = $('#qr-form');
+  if (qrForm) {
+    qrForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const orderId = parseInt($('#qr-order').value);
+      const itemId = parseInt($('#qr-item').value);
+      const processName = $('#qr-process').value;
 
-    if (!orderId || !itemId || !processName) {
-      toast('すべての項目を選択してください', 'warning');
-      return;
-    }
+      if (!orderId || !itemId || !processName) {
+        toast('すべての項目を選択してください', 'warning');
+        return;
+      }
 
-    if (registerProgress(orderId, itemId, processName)) {
-      toast('進捗を登録しました', 'success');
-      renderQrPage();
-      $('#qr-order').value = '';
-      $('#qr-item').value = '';
-      $('#qr-item').disabled = true;
-      $('#qr-process').value = '';
-      $('#qr-process').disabled = true;
-    }
-  });
+      if (registerProgress(orderId, itemId, processName)) {
+        toast('進捗を登録しました', 'success');
+        renderQrPage();
+        $('#qr-order').value = '';
+        $('#qr-item').value = '';
+        $('#qr-item').disabled = true;
+        $('#qr-process').value = '';
+        $('#qr-process').disabled = true;
+      }
+    });
+  }
 
   // モーダル
-  $('#modal-close').addEventListener('click', hideModal);
-  $('#modal-overlay').addEventListener('click', (e) => {
-    if (e.target === $('#modal-overlay')) hideModal();
-  });
+  safeAddListener('#modal-close', 'click', hideModal);
+  const modalOverlay = $('#modal-overlay');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) hideModal();
+    });
+  }
 
   // 各種追加ボタン
-  $('#add-order-btn').addEventListener('click', showAddOrderModal);
-  $('#add-defect-btn').addEventListener('click', showAddDefectModal);
-  $('#add-bom-btn').addEventListener('click', showAddBomModal);
+  safeAddListener('#add-order-btn', 'click', showAddOrderModal);
+  safeAddListener('#add-defect-btn', 'click', showAddDefectModal);
+  safeAddListener('#add-bom-btn', 'click', showAddBomModal);
 
-  const deleteBomBtn = $('#delete-all-bom-btn');
-  if (deleteBomBtn) deleteBomBtn.addEventListener('click', deleteAllBoms);
-
-  const deleteSelBtn = $('#delete-selected-bom-btn');
-  if (deleteSelBtn) deleteSelBtn.addEventListener('click', deleteSelectedBoms);
+  safeAddListener('#delete-all-bom-btn', 'click', deleteAllBoms);
+  safeAddListener('#delete-selected-bom-btn', 'click', deleteSelectedBoms);
 
   // ボタン登録（null安全）
-  const importBomBtn = $('#import-bom-btn');
-  if (importBomBtn) importBomBtn.addEventListener('click', showImportBomModal);
+  safeAddListener('#import-bom-btn', 'click', showImportBomModal);
+  safeAddListener('#add-rate-btn', 'click', showAddRateModal);
+  safeAddListener('#import-rates-btn', 'click', showAddRateModal);
+  safeAddListener('#add-user-btn', 'click', showAddUserModal);
 
-  const addRateBtn = $('#add-rate-btn');
-  if (addRateBtn) addRateBtn.addEventListener('click', showAddRateModal);
-
-  const importRateBtn = $('#import-rates-btn');
-  if (importRateBtn) importRateBtn.addEventListener('click', showAddRateModal);
-
-  const addUserBtn = $('#add-user-btn');
-  if (addUserBtn) addUserBtn.addEventListener('click', showAddUserModal);
-
-  const filterReportBtn = $('#filter-report-btn');
-  if (filterReportBtn) filterReportBtn.addEventListener('click', renderReport);
-
-  const genReportBtn = $('#generate-report-btn');
-  if (genReportBtn) genReportBtn.addEventListener('click', printReport);
-
-  const exportReportBtn = $('#export-report-btn');
-  if (exportReportBtn) exportReportBtn.addEventListener('click', exportReportCSV);
+  // 月次報告
+  safeAddListener('#filter-report-btn', 'click', renderReport);
+  safeAddListener('#generate-report-btn', 'click', printReport);
+  safeAddListener('#export-report-btn', 'click', exportReportCSV);
 });
 
 // ========================================
@@ -4910,149 +4909,217 @@ function renderReport(argStart, argEnd) {
   const deadStockRatio = totalInvAmount > 0 ? ((totalFixedAmount / totalInvAmount) * 100).toFixed(1) : 0;
 
   const html = `
-    <div class="report-print" id="report-print-area">
-      <div class="report-title">★月次・製造原価報告書 (${dateRangeText})</div>
-      <div class="report-meta">作成日時: ${createdAt}</div>
+    <div class="report-print" id="report-print-area" style="background: #ffffff; color: #1e293b; font-family: 'Inter', 'Noto Sans JP', sans-serif; max-width: 1000px; margin: 0 auto; padding: 2.5rem; border-top: 8px solid #0B2D48; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border-radius: 8px;">
+      <!-- 会議資料ヘッダー -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem;">
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: #0B2D48; text-transform: uppercase; letter-spacing: 0.1em; background: #e0f2fe; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem;">経営会議報告資料</span>
+          <h2 style="font-size: 1.75rem; font-weight: 800; color: #0B2D48; margin: 0;">月次製造実績・原価実績報告書</h2>
+          <p style="font-size: 0.875rem; color: #64748b; margin: 4px 0 0 0;">対象期間: <strong style="color: #0f172a;">${dateRangeText}</strong></p>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: #dc2626; border: 1.5px solid #fecaca; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; background: #fef2f2;">社外秘 (CONFIDENTIAL)</span>
+          <p style="font-size: 0.75rem; color: #64748b; margin: 0;">出力日時: ${createdAt}</p>
+          <p style="font-size: 0.75rem; color: #64748b; margin: 2px 0 0 0;">TAC製造部 管理システム</p>
+        </div>
+      </div>
       
-      <div class="report-section">
-        <h3>■月次総括サマリ</h3>
-        <div class="report-summary">
-          <div class="summary-item">
-            <span class="summary-label">総出荷台数</span>
-            <span class="summary-value">${totalQuantity} 台</span>
+      <!-- 総括サマリ -->
+      <div style="margin-bottom: 2.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem;">
+          <span>■ 月次総括サマリ (主要KPI)</span>
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+          <!-- 生産数量 -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem;">総完成数</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.75rem; font-weight: 800; color: #0b2d48;">${totalQuantity.toLocaleString()}<span style="font-size: 0.875rem; font-weight: 500; color: #64748b; margin-left: 4px;">台</span></span>
+              <span style="font-size: 0.75rem; color: #10b981; font-weight: 600; background: #ecfdf5; padding: 2px 8px; border-radius: 9999px;">通常稼働</span>
+            </div>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">加工費総額</span>
-            <span class="summary-value">${Math.round(totalCost).toLocaleString()} 円</span>
+          <!-- 加工費総額 -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem;">製造加工費総額</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.75rem; font-weight: 800; color: #0b2d48;">¥${Math.round(totalCost).toLocaleString()}</span>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">労務・加工賃率換算</span>
+            </div>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">1台当たり平均</span>
-            <span class="summary-value">${avgCostPerUnit.toLocaleString()} 円/台</span>
+          <!-- 1台あたり加工費 -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem;">1台当り平均加工単価</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.75rem; font-weight: 800; color: #0b2d48;">¥${avgCostPerUnit.toLocaleString()}<span style="font-size: 0.875rem; font-weight: 500; color: #64748b; margin-left: 2px;">/台</span></span>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">BOM標準加工費基準</span>
+            </div>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">総生産時間</span>
-            <span class="summary-value">${totalTime.toLocaleString()} 分 (${totalDays}日)</span>
+          <!-- 総生産時間 -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem;">総工数（生産時間）</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.5rem; font-weight: 800; color: #0b2d48;">${totalTime.toLocaleString()}<span style="font-size: 0.875rem; font-weight: 500; color: #64748b; margin-left: 2px;">分</span><span style="font-size: 0.875rem; font-weight: 500; color: #64748b; margin-left: 8px;">(${(totalTime / 60).toFixed(1)}h)</span></span>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">稼働換算: ${totalDays} 人日</span>
+            </div>
           </div>
-          <div class="summary-item" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 0.5rem;">
-            <span class="summary-label" style="color:#dc2626;">不良率 (歩留まり逆数)</span>
-            <span class="summary-value" style="color:#dc2626;">${defectRate} %</span>
+          <!-- 不良率 -->
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #991b1b; margin-bottom: 0.5rem;">歩留まり不良率</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.75rem; font-weight: 800; color: #991b1b;">${defectRate}<span style="font-size: 0.875rem; font-weight: 500; margin-left: 2px;">%</span></span>
+              <span style="font-size: 0.75rem; color: #991b1b; font-weight: 600; background: #fee2e2; padding: 2px 8px; border-radius: 9999px;">不良数: ${totalDefects} 件</span>
+            </div>
           </div>
-          <div class="summary-item" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 0.5rem;">
-            <span class="summary-label" style="color:#d97706;">不動品比率</span>
-            <span class="summary-value" style="color:#d97706;">${deadStockRatio} %</span>
+          <!-- 不動品比率 -->
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #92400e; margin-bottom: 0.5rem;">不動在庫（長期滞留）比率</span>
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 1.75rem; font-weight: 800; color: #92400e;">${deadStockRatio}<span style="font-size: 0.875rem; font-weight: 500; margin-left: 2px;">%</span></span>
+              <span style="font-size: 0.75rem; color: #92400e; font-weight: 600; background: #fef3c7; padding: 2px 8px; border-radius: 9999px;">要改善</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="report-section">
-        <h3>■不良品分析</h3>
-        <div style="display: flex; gap: 2rem;">
-            <div style="flex: 1;">
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>不良理由</th>
-                            <th>発生件数</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${Object.entries(defectReasons).length > 0 ?
-      Object.entries(defectReasons)
-        .sort((a, b) => b[1] - a[1]) // 件数降順
-        .map(([reason, qty]) => `
-                                <tr>
-                                    <td>${reason}</td>
-                                    <td>${qty}</td>
-                                </tr>
-                            `).join('') :
-      '<tr><td colspan="2" class="text-center text-muted">不良データがありません</td></tr>'
-    }
-                    </tbody>
-                </table>
+      <!-- 不良品分析 -->
+      <div style="margin-bottom: 2.5rem; page-break-inside: avoid;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem;">
+          <span>■ 不良品発生分析</span>
+        </h3>
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <div style="flex: 2; min-width: 300px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; border: 1px solid #cbd5e1;">
+              <thead>
+                <tr style="background: #0B2D48; color: #ffffff;">
+                  <th style="padding: 10px 14px; font-weight: 600; border: 1px solid #0b2d48;">発生理由（原因分類）</th>
+                  <th style="padding: 10px 14px; font-weight: 600; text-align: right; border: 1px solid #0b2d48; width: 120px;">発生個数</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.entries(defectReasons).length > 0 ?
+                  Object.entries(defectReasons)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([reason, qty], idx) => `
+                      <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 14px; border: 1px solid #cbd5e1;">${reason}</td>
+                        <td style="padding: 10px 14px; text-align: right; font-weight: 600; color: #ef4444; border: 1px solid #cbd5e1;">${qty} 個</td>
+                      </tr>
+                    `).join('') :
+                  '<tr><td colspan="2" style="padding: 16px; text-align: center; color: #94a3b8; border: 1px solid #cbd5e1;">期間内の不良発生データはありません</td></tr>'
+                }
+              </tbody>
+            </table>
+          </div>
+          <div style="flex: 1; min-width: 220px; background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <span style="font-size: 0.875rem; font-weight: 700; color: #c53030; margin-bottom: 0.5rem;">不良品総数 (個数ベース)</span>
+            <span style="font-size: 2.25rem; font-weight: 800; color: #e53e3e;">${totalDefectQty} <span style="font-size: 1rem; font-weight: 500;">個</span></span>
+            <div style="margin-top: 1rem; font-size: 0.75rem; color: #742a2a; text-align: center;">
+              発生レコード数: ${totalDefects} 件<br>
+              ※不良率は出荷台数に対する個数換算です
             </div>
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                <div class="summary-item">
-                    <span class="summary-label">不良総数 (個数ベース)</span>
-                    <span class="summary-value" style="color:#dc2626; font-size: 1.5rem;">${totalDefectQty} 個</span>
-                </div>
-                 <div class="summary-item" style="margin-top: 1rem;">
-                    <span class="summary-label">発生件数 (レコード数)</span>
-                    <span class="summary-value">${totalDefects} 件</span>
-                </div>
-            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 在庫金額セクション -->
-      <div class="report-section" style="background: #ffffff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-        <h3 style="margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #2563eb; padding-bottom: 0.5rem; display: inline-block;">■在庫金額サマリ</h3>
-        <div class="report-summary" style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
-          <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">在庫金額合計</span>
-            <span class="summary-value" style="color: #1e40af; font-size: 2rem; font-weight: 800; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);">¥${Math.round(totalInvAmount).toLocaleString()}</span>
+      <!-- 在庫金額分析 -->
+      <div style="margin-bottom: 2.5rem; page-break-inside: avoid; background: #ffffff; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1.25rem; border-bottom: 2px solid #0B2D48; padding-bottom: 0.5rem; display: inline-block;">■ 資産（在庫）評価分析</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+          <div style="text-align: center; border-right: 1px solid #cbd5e1;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">総在庫評価額</span>
+            <span style="font-size: 1.75rem; font-weight: 800; color: #1e40af;">¥${Math.round(totalInvAmount).toLocaleString()}</span>
           </div>
-          <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">通常在庫</span>
-            <span class="summary-value" style="color: #059669; font-size: 1.5rem; font-weight: bold;">¥${Math.round(totalNormalAmount).toLocaleString()}</span>
+          <div style="text-align: center; border-right: 1px solid #cbd5e1;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">内通常在庫</span>
+            <span style="font-size: 1.5rem; font-weight: 800; color: #059669;">¥${Math.round(totalNormalAmount).toLocaleString()}</span>
           </div>
-          <div class="summary-item">
-            <span class="summary-label" style="font-weight: bold; color: #475569;">不動品在庫</span>
-            <span class="summary-value" style="color: #d97706; font-size: 1.5rem; font-weight: bold;">¥${Math.round(totalFixedAmount).toLocaleString()}</span>
+          <div style="text-align: center;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">内不動品在庫</span>
+            <span style="font-size: 1.5rem; font-weight: 800; color: #d97706;">¥${Math.round(totalFixedAmount).toLocaleString()}</span>
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex-wrap: wrap;">
           <!-- 分類別グラフ -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📊 分類別在庫金額</h4>
-            ${categoryRows || '<p style="color: #94a3b8;">在庫データがありません</p>'}
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: #334155; border-left: 3px solid #1e40af; padding-left: 0.5rem;">資材分類別 在庫金額構成</h4>
+            ${categoryRows || '<p style="color: #94a3b8; font-size: 0.875rem;">在庫データがありません</p>'}
           </div>
           
-          <!-- 月別推移グラフ -->
+          <!-- 月別推移グラフ (印刷でもはっきり見えるように再設計) -->
           <div>
-            <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: #475569;">📈 月別在庫推移（過去6ヶ月）</h4>
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: #334155; border-left: 3px solid #1e40af; padding-left: 0.5rem;">過去6ヶ月の在庫推移（対比グラフ）</h4>
+            <div style="display: flex; gap: 0.75rem; align-items: flex-end; padding: 1.25rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; height: 160px; box-sizing: border-box;">
               ${trendBars}
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: #64748b;">
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #2563eb; border-radius: 2px;"></span> 通常</span>
-              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> 不動品</span>
+            <div style="display: flex; gap: 1rem; margin-top: 0.75rem; font-size: 0.75rem; color: #64748b; justify-content: center;">
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: linear-gradient(180deg, #2563eb, #60a5fa); border-radius: 2px;"></span> 通常在庫</span>
+              <span style="display: flex; align-items: center; gap: 0.25rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> 不動在庫（滞留）</span>
             </div>
           </div>
         </div>
       </div>
       
-      <div class="report-section">
-        <h3>■詳細データ一覧</h3>
-        <table class="report-table">
+      <!-- 詳細データ一覧 -->
+      <div style="margin-bottom: 2.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>■ 物件別・製品別詳細原価内訳</span>
+          <span style="font-size: 0.75rem; font-weight: normal; color: #64748b;">(納期順)</span>
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; border: 1px solid #cbd5e1;">
           <thead>
-            <tr>
-              <th>物件名</th>
-              <th>製品名</th>
-              <th>納期</th>
-              <th style="text-align: right;">台数</th>
-              <th style="text-align: right;">台/生産時間</th>
-              <th style="text-align: right;">台/加工費</th>
-              <th style="text-align: right;">総生産時間</th>
-              <th style="text-align: right;">総加工費</th>
+            <tr style="background: #0B2D48; color: #ffffff;">
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600;">物件名</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600;">製品名</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: center; width: 70px;">納期</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: right; width: 50px;">数量</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: right; width: 90px;">時間/台</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: right; width: 90px;">加工費/台</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: right; width: 90px;">総生産時間</th>
+              <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600; text-align: right; width: 100px;">総加工費額</th>
             </tr>
           </thead>
           <tbody>
-            ${detailRows || '<tr><td colspan="8" class="text-center text-muted">完了案件がありません</td></tr>'}
+            ${detailRows || '<tr><td colspan="8" style="padding: 16px; text-align: center; color: #94a3b8; border: 1px solid #cbd5e1;">集計対象となる完了案件データはありません</td></tr>'}
           </tbody>
         </table>
       </div>
       
-      <div class="report-section">
-        <h3>■部門別集計</h3>
-        <div class="report-departments">
-          ${Object.entries(departmentCosts).map(([dept, cost]) => `
-            <div class="dept-item">
-              <span class="dept-name">${dept}</span>
-              <span class="dept-cost">${Math.round(cost).toLocaleString()} 円</span>
-              <span class="dept-time" style="font-size: 0.75rem; color: #64748b;">(${(departmentTimes[dept] || 0).toLocaleString()} 分)</span>
-            </div>
-          `).join('')}
+      <!-- 部門別集計 -->
+      <div style="page-break-inside: avoid;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem;">■ 製造部門別（係別）コスト配分内訳</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+          ${Object.entries(departmentCosts).map(([dept, cost]) => {
+            const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(1) : '0.0';
+            return `
+              <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.25rem; border-top: 4px solid #0B2D48;">
+                <div style="font-weight: 700; color: #475569; font-size: 0.875rem; margin-bottom: 4px;">${dept}</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #0b2d48; margin: 4px 0;">¥${Math.round(cost).toLocaleString()}</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                  <span>構成比: <strong>${pct}%</strong></span>
+                  <span>時間: ${(departmentTimes[dept] || 0).toLocaleString()} 分</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      
+      <!-- 報告書フッターサインエリア (会議用) -->
+      <div style="margin-top: 3.5rem; border-top: 1px solid #cbd5e1; padding-top: 1.5rem; display: flex; justify-content: space-between; font-size: 0.8rem; color: #64748b; page-break-inside: avoid;">
+        <div>
+          <span>TAC FURNITURE CO., LTD. MANUFACTURING DEPT.</span>
+        </div>
+        <div style="display: flex; gap: 2rem; text-align: center;">
+          <div style="width: 100px;">
+            <div style="height: 40px; border: 1px solid #cbd5e1; border-bottom: none; background: #f8fafc;"></div>
+            <div style="border: 1px solid #cbd5e1; padding: 4px; font-weight: 600;">承認者</div>
+          </div>
+          <div style="width: 100px;">
+            <div style="height: 40px; border: 1px solid #cbd5e1; border-bottom: none; background: #f8fafc;"></div>
+            <div style="border: 1px solid #cbd5e1; padding: 4px; font-weight: 600;">報告者</div>
+          </div>
         </div>
       </div>
     </div>
@@ -6992,14 +7059,10 @@ function renderInvCheckPage() {
     tempScanMap[s.productId] = s;
   });
 
-  // Build unified lists
+  // Build unified lists (include all products from master)
   const renderedProductIds = new Set();
+  products.forEach(p => renderedProductIds.add(p.id));
   currentTempScans.forEach(s => renderedProductIds.add(s.productId));
-  Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
-      renderedProductIds.add(id);
-    }
-  });
 
   const listItems = Array.from(renderedProductIds).map(pid => {
     const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
@@ -7020,7 +7083,8 @@ function renderInvCheckPage() {
       worker: scan ? (scan.workerName || scan.worker || '-') : '-',
       workerId: scan ? (scan.worker || '-') : '-',
       isScanned: isScanned,
-      hasPrevQty: prevQty > 0
+      hasPrevQty: prevQty > 0,
+      isZeroCheck: (prevQty === 0 && !isScanned)
     };
   });
 
@@ -7034,6 +7098,8 @@ function renderInvCheckPage() {
     filteredItems = listItems.filter(item => item.isScanned);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
+  } else if (filterStatus === 'zerocheck') {
+    filteredItems = listItems.filter(item => item.prevQty === 0 && !item.isScanned);
   } else if (filterStatus === 'unpriced') {
     filteredItems = listItems.filter(item => item.price <= 0);
   }
@@ -7042,6 +7108,7 @@ function renderInvCheckPage() {
   const totalItems = listItems.length;
   const scannedCount = listItems.filter(item => item.isScanned).length;
   const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
+  const zeroCheckCount = listItems.filter(item => item.prevQty === 0 && !item.isScanned).length;
 
   // Summary alerts HTML
   const summaryAlertsContainer = $('#inv-check-summary-alerts');
@@ -7059,6 +7126,11 @@ function renderInvCheckPage() {
         ✓ スキャン漏れなし
       </div>
       `}
+      ${zeroCheckCount > 0 ? `
+      <div style="background: #fffbeb; color: #d97706; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ⚠️ 0のまま未確認: <strong>${zeroCheckCount}</strong> 件
+      </div>
+      ` : ''}
     `;
   }
 
@@ -7078,13 +7150,20 @@ function renderInvCheckPage() {
         let rowClass = '';
         if (item.hasPrevQty && !item.isScanned) {
           rowClass = 'style="background-color: #fee2e2; color: #991b1b;"';
+        } else if (item.prevQty === 0 && !item.isScanned) {
+          rowClass = 'style="background-color: #fffbeb; color: #92400e;"';
         } else if (item.price <= 0) {
           rowClass = 'style="background-color: #fff3cd; color: #856404;"';
         }
 
-        let statusBadge = (item.hasPrevQty && !item.isScanned)
-          ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
-          : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+        let statusBadge = '';
+        if (item.isScanned) {
+          statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+        } else if (item.hasPrevQty) {
+          statusBadge = '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>';
+        } else {
+          statusBadge = '<span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 0のまま？(未確認)</span>';
+        }
 
         if (item.price <= 0) {
           statusBadge += ' <span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px;">⚠️ 単価未登録</span>';
@@ -7120,8 +7199,9 @@ function renderInvCheckPage() {
   // Draw banner alert warning if missing scans exist
   const alertContainer = $('#inv-check-alerts-container');
   if (alertContainer) {
+    let alertHtml = '';
     if (missingCount > 0) {
-      alertContainer.innerHTML = `
+      alertHtml += `
         <div style="background: #fee2e2; border-left: 6px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 24px;">⚠️</span>
           <div>
@@ -7130,9 +7210,19 @@ function renderInvCheckPage() {
           </div>
         </div>
       `;
-    } else {
-      alertContainer.innerHTML = '';
     }
+    if (zeroCheckCount > 0) {
+      alertHtml += `
+        <div style="background: #fffbeb; border-left: 6px solid #f59e0b; color: #92400e; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 24px;">⚠️</span>
+          <div>
+            <div style="font-weight: bold;">0のまま未確認アラート</div>
+            <div style="font-size: 0.875rem;">前月の在庫が0だった商品で、今月まだ棚卸登録されていない商品が <strong>${zeroCheckCount}</strong> 件あります（薄い黄色の行）。本当に0のまま問題ないか確認し、在庫がある場合は数量を入力するかスキャン登録してください。</div>
+          </div>
+        </div>
+      `;
+    }
+    alertContainer.innerHTML = alertHtml;
   }
 }
 

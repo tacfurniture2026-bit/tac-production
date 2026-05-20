@@ -594,7 +594,7 @@
                                 style="font-size: 0.8rem; margin-right: 0.5rem;" title="データが消えた場合に押してください">🔄
                                 初期データ復元</button>
                             <button class="btn btn-danger" onclick="deleteSelectedBoms()">🗑 選択削除</button>
-                            <button class="btn btn-primary" onclick="showAddBomModal()">+ 新規登録</button>
+                            <button class="btn btn-primary" id="add-bom-btn" onclick="showAddBomModal()">+ 新規登録</button>
                         </div>
                     </div>
                 </div>
@@ -1022,6 +1022,7 @@
                                         <option value="all">すべて</option>
                                         <option value="scanned">✓ 仮登録済</option>
                                         <option value="missing">⚠️ 未スキャン(漏れ)</option>
+                                        <option value="zerocheck">⚠️ 0のまま未確認</option>
                                         <option value="unpriced">⚠️ 単価未登録</option>
                                     </select>
                                 </div>

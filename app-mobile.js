@@ -6375,14 +6375,10 @@ function renderInvCheckPage() {
     tempScanMap[s.productId] = s;
   });
 
-  // Build unified lists
+  // Build unified lists (include all products from master)
   const renderedProductIds = new Set();
+  products.forEach(p => renderedProductIds.add(p.id));
   currentTempScans.forEach(s => renderedProductIds.add(s.productId));
-  Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
-      renderedProductIds.add(id);
-    }
-  });
 
   const listItems = Array.from(renderedProductIds).map(pid => {
     const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
@@ -6403,7 +6399,8 @@ function renderInvCheckPage() {
       worker: scan ? (scan.workerName || scan.worker || '-') : '-',
       workerId: scan ? (scan.worker || '-') : '-',
       isScanned: isScanned,
-      hasPrevQty: prevQty > 0
+      hasPrevQty: prevQty > 0,
+      isZeroCheck: (prevQty === 0 && !isScanned)
     };
   });
 
@@ -6417,6 +6414,8 @@ function renderInvCheckPage() {
     filteredItems = listItems.filter(item => item.isScanned);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
+  } else if (filterStatus === 'zerocheck') {
+    filteredItems = listItems.filter(item => item.prevQty === 0 && !item.isScanned);
   } else if (filterStatus === 'unpriced') {
     filteredItems = listItems.filter(item => item.price <= 0);
   }
@@ -6425,6 +6424,7 @@ function renderInvCheckPage() {
   const totalItems = listItems.length;
   const scannedCount = listItems.filter(item => item.isScanned).length;
   const missingCount = listItems.filter(item => item.hasPrevQty && !item.isScanned).length;
+  const zeroCheckCount = listItems.filter(item => item.prevQty === 0 && !item.isScanned).length;
 
   // Summary alerts HTML
   const summaryAlertsContainer = $('#inv-check-summary-alerts');
@@ -6442,6 +6442,11 @@ function renderInvCheckPage() {
         ✓ スキャン漏れなし
       </div>
       `}
+      ${zeroCheckCount > 0 ? `
+      <div style="background: #fffbeb; color: #d97706; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+        ⚠️ 0のまま未確認: <strong>${zeroCheckCount}</strong> 件
+      </div>
+      ` : ''}
     `;
   }
 
@@ -6461,13 +6466,20 @@ function renderInvCheckPage() {
         let rowClass = '';
         if (item.hasPrevQty && !item.isScanned) {
           rowClass = 'style="background-color: #fee2e2; color: #991b1b;"';
+        } else if (item.prevQty === 0 && !item.isScanned) {
+          rowClass = 'style="background-color: #fffbeb; color: #92400e;"';
         } else if (item.price <= 0) {
           rowClass = 'style="background-color: #fff3cd; color: #856404;"';
         }
 
-        let statusBadge = (item.hasPrevQty && !item.isScanned)
-          ? '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>'
-          : '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+        let statusBadge = '';
+        if (item.isScanned) {
+          statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+        } else if (item.hasPrevQty) {
+          statusBadge = '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>';
+        } else {
+          statusBadge = '<span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 0のまま？(未確認)</span>';
+        }
 
         if (item.price <= 0) {
           statusBadge += ' <span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px;">⚠️ 単価未登録</span>';
@@ -6503,8 +6515,9 @@ function renderInvCheckPage() {
   // Draw banner alert warning if missing scans exist
   const alertContainer = $('#inv-check-alerts-container');
   if (alertContainer) {
+    let alertHtml = '';
     if (missingCount > 0) {
-      alertContainer.innerHTML = `
+      alertHtml += `
         <div style="background: #fee2e2; border-left: 6px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
           <span style="font-size: 24px;">⚠️</span>
           <div>
@@ -6513,9 +6526,19 @@ function renderInvCheckPage() {
           </div>
         </div>
       `;
-    } else {
-      alertContainer.innerHTML = '';
     }
+    if (zeroCheckCount > 0) {
+      alertHtml += `
+        <div style="background: #fffbeb; border-left: 6px solid #f59e0b; color: #92400e; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 24px;">⚠️</span>
+          <div>
+            <div style="font-weight: bold;">0のまま未確認アラート</div>
+            <div style="font-size: 0.875rem;">前月の在庫が0だった商品で、今月まだ棚卸登録されていない商品が <strong>${zeroCheckCount}</strong> 件あります（薄い黄色の行）。本当に0のまま問題ないか確認し、在庫がある場合は数量を入力するかスキャン登録してください。</div>
+          </div>
+        </div>
+      `;
+    }
+    alertContainer.innerHTML = alertHtml;
   }
 }
 
