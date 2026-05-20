@@ -9,12 +9,33 @@
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
 
-    <!-- PWA無効化 (Manifest削除) -->
+    <!-- PWA: 画面縦固定対応 -->
     <meta name="theme-color" content="#0B2D48">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
     <link rel="apple-touch-icon" href="icon-192.png?v=2">
+    <link rel="manifest" href="manifest.json">
+    <script>
+        // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
+        (function() {
+            try {
+                var m = {
+                    name: "TAC製造部 生産管理",
+                    short_name: "TAC生産管理",
+                    display: "standalone",
+                    orientation: "portrait",
+                    theme_color: "#0B2D48",
+                    background_color: "#FFFFFF",
+                    start_url: ".",
+                    icons: [{src:"icon-192.png",sizes:"192x192",type:"image/png"}]
+                };
+                var blob = new Blob([JSON.stringify(m)], {type: 'application/json'});
+                var link = document.querySelector('link[rel="manifest"]');
+                if (link) link.href = URL.createObjectURL(blob);
+            } catch(e) {}
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -33782,13 +33803,21 @@ window.logout = function () {
 };
 
 function checkAuth() {
-  const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
-    showMainScreen();
-  } else {
-    showLoginScreen();
+  try {
+    const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
+    if (savedUser && savedUser !== 'null' && savedUser !== 'undefined' && savedUser !== '') {
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed.username) {
+        currentUser = parsed;
+        showMainScreen();
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('ログイン情報の復元に失敗:', e);
+    localStorage.removeItem(DB.KEYS.CURRENT_USER);
   }
+  showLoginScreen();
 }
 
 // ========================================
@@ -38362,6 +38391,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // 認証チェック
   checkAuth();
 
+  // スマホのバックグラウンド復帰時にログイン状態を保護
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentUser) {
+      // ページ復帰時にlocalStorageにユーザー情報を再確認・再保存
+      const saved = localStorage.getItem(DB.KEYS.CURRENT_USER);
+      if (!saved || saved === 'null' || saved === 'undefined') {
+        localStorage.setItem(DB.KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        console.log('🔄 ログイン情報をlocalStorageに再保存しました');
+      }
+    }
+  });
+
   // ログインフォーム
   $('#login-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -39357,7 +39398,7 @@ function renderTodayInvLogs() {
 
   const todayLogs = [
     ...tempScans
-      .filter(t => t.username === myUsername)  // 自分の仮登録のみ
+      .filter(t => (t.worker === myUsername || t.username === myUsername))  // workerまたはusernameでフィルタ
       .map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
     ...logs.filter(log => {
       // INV_LOGSにusernameフィールドがある場合はそれでフィルタ
@@ -40404,7 +40445,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof initTheme === 'function') initTheme();
 
   // 認証状態チェック (ログイン画面/メイン画面の切り替え)
-  checkAuth();
+  // ※DOMContentLoadedで既にチェック済みの場合はスキップ
+  if (!currentUser) {
+    checkAuth();
+  }
 
   setTimeout(() => {
     // フルスクリーン切り替え
@@ -41285,7 +41329,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.18</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.19</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">

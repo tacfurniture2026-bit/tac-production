@@ -171,13 +171,21 @@ window.logout = function () {
 };
 
 function checkAuth() {
-  const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
-    showMainScreen();
-  } else {
-    showLoginScreen();
+  try {
+    const savedUser = localStorage.getItem(DB.KEYS.CURRENT_USER);
+    if (savedUser && savedUser !== 'null' && savedUser !== 'undefined' && savedUser !== '') {
+      const parsed = JSON.parse(savedUser);
+      if (parsed && parsed.username) {
+        currentUser = parsed;
+        showMainScreen();
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('ログイン情報の復元に失敗:', e);
+    localStorage.removeItem(DB.KEYS.CURRENT_USER);
   }
+  showLoginScreen();
 }
 
 // ========================================
@@ -4751,6 +4759,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // 認証チェック
   checkAuth();
 
+  // スマホのバックグラウンド復帰時にログイン状態を保護
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentUser) {
+      // ページ復帰時にlocalStorageにユーザー情報を再確認・再保存
+      const saved = localStorage.getItem(DB.KEYS.CURRENT_USER);
+      if (!saved || saved === 'null' || saved === 'undefined') {
+        localStorage.setItem(DB.KEYS.CURRENT_USER, JSON.stringify(currentUser));
+        console.log('🔄 ログイン情報をlocalStorageに再保存しました');
+      }
+    }
+  });
+
   // ログインフォーム
   $('#login-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -5746,7 +5766,7 @@ function renderTodayInvLogs() {
 
   const todayLogs = [
     ...tempScans
-      .filter(t => t.username === myUsername)  // 自分の仮登録のみ
+      .filter(t => (t.worker === myUsername || t.username === myUsername))  // workerまたはusernameでフィルタ
       .map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
     ...logs.filter(log => {
       // INV_LOGSにusernameフィールドがある場合はそれでフィルタ
@@ -6793,7 +6813,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof initTheme === 'function') initTheme();
 
   // 認証状態チェック (ログイン画面/メイン画面の切り替え)
-  checkAuth();
+  // ※DOMContentLoadedで既にチェック済みの場合はスキップ
+  if (!currentUser) {
+    checkAuth();
+  }
 
   setTimeout(() => {
     // フルスクリーン切り替え
