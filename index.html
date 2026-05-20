@@ -116,8 +116,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20260520_9"></script>
-    <script src="app.js?v=20260520_9"></script>
+    <script src="data.js?v=20260520_10"></script>
+    <script src="app.js?v=20260520_10"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -179,7 +179,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.10</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.11</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -707,16 +707,22 @@
                         <h3>📅 期間設定</h3>
                     </div>
                     <div class="card-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>開始日</label>
-                                <input type="text" id="report-start-date" class="form-input" placeholder="例: 2025-01-01" pattern="\d{4}-\d{2}-\d{2}">
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>開始日</label>
+                                    <input type="text" id="report-start-date" class="form-input" placeholder="例: 2025-01-01" pattern="\d{4}-\d{2}-\d{2}">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>終了日</label>
+                                    <input type="text" id="report-end-date" class="form-input" placeholder="例: 2026-04-20" pattern="\d{4}-\d{2}-\d{2}">
+                                </div>
+                                <button class="btn btn-secondary" id="filter-report-btn" onclick="renderReport(this.parentElement.querySelector('#report-start-date').value, this.parentElement.querySelector('#report-end-date').value)">集計</button>
                             </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>終了日</label>
-                                <input type="text" id="report-end-date" class="form-input" placeholder="例: 2026-04-20" pattern="\d{4}-\d{2}-\d{2}">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; padding-top: 0.25rem;">
+                                <input type="checkbox" id="show-report-comment-checkbox" checked style="width: 16px; height: 16px; cursor: pointer;">
+                                <label for="show-report-comment-checkbox" style="font-size: 0.875rem; cursor: pointer; user-select: none;">工場長からのコメントを表示する</label>
                             </div>
-                            <button class="btn btn-secondary" id="filter-report-btn" onclick="renderReport(this.parentElement.querySelector('#report-start-date').value, this.parentElement.querySelector('#report-end-date').value)">集計</button>
                         </div>
                     </div>
                 </div>

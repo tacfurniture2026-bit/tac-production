@@ -4661,7 +4661,76 @@ document.addEventListener('DOMContentLoaded', () => {
   safeAddListener('#filter-report-btn', 'click', renderReport);
   safeAddListener('#generate-report-btn', 'click', printReport);
   safeAddListener('#export-report-btn', 'click', exportReportCSV);
+
+  const commentCheckbox = document.getElementById('show-report-comment-checkbox');
+  if (commentCheckbox) {
+    commentCheckbox.addEventListener('change', () => {
+      const isChecked = commentCheckbox.checked;
+      const commentBox = document.getElementById('report-comment-box');
+      if (commentBox) {
+        commentBox.style.display = isChecked ? 'block' : 'none';
+      }
+      
+      // 画面上のレポートコンテナから、実際に描画されているレポートのキーを取得
+      const reportPrintArea = document.getElementById('report-print-area');
+      const commentKey = reportPrintArea ? (reportPrintArea.dataset.currentCommentKey || 'all_all') : 'all_all';
+      
+      const allComments = DB.get(DB.KEYS.REPORT_COMMENTS) || [];
+      const target = allComments.find(c => c.id === commentKey);
+      if (target) {
+        target.visible = isChecked;
+        DB.save(DB.KEYS.REPORT_COMMENTS, allComments);
+      }
+    });
+  }
 });
+
+function getNormalizedCommentKey(startDate, endDate) {
+  const parseDateLocal = (d) => {
+    if (!d) return null;
+    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
+    s = s.replace(/\s+/g, '');
+    const parts = s.split('-').filter(Boolean);
+    if (parts.length >= 3) {
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]) - 1;
+      const day = parseInt(parts[2]);
+      if (y > 1900 && m >= 0 && day > 0) {
+        return new Date(y, m, day);
+      }
+    }
+    const dt = new Date(d);
+    return !isNaN(dt.getTime()) ? dt : null;
+  };
+
+  const norm = (d) => {
+    const dt = parseDateLocal(d);
+    if (!dt) return 'all';
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  
+  const startKey = norm(startDate);
+  const endKey = norm(endDate);
+  return `${startKey}_${endKey}`;
+}
+
+function generateFactoryDirectorComment(totalQuantity, defectRate, deadStockRatio) {
+  let text = '';
+  if (totalQuantity === 0) {
+    text = `今月は集計期間中に完成した製品がなかったみたいだね。次の納期に向けて、今のうちに工場の機械のメンテナンスや、使っていない部品の整理整頓を進めておこう。準備をしっかり整えて、次の生産に備えよう！`;
+  } else if (parseFloat(defectRate) >= 3.0) {
+    text = `今月は ${totalQuantity}台 を無事に完成させることができたよ。みんな、本当にお疲れ様！ただ、不良率が ${defectRate}% と少し高めなのが心配だね。材料のムダを減らすために、作業の手順をもう一度みんなで確認しよう！`;
+  } else if (parseFloat(deadStockRatio) >= 10.0) {
+    text = `今月は ${totalQuantity}台 完成したね。みんながんばってくれてありがとう。ただ、倉庫の使っていない部品の割合が ${deadStockRatio}% と少し多めなのが気になるな。整理整頓をして、必要なものを必要なだけ作るように心がけよう。`;
+  } else {
+    text = `今月もみんなのおかげで、予定通り ${totalQuantity}台 の製品を無事に完成させることができたよ。不良率も ${defectRate}% と低く抑えられていて素晴らしいね。この調子で、怪我に気をつけて安全第一でがんばろう！`;
+  }
+  return text;
+}
 
 // ========================================
 // 月次報告
@@ -4986,8 +5055,51 @@ function renderReport(argStart, argEnd) {
   const defectRate = totalQuantity > 0 ? ((totalDefects / totalQuantity) * 100).toFixed(1) : 0;
   const deadStockRatio = totalInvAmount > 0 ? ((totalFixedAmount / totalInvAmount) * 100).toFixed(1) : 0;
 
+  // コメントの取得・自動生成
+  const comments = DB.get(DB.KEYS.REPORT_COMMENTS) || [];
+  const commentKey = getNormalizedCommentKey(startDate, endDate);
+  let commentObj = comments.find(c => c.id === commentKey);
+  
+  if (!commentObj) {
+    const generatedText = generateFactoryDirectorComment(totalQuantity, defectRate, deadStockRatio);
+    commentObj = {
+      id: commentKey,
+      text: generatedText,
+      visible: true
+    };
+    comments.push(commentObj);
+    DB.save(DB.KEYS.REPORT_COMMENTS, comments);
+  }
+
+  // チェックボックスの状態を同期
+  const commentCheckbox = document.getElementById('show-report-comment-checkbox');
+  if (commentCheckbox) {
+    commentCheckbox.checked = commentObj.visible;
+  }
+
+  const commentBoxStyle = commentObj.visible ? 'display: block;' : 'display: none;';
+  
+  const commentBoxHtml = `
+    <div id="report-comment-box" class="report-section" style="${commentBoxStyle} margin-bottom: 2.5rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.5rem; page-break-inside: avoid;">
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: #92400e; margin-top: 0; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>👴 工場長からのコメント</span>
+        <button id="edit-comment-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #d97706; background: #fff; color: #d97706;">
+          <span class="material-icons" style="font-size: 14px;">edit</span> 編集する
+        </button>
+      </h3>
+      <div id="comment-text-display" style="font-size: 0.95rem; line-height: 1.6; color: #78350f; white-space: pre-wrap; font-weight: 500;">${commentObj.text}</div>
+      <div id="comment-edit-area" style="display: none; margin-top: 10px;">
+        <textarea id="comment-textarea" style="width: 100%; height: 90px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-size: 0.95rem; line-height: 1.5; color: #1e293b;" maxlength="200">${commentObj.text}</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+          <button id="cancel-comment-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">キャンセル</button>
+          <button id="save-comment-btn" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">保存する</button>
+        </div>
+      </div>
+    </div>
+  `;
+
   const html = `
-    <div class="report-print" id="report-print-area" style="background: #ffffff; color: #1e293b; font-family: 'Inter', 'Noto Sans JP', sans-serif; max-width: 1000px; margin: 0 auto; padding: 2.5rem; border-top: 8px solid #0B2D48; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border-radius: 8px;">
+    <div class="report-print" id="report-print-area" data-current-comment-key="${commentKey}" style="background: #ffffff; color: #1e293b; font-family: 'Inter', 'Noto Sans JP', sans-serif; max-width: 1000px; margin: 0 auto; padding: 2.5rem; border-top: 8px solid #0B2D48; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border-radius: 8px;">
       <!-- 会議資料ヘッダー -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem;">
         <div>
@@ -5001,6 +5113,8 @@ function renderReport(argStart, argEnd) {
           <p style="font-size: 0.75rem; color: #64748b; margin: 2px 0 0 0;">TAC製造部 管理システム</p>
         </div>
       </div>
+      
+      ${commentBoxHtml}
       
       <!-- 総括サマリ -->
       <div style="margin-bottom: 2.5rem;">
@@ -5204,6 +5318,52 @@ function renderReport(argStart, argEnd) {
   `;
 
   $('#report-content').innerHTML = html;
+
+  // コメント編集などのDOMイベント紐付け
+  const editBtn = document.getElementById('edit-comment-btn');
+  const saveBtn = document.getElementById('save-comment-btn');
+  const cancelBtn = document.getElementById('cancel-comment-btn');
+  const textDisplay = document.getElementById('comment-text-display');
+  const editArea = document.getElementById('comment-edit-area');
+  const textarea = document.getElementById('comment-textarea');
+
+  if (editBtn && saveBtn && cancelBtn && textDisplay && editArea && textarea) {
+    editBtn.addEventListener('click', () => {
+      textDisplay.style.display = 'none';
+      editBtn.style.display = 'none';
+      editArea.style.display = 'block';
+      textarea.value = commentObj.text;
+      textarea.focus();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      textDisplay.style.display = 'block';
+      editBtn.style.display = 'inline-flex';
+      editArea.style.display = 'none';
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const newText = textarea.value.trim();
+      if (newText === '') {
+        toast('コメントを入力してください', 'warning');
+        return;
+      }
+      
+      const allComments = DB.get(DB.KEYS.REPORT_COMMENTS) || [];
+      const target = allComments.find(c => c.id === commentKey);
+      if (target) {
+        target.text = newText;
+        commentObj.text = newText;
+        DB.save(DB.KEYS.REPORT_COMMENTS, allComments);
+      }
+      
+      textDisplay.textContent = newText;
+      textDisplay.style.display = 'block';
+      editBtn.style.display = 'inline-flex';
+      editArea.style.display = 'none';
+      toast('工場長コメントを保存しました', 'success');
+    });
+  }
 }
 
 function exportReportCSV() {
