@@ -2043,3 +2043,17 @@ body.dark-mode .summary-value {
     z-index: 5;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
+
+/* ========================================
+   タッチデバイスでのサイドバーホバー残留対策
+   ======================================== */
+.sidebar.force-collapsed {
+    width: var(--sidebar-width-collapsed) !important;
+}
+.sidebar.force-collapsed .logo-text,
+.sidebar.force-collapsed .nav-section,
+.sidebar.force-collapsed .nav-item span:not(.nav-icon),
+.sidebar.force-collapsed .user-info {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

@@ -329,6 +329,15 @@ function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
 
+  // iPad等タッチデバイスでのホバー残留対策
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.add('force-collapsed');
+    setTimeout(() => {
+      sidebar.classList.remove('force-collapsed');
+    }, 400);
+  }
+
   // ページ切り替え
   $$('.page').forEach(p => p.classList.remove('active'));
   $(`#page-${pageName}`).classList.add('active');
@@ -5129,74 +5138,19 @@ function printReport() {
         toast('レポートの生成に失敗しました。先に「集計」ボタンを押してください。', 'error');
         return;
       }
-      doPrintReport(reportArea);
+      openPrintReportWindow(reportArea);
     }, 300);
     return;
   }
-  doPrintReport(reportArea);
+  openPrintReportWindow(reportArea);
 }
 
-function doPrintReport(reportArea) {
-  // iframeを使った印刷（ポップアップブロッカー回避）
-  let printIframe = document.getElementById('print-iframe');
-  if (!printIframe) {
-    printIframe = document.createElement('iframe');
-    printIframe.id = 'print-iframe';
-    printIframe.style.visibility = 'hidden';
-    printIframe.style.position = 'fixed';
-    printIframe.style.right = '0';
-    printIframe.style.bottom = '0';
-    document.body.appendChild(printIframe);
-  }
-
-  const printHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>月次製造原価報告書</title>
-      <style>
-        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; padding: 2rem; color: #333; line-height: 1.5; }
-        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; border-bottom: 2px solid #1e40af; padding-bottom: 0.5rem; }
-        .report-meta { color: #666; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: right; }
-        .report-section { margin-bottom: 2rem; }
-        .report-section h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1e40af; border-left: 4px solid #1e40af; padding-left: 0.5rem; }
-        .report-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
-        .summary-item { display: flex; flex-direction: column; background: #f8fafc; padding: 0.75rem 1rem; border-radius: 4px; border: 1px solid #e2e8f0; min-width: 120px; }
-        .summary-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; font-weight: bold; }
-        .summary-value { font-size: 1.1rem; font-weight: bold; color: #0f172a; }
-        .report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        .report-table th, .report-table td { border: 1px solid #cbd5e1; padding: 0.4rem 0.5rem; }
-        .report-table th { background: #f1f5f9; font-weight: bold; text-align: center; }
-        .report-departments { display: flex; gap: 2rem; }
-        .dept-item { display: flex; flex-direction: column; }
-        .dept-name { font-size: 0.875rem; color: #64748b; }
-        .dept-cost { font-size: 1rem; font-weight: bold; color: #0f172a; }
-        @media print { 
-          @page { size: A4 portrait; margin: 10mm; }
-          body { padding: 0; font-size: 9pt; }
-          .report-section { page-break-inside: avoid; }
-          .report-table { font-size: 8pt; }
-          .summary-item { border: 1px solid #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-      </style>
-    </head>
-    <body>
-      ${reportArea.innerHTML}
-    </body>
-    </html>
-  `;
-
-  const doc = printIframe.contentDocument || printIframe.contentWindow.document;
-  doc.open();
-  doc.write(printHTML);
-  doc.close();
-
-  // スタイルの読み込み等のために少し待ってからダイアログを表示
-  setTimeout(() => {
-    printIframe.contentWindow.focus();
-    printIframe.contentWindow.print();
-  }, 500);
+function openPrintReportWindow(reportArea) {
+  const reportData = {
+    html: reportArea.innerHTML
+  };
+  sessionStorage.setItem('print_report_data', JSON.stringify(reportData));
+  window.open('print_report.html', '_blank');
 }
 
 // ========================================

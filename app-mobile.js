@@ -313,6 +313,15 @@ function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
 
+  // iPad等タッチデバイスでのホバー残留対策
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.add('force-collapsed');
+    setTimeout(() => {
+      sidebar.classList.remove('force-collapsed');
+    }, 400);
+  }
+
   // ページ切り替え
   $$('.page').forEach(p => p.classList.remove('active'));
   $(`#page-${pageName}`).classList.add('active');
@@ -4755,7 +4764,9 @@ function exportReportCSV() {
   const dateStr = new Date().toISOString().split('T')[0];
   link.href = URL.createObjectURL(blob);
   link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
 
@@ -4768,48 +4779,18 @@ function printReport() {
       toast('レポートの生成に失敗しました', 'error');
       return;
     }
-    doPrintReport(reportArea2);
+    openPrintReportWindow(reportArea2);
     return;
   }
-  doPrintReport(reportArea);
+  openPrintReportWindow(reportArea);
 }
 
-function doPrintReport(reportArea) {
-
-  // 印刷用ウィンドウで開く
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>月次報告書</title>
-      <style>
-        body { font-family: 'Noto Sans JP', sans-serif; padding: 2rem; color: #1F2937; }
-        .report-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .report-meta { color: #6B7280; margin-bottom: 2rem; }
-        .report-section { margin-bottom: 2rem; }
-        .report-section h3 { font-size: 1rem; margin-bottom: 1rem; color: #1F2937; }
-        .report-summary { display: flex; gap: 2rem; margin-bottom: 1rem; }
-        .summary-item { display: flex; flex-direction: column; }
-        .summary-label { font-size: 0.875rem; color: #6B7280; }
-        .summary-value { font-size: 1.25rem; font-weight: bold; }
-        .report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .report-table th, .report-table td { border: 1px solid #D1D5DB; padding: 0.5rem; text-align: left; }
-        .report-table th { background: #F3F4F6; font-weight: 600; }
-        .report-departments { display: flex; gap: 2rem; }
-        .dept-item { display: flex; flex-direction: column; }
-        .dept-name { font-size: 0.875rem; color: #6B7280; }
-        .dept-cost { font-size: 1rem; font-weight: bold; }
-        @media print { body { padding: 0; } }
-      </style>
-    </head>
-    <body>
-      ${reportArea.innerHTML}
-    </body>
-    </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
+function openPrintReportWindow(reportArea) {
+  const reportData = {
+    html: reportArea.innerHTML
+  };
+  sessionStorage.setItem('print_report_data', JSON.stringify(reportData));
+  window.open('print_report.html', '_blank');
 }
 
 // ========================================

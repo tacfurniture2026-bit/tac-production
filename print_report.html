@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>月次製造原価報告書 - TAC製造部</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #0B2D48;
+            --color-text: #1e293b;
+            --color-border: #cbd5e1;
+            --color-bg: #f8fafc;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+            padding: 20px;
+        }
+        .toolbar {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toolbar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            min-height: 297mm;
+        }
+        /* 月次報告書用の印刷スタイル */
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 0.5rem;
+            color: var(--color-primary);
+        }
+        .report-meta {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            text-align: right;
+        }
+        .report-section {
+            margin-bottom: 2rem;
+        }
+        .report-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+            border-left: 4px solid var(--color-primary);
+            padding-left: 0.5rem;
+        }
+        .report-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            min-width: 130px;
+            flex: 1;
+        }
+        .summary-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            font-weight: bold;
+        }
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid var(--color-border);
+            padding: 0.5rem;
+        }
+        .report-table th {
+            background: #f1f5f9;
+            font-weight: bold;
+            text-align: center;
+        }
+        .report-departments {
+            display: flex;
+            gap: 2rem;
+        }
+        .dept-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .dept-name {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        .dept-cost {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .report-chart-container {
+            display: none !important; /* 印刷時には棒グラフ非表示 */
+        }
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                color: black;
+            }
+            .toolbar {
+                display: none !important;
+            }
+            .print-container {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 15mm 12mm 15mm 12mm;
+            }
+            .report-section {
+                page-break-inside: avoid;
+            }
+            .summary-item {
+                border: 1px solid #ccc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="toolbar-title">🏭 TAC製造部 - 月次製造原価報告書 印刷</div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="window.close()">✕ 閉じる</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ A4サイズで印刷</button>
+        </div>
+    </div>
+    <div class="print-container" id="report-print-target">
+        <!-- レポート内容が動的に生成されます -->
+    </div>
+    <script>
+        window.onload = function() {
+            const dataJson = sessionStorage.getItem('print_report_data');
+            if (!dataJson) {
+                document.getElementById('report-print-target').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444; font-weight: bold;">
+                        印刷対象のデータが選択されていません。月次報告画面からPDF出力を実行してください。
+                    </div>
+                `;
+                return;
+            }
+            const data = JSON.parse(dataJson);
+            document.getElementById('report-print-target').innerHTML = data.html;
+            
+            // 印刷プレビューを少し遅延させて自動起動 (ブラウザ保護を回避)
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>
