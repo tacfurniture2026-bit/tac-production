@@ -149,7 +149,8 @@ function login(username, password) {
 
   if (user) {
     currentUser = user;
-    DB.save(DB.KEYS.CURRENT_USER, user);
+    // localStorageに永続保存（ログアウトまで維持）
+    localStorage.setItem(DB.KEYS.CURRENT_USER, JSON.stringify(user));
     return true;
   }
   return false;
@@ -204,6 +205,17 @@ function showMainScreen() {
   $$('.admin-only').forEach(el => {
     el.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
   });
+
+  // 画面縦固定: Screen Orientation API でポートレートをロック試行
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(() => {
+        // API非対応・権限なしの場合は無視（CSS側で対応済み）
+      });
+    }
+  } catch (e) {
+    // 例外無視
+  }
 
   // モバイルナビの初期化
   initMobileNav();
@@ -5729,15 +5741,26 @@ function renderTodayInvLogs() {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const today = new Date().toISOString().split('T')[0];
 
+  // ログインユーザーのusernameを取得
+  const myUsername = currentUser ? currentUser.username : '';
+
   const todayLogs = [
-    ...tempScans.map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
-    ...logs
-  ].filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 10);
+    ...tempScans
+      .filter(t => t.username === myUsername)  // 自分の仮登録のみ
+      .map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
+    ...logs.filter(log => {
+      // INV_LOGSにusernameフィールドがある場合はそれでフィルタ
+      if (log.username) return log.username === myUsername;
+      if (log.user) return log.user === myUsername;
+      // usernameフィールドがないログは表示しない（自分のものか判別不能）
+      return false;
+    })
+  ].filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 20);
   
   const container = $('#inv-today-logs');
 
   if (todayLogs.length === 0) {
-    container.innerHTML = '<p class="text-muted">本日の履歴がありません</p>';
+    container.innerHTML = '<p class="text-muted">本日の自分の履歴がありません</p>';
     return;
   }
 

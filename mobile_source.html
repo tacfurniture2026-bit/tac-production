@@ -108,6 +108,39 @@
         .gantt-container-mono.is-fullscreen .matrix-container {
             max-height: 95vh !important;
         }
+        /* === 画面縦固定: 横向き時の警告オーバーレイ === */
+        #landscape-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(11, 45, 72, 0.97);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #fff;
+            text-align: center;
+            padding: 2rem;
+        }
+        #landscape-overlay .rotate-icon {
+            font-size: 64px;
+            margin-bottom: 1rem;
+            animation: rotateHint 2s ease-in-out infinite;
+        }
+        #landscape-overlay p {
+            font-size: 1.125rem;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            #landscape-overlay {
+                display: flex !important;
+            }
+        }
     </style>
 
     <!-- Firebase SDK -->
@@ -142,6 +175,12 @@
 </head>
 
 <body>
+    <!-- 横向き警告オーバーレイ -->
+    <div id="landscape-overlay">
+        <div class="rotate-icon">📱</div>
+        <p>画面を縦向きにしてください</p>
+        <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">このアプリは縦画面専用です</p>
+    </div>
 
     <!-- テーマ切替スイッチ -->
     <div class="theme-switch-wrapper">
@@ -189,7 +228,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.17</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.18</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
