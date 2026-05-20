@@ -2014,6 +2014,12 @@ body.dark-mode .summary-value {
     border-color: #16a34a;
 }
 
+.matrix-cell.status-defect {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #b91c1c !important;
+}
+
 /* ::after removed to prevent double text */
 
 .matrix-cell.status-disabled {

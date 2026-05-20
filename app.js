@@ -594,6 +594,7 @@ function renderDashboard() {
 function renderGantt() {
   const orders = DB.get(DB.KEYS.ORDERS);
   const boms = DB.get(DB.KEYS.BOM);
+  const defects = DB.get(DB.KEYS.DEFECTS) || [];
 
   // フィルタリング
   let filtered = orders;
@@ -732,11 +733,26 @@ function renderGantt() {
         allProcesses.forEach(process => {
           const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
           const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
+          const hasPendingDefect = Array.isArray(defects) && defects.some(d => 
+            String(d.orderId) === String(order.id) &&
+            String(d.itemId) === String(item.id) &&
+            d.processName === process &&
+            d.status === 'pending'
+          );
 
           if (!hasProcess) {
             html += `<td class="matrix-cell status-disabled"></td>`;
           } else {
-            const statusClass = isComplete ? 'status-done' : 'status-todo';
+            let statusClass = 'status-todo';
+            let statusText = '<span style="font-size:10px; color:#94a3b8;">未</span>';
+            if (isComplete) {
+              statusClass = 'status-done';
+              statusText = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+            } else if (hasPendingDefect) {
+              statusClass = 'status-defect';
+              statusText = '<span style="font-size:10px; color:#ffffff; font-weight:bold;">不良</span>';
+            }
+
             // エスケープ処理（シングルクォート対策）
             const safeProcess = process.replace(/'/g, "\\'");
             const safeOrderId = String(order.id).replace(/'/g, "\\'");
@@ -745,7 +761,7 @@ function renderGantt() {
                <td class="matrix-cell ${statusClass}"
                    onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}')"
                    style="width: 100px; min-width: 100px;">
-                   ${isComplete ? '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>' : '<span style="font-size:10px; color:#94a3b8;">未</span>'}
+                   ${statusText}
                </td>
              `;
           }
@@ -839,6 +855,7 @@ function collapseAll() {
 
 // QRスキャナーインスタンス
 let qrScanner = null;
+let defectQrScanner = null;
 
 function renderQrPage() {
   const orders = DB.get(DB.KEYS.ORDERS);
@@ -1310,43 +1327,489 @@ function registerProgress(orderId, itemId, processName) {
 }
 
 // ========================================
+// 不良品QRスキャン & フォーム連携
+// ========================================
+
+function startDefectQrScanner() {
+  const placeholder = $('#defect-scanner-placeholder');
+  const startBtn = $('#defect-start-scan-btn');
+  const stopBtn = $('#defect-stop-scan-btn');
+  const resultDiv = $('#defect-scan-result');
+
+  if (defectQrScanner) {
+    console.log('Defect QR Scanner is already running');
+    return;
+  }
+
+  // 他のスキャナーを停止
+  if (typeof stopQrScanner === 'function') stopQrScanner();
+  if (typeof stopInvScanner === 'function') stopInvScanner();
+
+  if (placeholder) placeholder.style.display = 'none';
+  if (startBtn) startBtn.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'inline-block';
+  if (resultDiv) resultDiv.style.display = 'none';
+
+  if (typeof Html5Qrcode === 'undefined') {
+    toast('QRスキャナーが読み込めません。ページを再読み込みしてください。', 'error');
+    return;
+  }
+
+  defectQrScanner = new Html5Qrcode('defect-scanner-preview');
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    aspectRatio: 1
+  };
+
+  defectQrScanner.start(
+    { facingMode: 'environment' },
+    config,
+    onDefectQrCodeScanned,
+    (error) => { /* エラー無視 */ }
+  ).catch(err => {
+    console.error('カメラ起動エラー:', err);
+    toast('カメラを起動できません。カメラの権限を許可してください。', 'error');
+    stopDefectQrScanner();
+  });
+}
+
+function stopDefectQrScanner() {
+  const placeholder = $('#defect-scanner-placeholder');
+  const startBtn = $('#defect-start-scan-btn');
+  const stopBtn = $('#defect-stop-scan-btn');
+
+  if (defectQrScanner) {
+    defectQrScanner.stop().then(() => {
+      defectQrScanner.clear();
+      defectQrScanner = null;
+    }).catch(err => console.log(err));
+  }
+
+  if (placeholder) placeholder.style.display = 'block';
+  if (startBtn) startBtn.style.display = 'inline-block';
+  if (stopBtn) stopBtn.style.display = 'none';
+}
+
+function onDefectQrCodeScanned(decodedText) {
+  try {
+    const safeSet = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+
+    console.log('Defect QR Scanned:', decodedText);
+    const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
+    toast(`読取成功: ${debugMsg}`, 'success');
+
+    stopDefectQrScanner();
+
+    const resultDiv = document.getElementById('defect-scan-result');
+    const dataDiv = document.getElementById('defect-scan-data');
+    if (resultDiv) resultDiv.style.display = 'block';
+
+    let projectName = '';
+    let productName = '';
+    let bomName = '';
+    let parsed = false;
+
+    // JSON パース
+    try {
+      const json = JSON.parse(decodedText);
+      if (json.project || json.projectName) {
+        projectName = (json.project || json.projectName || '').trim();
+        productName = (json.product || json.productName || '').trim();
+        bomName = (json.bom || json.bomName || json.item || '').trim();
+        parsed = true;
+      }
+    } catch (e) { }
+
+    // 区切り文字
+    if (!parsed) {
+      const parts = decodedText.split(/[|\t_]/);
+      if (parts.length >= 3) {
+        projectName = parts[0].trim();
+        productName = parts[1].trim();
+        bomName = parts[2].trim();
+        parsed = true;
+      } else {
+        const commaParts = decodedText.split(',');
+        if (commaParts.length >= 3) {
+          projectName = commaParts[0].trim();
+          productName = commaParts[1].trim();
+          bomName = commaParts[2].trim();
+          parsed = true;
+        }
+      }
+    }
+
+    if (!parsed) {
+      const parts2 = decodedText.split(/[|,\t_]/);
+      if (parts2.length === 2) {
+        productName = parts2[0].trim();
+        bomName = parts2[1].trim();
+        parsed = true;
+      }
+    }
+
+    if (!parsed) {
+      const orders = DB.get(DB.KEYS.ORDERS) || [];
+      const searchText = decodedText.trim();
+      const matchOrder = orders.find(o =>
+        o.orderNo === searchText ||
+        o.projectName === searchText ||
+        o.productName === searchText ||
+        (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+      );
+
+      if (matchOrder) {
+        projectName = matchOrder.projectName;
+        productName = matchOrder.productName;
+        const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+        if (matchItem) bomName = matchItem.bomName;
+        parsed = true;
+      }
+    }
+
+    if (dataDiv) {
+      if (parsed && (projectName || productName || bomName)) {
+        dataDiv.innerHTML = `
+          ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+          ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+          ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+        `;
+        safeSet('defect-qr-project-name', projectName || '');
+        safeSet('defect-qr-product-name', productName || '');
+        safeSet('defect-qr-bom-name', bomName || '');
+      } else {
+        dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+      }
+    }
+
+    if (parsed && (projectName || productName)) {
+      selectFromDefectQrData(projectName, productName, bomName);
+    } else {
+      toast('データが見つかりませんでした (手動選択してください)', 'warning');
+    }
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate(100); } catch (e) { }
+    }
+  } catch (e) {
+    console.error('Defect QR Scan Error:', e);
+    toast('システムエラー: ' + e.message, 'error');
+  }
+}
+
+function selectFromDefectQrData(projectName, productName, bomName) {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
+
+  const pNameNorm = normalize(projectName);
+  const prodNameNorm = normalize(productName);
+  const bomNameNorm = normalize(bomName);
+
+  let order = orders.find(o =>
+    o.projectName.includes(projectName) && o.productName.includes(productName)
+  );
+
+  if (!order) {
+    order = orders.find(o =>
+      normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
+    );
+  }
+
+  if (!order) {
+    toast(`該当する指示書が見つかりません (現場: ${projectName}, 品名: ${productName})`, 'warning');
+    return;
+  }
+
+  const orderSelect = document.getElementById('defect-reg-order');
+  if (orderSelect) {
+    const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
+    if (!opt) {
+      const newOpt = document.createElement('option');
+      newOpt.value = order.id;
+      newOpt.text = `${order.projectName} - ${order.productName}`;
+      orderSelect.add(newOpt);
+    }
+    orderSelect.value = order.id;
+  }
+
+  updateDefectRegItemSelect();
+
+  setTimeout(() => {
+    let item = order.items?.find(i =>
+      i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
+    );
+
+    if (!item && bomNameNorm) {
+      item = order.items?.find(i =>
+        normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
+      );
+    }
+
+    if (item) {
+      const itemSelect = document.getElementById('defect-reg-item');
+      if (itemSelect) {
+        itemSelect.value = item.id;
+      }
+      updateDefectRegProcessButtons();
+      toast(`指示書と部材を選択しました`, 'success');
+    } else {
+      toast(`部材が見つかりません: ${bomName}`, 'warning');
+    }
+  }, 100);
+}
+
+function updateDefectRegOrderSelect() {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const orderSelect = document.getElementById('defect-reg-order');
+  if (!orderSelect) return;
+  orderSelect.innerHTML = '<option value="">選択してください</option>' +
+    orders.map(o => `<option value="${o.id}">${o.projectName} - ${o.productName}</option>`).join('');
+}
+
+function updateDefectRegItemSelect() {
+  const orderId = parseInt($('#defect-reg-order').value);
+  const itemSelect = $('#defect-reg-item');
+  const processContainer = $('#defect-reg-process-buttons');
+  const processHidden = $('#defect-reg-process');
+
+  if (!orderId) {
+    itemSelect.innerHTML = '<option value="">先に指示書を選択</option>';
+    itemSelect.disabled = true;
+    if (processContainer) processContainer.innerHTML = '<p class="text-muted" style="width:100%;">先に部材を選択してください</p>';
+    if (processHidden) processHidden.value = '';
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+
+  if (order && order.items) {
+    itemSelect.innerHTML = '<option value="">選択してください</option>' +
+      order.items.map(i => `<option value="${i.id}">${i.bomName} (${i.partCode})</option>`).join('');
+    itemSelect.disabled = false;
+  }
+}
+
+function updateDefectRegProcessButtons() {
+  const orderId = parseInt($('#defect-reg-order').value);
+  const itemId = parseInt($('#defect-reg-item').value);
+  const processContainer = $('#defect-reg-process-buttons');
+  const processHidden = $('#defect-reg-process');
+
+  if (!processContainer) return;
+
+  if (!orderId || !itemId) {
+    processContainer.innerHTML = '<p class="text-muted" style="width:100%;">先に部材を選択してください</p>';
+    if (processHidden) processHidden.value = '';
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+  const item = order?.items?.find(i => i.id === itemId);
+
+  if (!item || !item.processes || item.processes.length === 0) {
+    processContainer.innerHTML = '<p class="text-muted" style="width:100%;">工程がありません</p>';
+    if (processHidden) processHidden.value = '';
+    return;
+  }
+
+  // 不良発生工程を選択するためのボタンを配置
+  processContainer.innerHTML = item.processes.map(p => {
+    return `<button type="button" class="process-btn" data-process="${p}" onclick="selectDefectProcess(this, '${p.replace(/'/g, "\\\\'")}')">${p}</button>`;
+  }).join('');
+
+  if (processHidden) processHidden.value = '';
+}
+
+function selectDefectProcess(btn, processName) {
+  const container = btn.parentElement;
+  container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const processHidden = $('#defect-reg-process');
+  if (processHidden) processHidden.value = processName;
+}
+
+function onDefectReasonSelectChange() {
+  const select = document.getElementById('defect-reg-reason-select');
+  const textInput = document.getElementById('defect-reg-reason-text');
+  if (!select || !textInput) return;
+  if (select.value === 'その他') {
+    textInput.style.display = 'block';
+    textInput.required = true;
+  } else {
+    textInput.style.display = 'none';
+    textInput.required = false;
+  }
+}
+
+function submitDefectRegForm(event) {
+  event.preventDefault();
+
+  const orderId = parseInt($('#defect-reg-order').value);
+  const itemId = parseInt($('#defect-reg-item').value);
+  const processName = $('#defect-reg-process').value;
+  const reasonSelect = $('#defect-reg-reason-select').value;
+  const reasonText = $('#defect-reg-reason-text').value;
+  const count = parseInt($('#defect-reg-count').value) || 1;
+
+  if (!orderId || !itemId || !processName || !reasonSelect) {
+    toast('必須項目を入力してください', 'warning');
+    return;
+  }
+
+  const reason = reasonSelect === 'その他' ? reasonText : reasonSelect;
+  if (reasonSelect === 'その他' && !reason) {
+    toast('具体的な理由を入力してください', 'warning');
+    return;
+  }
+
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const order = orders.find(o => o.id === orderId);
+  const item = order?.items?.find(i => i.id === itemId);
+
+  if (!order || !item) {
+    toast('該当する指示書または部材が見つかりません', 'error');
+    return;
+  }
+
+  // 不良データを追加
+  DB.add(DB.KEYS.DEFECTS, {
+    id: DB.nextId(DB.KEYS.DEFECTS),
+    orderId,
+    itemId,
+    projectName: order.projectName,
+    productName: order.productName,
+    bomName: item.bomName,
+    processName,
+    count,
+    reason,
+    reporter: currentUser ? currentUser.displayName : '作業員',
+    reportedAt: new Date().toISOString(),
+    status: 'pending' // pending = 未解決（再製作中）
+  });
+
+  // 不良発生工程を完了から未完了（completed配列から除外）に戻す
+  if (Array.isArray(item.completed)) {
+    item.completed = item.completed.filter(p => p !== processName);
+  }
+
+  DB.save(DB.KEYS.ORDERS, orders);
+
+  toast('不良品を登録しました', 'success');
+
+  // フォームのリセット
+  document.getElementById('defect-reg-form').reset();
+  $('#defect-reg-process').value = '';
+  const processContainer = $('#defect-reg-process-buttons');
+  if (processContainer) processContainer.innerHTML = '<p class="text-muted" style="width:100%;">先に部材を選択してください</p>';
+  $('#defect-reg-item').disabled = true;
+  $('#defect-reg-reason-text').style.display = 'none';
+
+  // 自動転記フィールドもリセット
+  const safeSet = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+  safeSet('defect-qr-project-name', '');
+  safeSet('defect-qr-product-name', '');
+  safeSet('defect-qr-bom-name', '');
+  
+  const resultDiv = document.getElementById('defect-scan-result');
+  if (resultDiv) resultDiv.style.display = 'none';
+
+  // 画面の更新
+  renderDefects();
+  renderGantt();
+}
+
+// ========================================
 // 不良品管理
 // ========================================
 
 function renderDefects() {
-  const defects = DB.get(DB.KEYS.DEFECTS);
+  const defects = DB.get(DB.KEYS.DEFECTS) || [];
   const tbody = $('#defects-body');
 
+  if (!tbody) return;
+
+  // スキャナーボタンのイベントを設定
+  const startBtn = $('#defect-start-scan-btn');
+  const stopBtn = $('#defect-stop-scan-btn');
+  if (startBtn) startBtn.onclick = startDefectQrScanner;
+  if (stopBtn) stopBtn.onclick = stopDefectQrScanner;
+
+  // 指示書セレクトボックスの初期値設定
+  updateDefectRegOrderSelect();
+
   if (defects.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">不良品の記録がありません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">不良品の記録がありません</td></tr>';
     return;
   }
 
-  tbody.innerHTML = defects.map(d => `
-    <tr>
-      <td>${d.projectName}</td>
-      <td>${d.productName}</td>
-      <td>${d.bomName}</td>
-      <td>${d.processName}</td>
-      <td class="text-danger font-semibold">${d.count}</td>
-      <td>${d.reason || '-'}</td>
-      <td>${d.reporter}</td>
-      <td><button class="btn btn-sm btn-icon" onclick="editDefect('${d.id}')" title="編集" style="margin-right: 4px;">✎</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDefect('${d.id}')">削除</button></td>
-    </tr>
-  `).join('');
+  // 逆順で表示（新しいものが上）
+  const displayList = [...defects].reverse();
+
+  tbody.innerHTML = displayList.map(d => {
+    const statusText = d.status === 'resolved' 
+      ? '<span style="color:#22c55e; font-weight:600;">✓ 解決済</span>' 
+      : '<span style="color:#ef4444; font-weight:600;">⚠ 再製作中</span>';
+
+    // 解決（完了）ボタンの表示。解決済みなら表示しない
+    const resolveBtn = d.status === 'resolved' 
+      ? '' 
+      : `<button class="btn btn-success btn-sm" onclick="resolveDefect('${d.id}')" style="margin-right: 4px;">解決</button>`;
+
+    return `
+      <tr>
+        <td>${d.projectName}</td>
+        <td>${d.productName}</td>
+        <td>${d.bomName}</td>
+        <td>${d.processName}</td>
+        <td class="text-danger font-semibold">${d.count}</td>
+        <td>${d.reason || '-'}</td>
+        <td>${d.reporter}</td>
+        <td>${statusText}</td>
+        <td>
+          ${resolveBtn}
+          <button class="btn btn-sm btn-icon" onclick="editDefect('${d.id}')" title="編集" style="margin-right: 4px;">✎</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDefect('${d.id}')">削除</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function resolveDefect(id) {
+  if (!confirm('この不良件を解決済みにしますか？\n（工程セルを再度「完了」にトグルすることでも自動解決されます）')) return;
+
+  const defects = DB.get(DB.KEYS.DEFECTS) || [];
+  const idx = defects.findIndex(d => String(d.id) === String(id));
+  if (idx === -1) return;
+
+  defects[idx].status = 'resolved';
+  DB.save(DB.KEYS.DEFECTS, defects);
+
+  toast('解決済みにしました', 'success');
+  renderDefects();
+  renderGantt();
 }
 
 function deleteDefect(id) {
   if (!confirm('この記録を削除しますか？')) return;
 
   const defects = DB.get(DB.KEYS.DEFECTS);
-  // 型変換して比較（IDが数値か文字列か不明なため）
   const filtered = defects.filter(d => String(d.id) !== String(id));
   DB.save(DB.KEYS.DEFECTS, filtered);
 
   toast('削除しました', 'success');
   renderDefects();
+  renderGantt();
 }
 
 function editDefect(id) {
@@ -8045,9 +8508,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processName) {
   // 1. 即時UIフィードバック（Optimistic Update）
-  // ユーザーに「反応した」ことを伝えるため、データ保存を待たずに色を変える
+  let isDone = false;
   if (cellElement) {
-    const isDone = cellElement.classList.contains('status-done');
+    isDone = cellElement.classList.contains('status-done');
     if (isDone) {
       cellElement.className = 'matrix-cell status-todo'; // クラスを完全に書き換え
       cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
@@ -8085,13 +8548,26 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
       item.completed.splice(idx, 1);
     } else {
       item.completed.push(proc);
+      
+      // 未完了/不良 -> 完了になる際、もしこの工程の保留中の不良データがあれば status を 'resolved' にする
+      const defects = DB.get(DB.KEYS.DEFECTS) || [];
+      let defectChanged = false;
+      defects.forEach(d => {
+        if (String(d.orderId) === String(order.id) &&
+            String(d.itemId) === String(item.id) &&
+            d.processName === proc &&
+            d.status === 'pending') {
+          d.status = 'resolved';
+          defectChanged = true;
+        }
+      });
+      if (defectChanged) {
+        DB.save(DB.KEYS.DEFECTS, defects);
+      }
     }
 
     // 3. 保存
     DB.save(DB.KEYS.ORDERS, orders);
-
-    // 再描画はFirebaseのリスナー任せにするか、遅延させる
-    // 即時再描画すると、Optimistic Updateと競合してチカチカする場合があるため
   } catch (e) {
     console.error('Toggle Error:', e);
     alert('エラーが発生しました: ' + e.message);

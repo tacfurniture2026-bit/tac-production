@@ -21,7 +21,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=20260520_14">
+    <link rel="stylesheet" href="styles-mobile.css?v=20260520_15">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -115,8 +115,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20260520_14"></script>
-    <script src="app-mobile.js?v=20260520_14"></script>
+    <script src="data.js?v=20260520_15"></script>
+    <script src="app-mobile.js?v=20260520_15"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -189,7 +189,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.14</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.16</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -515,15 +515,114 @@
             <!-- 不良品管理 -->
             <div id="page-defects" class="page">
                 <div class="page-header">
-                    <div class="flex items-start gap-4" style="flex-direction: column;">
-                        <div>
-                            <h1>△ 不良品管理</h1>
-                            <p>不良品の登録・管理</p>
+                    <h1>△ 不良品管理</h1>
+                    <p>指示書のQRをスキャンして、部材の不良登録を行います</p>
+                </div>
+                <div class="qr-layout">
+                    <!-- QRスキャナー -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📷 不良品QRスキャン</h3>
                         </div>
-                        <button class="btn btn-primary" id="add-defect-btn">+ 不良品登録</button>
+                        <div class="card-body">
+                            <div id="defect-scanner-container">
+                                <div id="defect-scanner-preview"
+                                    style="width: 100%; max-width: 400px; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+                                    <div id="defect-scanner-placeholder"
+                                        style="color: #fff; text-align: center; padding: 20px;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">📷</div>
+                                        <p>カメラを起動して指示書QRコードをスキャン</p>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+                                    <button type="button" class="btn btn-primary" id="defect-start-scan-btn">📷 スキャン開始</button>
+                                    <button type="button" class="btn btn-secondary" id="defect-stop-scan-btn"
+                                        style="display: none;">⏹ 停止</button>
+                                </div>
+                                <div id="defect-scan-result"
+                                    style="margin-top: 16px; padding: 12px; background: var(--color-bg-primary); border-radius: 8px; display: none;">
+                                    <div style="font-weight: 600; margin-bottom: 8px;">✅ スキャン結果</div>
+                                    <div id="defect-scan-data" style="font-size: 14px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 手動選択・登録フォーム -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📝 不良登録フォーム</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="defect-reg-form" onsubmit="submitDefectRegForm(event)">
+                                <!-- 自動転記エリア -->
+                                <div class="form-group"
+                                    style="padding: 10px; background: var(--color-bg-primary); border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 1rem;">
+                                    <label style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: bold;">読み取りデータ (自動転記)</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+                                        <div>
+                                            <span style="font-size: 0.7rem; color: var(--color-text-secondary);">現場名</span>
+                                            <input type="text" id="defect-qr-project-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: var(--color-bg-secondary); height: auto;">
+                                        </div>
+                                        <div>
+                                            <span style="font-size: 0.7rem; color: var(--color-text-secondary);">品名</span>
+                                            <input type="text" id="defect-qr-product-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: var(--color-bg-secondary); height: auto;">
+                                        </div>
+                                        <div style="grid-column: span 2;">
+                                            <span style="font-size: 0.7rem; color: var(--color-text-secondary);">部材名</span>
+                                            <input type="text" id="defect-qr-bom-name" class="form-input" readonly
+                                                style="font-size: 0.8rem; padding: 6px; background: var(--color-bg-secondary); height: auto;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>指示書 *</label>
+                                    <select id="defect-reg-order" class="form-input" onchange="updateDefectRegItemSelect()" required>
+                                        <option value="">選択してください</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>部材 *</label>
+                                    <select id="defect-reg-item" class="form-input" onchange="updateDefectRegProcessButtons()" required disabled>
+                                        <option value="">先に指示書を選択</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>発生工程 *（タップして選択）</label>
+                                    <div id="defect-reg-process-buttons" class="process-btn-grid">
+                                        <p class="text-muted" style="width:100%;">先に部材を選択してください</p>
+                                    </div>
+                                    <input type="hidden" id="defect-reg-process" value="" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>不良品名 / 不良内容 *</label>
+                                    <select id="defect-reg-reason-select" class="form-input" onchange="onDefectReasonSelectChange()" required>
+                                        <option value="">選択してください</option>
+                                        <option value="キズ・打痕">キズ・打痕</option>
+                                        <option value="寸法不良">寸法不良</option>
+                                        <option value="加工ズレ">加工ズレ</option>
+                                        <option value="木目方向間違い">木目方向間違い</option>
+                                        <option value="貼り合わせ剥がれ">貼り合わせ剥がれ</option>
+                                        <option value="部材間違い">部材間違い</option>
+                                        <option value="その他">その他（直接入力）</option>
+                                    </select>
+                                    <input type="text" id="defect-reg-reason-text" class="form-input" placeholder="具体的な理由を入力してください" style="margin-top: 8px; display: none;">
+                                </div>
+                                <div class="form-group">
+                                    <label>不良数量 *</label>
+                                    <input type="number" id="defect-reg-count" class="form-input" value="1" min="1" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger btn-full" style="font-size: 16px; padding: 12px; font-weight: bold;">⚠ 不良品を登録する</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-                <div class="card">
+                <!-- 登録済みの不良品一覧 -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h3>📋 不良品発生記録一覧</h3>
+                    </div>
                     <div class="table-container">
                         <table class="table">
                             <thead>
@@ -531,10 +630,11 @@
                                     <th>物件名</th>
                                     <th>品名</th>
                                     <th>部材</th>
-                                    <th>工程</th>
+                                    <th>発生工程</th>
                                     <th>数量</th>
-                                    <th>理由</th>
+                                    <th>不良内容</th>
                                     <th>報告者</th>
+                                    <th>ステータス</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
