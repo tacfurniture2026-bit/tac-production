@@ -4663,7 +4663,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■月次総括サマリ</h3>
-        <div class="report-summary">
+        <div class="report-summary kpi-grid">
           <div class="summary-item">
             <span class="summary-label">総出荷台数</span>
             <span class="summary-value">${totalQuantity} 台</span>
@@ -4740,7 +4740,7 @@ function renderReport() {
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div class="inventory-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
           <!-- 分類別グラフ -->
           <div>
             <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📊 分類別在庫金額</h4>
@@ -4763,7 +4763,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■詳細データ一覧</h3>
-        <table class="report-table">
+        <table class="report-table detail-table">
           <thead>
             <tr>
               <th>物件名</th>
@@ -4782,7 +4782,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■部門別集計</h3>
-        <div class="report-departments">
+        <div class="report-departments dept-grid">
           ${Object.entries(departmentCosts).map(([dept, cost]) => `
             <div class="dept-item">
               <span class="dept-name">${dept}</span>

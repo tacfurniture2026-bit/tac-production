@@ -5007,7 +5007,7 @@ function renderReport(argStart, argEnd) {
         <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem;">
           <span>■ 月次総括サマリ (主要KPI)</span>
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
           <!-- 生産数量 -->
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
             <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem;">総完成数</span>
@@ -5118,7 +5118,7 @@ function renderReport(argStart, argEnd) {
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex-wrap: wrap;">
+        <div class="inventory-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex-wrap: wrap;">
           <!-- 分類別グラフ -->
           <div>
             <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: #334155; border-left: 3px solid #1e40af; padding-left: 0.5rem;">資材分類別 在庫金額構成</h4>
@@ -5145,7 +5145,7 @@ function renderReport(argStart, argEnd) {
           <span>■ 物件別・製品別詳細原価内訳</span>
           <span style="font-size: 0.75rem; font-weight: normal; color: #64748b;">(納期順)</span>
         </h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; border: 1px solid #cbd5e1;">
+        <table class="detail-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.8rem; border: 1px solid #cbd5e1;">
           <thead>
             <tr style="background: #0B2D48; color: #ffffff;">
               <th style="padding: 8px 10px; border: 1px solid #cbd5e1; font-weight: 600;">物件名</th>
@@ -5167,7 +5167,7 @@ function renderReport(argStart, argEnd) {
       <!-- 部門別集計 -->
       <div style="page-break-inside: avoid;">
         <h3 style="font-size: 1.1rem; font-weight: 700; color: #0B2D48; margin-bottom: 1rem; border-left: 4px solid #0B2D48; padding-left: 0.5rem;">■ 製造部門別（係別）コスト配分内訳</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+        <div class="dept-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
           ${Object.entries(departmentCosts).map(([dept, cost]) => {
             const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(1) : '0.0';
             return `

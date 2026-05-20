@@ -38235,7 +38235,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■月次総括サマリ</h3>
-        <div class="report-summary">
+        <div class="report-summary kpi-grid">
           <div class="summary-item">
             <span class="summary-label">総出荷台数</span>
             <span class="summary-value">${totalQuantity} 台</span>
@@ -38312,7 +38312,7 @@ function renderReport() {
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div class="inventory-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
           <!-- 分類別グラフ -->
           <div>
             <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📊 分類別在庫金額</h4>
@@ -38335,7 +38335,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■詳細データ一覧</h3>
-        <table class="report-table">
+        <table class="report-table detail-table">
           <thead>
             <tr>
               <th>物件名</th>
@@ -38354,7 +38354,7 @@ function renderReport() {
       
       <div class="report-section">
         <h3>■部門別集計</h3>
-        <div class="report-departments">
+        <div class="report-departments dept-grid">
           ${Object.entries(departmentCosts).map(([dept, cost]) => `
             <div class="dept-item">
               <span class="dept-name">${dept}</span>
@@ -40722,7 +40722,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.09</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.10</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">

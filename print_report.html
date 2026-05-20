@@ -50,29 +50,51 @@
             cursor: pointer;
             border: none;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .btn-secondary {
             background-color: #e2e8f0;
             color: #475569;
         }
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
         .btn-primary {
             background-color: var(--color-primary);
             color: white;
+        }
+        .btn-primary:hover {
+            background-color: #061a2b;
+        }
+        .btn-accent {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-accent:hover {
+            background-color: #1d4ed8;
         }
         .print-container {
             max-width: 1000px;
             margin: 0 auto;
             background: white;
-            padding: 0;
+            padding: 2.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             min-height: 297mm;
+            transition: all 0.3s;
         }
+
+        /* ==================================================
+         * 共通の印刷スタイル・リセット (はみ出し防止)
+         * ================================================== */
         @media print {
             body {
-                background-color: white;
-                padding: 0;
-                color: black;
+                background-color: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: black !important;
             }
             .toolbar {
                 display: none !important;
@@ -84,15 +106,117 @@
                 max-width: none !important;
                 width: 100% !important;
                 border-radius: 0 !important;
+                background: white !important;
             }
-            @page {
-                size: A4 portrait;
-                margin: 12mm 10mm 12mm 10mm;
+            
+            /* 流し込まれるコンテンツ全体のスタイル強制上書き */
+            #report-print-area {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                background: white !important;
             }
-            /* 全ての要素で背景色と文字色を強制的に印刷する */
+
+            /* テーブルあふれ防止 */
+            table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                word-break: break-all !important;
+                white-space: normal !important;
+            }
+
+            /* KPIカードなどのグリッド崩れ防止 */
+            .kpi-grid {
+                display: grid !important;
+                gap: 8px !important;
+            }
+            .kpi-grid > div {
+                min-width: 0 !important;
+                padding: 8px 10px !important;
+            }
+
+            /* 署名フッターや特定セクションが不自然に分裂しないようにする */
+            .report-section, tr, .dept-grid > div {
+                page-break-inside: avoid !important;
+            }
+            
+            /* 色合いを印刷用ブラウザ設定で強制表示 */
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+        }
+
+        /* ==================================================
+         * 用紙サイズ個別調整スタイル
+         * ================================================== */
+        /* --- A4 用紙 --- */
+        body.print-size-a4 .print-container {
+            font-size: 0.9rem;
+        }
+        @media print {
+            body.print-size-a4 .kpi-grid {
+                grid-template-columns: repeat(3, 1fr) !important; /* A4は3列 */
+            }
+            body.print-size-a4 .kpi-grid > div span {
+                font-size: 0.7rem !important; /* KPIラベルを少し小さく */
+            }
+            body.print-size-a4 .kpi-grid > div .summary-value,
+            body.print-size-a4 .kpi-grid > div div > span:first-child {
+                font-size: 1.3rem !important; /* 数値サイズを適正化 */
+            }
+            body.print-size-a4 .inventory-grid {
+                grid-template-columns: 1fr !important; /* A4は縦に並べてあふれを防ぐ */
+                gap: 1.5rem !important;
+            }
+            body.print-size-a4 .dept-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            body.print-size-a4 .detail-table th,
+            body.print-size-a4 .detail-table td {
+                font-size: 0.72rem !important;
+                padding: 5px 6px !important;
+            }
+            body.print-size-a4 .detail-table th:nth-child(1), /* 物件名 */
+            body.print-size-a4 .detail-table td:nth-child(1) {
+                width: 25% !important;
+            }
+            body.print-size-a4 .detail-table th:nth-child(2), /* 製品名 */
+            body.print-size-a4 .detail-table td:nth-child(2) {
+                width: 25% !important;
+            }
+        }
+
+        /* --- A3 用紙 --- */
+        body.print-size-a3 .print-container {
+            font-size: 1.15rem; /* A3サイズに合わせて少し拡大 */
+        }
+        @media print {
+            body.print-size-a3 .kpi-grid {
+                grid-template-columns: repeat(3, 1fr) !important; /* A3は広々と3列 */
+            }
+            body.print-size-a3 .kpi-grid > div {
+                padding: 15px !important;
+            }
+            body.print-size-a3 .inventory-grid {
+                grid-template-columns: 1fr 1fr !important; /* A3は広いため横に2列並べる */
+                gap: 2.5rem !important;
+            }
+            body.print-size-a3 .dept-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 20px !important;
+            }
+            body.print-size-a3 .detail-table th,
+            body.print-size-a3 .detail-table td {
+                font-size: 0.9rem !important;
+                padding: 8px 12px !important;
             }
         }
     </style>
@@ -102,12 +226,17 @@
         <div class="toolbar-title">🏭 TAC製造部 - 月次製造原価報告書 印刷</div>
         <div class="btn-group">
             <button class="btn btn-secondary" onclick="window.close()">✕ 閉じる</button>
-            <button class="btn btn-primary" onclick="window.print()">🖨️ A4サイズで印刷</button>
+            <button class="btn btn-primary" onclick="setPageSizeAndPrint('A4')">🖨️ A4サイズで印刷</button>
+            <button class="btn btn-accent" onclick="setPageSizeAndPrint('A3')">🖨️ A3サイズで印刷</button>
         </div>
     </div>
     <div class="print-container" id="report-print-target">
         <!-- レポート内容が動的に生成されます -->
     </div>
+
+    <!-- 動的に@pageサイズを切り替えるためのstyleタグ -->
+    <style id="dynamic-page-style"></style>
+
     <script>
         window.onload = function() {
             const dataJson = sessionStorage.getItem('print_report_data');
@@ -122,11 +251,37 @@
             const data = JSON.parse(dataJson);
             document.getElementById('report-print-target').innerHTML = data.html;
             
-            // 印刷プレビューを少し遅延させて自動起動 (ブラウザ保護を回避)
+            // デフォルトはA4サイズ設定で準備
+            setupPageSize('A4');
+        };
+
+        function setupPageSize(size) {
+            const styleTag = document.getElementById('dynamic-page-style');
+            if (size === 'A3') {
+                styleTag.innerHTML = `
+                    @page {
+                        size: A3 portrait;
+                        margin: 15mm 12mm 15mm 12mm;
+                    }
+                `;
+            } else {
+                styleTag.innerHTML = `
+                    @page {
+                        size: A4 portrait;
+                        margin: 12mm 10mm 12mm 10mm;
+                    }
+                `;
+            }
+            document.body.className = 'print-size-' + size.toLowerCase();
+        }
+
+        function setPageSizeAndPrint(size) {
+            setupPageSize(size);
+            // 用紙サイズ設定の再評価をブラウザに促すため、少し遅延を入れて印刷を起動
             setTimeout(() => {
                 window.print();
-            }, 500);
-        };
+            }, 150);
+        }
     </script>
 </body>
 </html>
