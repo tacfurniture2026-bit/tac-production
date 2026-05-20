@@ -325,6 +325,46 @@ window.refreshCurrentPage = function () {
   }
 };
 
+function isTouchDevice() {
+  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+}
+
+function initSidebarHover() {
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+
+  // マウスホバーでの展開（PC向け）
+  sidebar.addEventListener('mouseenter', () => {
+    if (isTouchDevice()) return;
+    sidebar.classList.add('expanded');
+  });
+
+  sidebar.addEventListener('mouseleave', () => {
+    if (isTouchDevice()) return;
+    sidebar.classList.remove('expanded');
+  });
+
+  // タッチデバイスでの開閉トグル（サイドバー自体がタップされたとき）
+  sidebar.addEventListener('click', (e) => {
+    if (isTouchDevice()) {
+      if (e.target.closest('.nav-item') || e.target.closest('#logout-btn')) {
+        // 項目選択時はクローズを優先
+        sidebar.classList.remove('expanded');
+        return;
+      }
+      sidebar.classList.toggle('expanded');
+    }
+  });
+
+  // メインエリアがタッチされたらサイドバーを閉じる（タッチデバイス向け）
+  const mainContent = document.querySelector('.main-content') || document.querySelector('.page-container') || document.body;
+  mainContent.addEventListener('touchstart', (e) => {
+    if (isTouchDevice() && !sidebar.contains(e.target)) {
+      sidebar.classList.remove('expanded');
+    }
+  });
+}
+
 function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
@@ -332,10 +372,10 @@ function navigateTo(pageName) {
   // iPad等タッチデバイスでのホバー残留対策
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) {
-    sidebar.classList.add('force-collapsed');
-    setTimeout(() => {
-      sidebar.classList.remove('force-collapsed');
-    }, 400);
+    sidebar.classList.remove('expanded');
+    if (document.activeElement) {
+      document.activeElement.blur();
+    }
   }
 
   // ページ切り替え
@@ -4434,6 +4474,9 @@ function updateUser() {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // サイドバーのホバー制御初期化
+  initSidebarHover();
+
   // 認証チェック
   checkAuth();
 
@@ -5019,138 +5062,157 @@ function renderReport(argStart, argEnd) {
 }
 
 function exportReportCSV() {
-  const startDateEl = document.getElementById('report-start-date');
-  const endDateEl = document.getElementById('report-end-date');
-  const startDate = startDateEl ? startDateEl.value.trim() : '';
-  const endDate = endDateEl ? endDateEl.value.trim() : '';
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const rates = DB.get(DB.KEYS.RATES);
-  const boms = DB.get(DB.KEYS.BOM);
-
-  const parseDate = (d) => {
-    if (!d) return null;
-    let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-    s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
-    s = s.replace(/\s+/g, '');
-    const parts = s.split('-').filter(Boolean);
-    if (parts.length >= 3) {
-      const y = parseInt(parts[0]); const m = parseInt(parts[1]) - 1; const day = parseInt(parts[2]);
-      if (y > 1900 && m >= 0 && day > 0) return new Date(y, m, day);
-    }
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt;
-    return null;
-  };
-  let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
-  const filterStart = parseDate(startDate);
-  const filterEnd = parseDate(endDate);
-  if (filterStart) {
-    filterStart.setHours(0, 0, 0, 0);
-    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d >= filterStart; });
-  }
-  if (filterEnd) {
-    filterEnd.setHours(23, 59, 59, 999);
-    filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d <= filterEnd; });
-  }
-
-  if (filteredOrders.length === 0) {
-    toast('エクスポートするデータがありません', 'warning');
-    return;
-  }
-
-  const rateMap = {};
-  rates.forEach(r => {
-    rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
-  });
-  const processToDept = {
-    '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
-    'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
-    '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
-  };
-  const headers = ['物件名', '製品名', '納期', '台数', '台/生産時間(分)', '台/加工費(円)', '総生産時間(分)', '総加工費(円)'];
-  let csvContent = headers.join(',') + '\n';
-
-  filteredOrders.forEach(order => {
-    const productBoms = boms.filter(b => b.productName === order.productName);
-    let orderTime = 0;
-    let orderCost = 0;
-
-    productBoms.forEach(bom => {
-      if (bom.processTimes) {
-        Object.entries(bom.processTimes).forEach(([process, time]) => {
-          const dept = processToDept[process] || '加工係';
-          const deptRate = rateMap[dept] || 50;
-          const totalTimeForProcess = time * order.quantity;
-          const costForProcess = totalTimeForProcess * deptRate;
-          orderTime += totalTimeForProcess;
-          orderCost += costForProcess;
-        });
-      }
-    });
-
-    if (orderTime === 0) {
-      orderTime = 60 * order.quantity;
-      orderCost = 25000 * order.quantity;
-    }
-
-    const unitTime = Math.round(orderTime / order.quantity);
-    const unitCost = Math.round(orderCost / order.quantity);
-
-    // エスケープ処理
-    const row = [
-      `"${order.projectName.replace(/"/g, '""')}"`,
-      `"${order.productName.replace(/"/g, '""')}"`,
-      order.dueDate || '',
-      order.quantity,
-      unitTime,
-      unitCost,
-      Math.round(orderTime),
-      Math.round(orderCost)
-    ];
-    csvContent += row.join(',') + '\n';
-  });
-
-  const bomArray = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  const blob = new Blob([bomArray, csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const dateStr = new Date().toISOString().split('T')[0];
-  link.href = URL.createObjectURL(blob);
-  link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
-}
-
-function printReport() {
-  let reportArea = $('#report-print-area');
-  if (!reportArea) {
-    // レポートが未生成の場合、まずDOMから期間を取得して生成
+  try {
     const startDateEl = document.getElementById('report-start-date');
     const endDateEl = document.getElementById('report-end-date');
     const startDate = startDateEl ? startDateEl.value.trim() : '';
     const endDate = endDateEl ? endDateEl.value.trim() : '';
-    renderReport(startDate, endDate);
-    // DOM更新を待ってから印刷
-    setTimeout(() => {
+    const orders = DB.get(DB.KEYS.ORDERS) || [];
+    const rates = DB.get(DB.KEYS.RATES) || [];
+    const boms = DB.get(DB.KEYS.BOM) || [];
+
+    const parseDate = (d) => {
+      if (!d) return null;
+      let s = String(d).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+      s = s.replace(/\//g, '-').replace(/\./g, '-').replace(/年/g, '-').replace(/月/g, '-').replace(/日/g, '').trim();
+      s = s.replace(/\s+/g, '');
+      const parts = s.split('-').filter(Boolean);
+      if (parts.length >= 3) {
+        const y = parseInt(parts[0]); const m = parseInt(parts[1]) - 1; const day = parseInt(parts[2]);
+        if (y > 1900 && m >= 0 && day > 0) return new Date(y, m, day);
+      }
+      const dt = new Date(d);
+      if (!isNaN(dt.getTime())) return dt;
+      return null;
+    };
+    
+    let filteredOrders = orders.filter(o => calculateProgress(o) === 100);
+    const filterStart = parseDate(startDate);
+    const filterEnd = parseDate(endDate);
+    if (filterStart) {
+      filterStart.setHours(0, 0, 0, 0);
+      filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d >= filterStart; });
+    }
+    if (filterEnd) {
+      filterEnd.setHours(23, 59, 59, 999);
+      filteredOrders = filteredOrders.filter(o => { const d = parseDate(o.dueDate); return !d || d <= filterEnd; });
+    }
+
+    if (filteredOrders.length === 0) {
+      toast('エクスポートするデータがありません。集計期間内に完了したオーダーがあるか確認してください。', 'warning');
+      return;
+    }
+
+    const rateMap = {};
+    rates.forEach(r => {
+      rateMap[r.subsection || r.section || r.department] = parseFloat(r.minuteRate) || 0;
+    });
+    const processToDept = {
+      '芯材カット': '基材係', '面材カット': '基材係', '芯組': '基材係', 'フラッシュ': '基材係',
+      'ランニングソー': '加工係', 'エッヂバンダー': '加工係', 'TOYO': '加工係', 'HOMAG': '加工係',
+      '仕上・梱包': '梱包仕上係', 'フロア加工': '加工係', 'アクリルBOX作成': '基材係', '扉面材くり抜き': '加工係'
+    };
+    const headers = ['物件名', '製品名', '納期', '台数', '台/生産時間(分)', '台/加工費(円)', '総生産時間(分)', '総加工費(円)'];
+    let csvContent = headers.join(',') + '\n';
+
+    filteredOrders.forEach(order => {
+      const productBoms = boms.filter(b => b.productName === order.productName);
+      let orderTime = 0;
+      let orderCost = 0;
+
+      productBoms.forEach(bom => {
+        if (bom.processTimes) {
+          Object.entries(bom.processTimes).forEach(([process, time]) => {
+            const dept = processToDept[process] || '加工係';
+            const deptRate = rateMap[dept] || 50;
+            const totalTimeForProcess = time * order.quantity;
+            const costForProcess = totalTimeForProcess * deptRate;
+            orderTime += totalTimeForProcess;
+            orderCost += costForProcess;
+          });
+        }
+      });
+
+      if (orderTime === 0) {
+        orderTime = 60 * order.quantity;
+        orderCost = 25000 * order.quantity;
+      }
+
+      const unitTime = Math.round(orderTime / order.quantity);
+      const unitCost = Math.round(orderCost / order.quantity);
+
+      // エスケープ処理
+      const row = [
+        `"${order.projectName.replace(/"/g, '""')}"`,
+        `"${order.productName.replace(/"/g, '""')}"`,
+        order.dueDate || '',
+        order.quantity,
+        unitTime,
+        unitCost,
+        Math.round(orderTime),
+        Math.round(orderCost)
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    const bomArray = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bomArray, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.href = URL.createObjectURL(blob);
+    link.download = `月次製造原価報告書_詳細_${dateStr}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    
+    toast('CSVエクスポートが完了しました。', 'success');
+  } catch (err) {
+    console.error('CSVエクスポートエラー:', err);
+    alert('CSV出力中にエラーが発生しました:\n' + err.message + '\n' + err.stack);
+  }
+}
+
+function printReport() {
+  // ポップアップブロック回避のため、まず同期的に空ウィンドウを確保
+  const printWindow = window.open('about:blank', '_blank');
+  if (!printWindow) {
+    toast('ポップアップがブロックされました。ブラウザの設定で許可してください。', 'error');
+    alert('ポップアップブロックを検知しました。印刷画面を開くにはブラウザの設定でポップアップを許可してください。');
+    return;
+  }
+
+  try {
+    let reportArea = $('#report-print-area');
+    if (!reportArea) {
+      // レポートが未生成の場合、まずDOMから期間を取得して生成
+      const startDateEl = document.getElementById('report-start-date');
+      const endDateEl = document.getElementById('report-end-date');
+      const startDate = startDateEl ? startDateEl.value.trim() : '';
+      const endDate = endDateEl ? endDateEl.value.trim() : '';
+      renderReport(startDate, endDate);
+      
       reportArea = $('#report-print-area');
       if (!reportArea) {
+        printWindow.close();
         toast('レポートの生成に失敗しました。先に「集計」ボタンを押してください。', 'error');
         return;
       }
-      openPrintReportWindow(reportArea);
-    }, 300);
-    return;
+    }
+    openPrintReportWindow(reportArea, printWindow);
+  } catch (err) {
+    if (printWindow) printWindow.close();
+    console.error('PDF出力エラー:', err);
+    alert('PDF印刷中にエラーが発生しました:\n' + err.message + '\n' + err.stack);
   }
-  openPrintReportWindow(reportArea);
 }
 
-function openPrintReportWindow(reportArea) {
+function openPrintReportWindow(reportArea, targetWindow) {
   const reportData = {
     html: reportArea.innerHTML
   };
-  sessionStorage.setItem('print_report_data', JSON.stringify(reportData));
-  window.open('print_report.html', '_blank');
+  targetWindow.sessionStorage.setItem('print_report_data', JSON.stringify(reportData));
+  targetWindow.location.href = 'print_report.html';
 }
 
 // ========================================

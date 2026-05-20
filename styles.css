@@ -248,7 +248,7 @@ body {
     overflow: hidden;
 }
 
-.sidebar:hover {
+.sidebar.expanded {
     width: var(--sidebar-width-expanded);
 }
 
@@ -276,7 +276,7 @@ body {
     transition: opacity var(--transition-fast);
 }
 
-.sidebar:hover .logo-text {
+.sidebar.expanded .logo-text {
     opacity: 1;
 }
 
@@ -299,7 +299,7 @@ body {
     transition: opacity var(--transition-fast);
 }
 
-.sidebar:hover .nav-section {
+.sidebar.expanded .nav-section {
     opacity: 1;
 }
 
@@ -340,7 +340,7 @@ body {
     transition: opacity var(--transition-fast);
 }
 
-.sidebar:hover .nav-item span:not(.nav-icon) {
+.sidebar.expanded .nav-item span:not(.nav-icon) {
     opacity: 1;
 }
 
@@ -369,7 +369,7 @@ body {
     transition: opacity var(--transition-fast);
 }
 
-.sidebar:hover .user-info {
+.sidebar.expanded .user-info {
     opacity: 1;
 }
 
