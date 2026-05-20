@@ -7140,10 +7140,18 @@ function renderInvCheckPage() {
     tempScanMap[s.productId] = s;
   });
 
-  // Build unified lists (include all products from master)
+  // Build unified lists (include all products from master, skipping invalid TEMP_ IDs)
   const renderedProductIds = new Set();
-  products.forEach(p => renderedProductIds.add(p.id));
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  products.forEach(p => {
+    if (!p.id.startsWith('TEMP_')) {
+      renderedProductIds.add(p.id);
+    }
+  });
+  currentTempScans.forEach(s => {
+    if (!s.productId.startsWith('TEMP_')) {
+      renderedProductIds.add(s.productId);
+    }
+  });
 
   const listItems = Array.from(renderedProductIds).map(pid => {
     const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
@@ -7438,11 +7446,15 @@ function confirmInvTempData() {
 
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
 
-  // 価格未登録チェック用の checkProductIds 構築
+  // 価格未登録チェック用の checkProductIds 構築 (skipping invalid TEMP_ IDs)
   const checkProductIds = new Set();
-  currentTempScans.forEach(s => checkProductIds.add(s.productId));
+  currentTempScans.forEach(s => {
+    if (!s.productId.startsWith('TEMP_')) {
+      checkProductIds.add(s.productId);
+    }
+  });
   Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
+    if (prevStockMap[id] > 0 && !id.startsWith('TEMP_')) {
       checkProductIds.add(id);
     }
   });
@@ -7481,9 +7493,13 @@ function confirmInvTempData() {
   // 2. Commit all listItems as official count logs
   // (We'll generate counts for ALL items scanned OR with previous stocks)
   const renderedProductIds = new Set();
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  currentTempScans.forEach(s => {
+    if (!s.productId.startsWith('TEMP_')) {
+      renderedProductIds.add(s.productId);
+    }
+  });
   Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
+    if (prevStockMap[id] > 0 && !id.startsWith('TEMP_')) {
       renderedProductIds.add(id);
     }
   });
@@ -7566,9 +7582,13 @@ function exportInvCheckToCsv() {
   });
 
   const renderedProductIds = new Set();
-  currentTempScans.forEach(s => renderedProductIds.add(s.productId));
+  currentTempScans.forEach(s => {
+    if (!s.productId.startsWith('TEMP_')) {
+      renderedProductIds.add(s.productId);
+    }
+  });
   Object.keys(prevStockMap).forEach(id => {
-    if (prevStockMap[id] > 0) {
+    if (prevStockMap[id] > 0 && !id.startsWith('TEMP_')) {
       renderedProductIds.add(id);
     }
   });
