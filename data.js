@@ -202,7 +202,7 @@ const DB = {
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
             this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
-            this.KEYS.BACKUPS
+            this.KEYS.BACKUPS, this.KEYS.INV_SCAN_TEMP
         ];
 
         dataKeys.forEach(key => {
@@ -299,6 +299,59 @@ const DB = {
                 this.save(this.KEYS.RATES, defaultRates);
             }
         }
+        
+        // 既存スキャンデータの救済（INV_PRODUCTS 内から INV_SCAN_TEMP へ抽出・移行）
+        setTimeout(() => {
+            this.migrateTempScansFromProducts();
+        }, 3000);
+    },
+
+    // 既存の埋め込みスキャンデータを INV_SCAN_TEMP に移行する（データロスト防止）
+    migrateTempScansFromProducts() {
+        if (typeof useFirebase !== 'undefined' && useFirebase && (!this._loaded[this.KEYS.INV_PRODUCTS] || !this._loaded[this.KEYS.INV_SCAN_TEMP])) {
+            // Firebase読込待機
+            setTimeout(() => this.migrateTempScansFromProducts(), 1000);
+            return;
+        }
+
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const tempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        let migratedCount = 0;
+        let needsProductSave = false;
+
+        products.forEach(p => {
+            if (p.tempQty !== undefined && p.tempQty !== null) {
+                const scanId = p.tempId || (Date.now() + "_" + p.id);
+                // 既に存在しない場合のみ追加
+                if (!tempScans.some(s => s.id === scanId)) {
+                    tempScans.push({
+                        id: scanId,
+                        productId: p.id,
+                        quantity: p.tempQty,
+                        worker: p.tempWorker || '',
+                        workerName: p.tempWorkerName || '',
+                        timestamp: p.tempTimestamp || new Date().toISOString(),
+                        month: p.tempMonth || '',
+                        type: 'count_temp'
+                    });
+                    migratedCount++;
+                }
+                // products から削除
+                delete p.tempQty;
+                delete p.tempWorker;
+                delete p.tempWorkerName;
+                delete p.tempTimestamp;
+                delete p.tempMonth;
+                delete p.tempId;
+                needsProductSave = true;
+            }
+        });
+
+        if (migratedCount > 0 || needsProductSave) {
+            console.log(`🔄 ${migratedCount}件の仮スキャンデータを INV_SCAN_TEMP に移行・救済しました。`);
+            this.save(this.KEYS.INV_SCAN_TEMP, tempScans);
+            this.save(this.KEYS.INV_PRODUCTS, products);
+        }
     },
 
     // 保存（全置換 - 初期化時など限定）
@@ -323,61 +376,38 @@ const DB = {
         }
     },
 
-    // 棚卸仮スキャンデータ (INV_PRODUCTS 内に埋め込み保存することで Firebase のパーミッションエラーを完全回避)
+    // 棚卸仮スキャンデータ
     getTempScans() {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        return products
-            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
-            .map(p => ({
-                id: p.tempId || (p.id + "_temp"),
-                productId: p.id,
-                quantity: p.tempQty,
-                worker: p.tempWorker,
-                workerName: p.tempWorkerName,
-                timestamp: p.tempTimestamp,
-                month: p.tempMonth
-            }));
+        return this.get(this.KEYS.INV_SCAN_TEMP) || [];
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const prod = products.find(p => p.id === productId);
-        if (prod) {
-            prod.tempQty = quantity;
-            prod.tempWorker = worker;
-            prod.tempWorkerName = workerName;
-            prod.tempTimestamp = timestamp;
-            prod.tempMonth = month;
-            prod.tempId = Date.now() + "_" + productId;
-            this.save(this.KEYS.INV_PRODUCTS, products);
-        }
+        const newScan = {
+            id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            productId: productId,
+            quantity: quantity,
+            worker: worker,
+            workerName: workerName,
+            timestamp: timestamp,
+            month: month,
+            type: 'count_temp'
+        };
+        // DB.add はトランザクションを使用するため、複数人の同時スキャンや連続スキャンでも競合せず蓄積される
+        this.add(this.KEYS.INV_SCAN_TEMP, newScan);
     },
 
-    deleteTempScan(productId) {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const prod = products.find(p => p.id === productId);
-        if (prod) {
-            delete prod.tempQty;
-            delete prod.tempWorker;
-            delete prod.tempWorkerName;
-            delete prod.tempTimestamp;
-            delete prod.tempMonth;
-            delete prod.tempId;
-            this.save(this.KEYS.INV_PRODUCTS, products);
+    deleteTempScan(scanId) {
+        // scanId が productId の場合（古い呼び出し）に対応するため、両方チェック
+        let scans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const originalLength = scans.length;
+        scans = scans.filter(s => s.id !== scanId && s.productId !== scanId);
+        if (scans.length !== originalLength) {
+            this.save(this.KEYS.INV_SCAN_TEMP, scans);
         }
     },
 
     clearTempScans() {
-        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
-        products.forEach(p => {
-            delete p.tempQty;
-            delete p.tempWorker;
-            delete p.tempWorkerName;
-            delete p.tempTimestamp;
-            delete p.tempMonth;
-            delete p.tempId;
-        });
-        this.save(this.KEYS.INV_PRODUCTS, products);
+        this.save(this.KEYS.INV_SCAN_TEMP, []);
     },
 
     // 追加（競合回避：トランザクション使用）

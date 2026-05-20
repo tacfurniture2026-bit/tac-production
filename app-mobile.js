@@ -6963,11 +6963,15 @@ function renderInvCheckPage() {
     });
   }
 
-  // Scanned items for this month
+  // Scanned items for this month (Accumulate quantities for the same product)
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
   const tempScanMap = {};
   currentTempScans.forEach(s => {
-    tempScanMap[s.productId] = s;
+    if (tempScanMap[s.productId]) {
+      tempScanMap[s.productId].quantity += (parseInt(s.quantity) || 0);
+    } else {
+      tempScanMap[s.productId] = { ...s, quantity: parseInt(s.quantity) || 0 };
+    }
   });
 
   // Build unified lists (include all products from master, skipping invalid TEMP_ IDs)
@@ -7157,6 +7161,8 @@ window.saveSingleTempScan = function(productId) {
   const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
   const timestamp = lastDay.toISOString();
 
+  // 既存のスキャンデータを一旦クリアして新しい合計値として保存（締め処理画面からの修正操作のため）
+  DB.deleteTempScan(productId);
   DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
   toast('仮登録数量を保存しました', 'success');
   renderInvCheckPage();
