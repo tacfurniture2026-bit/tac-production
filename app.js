@@ -3036,28 +3036,50 @@ function renderBom() {
 
     let html = '';
     Object.keys(grouped).sort().forEach(cat => {
+      // 標準工程のヘッダー項目を生成
+      const processHeaders = STANDARD_PROCESSES.map(p => {
+        let shortName = p;
+        if (p === '芯材カット') shortName = '芯材';
+        else if (p === '面材カット') shortName = '面材';
+        else if (p === 'フラッシュ') shortName = 'フラ';
+        else if (p === 'ランニングソー') shortName = 'ラン';
+        else if (p === 'エッヂバンダー') shortName = 'エッ';
+        else if (p === '仕上・梱包') shortName = '仕上';
+        else if (p === 'フロア加工') shortName = 'フロ';
+        else if (p === 'アクリルBOX作成') shortName = 'アク';
+        else if (p === '扉面材くり抜き') shortName = 'くり';
+        
+        return `<th style="font-size: 0.7rem; padding: 4px 2px; text-align: center; min-width: 38px; font-weight: 500;">${shortName}</th>`;
+      }).join('');
+
       html += `
       <div style="margin-bottom: 2rem;">
         <h3 style="border-bottom: 2px solid var(--color-border); padding-bottom: 0.5rem; margin-bottom: 1rem; display:flex; align-items:center;">
           <input type="checkbox" class="bom-cat-check" onchange="toggleBomChecks(this, '${cat}')" style="margin-right:0.5rem;">
           ${cat}
         </h3>
-        <div class="table-container">
-          <table class="table">
+        <div class="table-container" style="overflow-x: auto;">
+          <table class="table" style="min-width: 100%; white-space: nowrap;">
             <thead>
               <tr>
-                <th style="width: 40px;">選択</th>
-                <th>製品名</th>
-                <th>BOM名</th>
-                <th>部材CD</th>
-                <th>工程</th>
-                <th>操作</th>
+                <th style="width: 40px; min-width: 40px;">選択</th>
+                <th style="min-width: 120px;">製品名</th>
+                <th style="min-width: 160px;">BOM名</th>
+                <th style="min-width: 90px;">部材CD</th>
+                ${processHeaders}
+                <th style="min-width: 100px; text-align: center;">操作</th>
               </tr>
             </thead>
             <tbody>
               ${grouped[cat].map(b => {
-        // 安全策: processesがundefinedの場合は空配列扱い
         const safeProcesses = Array.isArray(b.processes) ? b.processes : [];
+        const processCells = STANDARD_PROCESSES.map(p => {
+          const hasProcess = safeProcesses.includes(p);
+          const bgStyle = hasProcess ? 'background-color: #fef08a; font-weight: bold; color: #854d0e;' : 'color: #cbd5e1;';
+          const checkMark = hasProcess ? '✓' : '';
+          return `<td style="${bgStyle} text-align: center; font-size: 0.75rem; padding: 4px;">${checkMark}</td>`;
+        }).join('');
+
         return `
                 <tr>
                   <td style="text-align:center;">
@@ -3066,14 +3088,10 @@ function renderBom() {
                   <td>${b.productName || ''}</td>
                   <td>${b.bomName || ''}</td>
                   <td>${b.partCode || ''}</td>
-                  <td>
-                    ${safeProcesses.length > 0 ?
-            safeProcesses.map(p => `<span class="badge badge-primary" style="margin-right: 0.25rem;">${p}</span>`).join('') :
-            '<span class="text-muted">なし</span>'}
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-secondary" onclick="showEditBomModal(${b.id})" style="margin-right: 0.25rem;">編集</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})">削除</button>
+                  ${processCells}
+                  <td style="text-align: center;">
+                    <button class="btn btn-sm btn-secondary" onclick="showEditBomModal(${b.id})" style="margin-right: 0.25rem; padding: 2px 6px; font-size: 0.75rem;">編集</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBom(${b.id})" style="padding: 2px 6px; font-size: 0.75rem;">削除</button>
                   </td>
                 </tr>
               `;
@@ -4888,13 +4906,13 @@ function renderReport(argStart, argEnd) {
   const maxTrendValue = Math.max(...monthlyTrend.map(m => m.total), 1);
   const trendBars = monthlyTrend.map(m => {
     const barHeight = Math.round((m.total / maxTrendValue) * 100);
-    const fixedHeight = m.total > 0 ? Math.round((m.fixedTotal / m.total) * barHeight) : 0;
+    const fixedRatio = m.total > 0 ? Math.round((m.fixedTotal / m.total) * 100) : 0;
     const minBarHeight = m.total > 0 ? Math.max(barHeight, 5) : 0;
     return `
       <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-        <div style="width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+        <div style="width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 100px;">
           <div style="background: linear-gradient(180deg, #2563eb, #60a5fa); width: 100%; height: ${minBarHeight}%; min-height: ${m.total > 0 ? '4px' : '0'}; border-radius: 4px 4px 0 0; position: relative;">
-            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: #f59e0b; opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
+            ${fixedRatio > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedRatio}%; background: #f59e0b; opacity: 0.8; border-radius: 0 0 4px 4px;"></div>` : ''}
           </div>
         </div>
         <div style="font-size: 0.75rem; margin-top: 0.5rem; color: #64748b;">${m.label}</div>
@@ -5050,7 +5068,7 @@ function renderReport(argStart, argEnd) {
           <!-- 月別推移グラフ (印刷でもはっきり見えるように再設計) -->
           <div>
             <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: #334155; border-left: 3px solid #1e40af; padding-left: 0.5rem;">過去6ヶ月の在庫推移（対比グラフ）</h4>
-            <div style="display: flex; gap: 0.75rem; align-items: flex-end; padding: 1.25rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; height: 160px; box-sizing: border-box;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-end; padding: 1.25rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; height: 180px; box-sizing: border-box;">
               ${trendBars}
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 0.75rem; font-size: 0.75rem; color: #64748b; justify-content: center;">

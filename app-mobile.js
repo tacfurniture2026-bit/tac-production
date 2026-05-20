@@ -4568,12 +4568,13 @@ function renderReport() {
   const maxTrendValue = Math.max(...monthlyTrend.map(m => m.total), 1);
   const trendBars = monthlyTrend.map(m => {
     const barHeight = Math.round((m.total / maxTrendValue) * 100);
-    const fixedHeight = m.total > 0 ? Math.round((m.fixedTotal / m.total) * barHeight) : 0;
+    const fixedRatio = m.total > 0 ? Math.round((m.fixedTotal / m.total) * 100) : 0;
+    const minBarHeight = m.total > 0 ? Math.max(barHeight, 5) : 0;
     return `
       <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-        <div style="flex: 1; width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
-          <div style="background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light)); width: 100%; height: ${barHeight}%; border-radius: 4px 4px 0 0; position: relative;">
-            ${fixedHeight > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedHeight}%; background: var(--color-warning); opacity: 0.7; border-radius: 0 0 4px 4px;"></div>` : ''}
+        <div style="width: 100%; max-width: 40px; display: flex; flex-direction: column; justify-content: flex-end; height: 100px;">
+          <div style="background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light)); width: 100%; height: ${minBarHeight}%; min-height: ${m.total > 0 ? '4px' : '0'}; border-radius: 4px 4px 0 0; position: relative;">
+            ${fixedRatio > 0 ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fixedRatio}%; background: var(--color-warning); opacity: 0.8; border-radius: 0 0 4px 4px;"></div>` : ''}
           </div>
         </div>
         <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--color-text-muted);">${m.label}</div>
@@ -4676,7 +4677,7 @@ function renderReport() {
           <!-- 月別推移グラフ -->
           <div>
             <h4 style="font-size: 0.875rem; margin-bottom: 1rem; color: var(--color-text-secondary);">📈 月別在庫推移（過去6ヶ月）</h4>
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md);">
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding: 1rem; background: var(--color-bg-primary); border-radius: var(--radius-md); height: 180px; box-sizing: border-box;">
               ${trendBars}
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem;">
