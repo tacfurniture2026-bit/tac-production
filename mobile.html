@@ -41564,6 +41564,29 @@ window.submitQuickProductRegister = function(productId, isMobile) {
   }
 };
 
+window.forceReloadMaster = function() {
+  if (typeof firebaseDB === 'undefined' || !firebaseDB) {
+    toast('Firebaseに接続されていません', 'error');
+    return;
+  }
+  toast('商品マスタを最新に同期しています...', 'info');
+  const fbKey = DB.toFirebaseKey(DB.KEYS.INV_PRODUCTS);
+  firebaseDB.ref(fbKey).once('value')
+    .then((snapshot) => {
+      const data = snapshot.val();
+      let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+      parsedData = parsedData.filter(item => item !== null);
+      DB._cache[DB.KEYS.INV_PRODUCTS] = parsedData;
+      localStorage.setItem(DB.KEYS.INV_PRODUCTS, JSON.stringify(parsedData));
+      toast('商品マスタを最新に更新しました', 'success');
+      if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+    })
+    .catch(error => {
+      console.error('マスタ再読込エラー:', error);
+      toast('マスタの再読込に失敗しました', 'error');
+    });
+};
+
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -41643,7 +41666,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.24</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.25</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42285,7 +42308,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.24</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.25</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42515,7 +42538,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
                             <p>仮登録された棚卸データの確認・修正・確定処理</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-secondary" onclick="if(typeof renderInvCheckPage === 'function') renderInvCheckPage()">🔄 マスタ再読込</button>
+                            <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
                         </div>
                     </div>
@@ -42771,7 +42794,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.24
+                    Version: v5.25
                 </div>
             </div>
         </div>

@@ -179,7 +179,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.24</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.25</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -1104,7 +1104,7 @@
                             <p>仮登録された棚卸データの確認・修正・確定処理</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-secondary" onclick="if(typeof renderInvCheckPage === 'function') renderInvCheckPage()">🔄 マスタ再読込</button>
+                            <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
                         </div>
                     </div>

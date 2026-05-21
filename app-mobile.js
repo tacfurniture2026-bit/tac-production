@@ -7787,3 +7787,26 @@ window.submitQuickProductRegister = function(productId, isMobile) {
     if (window.renderTodayInvLogs) renderTodayInvLogs();
   }
 };
+
+window.forceReloadMaster = function() {
+  if (typeof firebaseDB === 'undefined' || !firebaseDB) {
+    toast('Firebaseに接続されていません', 'error');
+    return;
+  }
+  toast('商品マスタを最新に同期しています...', 'info');
+  const fbKey = DB.toFirebaseKey(DB.KEYS.INV_PRODUCTS);
+  firebaseDB.ref(fbKey).once('value')
+    .then((snapshot) => {
+      const data = snapshot.val();
+      let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+      parsedData = parsedData.filter(item => item !== null);
+      DB._cache[DB.KEYS.INV_PRODUCTS] = parsedData;
+      localStorage.setItem(DB.KEYS.INV_PRODUCTS, JSON.stringify(parsedData));
+      toast('商品マスタを最新に更新しました', 'success');
+      if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+    })
+    .catch(error => {
+      console.error('マスタ再読込エラー:', error);
+      toast('マスタの再読込に失敗しました', 'error');
+    });
+};
