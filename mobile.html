@@ -2827,28 +2827,33 @@ const DB = {
         this._cache[key] = localData;
         localStorage.setItem(key, JSON.stringify(localData));
 
-        return new Promise((resolve, reject) => {
-            if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-                const fbKey = this.toFirebaseKey(key);
-                const updates = {};
-                newItems.forEach(item => {
-                    updates[item.id] = item;
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            
+            // ルールによるPermission Deniedを防ぐため、update()ではなく個別のset()をPromise.allで実行する
+            const promises = newItems.map(item => {
+                return new Promise((resolve, reject) => {
+                    firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
                 });
-                // update() を使うことで、既存の他のキーを上書きせず、複数件を1回のリクエストで安全にマージする
-                firebaseDB.ref(fbKey).update(updates, (error) => {
-                    if (error) {
-                        console.error('addMultiple failed:', error, updates);
-                        toast('データの送信に失敗しました: ' + (error.message || error), 'error');
-                        reject(error);
-                    } else {
-                        resolve(true);
-                    }
+            });
+
+            return Promise.all(promises)
+                .then(() => true)
+                .catch(error => {
+                    console.error('addMultiple failed (individual set):', error);
+                    toast('データの送信に失敗しました: ' + (error.message || error), 'error');
+                    return Promise.reject(error);
                 });
-            } else {
-                this.save(key, localData);
-                resolve(true);
-            }
-        });
+        } else {
+            this.save(key, localData);
+            return Promise.resolve(true);
+        }
     },
 
     // 一括追加（Promise対応・Firebase非同期対応）
@@ -41666,7 +41671,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.25</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.26</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42308,7 +42313,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.25</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.26</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42794,7 +42799,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.25
+                    Version: v5.26
                 </div>
             </div>
         </div>

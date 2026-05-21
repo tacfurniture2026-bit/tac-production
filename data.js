@@ -524,28 +524,33 @@ const DB = {
         this._cache[key] = localData;
         localStorage.setItem(key, JSON.stringify(localData));
 
-        return new Promise((resolve, reject) => {
-            if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-                const fbKey = this.toFirebaseKey(key);
-                const updates = {};
-                newItems.forEach(item => {
-                    updates[item.id] = item;
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+            const fbKey = this.toFirebaseKey(key);
+            
+            // ルールによるPermission Deniedを防ぐため、update()ではなく個別のset()をPromise.allで実行する
+            const promises = newItems.map(item => {
+                return new Promise((resolve, reject) => {
+                    firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
                 });
-                // update() を使うことで、既存の他のキーを上書きせず、複数件を1回のリクエストで安全にマージする
-                firebaseDB.ref(fbKey).update(updates, (error) => {
-                    if (error) {
-                        console.error('addMultiple failed:', error, updates);
-                        toast('データの送信に失敗しました: ' + (error.message || error), 'error');
-                        reject(error);
-                    } else {
-                        resolve(true);
-                    }
+            });
+
+            return Promise.all(promises)
+                .then(() => true)
+                .catch(error => {
+                    console.error('addMultiple failed (individual set):', error);
+                    toast('データの送信に失敗しました: ' + (error.message || error), 'error');
+                    return Promise.reject(error);
                 });
-            } else {
-                this.save(key, localData);
-                resolve(true);
-            }
-        });
+        } else {
+            this.save(key, localData);
+            return Promise.resolve(true);
+        }
     },
 
     // 一括追加（Promise対応・Firebase非同期対応）
