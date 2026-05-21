@@ -476,7 +476,7 @@ const DB = {
 
     deleteLocalBatchScan(productId) {
         let scans = this.getLocalBatchScans();
-        scans = scans.filter(s => s.productId !== productId);
+        scans = scans.filter(s => String(s.productId) !== String(productId));
         localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
     },
 

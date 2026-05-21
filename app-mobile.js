@@ -5787,6 +5787,10 @@ function proceedWithLocalBatchSave(productId, quantity, productName) {
 }
 
 function showDuplicateScanModal(productId, productName, newQty, currentQty) {
+  // productName内のシングルクォート等をエスケープするか、引数渡しをやめる
+  // HTML側で変数が壊れないように productId だけ渡すようにする
+  const safeProductId = productId.replace(/'/g, "\\'");
+  
   const body = `
     <div style="padding: 1rem;">
       <p style="margin-bottom: 1.5rem; font-weight: 600; line-height: 1.5;">
@@ -5796,12 +5800,12 @@ function showDuplicateScanModal(productId, productName, newQty, currentQty) {
       </p>
       <p style="margin-bottom: 1rem; color: var(--color-text-muted);">どのように処理しますか？</p>
       <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <button class="btn btn-primary" onclick="handleDuplicateAction('${productId}', 'add', ${newQty}, ${currentQty}, '${productName}')" style="font-size: 1.1rem; padding: 12px;">
+        <button class="btn btn-primary" onclick="handleDuplicateAction('${safeProductId}', 'add', ${newQty}, ${currentQty})" style="font-size: 1.1rem; padding: 12px;">
           ➕ 追加する（${currentQty} + ${newQty} = ${currentQty + newQty}）
         </button>
         <div style="display: flex; gap: 0.75rem;">
           <input type="number" id="duplicate-override-qty" class="form-input" value="${newQty}" style="width: 100px; text-align: center; font-size: 1.1rem; font-weight: bold;">
-          <button class="btn btn-warning" onclick="handleDuplicateAction('${productId}', 'overwrite', 0, 0, '${productName}')" style="flex: 1;">
+          <button class="btn btn-warning" onclick="handleDuplicateAction('${safeProductId}', 'overwrite', 0, 0)" style="flex: 1;">
             ✍️ この数量で上書き修正
           </button>
         </div>
@@ -5810,14 +5814,19 @@ function showDuplicateScanModal(productId, productName, newQty, currentQty) {
   `;
 
   const footer = `
-    <button class="btn btn-secondary" onclick="handleDuplicateAction('${productId}', 'cancel', 0, 0, '${productName}')">❌ 登録しない（キャンセル）</button>
+    <button class="btn btn-secondary" onclick="handleDuplicateAction('${safeProductId}', 'cancel', 0, 0)">❌ 登録しない（キャンセル）</button>
   `;
 
   showModal('⚠️ スキャン重複確認', body, footer);
 }
 
-window.handleDuplicateAction = function(productId, action, newQty, currentQty, productName) {
+window.handleDuplicateAction = function(productId, action, newQty, currentQty) {
   hideModal();
+  
+  // マスタからproductNameを再取得
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === productId);
+  const productName = product ? product.name : productId;
   
   if (action === 'cancel') {
     $('#inv-scan-product-id').value = '';
@@ -5832,12 +5841,12 @@ window.handleDuplicateAction = function(productId, action, newQty, currentQty, p
   if (action === 'add') {
     const finalQty = currentQty + newQty;
     DB.updateLocalBatchScan(productId, finalQty);
-    toast(`${productName || productId}の数量を ${finalQty} に更新しました`, 'success');
+    toast(`${productName}の数量を ${finalQty} に更新しました`, 'success');
   } else if (action === 'overwrite') {
     const overrideInput = $('#duplicate-override-qty');
     const finalQty = parseInt(overrideInput.value) || 0;
     DB.updateLocalBatchScan(productId, finalQty);
-    toast(`${productName || productId}の数量を ${finalQty} に上書き修正しました`, 'success');
+    toast(`${productName}の数量を ${finalQty} に上書き修正しました`, 'success');
   }
   
   // フォームリセット
@@ -5917,9 +5926,9 @@ function sendBatchScans() {
     return;
   }
 
-  // 送信用のデータ配列を作成
-  const newScans = localScans.map(scan => ({
-    id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+  // 送信用のデータ配列を作成（IDが被らないようにindexを付加）
+  const newScans = localScans.map((scan, index) => ({
+    id: (Date.now() + index) + "_" + Math.random().toString(36).substr(2, 9),
     productId: scan.productId,
     quantity: scan.quantity,
     worker: scan.worker,
@@ -5933,7 +5942,7 @@ function sendBatchScans() {
   // 一括でFirebaseへ送信
   DB.addMultiple(DB.KEYS.INV_SCAN_TEMP, newScans)
     .then(() => {
-      toast(`送信完了: ${newScans.length}件のデータをサーバーへ一括送信しました`, 'success');
+      toast(`送信完了: ${newScans.length}件のデータをサーバーへ送信しました`, 'success');
       setTimeout(() => {
         if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
           DB.clearLocalBatchScans();
@@ -5945,7 +5954,7 @@ function sendBatchScans() {
     .catch(error => {
       console.error('Batch send error:', error);
       // エラー時はアラートを表示し、バッチデータは消さない
-      alert('送信に失敗しました。\nネットワーク環境を確認し、再度お試しください。');
+      alert('送信に失敗しました。\n・Wi-Fi接続が不安定\n・ログインセッションの有効期限切れ（一度ログアウトして再ログインしてください）\nなどの原因が考えられます。');
     });
 }
 
