@@ -8,6 +8,18 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
+    <!-- 【強制キャッシュバスティング v5.29】 -->
+    <script>
+        (function() {
+            var currentVersion = '5.29';
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('v') !== currentVersion) {
+                // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + currentVersion;
+                window.location.replace(newUrl);
+            }
+        })();
+    </script>
 
     <!-- PWA: 画面縦固定対応 -->
     <meta name="theme-color" content="#0B2D48">
@@ -169,8 +181,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=20260520_15"></script>
-    <script src="app-mobile.js?v=20260520_15"></script>
+    <script src="data.js?v=20260521_v5.29"></script>
+    <script src="app-mobile.js?v=20260521_v5.29"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -249,7 +261,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.28</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.29</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -891,7 +903,7 @@
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.28</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.29</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -1377,7 +1389,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.28
+                    Version: v5.29
                 </div>
             </div>
         </div>

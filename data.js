@@ -379,29 +379,8 @@ const DB = {
 
     // 棚卸仮スキャンデータ
     getTempScans() {
-        // Firebaseからの最新データ
-        const cacheScans = this._cache[this.KEYS.INV_SCAN_TEMP] || [];
-        
-        // オフライン・通信切断でFirebaseに届かずローカルに残っているデータを取得
-        let localScans = [];
-        try { localScans = JSON.parse(localStorage.getItem(this.KEYS.INV_SCAN_TEMP) || '[]'); } catch(e){}
-        if (!Array.isArray(localScans)) localScans = [];
-
-        // Firebase利用時はマージ処理（サーバー未到達のデータを救出して再送信）
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && this._loaded[this.KEYS.INV_SCAN_TEMP]) {
-            const missingScans = localScans.filter(ls => ls && ls.id && !cacheScans.some(cs => cs && cs.id === ls.id));
-            if (missingScans.length > 0) {
-                console.log(`🔄 未送信スキャンデータ ${missingScans.length} 件を検知、Firebaseへ再送信します`);
-                missingScans.forEach(scan => {
-                    this.add(this.KEYS.INV_SCAN_TEMP, scan);
-                });
-                return [...cacheScans, ...missingScans];
-            }
-            return cacheScans;
-        }
-
-        // 未ロード時やローカルモード時はローカルデータを返す
-        return localScans.length > 0 ? localScans : cacheScans;
+        const logs = this.get(this.KEYS.INV_LOGS) || [];
+        return logs.filter(log => log && log.type === 'count_temp');
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
@@ -421,17 +400,16 @@ const DB = {
     },
 
     deleteTempScan(scanId) {
-        // scanId が productId の場合（古い呼び出し）に対応するため、両方チェック
-        let scans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
-        const originalLength = scans.length;
-        scans = scans.filter(s => s.id !== scanId && s.productId !== scanId);
-        if (scans.length !== originalLength) {
-            this.save(this.KEYS.INV_SCAN_TEMP, scans);
-        }
+        this.delete(this.KEYS.INV_LOGS, scanId);
     },
 
     clearTempScans() {
-        this.save(this.KEYS.INV_SCAN_TEMP, []);
+        const tempScans = this.getTempScans();
+        tempScans.forEach(scan => {
+            if (scan && scan.id) {
+                this.delete(this.KEYS.INV_LOGS, scan.id);
+            }
+        });
     },
 
     // ========================================

@@ -7814,15 +7814,31 @@ window.saveSingleTempScan = function(productId) {
   const timestamp = lastDay.toISOString();
 
   const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+  
+  // 既存の count_temp があれば更新、なければ追加
+  const tempScans = DB.getTempScans() || [];
+  const existing = tempScans.find(s => s.productId === productId && s.timestamp && s.timestamp.startsWith(selectedMonth));
+  
+  if (existing && existing.id) {
+      existing.quantity = newQty;
+      existing.worker = currentUser.username;
+      existing.workerName = currentUser.displayName;
+      DB.update(DB.KEYS.INV_LOGS, existing.id, existing);
+  } else {
+      DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  }
 
-  DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
   toast('仮登録数量を保存しました', 'success');
   renderInvCheckPage();
 };
 
 window.deleteSingleTempScan = function(productId) {
   if (!confirm('仮スキャンデータを消去しますか？')) return;
-  DB.deleteTempScan(productId);
+  const tempScans = DB.getTempScans() || [];
+  const scan = tempScans.find(s => s.productId === productId);
+  if (scan && scan.id) {
+      DB.delete(DB.KEYS.INV_LOGS, scan.id);
+  }
   toast('仮スキャンデータから削除しました', 'success');
   renderInvCheckPage();
 };
@@ -7972,9 +7988,13 @@ function confirmInvTempData() {
   if (!confirm(confirmMsg)) return;
 
   // Let's perform final closing:
-  // 1. Clean existing type count logs for this month from INV_LOGS
+  // 1. Clean existing type count logs AND count_temp logs for this month from INV_LOGS
   let logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  logs = logs.filter(l => !(l.timestamp && l.timestamp.startsWith(selectedMonth) && l.type === 'count'));
+  logs = logs.filter(l => {
+      if (!(l.timestamp && l.timestamp.startsWith(selectedMonth))) return true;
+      if (l.type === 'count' || l.type === 'count_temp') return false; // 確定分と仮データを一掃
+      return true;
+  });
 
   // 2. Commit all listItems as official count logs
   // (We'll generate counts for ALL items scanned OR with previous stocks)

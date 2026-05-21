@@ -5948,8 +5948,8 @@ function sendBatchScans() {
     type: 'count_temp'
   }));
 
-  // 一括でFirebaseへ送信
-  DB.addMultiple(DB.KEYS.INV_SCAN_TEMP, newScans)
+  // 一括でFirebaseへ送信 (権限エラーを回避するため、INV_SCAN_TEMP ではなく INV_LOGS に送信し、type: count_temp で識別する)
+  DB.addMultiple(DB.KEYS.INV_LOGS, newScans)
     .then(() => {
       toast(`送信完了: ${newScans.length}件のデータをサーバーへ送信しました`, 'success');
       setTimeout(() => {
