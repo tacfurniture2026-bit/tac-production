@@ -214,6 +214,7 @@ const DB = {
                 let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
                 this._cache[key] = parsedData.filter(item => item !== null);
                 this._loaded[key] = true; // 同期完了フラグをセット
+                localStorage.setItem(key, JSON.stringify(this._cache[key])); // 常にローカルにバックアップ
                 console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
 
                 // UI更新（定義されている場合）
@@ -378,7 +379,29 @@ const DB = {
 
     // 棚卸仮スキャンデータ
     getTempScans() {
-        return this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        // Firebaseからの最新データ
+        const cacheScans = this._cache[this.KEYS.INV_SCAN_TEMP] || [];
+        
+        // オフライン・通信切断でFirebaseに届かずローカルに残っているデータを取得
+        let localScans = [];
+        try { localScans = JSON.parse(localStorage.getItem(this.KEYS.INV_SCAN_TEMP) || '[]'); } catch(e){}
+        if (!Array.isArray(localScans)) localScans = [];
+
+        // Firebase利用時はマージ処理（サーバー未到達のデータを救出して再送信）
+        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && this._loaded[this.KEYS.INV_SCAN_TEMP]) {
+            const missingScans = localScans.filter(ls => ls && ls.id && !cacheScans.some(cs => cs && cs.id === ls.id));
+            if (missingScans.length > 0) {
+                console.log(`🔄 未送信スキャンデータ ${missingScans.length} 件を検知、Firebaseへ再送信します`);
+                missingScans.forEach(scan => {
+                    this.add(this.KEYS.INV_SCAN_TEMP, scan);
+                });
+                return [...cacheScans, ...missingScans];
+            }
+            return cacheScans;
+        }
+
+        // 未ロード時やローカルモード時はローカルデータを返す
+        return localScans.length > 0 ? localScans : cacheScans;
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
@@ -412,6 +435,15 @@ const DB = {
 
     // 追加（競合回避：トランザクション使用）
     add(key, newItem) {
+        // 即座にローカルに反映してリロード消失を防止（オプティミスティックUI保護）
+        let localData = this._cache[key] || [];
+        if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
+        if (newItem.id && !localData.some(d => d.id === newItem.id)) {
+            localData.push(newItem);
+            this._cache[key] = localData;
+            localStorage.setItem(key, JSON.stringify(localData));
+        }
+
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).transaction((currentData) => {
@@ -427,10 +459,8 @@ const DB = {
                 }
             });
         } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            data.push(newItem);
-            this.save(key, data);
+            // ローカルストレージは既に上で更新済みだが、再セーブを呼ぶ
+            this.save(key, localData);
         }
     },
 
@@ -468,6 +498,7 @@ const DB = {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             this._cache[key] = merged;
+            localStorage.setItem(key, JSON.stringify(merged));
             return firebaseDB.ref(fbKey).set(merged)
                 .then(() => {
                     console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
@@ -492,14 +523,24 @@ const DB = {
 
     // 更新（競合回避：トランザクション使用）
     update(key, id, updatedItem) {
+        // 即座にローカルに反映してリロード消失を防止
+        let localData = this._cache[key] || [];
+        if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
+        const index = localData.findIndex(item => item && item.id === id);
+        if (index !== -1) {
+            localData[index] = updatedItem;
+            this._cache[key] = localData;
+            localStorage.setItem(key, JSON.stringify(localData));
+        }
+
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             firebaseDB.ref(fbKey).transaction((currentData) => {
                 if (!currentData) return;
                 const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                const index = dataArray.findIndex(item => item && item.id === id);
-                if (index !== -1) {
-                    dataArray[index] = updatedItem;
+                const i = dataArray.findIndex(item => item && item.id === id);
+                if (i !== -1) {
+                    dataArray[i] = updatedItem;
                 }
                 return dataArray;
             }, (error, committed) => {
@@ -509,13 +550,7 @@ const DB = {
                 }
             });
         } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            const index = data.findIndex(item => item.id === id);
-            if (index !== -1) {
-                data[index] = updatedItem;
-                this.save(key, data);
-            }
+            this.save(key, localData);
         }
     },
 
