@@ -1,0 +1,87 @@
+=== SEARCHING ALL CSV FILES FOR TARGETS ===
+
+
+--- Target: PAO WORK BOX1人1012BL GO不燃 ---
+  [2026年2月 Row 930] Code: 'N12000000000143' | ClassCode: '12-143' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+  [2026年3月 Row 1109] Code: 'N26000000000036' | ClassCode: '26-036' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+
+--- Target: PAO CALMDOWN1290R GO ---
+  No matches found in any CSV.
+
+--- Target: PAO WORK BOX1人1012SR GO不燃 ---
+  No matches found in any CSV.
+
+--- Target: PAO WORK BOX1人1012SL GO不燃 ---
+  No matches found in any CSV.
+
+--- Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA ---
+  [2026年1月 Row 513] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年2月 Row 527] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 529] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 1096] Code: 'N26000000000023' | ClassCode: '26-023' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: ''
+  [2026年4月 Row 523] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+
+--- Target: ｼｪﾙﾌ 中方立 H2400 D240用 BW ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 左右方立 H2400 D240用 BW ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 施工棚板W800 D240用3枚入 BW ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 追加棚板 W800 D240用 BW ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 可動棚板 W800 D240用 BW ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 中方立 H2400 D380用 ---
+  [2026年3月 Row 1091] Code: 'N26000000000018' | ClassCode: '26-018' | Name: 'ｼｪﾙﾌ 中方立 H2400 D380用 SH' | Remark: ''
+  [2026年3月 Row 1101] Code: 'N26000000000028' | ClassCode: '26-028' | Name: '特注　ｼｪﾙﾌ 中方立 H2400 D380用 GO' | Remark: ''
+
+--- Target: ｼｪﾙﾌ 左右方立 H2400 D380 ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 施工棚板W800 D380用3 ---
+  [2026年3月 Row 1110] Code: 'N26000000000037' | ClassCode: '26-037' | Name: 'ｼｪﾙﾌ 施工棚板W800 D380用3枚入 GO' | Remark: ''
+
+--- Target: ｼｪﾙﾌ 追加棚板 W800 D380用 ---
+  No matches found in any CSV.
+
+--- Target: ｼｪﾙﾌ 可動棚板 W800 D380用 ---
+  No matches found in any CSV.
+
+--- Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1BW ---
+  [2026年1月 Row 513] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年2月 Row 527] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 529] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年4月 Row 523] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+
+--- Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1GO ---
+  [2026年1月 Row 513] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年2月 Row 527] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 529] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年4月 Row 523] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+
+--- Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP ---
+  [2026年1月 Row 513] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年2月 Row 527] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 529] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年4月 Row 523] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+
+--- Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH ---
+  [2026年1月 Row 513] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年2月 Row 527] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 529] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+  [2026年3月 Row 1099] Code: 'N26000000000026' | ClassCode: '26-026' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH' | Remark: ''
+  [2026年4月 Row 523] Code: 'N05000000000300' | ClassCode: '05-300' | Name: '座金 BATPOH34' | Remark: 'FJL'
+
+--- Target: 特注/PAO(1人用)9100002362 ---
+  No matches found in any CSV.
+
+--- Target: 特注/PAO(4人用)9100002363 ---
+  No matches found in any CSV.
+
+--- Target: 特注/PAO(6人用)9100002364 ---
+  No matches found in any CSV.

@@ -1,0 +1,82 @@
+=== SEARCHING CSV FILES BY ORDER NUMBERS ===
+
+
+--- Order Number: 9100003406 ---
+  [2026年1月 Row 956] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: '' | Match in Col 24: '9100003406'
+
+--- Order Number: 9100003369 ---
+  [2026年1月 Row 957] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: '' | Match in Col 24: '9100003369'
+
+--- Order Number: 9100003370 ---
+  [2026年1月 Row 958] Code: '' | ClassCode: '' | Name: 'PAO CALMDOWN1290R GO' | Remark: '' | Match in Col 24: '9100003370'
+
+--- Order Number: 9100003807 ---
+  [2026年1月 Row 959] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: '' | Match in Col 24: '9100003807'
+
+--- Order Number: 9100003635 ---
+  [2026年1月 Row 960] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012SR GO不燃' | Remark: '' | Match in Col 24: '9100003635'
+
+--- Order Number: 9100003636 ---
+  [2026年1月 Row 961] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012SL GO不燃' | Remark: '' | Match in Col 24: '9100003636'
+
+--- Order Number: 2100009091-1 ---
+  [2026年1月 Row 962] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: 'RGFJLNW-1KKA' | Match in Col 24: '2100009091-1'
+
+--- Order Number: 2100009229-1 ---
+  [2026年1月 Row 963] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 中方立 H2400 D240用 BW' | Remark: 'G1IV240BBW1-N' | Match in Col 24: '2100009229-1'
+
+--- Order Number: 2100009229-2 ---
+  [2026年1月 Row 964] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 左右方立 H2400 D240用 BW' | Remark: 'G1HV240BBW2-N' | Match in Col 24: '2100009229-2'
+
+--- Order Number: 2100009229-3 ---
+  [2026年1月 Row 965] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 施工棚板W800 D240用3枚入 BW' | Remark: 'G1E8003BBW3-N' | Match in Col 24: '2100009229-3'
+
+--- Order Number: 2100009229-4 ---
+  [2026年1月 Row 966] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 追加棚板 W800 D240用 BW' | Remark: 'G1K8003BBW1-N' | Match in Col 24: '2100009229-4'
+
+--- Order Number: 2100009229-5 ---
+  [2026年1月 Row 967] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 可動棚板 W800 D240用 BW' | Remark: 'G1S8003BBW1-N' | Match in Col 24: '2100009229-5'
+
+--- Order Number: 2100009233-1 ---
+  [2026年1月 Row 968] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 中方立 H2400 D380用' | Remark: 'G1IV240AGO1' | Match in Col 24: '2100009233-1'
+
+--- Order Number: 2100009233-2 ---
+  [2026年1月 Row 969] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 左右方立 H2400 D380' | Remark: 'G1HV240AGO2' | Match in Col 24: '2100009233-2'
+
+--- Order Number: 2100009233-3 ---
+  [2026年1月 Row 970] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 施工棚板W800 D380用3' | Remark: 'G1E8003AGO3' | Match in Col 24: '2100009233-3'
+
+--- Order Number: 2100009233-4 ---
+  [2026年1月 Row 971] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 追加棚板 W800 D380用' | Remark: 'G1K8003AGO1' | Match in Col 24: '2100009233-4'
+
+--- Order Number: 2100009233-5 ---
+  [2026年1月 Row 972] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 可動棚板 W800 D380用' | Remark: 'G1S8003AGO1' | Match in Col 24: '2100009233-5'
+
+--- Order Number: 2100009534-1 ---
+  [2026年1月 Row 973] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1BW' | Remark: 'RGFJLNW-1BW' | Match in Col 24: '2100009534-1'
+  [2026年1月 Row 976] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP' | Remark: 'RGFJLNW-1MPP' | Match in Col 24: '2100009534-10'
+  [2026年1月 Row 977] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH' | Remark: 'RGFJLNW-1WH' | Match in Col 24: '2100009534-13'
+
+--- Order Number: 2100009534-4 ---
+  [2026年1月 Row 974] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1GO' | Remark: 'RGFJLNW-1GO' | Match in Col 24: '2100009534-4'
+  [2026年2月 Row 938] Code: 'N12000000000192' | ClassCode: '12-192' | Name: 'RGFJLNW-1GO' | Remark: '' | Match in Col 7: '2100009534-4'
+  [2026年3月 Row 1005] Code: 'N12000000000192' | ClassCode: '12-192' | Name: '2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板' | Remark: '' | Match in Col 6: '2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板'
+  [2026年3月 Row 1006] Code: 'N12000000000193' | ClassCode: '12-193' | Name: '2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉' | Remark: '' | Match in Col 6: '2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉'
+
+--- Order Number: 2100009534-7 ---
+  [2026年1月 Row 975] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: 'RGFJLNW-1KKA' | Match in Col 24: '2100009534-7'
+
+--- Order Number: 2100009534-10 ---
+  [2026年1月 Row 976] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP' | Remark: 'RGFJLNW-1MPP' | Match in Col 24: '2100009534-10'
+
+--- Order Number: 2100009534-13 ---
+  [2026年1月 Row 977] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH' | Remark: 'RGFJLNW-1WH' | Match in Col 24: '2100009534-13'
+
+--- Order Number: 9100002362 ---
+  [2026年1月 Row 978] Code: '' | ClassCode: '' | Name: '特注/PAO(1人用)9100002362' | Remark: '' | Match in Col 6: '特注/PAO(1人用)9100002362'
+
+--- Order Number: 9100002363 ---
+  [2026年1月 Row 979] Code: '' | ClassCode: '' | Name: '特注/PAO(4人用)9100002363' | Remark: '' | Match in Col 6: '特注/PAO(4人用)9100002363'
+
+--- Order Number: 9100002364 ---
+  [2026年1月 Row 980] Code: '' | ClassCode: '' | Name: '特注/PAO(6人用)9100002364' | Remark: '' | Match in Col 6: '特注/PAO(6人用)9100002364'

@@ -1,0 +1,87 @@
+=== SEARCHING CSV FILES BY MODEL CODES ===
+
+
+--- Model Code: G1IV240BBW1-N ---
+  [2026年1月 Row 963] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 中方立 H2400 D240用 BW' | Remark: 'G1IV240BBW1-N'
+
+--- Model Code: G1HV240BBW2-N ---
+  [2026年1月 Row 964] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 左右方立 H2400 D240用 BW' | Remark: 'G1HV240BBW2-N'
+
+--- Model Code: G1E8003BBW3-N ---
+  [2026年1月 Row 965] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 施工棚板W800 D240用3枚入 BW' | Remark: 'G1E8003BBW3-N'
+
+--- Model Code: G1K8003BBW1-N ---
+  [2026年1月 Row 966] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 追加棚板 W800 D240用 BW' | Remark: 'G1K8003BBW1-N'
+
+--- Model Code: G1S8003BBW1-N ---
+  [2026年1月 Row 967] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 可動棚板 W800 D240用 BW' | Remark: 'G1S8003BBW1-N'
+
+--- Model Code: G1IV240AGO1 ---
+  [2026年1月 Row 968] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 中方立 H2400 D380用' | Remark: 'G1IV240AGO1'
+
+--- Model Code: G1HV240AGO2 ---
+  [2026年1月 Row 969] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 左右方立 H2400 D380' | Remark: 'G1HV240AGO2'
+
+--- Model Code: G1E8003AGO3 ---
+  [2026年1月 Row 970] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 施工棚板W800 D380用3' | Remark: 'G1E8003AGO3'
+
+--- Model Code: G1K8003AGO1 ---
+  [2026年1月 Row 971] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 追加棚板 W800 D380用' | Remark: 'G1K8003AGO1'
+
+--- Model Code: G1S8003AGO1 ---
+  [2026年1月 Row 972] Code: '' | ClassCode: '' | Name: 'ｼｪﾙﾌ 可動棚板 W800 D380用' | Remark: 'G1S8003AGO1'
+  [2026年2月 Row 955] Code: 'N12000000000205' | ClassCode: '12-205' | Name: '2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚' | Remark: ''
+  [2026年3月 Row 1018] Code: 'N12000000000205' | ClassCode: '12-205' | Name: '2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚' | Remark: ''
+
+--- Model Code: RGFJLNW-1BW ---
+  [2026年1月 Row 973] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1BW' | Remark: 'RGFJLNW-1BW'
+  [2026年2月 Row 940] Code: 'N12000000000161' | ClassCode: '12-161' | Name: 'RGFJLNW-1BW' | Remark: ''
+  [2026年2月 Row 948] Code: 'N12000000000160' | ClassCode: '12-160' | Name: 'RGFJLNW-1BW' | Remark: ''
+  [2026年2月 Row 951] Code: 'N12000000000163' | ClassCode: '12-163' | Name: 'RGFJLNW-1BW' | Remark: ''
+
+--- Model Code: RGFJLNW-1GO ---
+  [2026年1月 Row 974] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1GO' | Remark: 'RGFJLNW-1GO'
+  [2026年2月 Row 938] Code: 'N12000000000192' | ClassCode: '12-192' | Name: 'RGFJLNW-1GO' | Remark: ''
+
+--- Model Code: RGFJLNW-1MPP ---
+  [2026年1月 Row 976] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP' | Remark: 'RGFJLNW-1MPP'
+
+--- Model Code: RGFJLNW-1KKA ---
+  [2026年1月 Row 962] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: 'RGFJLNW-1KKA'
+  [2026年1月 Row 975] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: 'RGFJLNW-1KKA'
+  [2026年2月 Row 943] Code: 'N12000000000162' | ClassCode: '12-162' | Name: 'RGFJLNW-1KKA' | Remark: ''
+  [2026年3月 Row 1096] Code: 'N26000000000023' | ClassCode: '26-023' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA' | Remark: ''
+
+--- Model Code: RGFJLNW-1WH ---
+  [2026年1月 Row 977] Code: '' | ClassCode: '' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH' | Remark: 'RGFJLNW-1WH'
+  [2026年3月 Row 1099] Code: 'N26000000000026' | ClassCode: '26-026' | Name: '木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH' | Remark: ''
+
+--- Model Code: 9100002362 ---
+  [2026年1月 Row 978] Code: '' | ClassCode: '' | Name: '特注/PAO(1人用)9100002362' | Remark: ''
+
+--- Model Code: 9100002363 ---
+  [2026年1月 Row 979] Code: '' | ClassCode: '' | Name: '特注/PAO(4人用)9100002363' | Remark: ''
+
+--- Model Code: 9100002364 ---
+  [2026年1月 Row 980] Code: '' | ClassCode: '' | Name: '特注/PAO(6人用)9100002364' | Remark: ''
+
+--- Model Code: CALMDOWN1290R ---
+  [2026年1月 Row 958] Code: '' | ClassCode: '' | Name: 'PAO CALMDOWN1290R GO' | Remark: ''
+
+--- Model Code: 1012SR GO ---
+  [2026年1月 Row 960] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012SR GO不燃' | Remark: ''
+
+--- Model Code: 1012SL GO ---
+  [2026年1月 Row 961] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012SL GO不燃' | Remark: ''
+
+--- Model Code: 1012BL GO ---
+  [2026年1月 Row 956] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+  [2026年1月 Row 957] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+  [2026年1月 Row 959] Code: '' | ClassCode: '' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+  [2026年2月 Row 930] Code: 'N12000000000143' | ClassCode: '12-143' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+  [2026年3月 Row 1109] Code: 'N26000000000036' | ClassCode: '26-036' | Name: 'PAO WORK BOX1人1012BL GO不燃' | Remark: ''
+
+
+=== SEARCHING FIREBASE MASTER BY MODEL CODES ===
+
+Error reading Firebase Master: name 'json' is not defined

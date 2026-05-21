@@ -1,0 +1,1222 @@
+ID: N01000000000023 | Category: 01 | Name: LVL 30X14X2430
+ID: N01000000000024 | Category: 01 | Name: LVL 30X17.7X2430
+ID: N01000000000026 | Category: 01 | Name: LVL 30X21.5X2002
+ID: N01000000000029 | Category: 01 | Name: LVL 30X21X2430
+ID: N01000000000032 | Category: 01 | Name: LVL 30X22X2430
+ID: N01000000000036 | Category: 01 | Name: LVL 30X24.5X2430 ｼｪﾙﾌ用 3C
+ID: N01000000000038 | Category: 01 | Name: LVL 30X24.5X2995  ｼｪﾙﾌ用 片面3C
+ID: N01000000000039 | Category: 01 | Name: LVL 30X25.5X2002 (t29.7)
+ID: N01000000000040 | Category: 01 | Name: LVL 30X25.5X2430 (t29.7)
+ID: N01000000000043 | Category: 01 | Name: LVL 30X26.5X2430
+ID: N01000000000045 | Category: 01 | Name: LVL 30X26X2430
+ID: N01000000000048 | Category: 01 | Name: LVL 30X27.5X2430
+ID: N01000000000051 | Category: 01 | Name: LVL 30x33.5X2430
+ID: N01000000000052 | Category: 01 | Name: LVL 35X30X2430
+ID: N01000000000053 | Category: 01 | Name: LVL 40x21x2430
+ID: N01000000000060 | Category: 01 | Name: LVL/RD貼  30X21.5X2002
+ID: N01000000000061 | Category: 01 | Name: LVL/RD貼  30X25.5X2002
+ID: N01000000000063 | Category: 01 | Name: LVL/RD貼 ｼｬｸﾘ付 30X27.5X2430
+ID: N01000000000068 | Category: 01 | Name: MDF 15X4X6
+ID: N01000000000069 | Category: 01 | Name: MDF 2.5X3X7
+ID: N01000000000073 | Category: 01 | Name: MDF 4X4'X8'
+ID: N01000000000074 | Category: 01 | Name: MDF 5.5X4'X8'
+ID: N01000000000078 | Category: 01 | Name: MDF t18X4'X8'
+ID: N01000000000079 | Category: 01 | Name: MDF t21X4'X6'
+ID: N01000000000083 | Category: 01 | Name: MDF t27㎜X4'X8'
+ID: N01000000000086 | Category: 01 | Name: MDF t5.5X4'X6'
+ID: N01000000000087 | Category: 01 | Name: MDF t9X4X6
+ID: N01000000000088 | Category: 01 | Name: ﾊｲﾍﾞｽﾄｳｯﾄﾞMDF 21X920X3950
+ID: N01000000000089 | Category: 01 | Name: PB t12X4'X6'
+ID: N01000000000093 | Category: 01 | Name: PB t15X4'X6'
+ID: N01000000000095 | Category: 01 | Name: PB t18X4'X6'
+ID: N01000000000096 | Category: 01 | Name: PB t20X4'X6'
+ID: N01000000000098 | Category: 01 | Name: ﾌｧﾙｶﾀ 15X4X8
+ID: N01000000000100 | Category: 01 | Name: ﾌｧﾙｶﾀ ﾗﾝﾊﾞｰｺｱ  t15X3'X6'
+ID: N01000000000101 | Category: 01 | Name: ﾌｧﾙｶﾀ ﾗﾝﾊﾞｰｺｱ  t18X4'X8'
+ID: N01000000000102 | Category: 01 | Name: ﾌｧﾙｶﾀ合板 t18X3'X6'
+ID: N01000000000104 | Category: 01 | Name: 合板 t9X910X1820
+ID: N01000000000105 | Category: 01 | Name: 合板 12X910X1820
+ID: N01000000000109 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ 500X1000X15.6
+ID: N01000000000110 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X26
+ID: N01000000000111 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X35
+ID: N01000000000112 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X45
+ID: N01000000000113 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X21
+ID: N01000000000114 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X24.5
+ID: N01000000000115 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№80E 500X1000X14.5
+ID: N01000000000116 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X28
+ID: N01000000000125 | Category: 01 | Name: LVL 29.7X21.5X2002
+ID: N01000000000127 | Category: 01 | Name: LVL 40x27.5x2430
+ID: N01000000000128 | Category: 01 | Name: LVL t30X30X2430
+ID: N01000000000137 | Category: 01 | Name: LVL　30X25.5X1960
+ID: N01000000000139 | Category: 01 | Name: MDF 2.5X3'X8'
+ID: N01000000000142 | Category: 01 | Name: ﾌｧﾙｶﾀ　t12x4'X8'
+ID: N01000000000143 | Category: 01 | Name: MDF　18*3'*8'
+ID: N01000000000144 | Category: 01 | Name: ﾆｭｰﾀﾞｲｽｺｱ500x1000x35.4
+ID: N01000000000145 | Category: 01 | Name: MDF 4x4x8
+ID: N01000000000146 | Category: 01 | Name: MDF1240x3900xt21
+ID: N01000000000147 | Category: 01 | Name: MDF(WH/SH)5.5X4X6
+ID: N01000000000148 | Category: 01 | Name: LVL 14.5x30x2430
+ID: N01000000000149 | Category: 01 | Name: LVL 14.5X30X2430
+ID: N01000000000150 | Category: 01 | Name: LVL30X44X2430
+ID: N02000000000001 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' BW
+ID: N02000000000002 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' BW
+ID: N02000000000004 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' CS
+ID: N02000000000005 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' GO
+ID: N02000000000006 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' GO
+ID: N02000000000007 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' LO
+ID: N02000000000008 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' LO
+ID: N02000000000009 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' MC
+ID: N02000000000010 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' MC
+ID: N02000000000011 | Category: 02 | Name: 片面化粧MDF t2.5X3'X6' MW
+ID: N02000000000012 | Category: 02 | Name: 片面化粧MDF t2.5X3X7 MW
+ID: N02000000000014 | Category: 02 | Name: 片面化粧MDF 2.5X3X7 NK
+ID: N02000000000017 | Category: 02 | Name: 片面化粧MDF 2.5X3X7 RD
+ID: N02000000000020 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' SH
+ID: N02000000000021 | Category: 02 | Name: 片面化粧MDFt2.5X3X8 SY
+ID: N02000000000022 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' WH
+ID: N02000000000023 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' WH
+ID: N02000000000024 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' WM
+ID: N02000000000025 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' WM
+ID: N02000000000027 | Category: 02 | Name: 片面化粧MDF 2.5X3X7 WW
+ID: N02000000000028 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' LW ﾚｻﾞｰﾎﾜｲﾄ
+ID: N02000000000029 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' MW ﾏｰﾌﾞﾙｳｯﾄﾞ
+ID: N02000000000030 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' NO ﾉﾙﾃｵｰｸ
+ID: N02000000000031 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' BA ﾌﾞﾗｯｸｱｶｼｱ
+ID: N02000000000033 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' MA ﾐﾃﾞｨｱﾑｱｶｼｱ
+ID: N02000000000034 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' NBL ﾈｵﾌﾞﾗｯｸﾚｻﾞｰ
+ID: N02000000000035 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' PW ﾊﾟｰﾙﾎﾜｲﾄ
+ID: N02000000000036 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' TO ｻｰﾓｽｵｰｸ
+ID: N02000000000037 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' UW ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ
+ID: N02000000000038 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' 
+ﾊﾞﾆﾗｳｯﾄﾞ
+ID: N02000000000041 | Category: 02 | Name: 片面化粧MDF t4X4'X6' NK
+ID: N02000000000051 | Category: 02 | Name: MDF化粧天板 t18X405X2450 BR
+ID: N02000000000052 | Category: 02 | Name: MDF化粧天板 t18X405X2450 BW
+ID: N02000000000055 | Category: 02 | Name: 化粧MDF t18X4'X7' BW
+ID: N02000000000056 | Category: 02 | Name: MDF化粧天板 t18X405X2450 CW
+ID: N02000000000057 | Category: 02 | Name: 化粧MDF t18X3'X6' CW
+ID: N02000000000058 | Category: 02 | Name: MDF化粧天板 t18X405X2450 GO
+ID: N02000000000062 | Category: 02 | Name: MDF化粧天板 t18X405X2450 GW
+ID: N02000000000063 | Category: 02 | Name: MDF化粧天板 t18X405X2450 LCB
+ID: N02000000000064 | Category: 02 | Name: 化粧MDF t18X920X1850 LCB
+ID: N02000000000066 | Category: 02 | Name: 化粧MDF t18X920X1850 LCW
+ID: N02000000000067 | Category: 02 | Name: MDF化粧天板 t18X405X2450 LO
+ID: N02000000000069 | Category: 02 | Name: MDF化粧天板 t18X405X2450 MC
+ID: N02000000000070 | Category: 02 | Name: 化粧MDF t18X4'X8' MC
+ID: N02000000000072 | Category: 02 | Name: MDF化粧天板 t18X405X2450 SH
+ID: N02000000000074 | Category: 02 | Name: MDF化粧天板 t18X405X2450 SP
+ID: N02000000000076 | Category: 02 | Name: MDF t18x4'x8' SP
+ID: N02000000000080 | Category: 02 | Name: MDF化粧天板 t18X405X2450 WM
+ID: N02000000000083 | Category: 02 | Name: 化粧MDF t18X4'X8' WM
+ID: N02000000000084 | Category: 02 | Name: 化粧MDF t18X3'X6' ｽｴｯﾄｸﾛﾏ
+ID: N02000000000086 | Category: 02 | Name: MDF化粧天板 t18X405X2450 CS色
+ID: N02000000000088 | Category: 02 | Name: MDF化粧天板 t18X405X2450 住友MC
+ID: N02000000000089 | Category: 02 | Name: MDF化粧天板 t18X405X2450 MW色
+ID: N02000000000090 | Category: 02 | Name: MDF化粧天板 t18X405X2450 NO色
+ID: N02000000000091 | Category: 02 | Name: MDF化粧天板 t18X405X2450 BA色
+ID: N02000000000092 | Category: 02 | Name: MDF化粧天板 t18X405X2450 MA色
+ID: N02000000000093 | Category: 02 | Name: MDF化粧天板 t18X405X2450NBL色
+ID: N02000000000094 | Category: 02 | Name: MDF化粧天板 t18X405X2450 TO色
+ID: N02000000000095 | Category: 02 | Name: MDF化粧天板 t18X405X2450 UW色
+ID: N02000000000097 | Category: 02 | Name: MDF t18X4'X6' BSH-254
+ID: N02000000000098 | Category: 02 | Name: MDF t18X3'X6' BR/ｸﾞﾚ
+ID: N02000000000099 | Category: 02 | Name: MDF t18x4'x8' BW
+ID: N02000000000100 | Category: 02 | Name: MDF t18x4'x8' LO
+ID: N02000000000104 | Category: 02 | Name: MDF t18x4'x8' WH
+ID: N02000000000105 | Category: 02 | Name: MDF t18X3'X6' WS4002ES/TWﾎﾜｲﾄ
+ID: N02000000000106 | Category: 02 | Name: MDF t18X3'X6' WS5188E/TWﾎﾜｲﾄ
+ID: N02000000000110 | Category: 02 | Name: MDF t18X3'X8' 表BA色 / 裏ｼｰﾄ貼 ﾌﾞﾗｯｸｱｶｼｱ
+ID: N02000000000142 | Category: 02 | Name: PB両面化粧板 t15X4'X8' WH
+ID: N02000000000151 | Category: 02 | Name: 化粧PB t18X3'X8' LCB
+ID: N02000000000153 | Category: 02 | Name: PB t18X3'X8' 表CS色 / 裏ｼｰﾄ貼 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ
+ID: N02000000000157 | Category: 02 | Name: PB t18X3'X8' 表NO色 / 裏ｼｰﾄ貼 ﾉﾙﾃｵｰｸ
+ID: N02000000000165 | Category: 02 | Name: ﾗｯﾋﾟﾝｸﾞ平貼 t18X3'X8' 表:GW色/裏:ｸﾞﾚ
+ID: N02000000000170 | Category: 02 | Name: 両面WM PB t20X4'X6'
+ID: N02000000000172 | Category: 02 | Name: LVS化粧天板 t18X405X2450 CS色
+ID: N02000000000173 | Category: 02 | Name: LVS化粧天板 t18X405X2450LW色
+ID: N02000000000174 | Category: 02 | Name: LVS化粧天板 t18X405X2436 MW色
+ID: N02000000000175 | Category: 02 | Name: LVS化粧天板 t18X405X2450 MW色
+ID: N02000000000176 | Category: 02 | Name: LVS化粧天板 t18X405X2450 NO色
+ID: N02000000000177 | Category: 02 | Name: LVS化粧天板 t18X405X2450 SP色
+ID: N02000000000178 | Category: 02 | Name: LVS化粧天板 t18X405X2450 BA色
+ID: N02000000000179 | Category: 02 | Name: LVS化粧天板 t18X405X2450MA色
+ID: N02000000000180 | Category: 02 | Name: LVS化粧天板 t18X405X2450 NBL色
+ID: N02000000000181 | Category: 02 | Name: LVS化粧天板 t18X405X2450 TO色
+ID: N02000000000182 | Category: 02 | Name: LVS化粧天板 t18X405X2450 UW色
+ID: N02000000000183 | Category: 02 | Name: LVS化粧天板 t18X405X2450 VW色
+ID: N02000000000184 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' BW
+ID: N02000000000185 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' C
+ID: N02000000000186 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' DB
+ID: N02000000000187 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' EC
+ID: N02000000000188 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' GO
+ID: N02000000000189 | Category: 02 | Name: 低ﾒﾗ t2.5X4X8 MW
+ID: N02000000000190 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X6'  NK
+ID: N02000000000191 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8'  NK
+ID: N02000000000193 | Category: 02 | Name: 低ﾒﾗ 2.5X4X8 WH(ﾎﾜｲﾄﾋｯｺﾘｰ)
+ID: N02000000000194 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' TWH
+ID: N02000000000195 | Category: 02 | Name: 低ﾒﾗ t2.5X4'X8' BK
+ID: N02000000000196 | Category: 02 | Name: 低ﾒﾗ t4X4'X6' MW
+ID: N02000000000197 | Category: 02 | Name: 低ﾒﾗ t4X4'X6'  NK
+ID: N02000000000198 | Category: 02 | Name: 低ﾒﾗ t4X4'X8'  NK
+ID: N02000000000200 | Category: 02 | Name: VRTB-5860D4 ﾚｲﾕｰﾙﾕｰｶﾘ
+ID: N02000000000201 | Category: 02 | Name: VRTB-5835D4 ｶｯﾌｪｵｰｸ
+ID: N02000000000202 | Category: 02 | Name: VRTB-5757D4 ｽﾓｰｸﾄﾞｵｰｸ
+ID: N02000000000203 | Category: 02 | Name: RT-3562TX ｺｰｼﾞｰｻﾝﾄﾞ
+ID: N02000000000204 | Category: 02 | Name: VRTB-5833D4 ｶｯﾌｪｵｰｸ
+ID: N02000000000205 | Category: 02 | Name: VRT5832D4 ｶｯﾌｪｵｰｸ
+ID: N02000000000207 | Category: 02 | Name: VRT-7250U4 ｼｭｶﾞｰﾋﾟﾝｸ
+ID: N02000000000209 | Category: 02 | Name: VRT-7023U4 ｸﾘｰﾐｰﾍﾞｰｼﾞｭ
+ID: N02000000000212 | Category: 02 | Name: VRTB-3509AS4 ｴﾄﾅ
+ID: N02000000000213 | Category: 02 | Name: VRTB-5841D4 ﾌﾟﾘﾏﾌﾞﾗｯｸﾁｪﾘｰ
+ID: N02000000000214 | Category: 02 | Name: RT-1981TX ﾋﾟｭｱﾎﾜｲﾄ
+ID: N02000000000215 | Category: 02 | Name: RT-5769TX ｱｯｿｳｫｰﾙﾅｯﾄ
+ID: N02000000000217 | Category: 02 | Name: EBI-8902FT6 ﾌﾞﾗｯｸ
+ID: N02000000000218 | Category: 02 | Name: FTN-508ZN
+ID: N02000000000219 | Category: 02 | Name: TJY-542K
+ID: N02000000000220 | Category: 02 | Name: FTN-2001ZNS
+ID: N02000000000221 | Category: 02 | Name: FJ-2060ZJN67
+ID: N02000000000222 | Category: 02 | Name: FX-5068ZJD67S
+ID: N02000000000223 | Category: 02 | Name: FJ-2055ZJD67S
+ID: N02000000000224 | Category: 02 | Name: EFN-2055ZD
+ID: N02000000000227 | Category: 02 | Name: FKJ-6000 4'X8'
+ID: N02000000000228 | Category: 02 | Name: TJ-10240
+ID: N02000000000229 | Category: 02 | Name: FKM-6400ZGN 3'X8' 裏ｻﾝﾀﾞｰあり
+ID: N02000000000251 | Category: 02 | Name: EFN-2054ZD
+ID: N02000000000252 | Category: 02 | Name: 化粧MDF t18X4'X8' SH
+ID: N02000000000253 | Category: 02 | Name: K-6530KN 4*8
+ID: N02000000000254 | Category: 02 | Name: K-6530KN 3*6
+ID: N02000000000255 | Category: 02 | Name: K-6629KN 3*6
+ID: N02000000000256 | Category: 02 | Name: K-6627KN 3*6
+ID: N02000000000257 | Category: 02 | Name: K-6627KN 4*8
+ID: N02000000000258 | Category: 02 | Name: ｱｲｶ ﾒﾗﾐﾝ CNY10301K 4X8
+ID: N02000000000259 | Category: 02 | Name: ｾﾙｻｽ FTN2054ZD 3*8
+ID: N02000000000260 | Category: 02 | Name: ｾﾙｻｽ FTN509ZD 3*8
+ID: N02000000000261 | Category: 02 | Name: CFN10243ZD
+ID: N02000000000262 | Category: 02 | Name: FKM6400ZGDS 4X8
+ID: N02000000000263 | Category: 02 | Name: K-6628KN 4*8
+ID: N02000000000264 | Category: 02 | Name: 面材 片面強化紙貼 MW色 t2.5X4'X8'
+ID: N02000000000280 | Category: 02 | Name: K-6630KN 0.95X4X8
+ID: N02000000000281 | Category: 02 | Name: FX-5068ZGDS　4'X8'
+ID: N02000000000282 | Category: 02 | Name: 片面化粧MDF t2.5X3'X9' PW ﾊﾟｰﾙﾎﾜｲﾄ
+ID: N02000000000285 | Category: 02 | Name: 低ﾒﾗ　EC　20X4'X6'
+ID: N02000000000286 | Category: 02 | Name: FKM6527ZGN
+ID: N02000000000287 | Category: 02 | Name: FKM6627ZGN
+ID: N02000000000288 | Category: 02 | Name: 両面化粧MDF SPW 3X8Xt18
+ID: N02000000000289 | Category: 02 | Name: 両面化粧MDF SMA 3X8Xt18
+ID: N02000000000290 | Category: 02 | Name: 両面化粧MDF SVW 3X8Xt18
+ID: N02000000000292 | Category: 02 | Name: 片面化粧MDF t2.5X3'X8' SH
+ID: N02000000000293 | Category: 02 | Name: 組立机用ﾀﾞﾝﾎﾞｰﾙ
+ID: N02000000000294 | Category: 02 | Name: 片面化粧MDFt2.5X3X8 BW
+ID: N02000000000295 | Category: 02 | Name: LVL30X44X2430
+ID: N02000000000296 | Category: 02 | Name: 両面積層材C5/WF　T18x1210x2445
+ID: N02000000000297 | Category: 02 | Name: 両面平貼り　SVW　T18x910x2445
+ID: N02000000000298 | Category: 02 | Name: 両面平貼り　SH　T18X1210X2445
+ID: N02000000000299 | Category: 02 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2425
+ID: N02000000000300 | Category: 02 | Name: 台輪　梱包材　2010
+ID: N02000000000301 | Category: 02 | Name: 両面平貼り　BW　t18x1210x2445
+ID: N02000000000302 | Category: 02 | Name: 両面平貼り　SPW t18x910x2445
+ID: N02000000000303 | Category: 02 | Name: 両面平貼り　SNBL　t18x910x2445
+ID: N02000000000304 | Category: 02 | Name: 両面平貼り　SMW t18x910x2445
+ID: N02000000000305 | Category: 02 | Name: 両面平貼り　WN t18x1210x2445
+ID: N02000000000306 | Category: 02 | Name: 両面平貼り　SNO t18x910x2445
+ID: N02000000000307 | Category: 02 | Name: 引出　梱包材　2235角当
+ID: N02000000000308 | Category: 02 | Name: 片面化粧MDF t2.5x4x8 GO
+ID: N02000000000309 | Category: 02 | Name: 低ﾒﾗ　t2.5x4x8　RUS
+ID: N02000000000310 | Category: 02 | Name: K-6629KN　4*8
+ID: N02000000000311 | Category: 02 | Name: MDF 4'X8'Xt2.5 ｼｰﾄ片面生 片面GO貼り
+ID: N02000000000312 | Category: 02 | Name: LVL 14.5x30x2430
+ID: N02000000000313 | Category: 02 | Name: ABSｴｯｼﾞ　2x43P　GO
+ID: N02000000000314 | Category: 02 | Name: FJ-817（4X8サイズ)
+ID: N02000000000315 | Category: 02 | Name: 片面化粧MDF　裏面VS貼り　t2.5x3x7　MW色
+ID: N02000000000316 | Category: 02 | Name: 片面化粧MDF　t2.5X4X8 MW
+ID: N02000000000317 | Category: 02 | Name: 両面化粧MDF　t18x3x8 NBL
+ID: N02000000000318 | Category: 02 | Name: 両面化粧MDF　t18x3x8 BA
+ID: N02000000000319 | Category: 02 | Name: 両面化粧MDF t18x4x8 BW
+ID: N02000000000320 | Category: 02 | Name: 両面MDF t18x3x8 MW
+ID: N02000000000321 | Category: 02 | Name: 両面化粧MDF　t18x3x8　NBL
+ID: N02000000000322 | Category: 02 | Name: 両面化粧MDF　t18x3x8 NO
+ID: N02000000000323 | Category: 02 | Name: 両面化粧MDF　t18x4x8　LO
+ID: N02000000000324 | Category: 02 | Name: FJ-802ZN 3x8
+ID: N02000000000325 | Category: 02 | Name: FKJ6626ZNN74
+ID: N02000000000326 | Category: 02 | Name: FKJ6600ZNN74
+ID: N02000000000327 | Category: 02 | Name: FKJ6608ZNN74
+ID: N02000000000328 | Category: 02 | Name: FKJ6623ZNN74
+ID: N02000000000329 | Category: 02 | Name: 15x4x6 WH
+ID: N02000000000330 | Category: 02 | Name: 15x4x6 SH
+ID: N02000000000331 | Category: 02 | Name: 20x4x6 WH
+ID: N02000000000332 | Category: 02 | Name: 20x4x6 SH
+ID: N02000000000333 | Category: 02 | Name: 5x4x6 WH/SH
+ID: N02000000000334 | Category: 02 | Name: 15x4x8 SH
+ID: N02000000000335 | Category: 02 | Name: FJ-120222JD67 935x2455x3
+ID: N02000000000337 | Category: 02 | Name: K-6115KN 4X8
+ID: N02000000000338 | Category: 02 | Name: ｺﾝﾊﾟﾈ　12X3X6
+ID: N03000000000001 | Category: 03 | Name: 1949-122 3尺 ﾚｷﾞｭﾗｰ柄 ﾐﾃﾞｨｱﾑﾊﾟｰﾁHD
+ID: N03000000000004 | Category: 03 | Name: NK 4尺 (ﾅﾁｭﾗﾙｳｫｰｸ)
+ID: N03000000000010 | Category: 03 | Name: ﾎﾞﾝﾚｯｸｽ BS002 WG色 4尺
+ID: N03000000000011 | Category: 03 | Name: ﾎﾞﾝﾚｯｸｽ BG003 BG色 4尺
+ID: N03000000000013 | Category: 03 | Name: ﾎﾞﾝﾚｯｸｽ BG143 BL色 4尺
+ID: N03000000000015 | Category: 03 | Name: NE80120 W750 WM
+ID: N03000000000017 | Category: 03 | Name: ﾘｱｰﾙ 2038-152 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)
+ID: N03000000000020 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2038-R52 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)旧価格
+ID: N03000000000021 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2038-R52 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)
+ID: N03000000000022 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2038-R45 WH 4尺 (ﾎﾜｲﾄﾋｯｺﾘｰ)
+ID: N03000000000023 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2443-R16 LO 4尺 (ﾗｲﾄｵｰｸ)
+ID: N03000000000024 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2417-R06 BW 4尺 (ﾋﾞﾀｰｳｫｰﾙﾅｯﾄ)
+ID: N03000000000025 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2430-R36 MC 4尺 (ﾐﾃﾞｨｱﾑﾁｪﾘｰ)
+ID: N03000000000026 | Category: 03 | Name: ﾘｱﾌﾟﾗｽ 2658-R54 GO 4尺  (ｸﾞﾚｰｼﾞｭｵｰｸ)
+ID: N03000000000027 | Category: 03 | Name: 三京化成 住友BR 3尺 (ﾌﾞﾗｯｸﾛｰｽﾞ)
+ID: N03000000000030 | Category: 03 | Name: WS-5156E 住友CW 3尺 (ｸﾘｰﾑﾎﾜｲﾄ)
+ID: N03000000000032 | Category: 03 | Name: 幅3尺ｼｰﾄ 250M/1巻 MA色 (住友MA)
+ID: N03000000000034 | Category: 03 | Name: 幅3尺ｼｰﾄ 250M/1巻 PW色 (住友PW)
+ID: N03000000000036 | Category: 03 | Name: 幅3尺ｼｰﾄ 250M/1巻 NO色 (住友NO)
+ID: N03000000000039 | Category: 03 | Name: WS-906E LCW 3尺 (ﾚｻﾞｰ調ﾎﾜｲﾄ)
+ID: N03000000000045 | Category: 03 | Name: 新WG
+ID: N03000000000057 | Category: 03 | Name: 住友UW UW色 ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ 3尺
+ID: N03000000000059 | Category: 03 | Name: VE-504C 3尺　ｸﾞﾚｰ
+ID: N03000000000060 | Category: 03 | Name: VE-501C ﾍﾞﾀｼﾛ　3尺
+ID: N03000000000062 | Category: 03 | Name: ｼｰﾄ 2432-R21　SY
+ID: N03000000000063 | Category: 03 | Name: 幅3尺ｼｰﾄ　250m/1巻　NBL色(住友NBL)
+ID: N03000000000064 | Category: 03 | Name: 幅3尺ｼｰﾄ　250m/1巻　MW色(住友MW)
+ID: N03000000000065 | Category: 03 | Name: 幅3尺ｼｰﾄ　250m/1巻　VW色(住友VW)
+ID: N03000000000066 | Category: 03 | Name: 幅3尺ｼｰﾄ　250m/1巻　BA色(住友BA)
+ID: N03000000000067 | Category: 03 | Name: VE-504C ｸﾞﾚｰ 4尺幅
+ID: N03000000000068 | Category: 03 | Name: VE-501C ﾎﾜｲﾄ 4尺幅
+ID: N03000000000069 | Category: 03 | Name: 幅3尺ｼｰﾄ 350ｍ/1巻 ＴＯ
+ID: N03000000000070 | Category: 03 | Name: 幅3尺ｼｰﾄ 350ｍ/1巻 CS
+ID: N03000000000071 | Category: 03 | Name: 幅3尺ｼｰﾄ 350ｍ/1巻 LW
+ID: N04000000000002 | Category: 04 | Name: ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 28㎜巾
+ID: N04000000000003 | Category: 04 | Name: ﾀﾞｯﾌﾟﾃｰﾌﾟ 44㎜幅 0.5㎜厚
+ﾗｽﾃｨｯｸ色
+ID: N04000000000004 | Category: 04 | Name: ﾀﾞｯﾌﾟﾃｰﾌﾟ 44㎜幅 0.5㎜厚
+ｴｸﾘｭ色
+ID: N04000000000005 | Category: 04 | Name: ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 36㎜巾
+ID: N04000000000006 | Category: 04 | Name: ﾀﾞｯﾌﾟ t0.5 ｴｸﾘｭ 24㎜巾
+ID: N04000000000007 | Category: 04 | Name: ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 24㎜巾
+ID: N04000000000008 | Category: 04 | Name: 18㎜巾 ﾁｮｰｸﾄﾞｽｸﾋﾗ色(CS)
+ABS 1X18ｴｯｼﾞ ﾛｰｶﾝ
+ID: N04000000000009 | Category: 04 | Name: 18㎜巾ﾊﾞﾆﾗｳｯﾄﾞ色(VW)
+ABS 1X18ｴｯｼﾞ ﾛｰｶﾝ
+ID: N04000000000010 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+TO色 ｻｰﾓｽｵｰｸ
+ID: N04000000000011 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+NO色 ﾉﾙﾃｵｰｸ
+ID: N04000000000012 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+MA色 ﾐﾃﾞｨｱﾑｱｶｼｱ
+ID: N04000000000014 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+MW色 ﾏｰﾌﾞﾙｳｯﾄﾞ
+ID: N04000000000015 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+BA色 ﾌﾞﾗｯｸｱｶｼｱ
+ID: N04000000000016 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+CS色 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ
+ID: N04000000000017 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+VW色 ﾊﾞﾆﾗｳｯﾄﾞ
+ID: N04000000000018 | Category: 04 | Name: ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 
+NBL色 住友新色 ﾚｻﾞｰﾌﾞﾗｯｸ
+ID: N04000000000025 | Category: 04 | Name: MW40-2110-S0344E 
+21㎜X1㎜厚 BC(MC)
+ID: N04000000000026 | Category: 04 | Name: MW40-2110-S0350E 
+21㎜X1㎜厚 住友MC
+ID: N04000000000027 | Category: 04 | Name: MW40-2110-S0349E 
+21㎜X1㎜厚 SPW
+ID: N04000000000028 | Category: 04 | Name: MW40-2110-S0345E 
+21㎜X1㎜厚 BW
+ID: N04000000000029 | Category: 04 | Name: MW40-2110-S0342E 
+21㎜X1㎜厚 SH
+ID: N04000000000030 | Category: 04 | Name: MW40-2110-S0347E 
+21㎜X1㎜厚 GW
+ID: N04000000000031 | Category: 04 | Name: MW40-2110-S0343E 
+21㎜X1㎜厚 LO
+ID: N04000000000032 | Category: 04 | Name: MW40-2110-S0348E 
+21㎜X1㎜厚 BR
+ID: N04000000000033 | Category: 04 | Name: MW40-2110-S0346E 
+21㎜X1㎜厚 CW
+ID: N04000000000034 | Category: 04 | Name: SC40-2110-N0110Q 
+21㎜X1㎜厚 LCW
+ID: N04000000000035 | Category: 04 | Name: SC40-2110-N0111Q 
+21㎜X1㎜厚 LCB
+ID: N04000000000039 | Category: 04 | Name: TA-4670 24㎜巾 白
+ID: N04000000000042 | Category: 04 | Name: WA-4153 22㎜巾
+ﾀﾞｰｸﾌﾞﾗｳﾝ
+ID: N04000000000059 | Category: 04 | Name: SC40-3320-3029 
+33㎜巾 WM
+ID: N04000000000061 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 30㎜巾 
+ﾀﾞｰｸﾌﾞﾗｳﾝ
+ID: N04000000000062 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 30㎜巾 
+ｴｸﾘｭ
+ID: N04000000000063 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 30㎜巾 
+店研WH 3601-501
+ID: N04000000000064 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 43㎜巾 
+店研WH
+ID: N04000000000065 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 23㎜巾 ﾗｽﾃｨｯｸ
+MW40-2320-S0429E
+ID: N04000000000067 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 23㎜巾 
+ﾀﾞｰｸﾌﾞﾗｳﾝ
+ID: N04000000000068 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 43㎜巾 
+ﾀﾞｰｸﾌﾞﾗｳﾝ
+ID: N04000000000069 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 23㎜巾 
+店研 WH
+ID: N04000000000070 | Category: 04 | Name: ﾛｰｶﾝt2㎜ 23㎜巾 
+ｴｸﾘｭ
+ID: N04000000000071 | Category: 04 | Name: MW40-2110-S0286E
+21㎜×1.0㎜厚 WH
+ID: N04000000000072 | Category: 04 | Name: MW40-2110-S0124V
+ 21㎜×1.0㎜厚 GO
+ID: N04000000000073 | Category: 04 | Name: SC40-2310-3029
+23X1㎜厚 WM
+ID: N04000000000079 | Category: 04 | Name: TA-4670 33㎜巾 白
+ID: N04000000000081 | Category: 04 | Name: TA-4670 53㎜巾 白
+ID: N04000000000083 | Category: 04 | Name: MW40-4520-4027
+ID: N04000000000084 | Category: 04 | Name: ﾛｰｶﾝ 2㎜厚 43㎜幅  GO色(昆山GO)
+ID: N04000000000085 | Category: 04 | Name: ｴｯｼﾞﾃｰﾌﾟ0.5㎜厚 43㎜幅 GO色
+ID: N04000000000086 | Category: 04 | Name: MW40-3620-5874E 
+ﾛｰｶﾝ2㎜ 36㎜巾 NK色
+ID: N04000000000087 | Category: 04 | Name: ﾛｰｶﾝ 43㎜幅 2㎜厚 BW色
+ID: N04000000000088 | Category: 04 | Name: ﾃｰﾌﾟ 43㎜幅 0.5㎜厚 BW色
+ID: N04000000000089 | Category: 04 | Name: ﾃｰﾌﾟ TA-4612 45㎜幅
+ID: N04000000000090 | Category: 04 | Name: ﾃｰﾌﾟ WA-4275 SY 40㎜幅
+ID: N04000000000091 | Category: 04 | Name: MW40-4520-004ME 45巾
+ID: N04000000000094 | Category: 04 | Name: MW40-4520-4030
+ID: N04000000000096 | Category: 04 | Name: 小口ﾃｰﾌﾟ WS-266E 0.5㎜厚 36㎜幅 WW
+ID: N04000000000098 | Category: 04 | Name: 新柄ﾎﾜｲﾄ木目調 2㎜厚 
+43㎜幅 NWH
+ID: N04000000000099 | Category: 04 | Name: 新柄ﾎﾜｲﾄ木目調 0.5㎜厚 
+43㎜幅 NWH
+ID: N04000000000100 | Category: 04 | Name: SC40-4520-3052
+ID: N04000000000101 | Category: 04 | Name: MW40-3920-5998V
+ID: N04000000000102 | Category: 04 | Name: SC40-3920-3052
+ID: N04000000000103 | Category: 04 | Name: ﾛｰｶﾝ 2㎜厚 43㎜幅 ﾋﾟﾝｸ
+ID: N04000000000104 | Category: 04 | Name: 小口ﾃｰﾌﾟ 0.5㎜厚43㎜幅 ﾋﾟﾝｸ
+ID: N04000000000105 | Category: 04 | Name: ﾚｻﾞｰﾎﾜｲﾄ(LW)ABS
+1.0X21ｴｯｼﾞ ﾚｻﾞｰ調N
+ID: N04000000000106 | Category: 04 | Name: SC40-4520-3013 白
+ID: N04000000000107 | Category: 04 | Name: ｿﾌﾄｴｯｼﾞ NK色 TV29C
+ID: N04000000000109 | Category: 04 | Name: MW40-4520-4042
+ID: N04000000000112 | Category: 04 | Name: TA-4670 44㎜巾 白
+ID: N04000000000113 | Category: 04 | Name: WA-4147
+ID: N04000000000116 | Category: 04 | Name: ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 30㎜巾
+ID: N04000000000117 | Category: 04 | Name: ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 42㎜巾
+ID: N04000000000118 | Category: 04 | Name: ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 28㎜巾
+ID: N04000000000129 | Category: 04 | Name: MW40-3320-4047 
+33X2㎜厚 SH(試作)
+ID: N04000000000164 | Category: 04 | Name: MW40-4320-4063(積層柄)
+ID: N04000000000165 | Category: 04 | Name: MW40-2320-4063(積層柄)
+ID: N04000000000166 | Category: 04 | Name: MW40-4320-M035IV
+ID: N04000000000167 | Category: 04 | Name: ﾛｰｶﾝ SC40-3920-3013 2㎜厚39㎜幅
+ID: N04000000000168 | Category: 04 | Name: ｴｯｼﾞﾃｰﾌﾟ RUS 0.5X22巾
+ID: N04000000000169 | Category: 04 | Name: WS-862E SH 2.0X33巾
+ID: N04000000000170 | Category: 04 | Name: MW40-2320-4027 NK
+ID: N04000000000171 | Category: 04 | Name: MW40-2320-4051 MW
+ID: N04000000000172 | Category: 04 | Name: ﾃｰﾌﾟ28mm幅0.45厚　EC(秋田工場より)
+ID: N04000000000176 | Category: 04 | Name: WA-005ME　0.5mm×24mm
+ID: N04000000000177 | Category: 04 | Name: 木口ﾃｰﾌﾟ　WA-009ME 0.5x24㎜
+ID: N04000000000178 | Category: 04 | Name: ｿﾌﾄｴｯｼﾞMW色
+ID: N04000000000179 | Category: 04 | Name: ﾃ-ﾌﾟ　巾17　WH色
+ID: N04000000000180 | Category: 04 | Name: ﾃｰﾌﾟ　巾20　WH
+ID: N04000000000181 | Category: 04 | Name: ﾃｰﾌﾟ　巾22　WH色
+ID: N04000000000182 | Category: 04 | Name: ﾃｰﾌﾟ　巾17　SH色
+ID: N04000000000183 | Category: 04 | Name: ﾃｰﾌﾟ　巾22　SH色
+ID: N05000000000002 | Category: 05 | Name: (+) 木ﾈｼﾞ皿ﾋﾞｽ M2.7X16
+ID: N05000000000009 | Category: 05 | Name: 3.8 x 25 ﾋﾞｽ ｼﾙﾊﾞｰ ｳｹｶﾅｸﾞ用ｻﾗﾀｯﾋﾟﾝｸﾞCG
+ID: N05000000000010 | Category: 05 | Name: 3.8X51 ｺｰｽﾚｯﾄﾞ
+ID: N05000000000011 | Category: 05 | Name: 33用ｱｼﾞｬｽﾀｰ 黒
+ID: N05000000000012 | Category: 05 | Name: 33用ｱｼﾞｬｽﾀｰ 白
+ID: N05000000000013 | Category: 05 | Name: 504-JP-SP-3C/12 
+Ф50 双輪ｷｬｽﾀｰ SP付
+ID: N05000000000016 | Category: 05 | Name: A-614R-22 面付錠 + L金具ﾋﾞｽ2本ｾｯﾄ
+ID: N05000000000017 | Category: 05 | Name: A-614R-22 面付錠 CL33-B 別番200通り
+ID: N05000000000018 | Category: 05 | Name: AD501･502用ｶﾊﾞｰｷｬｯﾌﾟ 黒 200-024-441
+ID: N05000000000019 | Category: 05 | Name: AD501･502用ｶﾊﾞｰｷｬｯﾌﾟ 白 200-024-440
+ID: N05000000000020 | Category: 05 | Name: AD-502-P ｱｼﾞｬｽﾀｰ 白 200-140-088
+ID: N05000000000021 | Category: 05 | Name: AD-502-P-BZC ｱｼﾞｬｽﾀｰ 黒 200-140-089
+ID: N05000000000022 | Category: 05 | Name: AKM001 ﾄｲﾚ用明かり取り窓
+ID: N05000000000023 | Category: 05 | Name: ATOM 60PMF-PU-CC-3C 
+ｽﾄｯﾌﾟ無 Φ60
+ID: N05000000000024 | Category: 05 | Name: ATOM 60PMF-PU-SP-CC-3C 
+ｽﾄｯﾌﾟ有 Φ60
+ID: N05000000000038 | Category: 05 | Name: FJL用 ｱｼﾞｬｽﾀｰｾｯﾄ
+ID: N05000000000039 | Category: 05 | Name: FJL用 ﾈｸﾀｲ掛け
+ID: N05000000000040 | Category: 05 | Name: FJL用 ﾊﾝｶﾞｰﾊﾟｲﾌﾟ
+ID: N05000000000041 | Category: 05 | Name: FJL用 ﾊﾝｶﾞｰﾊﾟｲﾌﾟｿｹｯﾄ(2個ｾｯﾄ)
+ID: N05000000000042 | Category: 05 | Name: FJL用 把手（229835 ﾌｧｲﾝﾊﾝﾄﾞﾙ-N 120)(いつもの)
+ID: N05000000000049 | Category: 05 | Name: G-60PPU/12 Ф60双輪三角ﾌﾟﾚｰﾄ SP無
+ID: N05000000000052 | Category: 05 | Name: GRIDﾋﾝｼﾞ MWA6HN7C99
+ID: N05000000000053 | Category: 05 | Name: GS-60PPU/12 Ф60双輪三角ﾌﾟﾚｰﾄ SP有
+ID: N05000000000054 | Category: 05 | Name: HAFELE ｶﾊﾞｰｷｬｯﾌﾟU型 黒
+ID: N05000000000055 | Category: 05 | Name: HAFELE ｶﾊﾞｰｷｬｯﾌﾟU型 白
+ID: N05000000000059 | Category: 05 | Name: HRP001 上部ﾛｰﾗｰｶｯﾌﾟ ﾋﾞｽｾｯﾄ
+ID: N05000000000068 | Category: 05 | Name: L金具+ﾋﾞｽ 2本ｾｯﾄ
+ID: N05000000000078 | Category: 05 | Name: TK用 ｱｼﾞｬｽﾀｰ本体 B K(UF2DT兼用) 1273-2
+ID: N05000000000079 | Category: 05 | Name: TK用 ｱｼﾞｬｽﾀｰ本体 WH (UF2DT兼用) 1273-1
+ID: N05000000000084 | Category: 05 | Name: Y-52 14mm ｽﾊﾟﾅ
+ID: N05000000000085 | Category: 05 | Name: Zﾜｯｼｬｰ Zｷｬｯﾌﾟ Z83 ｱｲﾎﾞﾘｰ
+ID: N05000000000087 | Category: 05 | Name: ｱｸﾘﾙﾐﾗｰ 2㎜厚 248X148ｻｲｽﾞ
+ID: N05000000000090 | Category: 05 | Name: ｱｼﾞｬｽﾀｰ調整ｽﾊﾟﾅ 13H
+ID: N05000000000091 | Category: 05 | Name: ｱｼﾞｬｽﾀｰ用 ﾌﾟﾚｰﾄ (UF2DT兼用) 1274
+ID: N05000000000104 | Category: 05 | Name: 可動ｶｳﾝﾀｰ ｷｬｽﾀｰｾｯﾄ
+ID: N05000000000106 | Category: 05 | Name: 金ﾀﾞﾎﾞ 5 x 7 x 15
+ID: N05000000000107 | Category: 05 | Name: ｶﾊﾞｰｷｬｯﾌﾟU型ｾｯﾄ 黒
+ID: N05000000000108 | Category: 05 | Name: ｶﾊﾞｰｷｬｯﾌﾟU型ｾｯﾄ 白
+ID: N05000000000111 | Category: 05 | Name: ｶﾑﾛｯｸｶﾊﾞｰｷｬｯﾌﾟｾｯﾄ 黒
+ID: N05000000000112 | Category: 05 | Name: ｶﾑﾛｯｸｶﾊﾞｰｷｬｯﾌﾟｾｯﾄ 白
+ID: N05000000000115 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄﾌﾗｯﾌﾟ扉ﾋﾝｼﾞﾍﾞｰｽ取付治具
+ID: N05000000000116 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 A仕様 SH
+ID: N05000000000117 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 A仕様 WH
+ID: N05000000000118 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 B仕様 SH
+ID: N05000000000119 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 B仕様 WH
+ID: N05000000000120 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 C仕様 SH
+ID: N05000000000121 | Category: 05 | Name: ｷｬﾋﾞﾈｯﾄ部品箱 C仕様 WH
+ID: N05000000000123 | Category: 05 | Name: ｹｰｽ錠ｾｯﾄ ILS
+ID: N05000000000125 | Category: 05 | Name: ｺｰﾅｰﾌﾟﾚｰﾄ ｾｯﾄ
+ID: N05000000000126 | Category: 05 | Name: ｺｰﾅｰﾌﾟﾚｰﾄ 単体
+ID: N05000000000127 | Category: 05 | Name: ｺｰﾅｰﾌﾟﾚｰﾄ治具(下穴ﾃﾝﾌﾟﾚｰﾄ)
+ID: N05000000000128 | Category: 05 | Name: 極低頭木ねじ NI 2.7X16
+ID: N05000000000129 | Category: 05 | Name: ｺﾈｸﾃｨﾝｸﾞﾎﾞﾙﾄ
+ID: N05000000000138 | Category: 05 | Name: ｼｪﾙﾌﾌﾗｯﾌﾟ扉ﾋﾝｼﾞﾍﾞｰｽ取付治具
+ID: N05000000000140 | Category: 05 | Name: ｼﾞｮｲﾝﾄﾋﾟﾝ 9039822
+ID: N05000000000141 | Category: 05 | Name: ｼﾘﾝﾀﾞｰ錠 507型
+ID: N05000000000142 | Category: 05 | Name: ｼﾘﾝﾀﾞｰ錠 YM103-22
+ID: N05000000000143 | Category: 05 | Name: ｽｰﾊﾟｰﾀﾞﾎﾞSPL 12ФX70
+ID: N05000000000144 | Category: 05 | Name: ｽﾃｯﾌﾟﾃｰﾌﾞﾙ用金具(BK/WH)
+ID: N05000000000146 | Category: 05 | Name: ｽﾃﾝﾚｽ 小ねじ ﾄﾗｽ 4x15
+ID: N05000000000150 | Category: 05 | Name: ｽﾗｲﾄﾞﾚｰﾙ 711-20WT500
+ID: N05000000000153 | Category: 05 | Name: ｽﾘﾑ可動棚受け 120-022-835
+ID: N05000000000154 | Category: 05 | Name: ｽﾚﾝﾀﾞｰ2000 ｽﾘﾑ粗目造作ﾋﾞｽ 3.3X25
+ID: N05000000000155 | Category: 05 | Name: ｽﾚﾝﾀﾞｰ2000 ｽﾘﾑ粗目造作ﾋﾞｽ 3.3X40
+ID: N05000000000156 | Category: 05 | Name: ｽﾚﾝﾀﾞｰｽﾚｯﾄﾞﾋﾞｽ 3.7X55
+ID: N05000000000157 | Category: 05 | Name: ｾｯﾄｷｬｯﾌﾟｶﾊﾞｰ GO
+ID: N05000000000158 | Category: 05 | Name: ｾｯﾄｷｬｯﾌﾟﾜｯｼｬｰ ﾍﾞｰｼﾞｭ
+ID: N05000000000159 | Category: 05 | Name: ﾀｲﾀｽ ｼｽﾃﾑ5 TLｼｬﾌﾄ MT05441YA
+ID: N05000000000160 | Category: 05 | Name: ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾊﾞｰｷｬｯﾌﾟ 黒 MT01026LA
+ID: N05000000000161 | Category: 05 | Name: ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾊﾞｰｷｬｯﾌﾟ白 MT01026WA
+ID: N05000000000162 | Category: 05 | Name: ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾑ15 MT05644ZN
+ID: N05000000000163 | Category: 05 | Name: ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾑ22 MT05657ZN
+ID: N05000000000165 | Category: 05 | Name: ﾀﾞｲﾔﾙﾛｯｸ=AL224E(V)
+ID: N05000000000166 | Category: 05 | Name: ﾀｵﾙ掛け
+ID: N05000000000167 | Category: 05 | Name: ﾀｷｹﾞﾝ ｶﾑ 黒-ﾋﾞｽ頭 黒
+ID: N05000000000169 | Category: 05 | Name: ﾀｷｹﾞﾝ ｶﾑ 白
+ID: N05000000000173 | Category: 05 | Name: ﾀｷｹﾞﾝ ｼｬﾌﾄKD-3
+ID: N05000000000175 | Category: 05 | Name: ﾀｯﾋﾟﾝｸﾞﾅﾍﾞﾋﾞｽ M4X20
+ID: N05000000000176 | Category: 05 | Name: ﾀﾞﾎﾞRM6 25㎜ (木ﾀﾞﾎﾞ)
+ID: N05000000000177 | Category: 05 | Name: ﾀﾞﾎﾞRM8 25㎜ (木ﾀﾞﾎﾞ)
+ID: N05000000000178 | Category: 05 | Name: ﾀﾞﾎﾞRS8 30㎜ (木ﾀﾞﾎﾞ)
+ID: N05000000000181 | Category: 05 | Name: ﾄﾗｽ A ﾀｯﾋﾟﾝｸﾞ 6X30 ﾕﾆｸﾛ
+ID: N05000000000182 | Category: 05 | Name: ﾄﾗｽｺ ﾕﾆｸﾛ 4X25
+ID: N05000000000184 | Category: 05 | Name: +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30
+ID: N05000000000187 | Category: 05 | Name: ﾄﾗｽﾋﾞｽ M4X25
+ID: N05000000000188 | Category: 05 | Name: ﾄﾗｽﾋﾞｽ M4X16
+ID: N05000000000189 | Category: 05 | Name: ﾄﾗｽﾋﾞｽ M4X20
+ID: N05000000000190 | Category: 05 | Name: ﾄﾞﾛﾜｰﾌﾛﾝﾄｱｼﾞｬｽﾀｰM4
+前板調整ｶﾑ
+ID: N05000000000191 | Category: 05 | Name: ﾅﾍﾞ A ﾀｯﾋﾟﾝｸﾞ 4X25
+ID: N05000000000194 | Category: 05 | Name: ﾅﾍﾞﾀｯﾋﾟﾝｸﾞﾋﾞｽ M4X50
+ID: N05000000000196 | Category: 05 | Name: ﾅﾍﾞﾀｯﾋﾟﾝｸﾞ ﾕﾆｸﾛ M3X12
+ID: N05000000000198 | Category: 05 | Name: ﾅﾍﾞﾋﾞｽ M5X30
+ID: N05000000000199 | Category: 05 | Name: ﾅﾍﾞﾋﾞｽ M6X30
+ID: N05000000000201 | Category: 05 | Name: ﾆｯｹﾙ (+) A ｻﾗ 3.5X12
+ID: N05000000000202 | Category: 05 | Name: ﾊﾟｰｿﾅﾙﾛｯｶｰ用ﾋﾝｼﾞ座金ｾｯﾄ
+ID: N05000000000203 | Category: 05 | Name: ﾊｰﾌｪﾚ ｼﾘﾝﾀﾞｰ錠ｾｯﾄ
+ID: N05000000000204 | Category: 05 | Name: ﾊｰﾌｪﾚ ﾋﾝｼﾞ
+ID: N05000000000205 | Category: 05 | Name: ﾊｰﾌｪﾚ ﾏｽﾀｰｷｰ
+ID: N05000000000206 | Category: 05 | Name: ﾊｰﾌｪﾚ 座金
+ID: N05000000000208 | Category: 05 | Name: ﾊﾟｲﾌﾟﾊﾝｶﾞｰ受け
+ID: N05000000000209 | Category: 05 | Name: ﾊﾞﾝﾎﾟﾝ
+ID: N05000000000213 | Category: 05 | Name: ﾋﾞｽ M3X35
+ID: N05000000000215 | Category: 05 | Name: ﾋﾝｼﾞ 248-0G49-051-TL
+ID: N05000000000222 | Category: 05 | Name: ﾌﾟｯｼｭｵｰﾌﾟﾝ引出ﾚｰﾙ水平取付治具
+ID: N05000000000224 | Category: 05 | Name: ﾌﾗｯﾌﾟｱｯﾌﾟｽﾃｰ取付治具
+ID: N05000000000225 | Category: 05 | Name: ﾌﾗｯﾌﾟｽﾃｰ取付治具
+ID: N05000000000226 | Category: 05 | Name: ﾌﾗｯﾌﾟﾀﾞｳﾝｽﾃｰ取付治具
+ID: N05000000000230 | Category: 05 | Name: ﾎﾞｯｸｽｷｬｯﾁ ｸﾛﾒｰﾄ
+ID: N05000000000231 | Category: 05 | Name: ﾏｸﾞﾈﾗｯﾁ ML30S型
+ID: N05000000000233 | Category: 05 | Name: ﾐｽﾄﾎﾜｲﾄ丸型DSC-100CWﾃﾞｻﾞｲﾝ明窓
+ID: N05000000000237 | Category: 05 | Name: ﾓﾍｱ ｼｰﾙ ｸﾞﾚｰ
+ID: N05000000000238 | Category: 05 | Name: ﾕﾆｸﾛ (+) Aｻﾗ 3.5 x 14
+ID: N05000000000239 | Category: 05 | Name: ﾕﾆｸﾛ (+) Aﾄﾗｽ 4 x 35
+ID: N05000000000240 | Category: 05 | Name: ﾕﾆｸﾛ 4X12
+ID: N05000000000246 | Category: 05 | Name: ﾕﾆｸﾛ木ねじ 皿 2.7X16
+ID: N05000000000251 | Category: 05 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾋﾞｽ
+(+)超極低頭Aﾀｯﾋﾟﾝｸﾞ 3X16
+ID: N05000000000253 | Category: 05 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=1168
+ID: N05000000000255 | Category: 05 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=568
+ID: N05000000000256 | Category: 05 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=768
+ID: N05000000000266 | Category: 05 | Name: 引出前板用取付ﾋﾞｽｾｯﾄ 黒 229272
+ID: N05000000000267 | Category: 05 | Name: 引出前板用取付ﾋﾞｽｾｯﾄ 白 229271
+ID: N05000000000270 | Category: 05 | Name: 化粧天板同梱ﾋﾞｽ M3.5X30 (4本入)黒 227664
+ID: N05000000000271 | Category: 05 | Name: 化粧天板同梱ﾋﾞｽ M3.5X30 (4本入)白 227663
+ID: N05000000000274 | Category: 05 | Name: 簡易三角ﾄﾞﾗｲﾊﾞｰ 昆山
+ID: N05000000000275 | Category: 05 | Name: 簡易三角ﾄﾞﾗｲﾊﾞｰ 大昌産業
+ID: N05000000000277 | Category: 05 | Name: 鬼目ﾅｯﾄ A M6X13
+ID: N05000000000278 | Category: 05 | Name: 鬼目ﾅｯﾄ D M6X13
+ID: N05000000000279 | Category: 05 | Name: 鬼目ﾅｯﾄ D M6X20
+ID: N05000000000280 | Category: 05 | Name: 鬼目ﾅｯﾄ D M8X25 0048250X
+ID: N05000000000281 | Category: 05 | Name: 鬼目ﾅｯﾄB M8XL13.5
+ID: N05000000000282 | Category: 05 | Name: 居室収納用 幕板固定L金具
+ID: N05000000000286 | Category: 05 | Name: 躯体ﾋﾞｽ M3.8X51 (4本入)黒 219420
+ID: N05000000000287 | Category: 05 | Name: 躯体ﾋﾞｽ M3.8X51 (4本入)白 219421
+ID: N05000000000288 | Category: 05 | Name: 鍵受けL金具
+ID: N05000000000289 | Category: 05 | Name: 差込ﾀﾞﾎﾞL型 TM ｾｯﾄ 黒 623660
+ID: N05000000000290 | Category: 05 | Name: 差込ﾀﾞﾎﾞL型 TM ｾｯﾄ 白 623670
+ID: N05000000000291 | Category: 05 | Name: 差込ﾀﾞﾎﾞｾｯﾄ (4入) 黒
+ID: N05000000000292 | Category: 05 | Name: 差込ﾀﾞﾎﾞｾｯﾄ (4入) 白
+ID: N05000000000293 | Category: 05 | Name: 差込ﾀﾞﾎﾞ丸型 M 白 623420
+ID: N05000000000294 | Category: 05 | Name: 差込ﾀﾞﾎﾞ丸型 黒 623420
+ID: N05000000000296 | Category: 05 | Name: 差込棚ﾀﾞﾎﾞ L型 L
+ID: N05000000000297 | Category: 05 | Name: 差込棚ﾀﾞﾎﾞ L型 R
+ID: N05000000000300 | Category: 05 | Name: 座金 BATPOH34
+ID: N05000000000307 | Category: 05 | Name: 0994582 ｻﾗﾀｯﾋﾟﾝｸﾞ4x25(+)ｸﾛﾒｰﾄ
+ID: N05000000000309 | Category: 05 | Name: 皿ﾀｯﾋﾟﾝｸﾞﾈｼﾞ 4 x 20
+ID: N05000000000318 | Category: 05 | Name: 施工棚板用 L金具ｾｯﾄ
+ID: N05000000000320 | Category: 05 | Name: 台輪L金具ｾｯﾄ　（特厚金折3Ｘ45Ｘ45　ねじセット）
+ID: N05000000000321 | Category: 05 | Name: 台輪同梱用ﾀﾞﾎﾞ 12入り
+ID: N05000000000322 | Category: 05 | Name: 大昌産業Φ60双輪ｷｬｽﾀｰｽﾄｯﾊﾟｰあり
+ID: N05000000000323 | Category: 05 | Name: 大昌産業Φ60双輪ｷｬｽﾀｰｽﾄｯﾊﾟｰなし
+ID: N05000000000327 | Category: 05 | Name: 棚板用ｶﾑﾛｯｸ 白 9064890
+ID: N05000000000337 | Category: 05 | Name: 鍋ﾀｯﾋﾟﾝｸﾞﾋﾞｽ M4X16
+ID: N05000000000338 | Category: 05 | Name: 背板ｼﾞｮｲﾅｰ ﾀﾞｰｸ L=2250
+ID: N05000000000339 | Category: 05 | Name: 背板ｼﾞｮｲﾅｰ ﾎﾜｲﾄ L=2250
+ID: N05000000000341 | Category: 05 | Name: 配線孔ｷｬｯﾌﾟ 丸型 φ45
+ID: N05000000000347 | Category: 05 | Name: 桧家用明窓
+ID: N05000000000348 | Category: 05 | Name: 木ﾀﾞﾎﾞ 2個ﾊﾞﾝﾎﾟﾝ2個ｾｯﾄ
+ID: N05000000000352 | Category: 05 | Name: 木鍋ﾋﾞｽ M3X12
+ID: N05000000000354 | Category: 05 | Name: 両開扉ﾌﾟｯｼｭｵｰﾌﾟﾝ取付下穴治具
+ID: N05000000000355 | Category: 05 | Name: 両開扉ﾌﾟｯｼｭﾗｯﾁ取付下穴治具
+ID: N05000000000356 | Category: 05 | Name: 連結ﾋﾞｽ M4X25 (8本入) 黒
+ID: N05000000000357 | Category: 05 | Name: 連結ﾋﾞｽ M4X25 (8本入) 白
+ID: N05000000000358 | Category: 05 | Name: 連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X30
+ID: N05000000000359 | Category: 05 | Name: 連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X35
+ID: N05000000000360 | Category: 05 | Name: 連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X45
+ID: N05000000000361 | Category: 05 | Name: 連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X50
+ID: N05000000000362 | Category: 05 | Name: 連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X55
+ID: N05000000000363 | Category: 05 | Name: 連結金具 ｷｬｯﾌﾟ ﾍﾞｰｼﾞｭ
+ID: N05000000000364 | Category: 05 | Name: 連結金具 ｷｬｯﾌﾟ 黒
+ID: N05000000000365 | Category: 05 | Name: 連結金具 ｷｬｯﾌﾟ 茶
+ID: N05000000000366 | Category: 05 | Name: 連結金具 ｷｬｯﾌﾟ 白
+ID: N05000000000367 | Category: 05 | Name: 連結金具ｷｬｯﾌﾟ ﾒｰﾌﾟﾙ
+ID: N05000000000369 | Category: 05 | Name: 連結金具ﾅｯﾄ A M6X14
+ID: N05000000000370 | Category: 05 | Name: 連結金具ﾅｯﾄ D M6X19
+ID: N05000000000371 | Category: 05 | Name: 連結金具ﾜｯｼｬｰ
+ID: N05000000000375 | Category: 05 | Name: ﾕﾆｸﾛ 3.5X25 艶消し黒
+ID: N05000000000379 | Category: 05 | Name: 木工ﾀﾞﾎﾞ 10X50
+ID: N05000000000381 | Category: 05 | Name: ﾓﾀﾞﾝﾌﾟﾚｰﾄ WCF8203BK 黒
+ID: N05000000000382 | Category: 05 | Name: ｷｬｽﾀｰ自在車ｺﾞﾑﾌﾟﾚｰﾄ式 Φ50
+ID: N05000000000383 | Category: 05 | Name: ﾊﾟﾅｿﾆｯｸ DH0211 ﾀﾞｸﾄ本体 1M　白
+ID: N05000000000384 | Category: 05 | Name: ﾊﾟﾅｿﾆｯｸ DH0231K ﾌｨｰﾄﾞｲﾝｷｬｯﾌﾟ配線ﾀﾞｸﾄ用
+ID: N05000000000385 | Category: 05 | Name: ﾊﾟﾅｿﾆｯｸ DH0232 ｴﾝﾄﾞｷｬｯﾌﾟ配線ﾀﾞｸﾄ用
+ID: N05000000000387 | Category: 05 | Name: ﾀﾞｲｺｰ  DPN-4128 Y　LEDﾍﾟﾝﾀﾞﾝﾄ
+ID: N05000000000393 | Category: 05 | Name: M4X25 (ﾎﾞﾙﾄ&ﾅｯﾄｾｯﾄ) 551-413
+ID: N05000000000394 | Category: 05 | Name: ACﾓｰﾀｰﾌｧﾝ MU825S-13
+ID: N05000000000397 | Category: 05 | Name: NC-1506 ﾊﾞﾈ白
+ID: N05000000000398 | Category: 05 | Name: M4袋ﾅｯﾄ 93-317
+ID: N05000000000399 | Category: 05 | Name: ﾅﾍﾞ小ねじ M4X45(ﾅﾍﾞ頭ﾎﾞﾙﾄ)
+ID: N05000000000400 | Category: 05 | Name: L金具固定用 M3X15 (ﾎﾞﾙﾄ&ﾅｯﾄｾｯﾄ) 551-601
+ID: N05000000000403 | Category: 05 | Name: 差込棚ﾀﾞﾎﾞ L型 L　黒
+ID: N05000000000404 | Category: 05 | Name: 差込棚ﾀﾞﾎﾞ L型 R　黒
+ID: N05000000000405 | Category: 05 | Name: PSEシール　mamapod
+ID: N05000000000406 | Category: 05 | Name: ｸﾜﾄﾞﾛﾌﾟｯｼｭｵｰﾌﾟﾝ 350㎜ L 9271058
+ID: N05000000000407 | Category: 05 | Name: ｸﾜﾄﾞﾛﾌﾟｯｼｭｵｰﾌﾟﾝ 350㎜ R 9271059
+ID: N05000000000408 | Category: 05 | Name: 平角 ﾋﾞﾆｰﾙ 3×10ﾃｰﾌﾟ付ﾎﾜｲﾄ 2m 36051
+ID: N05000000000409 | Category: 05 | Name: ｽﾚﾝﾀﾞｰ2000　M3.8×75mm
+ID: N05000000000410 | Category: 05 | Name: ｽﾘﾑｽﾚｯﾄﾞM3.8×65mm
+ID: N05000000000411 | Category: 05 | Name: BEST No.610N-H40
+ID: N05000000000412 | Category: 05 | Name: LGBC81651LE1　LEDﾌﾞﾗｹｯﾄ60形電球色
+ID: N05000000000413 | Category: 05 | Name: ST1-109S030　PSE対応ACﾌｧﾝ
+ID: N05000000000414 | Category: 05 | Name: 109-049E　ﾌｨﾝｶﾞｰｶﾞｰﾄﾞﾌｨﾙﾀｰｾｯﾄ　80mm用
+ID: N05000000000415 | Category: 05 | Name: 戸当ゴムD-187-25　黒
+ID: N05000000000419 | Category: 05 | Name: ﾅﾍﾞﾀｯﾋﾟﾝｸﾞ　4X25　10本ｾｯﾄ
+ID: N05000000000420 | Category: 05 | Name: 双輪キャスター プレート式　MSP-4040 ストッパー無 96-391
+ID: N05000000000421 | Category: 05 | Name: 双輪キャスター プレート式　MSP-40S40 ストッパー有 96-392
+ID: N05000000000422 | Category: 05 | Name: スガツネ 締結金具 固定ねじ  IT2182-1180 鋼 ニッケルめっき
+ID: N05000000000423 | Category: 05 | Name: ｽﾃﾝ　(+)ﾄﾗｽ小ねじ　4X20
+ID: N05000000000424 | Category: 05 | Name: 303721 BSﾗｲﾝ引手ｽﾃﾝ艶消しL=2006mm
+ID: N05000000000425 | Category: 05 | Name: 303720 BSﾗｲﾝ引手ﾌﾞﾗｯｸ艶消しL=2006mm
+ID: N05000000000426 | Category: 05 | Name: 神保電器 JEC-BN-55V-PW
+ID: N05000000000427 | Category: 05 | Name: スライド折れ戸金具・カップ
+ID: N05000000000428 | Category: 05 | Name: K-77-B-8S　黒　PA M8X15(PAOﾃﾞｽｸ用ｷｬｽﾀｰ)
+ID: N05000000000430 | Category: 05 | Name: G2L4001AKL　ﾗｲﾃｨｸﾞﾊﾟﾈﾙ400用金物
+ID: N05000000000431 | Category: 05 | Name: G2L8001AKL ﾗｲﾃｨｸﾞﾊﾟﾈﾙ800用金物
+ID: N05000000000434 | Category: 05 | Name: 鑑押えとビス（2296*960*3.0）
+ID: N05000000000435 | Category: 05 | Name: G2L6001AKL　ﾗｲﾃｨｸﾞﾊﾟﾈﾙ600用金物
+ID: N05000000000436 | Category: 05 | Name: G4LC001AKL ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ1200用金物
+ID: N05000000000437 | Category: 05 | Name: ｱﾙﾐZ型B2　1*10.5*11.5*11.5　4070MM
+ID: N05000000000438 | Category: 05 | Name: ｱﾙﾐｼﾞｮｲﾅｰｺ-10　ｺ型　B2　1820mm
+ID: N05000000000439 | Category: 05 | Name: ｱﾙﾐｼﾞｮｲﾅｰｺ-10　ｺ型　B2　2730mm
+ID: N05000000000440 | Category: 05 | Name: G61-5008AS　ｱﾙﾐ
+ID: N05000000000442 | Category: 05 | Name: ｴｱﾀｲﾄ　E-800-2N-800
+ID: N05000000000443 | Category: 05 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物：ｱﾙﾐｼﾞｮｲﾅｰL=755
+ID: N05000000000444 | Category: 05 | Name: 背板ｽﾍﾟｰｻｰ
+ID: N05000000000445 | Category: 05 | Name: 木ﾀﾞﾎﾞ　12x50
+ID: N05000000000446 | Category: 05 | Name: ﾋﾝｼﾞ U200-C17MF1 HO(RGP4545用)
+ID: N06000000000001 | Category: 06 | Name: 1570 左右方立2枚 W240
+ID: N06000000000002 | Category: 06 | Name: 1560 左右方立2枚入 D380用付属
+ID: N06000000000003 | Category: 06 | Name: 1740 ｼｪﾙﾌ左右方立2枚入2400 380用中板
+ID: N06000000000004 | Category: 06 | Name: 1680 ｼｪﾙﾌ中方立1枚入2400 380用
+ID: N06000000000005 | Category: 06 | Name: 1730 ｼｪﾙﾌ左右方立2枚入れ 2400 380用
+ID: N06000000000006 | Category: 06 | Name: 1690 GRID 2枚入 2400用240用中板
+ID: N06000000000010 | Category: 06 | Name: 1700 GRID 2枚入 2400用 240用
+ID: N06000000000012 | Category: 06 | Name: 1770 GRID 1枚入 2400用 240用
+ID: N06000000000016 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ本体 H450 532X389X84
+ID: N06000000000018 | Category: 06 | Name: 2410 ｷｬﾋﾞﾈｯﾄ本体ｼﾞｮｲﾅｰ付H770
+ID: N06000000000019 | Category: 06 | Name: 2420 ｷｬﾋﾞﾈｯﾄ本体(ｼﾞｮｲﾅｰ付)H900
+ID: N06000000000020 | Category: 06 | Name: 2425 ｷｬﾋﾞﾈｯﾄ本体(ｼﾞｮｲﾅｰ付)付属
+ID: N06000000000024 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ可動棚板 
+353X60X768
+ID: N06000000000026 | Category: 06 | Name: 引出ﾕﾆｯﾄ 350X70X360
+ID: N06000000000027 | Category: 06 | Name: 引出ﾕﾆｯﾄ 350X70X560
+ID: N06000000000028 | Category: 06 | Name: 引出ﾕﾆｯﾄ 350X70X760
+ID: N06000000000030 | Category: 06 | Name: 2220 引き出しﾕﾆｯﾄ 350×140×560
+ID: N06000000000031 | Category: 06 | Name: 2230 引き出しﾕﾆｯﾄ 350×140×760
+ID: N06000000000032 | Category: 06 | Name: 引出ﾕﾆｯﾄ H70付属 (四角)
+ID: N06000000000034 | Category: 06 | Name: 2235 引き出しﾕﾆｯﾄ H140付属
+ID: N06000000000036 | Category: 06 | Name: 2020 台輪 60*75*767
+ID: N06000000000037 | Category: 06 | Name: 2010 台輪 60*75*375
+ID: N06000000000038 | Category: 06 | Name: 2030 化粧天板 405*18*402
+ID: N06000000000039 | Category: 06 | Name: 2040 化粧天板 405*18*802
+ID: N06000000000040 | Category: 06 | Name: 2050 化粧天板 405*18*1202
+ID: N06000000000043 | Category: 06 | Name: 2080 化粧天板 405*18*2402
+ID: N06000000000044 | Category: 06 | Name: ﾌﾗｯﾌﾟ扉 296X1196
+ID: N06000000000049 | Category: 06 | Name: 1510 ﾌﾗｯﾌﾟｶﾞﾗｽ扉F8030A用 800*300
+ID: N06000000000050 | Category: 06 | Name: 1490 ﾌﾗｯﾌﾟｶﾞﾗｽ扉F8045A
+ID: N06000000000051 | Category: 06 | Name: 施工棚板 3枚入 236X370
+ID: N06000000000052 | Category: 06 | Name: 1850 施工棚板3枚ｾｯﾄW376D570
+ID: N06000000000053 | Category: 06 | Name: 施工棚板 3枚入 236X570
+ID: N06000000000054 | Category: 06 | Name: 施工棚板 3枚入 236X1170
+ID: N06000000000055 | Category: 06 | Name: 施工棚板 3枚ｾｯﾄ 付属 W240
+ID: N06000000000056 | Category: 06 | Name: 施工棚板 3枚入 376X1170
+ID: N06000000000057 | Category: 06 | Name: 1830 施工棚板3枚ｾｯﾄW376D370
+ID: N06000000000058 | Category: 06 | Name: 施工棚板 3枚ｾｯﾄ 付属 W380
+ID: N06000000000059 | Category: 06 | Name: 1840 施工棚板3枚ｾｯﾄW376D770
+ID: N06000000000060 | Category: 06 | Name: 1810 施工棚板3枚ｾｯﾄW236D770
+ID: N06000000000061 | Category: 06 | Name: 1890 引き出し前板 146*396
+ID: N06000000000062 | Category: 06 | Name: 引き出し前板 (146X596)
+ID: N06000000000063 | Category: 06 | Name: 1910 引き出し前板 146*796
+ID: N06000000000064 | Category: 06 | Name: 引き出し前板 (296X396)
+ID: N06000000000066 | Category: 06 | Name: 1950 引き出し前板 296*796
+ID: N06000000000067 | Category: 06 | Name: 1960 開き扉(396*446)
+ID: N06000000000068 | Category: 06 | Name: 1970 開き扉(396*596)
+ID: N06000000000069 | Category: 06 | Name: 1980 開き扉(396*896)
+ID: N06000000000070 | Category: 06 | Name: 開き扉 (596X446)
+ID: N06000000000071 | Category: 06 | Name: 開き扉 (596X596)
+ID: N06000000000072 | Category: 06 | Name: 1920 開き扉(596×896)
+ID: N06000000000074 | Category: 06 | Name: ｶﾞﾗｽ扉 付属 W450
+ID: N06000000000075 | Category: 06 | Name: ｶﾞﾗｽ扉 付属 W300
+ID: N06000000000076 | Category: 06 | Name: 1460 ｶﾞﾗｽ扉T4045A用(400*450)
+ID: N06000000000077 | Category: 06 | Name: 1470 ｶﾞﾗｽ扉T4060A用400*600
+ID: N06000000000079 | Category: 06 | Name: ｶﾞﾗｽ扉 1205X300
+ID: N06000000000080 | Category: 06 | Name: 1610 追加棚板･可動棚板 W236D770
+ID: N06000000000081 | Category: 06 | Name: 1640 追加棚板･可動棚板 W376 D570
+ID: N06000000000082 | Category: 06 | Name: 1620 追加棚板･可動棚板 W236D1170
+ID: N06000000000083 | Category: 06 | Name: 1650　追加棚板・可動棚板W376D1170
+ID: N06000000000085 | Category: 06 | Name: 追加棚板 可動棚板 
+1枚付属 W380
+ID: N06000000000086 | Category: 06 | Name: 追加棚板 可動棚板 
+1枚付属 W240
+ID: N06000000000087 | Category: 06 | Name: 追加棚板 可動棚板 
+1枚 236X370
+ID: N06000000000088 | Category: 06 | Name: 2440 追加棚板･可動棚板 W376D770
+ID: N06000000000089 | Category: 06 | Name: 1600 追加棚板･可動棚板 W236 D570
+ID: N06000000000091 | Category: 06 | Name: ｽﾘﾑ可動棚板5枚 
+368X50X568
+ID: N06000000000092 | Category: 06 | Name: 固定棚板 365X20X370
+ID: N06000000000093 | Category: 06 | Name: 固定棚板 365X20X770
+ID: N06000000000102 | Category: 06 | Name: 2530 可動ｶｳﾝﾀｰ梱包(小)
+ID: N06000000000104 | Category: 06 | Name: ﾊｲﾀｲﾌﾟ 899X66X978
+ID: N06000000000106 | Category: 06 | Name: 2500 木製ﾚｼﾞ台
+ID: N06000000000117 | Category: 06 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ本体 838X1493
+ID: N06000000000121 | Category: 06 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ半切ﾊﾟｯﾄﾞ 392X80
+ID: N06000000000122 | Category: 06 | Name: ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾊﾟｯﾄﾞ 392X1489
+ID: N06000000000123 | Category: 06 | Name: 兼用残り材ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾊﾟｯﾄﾞ 392X844
+ID: N06000000000126 | Category: 06 | Name: PAO部品箱使用(電源ﾕﾆｯﾄ用 225X195X67)
+ID: N06000000000127 | Category: 06 | Name: 2660 FJLN部品箱 351*156*70
+ID: N06000000000128 | Category: 06 | Name: 2670 FJLN①1802*556*53
+ID: N06000000000129 | Category: 06 | Name: 2680 FJLN①用ﾊﾟｯﾄ 548*1782
+ID: N06000000000130 | Category: 06 | Name: 2690 FJLN②用1850*401*72
+ID: N06000000000131 | Category: 06 | Name: 2700 FJLN②用ﾊﾟｯﾄ393*1830
+ID: N06000000000166 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ棚板3枚入り W400用
+ID: N06000000000167 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ棚板3枚入り W800用
+ID: N06000000000180 | Category: 06 | Name: DRB(IU PAO)用ﾀﾞﾝﾎﾞｰﾙ　2Pテープ貼り
+ID: N06000000000181 | Category: 06 | Name: 3170 DBﾌﾗｯﾌﾟｶﾞﾗｽ扉F6030A用
+ID: N06000000000183 | Category: 06 | Name: 追加棚板･可動棚板(1枚入り) W376D370
+ID: N06000000000184 | Category: 06 | Name: DRB(IU PAO)用ﾀﾞﾝﾎﾞｰﾙ　1Pテープ貼り
+ID: N06000000000185 | Category: 06 | Name: ｿﾌｧｰﾜｺﾞﾝ用ﾀﾞﾝﾎﾞｰﾙ
+ID: N06000000000186 | Category: 06 | Name: ｶﾞﾗｽ扉　T3045A
+ID: N06000000000187 | Category: 06 | Name: 1650　追加棚板・可動棚板 W376 D1170
+ID: N06000000000188 | Category: 06 | Name: ﾀﾞﾝﾎﾞｰﾙ　ｷｬﾋﾞﾈｯﾄ部品箱A・B
+ID: N06000000000189 | Category: 06 | Name: ﾀﾞﾝﾎﾞｰﾙ　ｷｬﾋﾞﾈｯﾄ部品箱C
+ID: N06000000000190 | Category: 06 | Name: 外寸　715X270X424(H)無地・クリア
+ID: N06000000000191 | Category: 06 | Name: ﾌﾗｯﾌﾟｶﾞﾗｽ扉F6045A用
+ID: N06000000000192 | Category: 06 | Name: ﾌﾗｯﾌﾟｶﾞﾗｽ扉F6045A用
+ID: N06000000000193 | Category: 06 | Name: 組立机用ﾀﾞﾝﾎﾞｰﾙ
+ID: N06000000000194 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　Ｌ2290
+ID: N06000000000195 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2300
+ID: N06000000000196 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2410
+ID: N06000000000197 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2420
+ID: N06000000000198 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2400
+ID: N06000000000199 | Category: 06 | Name: ｷｬﾋﾞﾈｯﾄ　梱包材　2425
+ID: N06000000000200 | Category: 06 | Name: 台輪　梱包材　2010
+ID: N06000000000201 | Category: 06 | Name: 台輪　梱包材　2020
+ID: N06000000000202 | Category: 06 | Name: 固定・可動棚　梱包材　2260
+ID: N06000000000203 | Category: 06 | Name: 固定・可動棚　梱包材　2270
+ID: N06000000000204 | Category: 06 | Name: 引出　梱包材　2200
+ID: N06000000000205 | Category: 06 | Name: 引出　梱包材　2230
+ID: N06000000000206 | Category: 06 | Name: 引出　梱包材　2025角当
+ID: N06000000000207 | Category: 06 | Name: 引出　梱包材　2235角当
+ID: N06000000000208 | Category: 06 | Name: 引出　梱包材　2205ﾚｰﾙ箱
+ID: N06000000000209 | Category: 06 | Name: 引出　梱包材　2235ﾚｰﾙ箱
+ID: N06000000000210 | Category: 06 | Name: ﾀﾞﾝﾎﾞｰﾙ　ﾚｰﾙ用　H300
+ID: N06000000000211 | Category: 06 | Name: ﾀﾞﾝﾎﾞｰﾙ　ﾚｰﾙ用　H150
+ID: N06000000000212 | Category: 06 | Name: 木製ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545BW　ﾀﾞﾝﾎﾞｰﾙ
+ID: N07000000000001 | Category: 07 | Name: ﾎｯﾄﾒﾙﾄ Jowat 280.00 15kg
+ID: N07000000000002 | Category: 07 | Name: 速乾ｽﾌﾟﾚｰ NVN2 14㎏
+ID: N07000000000003 | Category: 07 | Name: RT-91 2.5㎏
+ID: N07000000000004 | Category: 07 | Name: ｱｲｶ ｱｲﾎﾞﾝ AX623-L 20KG
+ID: N07000000000005 | Category: 07 | Name: FESTOOL  EVA nature 48x-KA 65
+ID: N07000000000006 | Category: 07 | Name: ｱｲﾒﾙﾄ W-9 15kg
+ID: N07000000000007 | Category: 07 | Name: ｱｲｶ Aibon W2702 ISOﾍﾟｰﾙ缶 18kg
+ID: N07000000000008 | Category: 07 | Name: PUR HM706.1.00 20kgﾊﾟｳﾁ
+ID: N07000000000009 | Category: 07 | Name: ｸﾗｲﾍﾞﾘｯﾄPUR HM 706.0.08 20kgﾊﾟｳﾁ
+ID: N07000000000010 | Category: 07 | Name: ｸﾗｲﾍﾞﾘｯﾄ Cleaner 761.8 20kgﾍﾟｰﾙ
+ID: N07000000000011 | Category: 07 | Name: PUR HM706.0.08 1.8kgﾊﾟｳﾁ*6
+ID: N07000000000012 | Category: 07 | Name: ｸﾗｲﾍﾞﾘｯﾄ 761.1 18KG　cleaner
+ID: N07000000000013 | Category: 07 | Name: ｸﾗｲﾍﾞﾘｯﾄ　Cleaner　761.7　20kgﾊﾟｳﾁ
+ID: N07000000000014 | Category: 07 | Name: ｸﾗｲﾍﾞﾘｯﾄ 822.2 5kg　cleaner
+ID: N07000000000017 | Category: 07 | Name: コニシ　ﾎﾞﾝﾄﾞｸﾞﾚ　MPX-1　＃57778
+ID: N07000000000018 | Category: 07 | Name: 両面ﾃｰﾌﾟ　一般用　5x15x10Ｍ
+ID: N08000000000001 | Category: 08 | Name: 両面粘着ﾃｰﾌﾟ 10㍉巾
+ID: N08000000000002 | Category: 08 | Name: 両面粘着ﾃｰﾌﾟ 30㍉巾
+ID: N08000000000005 | Category: 08 | Name: OPPﾃｰﾌﾟ(3M透明ﾃｰﾌﾟ)
+ID: N08000000000006 | Category: 08 | Name: ｴｱｷｬｯﾌﾟ ﾌﾟﾁﾌﾟﾁH37 42M巻
+ID: N08000000000008 | Category: 08 | Name: ｼﾝｺｰ VP-452 20g 同梱用木工ﾎﾞﾝﾄﾞ
+ID: N08000000000018 | Category: 08 | Name: ｽﾄﾚｯﾁﾌｨﾙﾑ
+ID: N08000000000019 | Category: 08 | Name: 養生ﾃｰﾌﾟ
+ID: N08000000000030 | Category: 08 | Name: ﾜｲﾄﾞｻﾝﾀﾞｰ用ﾍﾟｰﾊﾟｰP80 470X1670
+ID: N08000000000033 | Category: 08 | Name: 取扱注意 OPPﾃｰﾌﾞ
+ID: N08000000000034 | Category: 08 | Name: ｽﾄﾚｯﾁﾊﾞｲﾝﾀﾞｰ
+ID: N08000000000036 | Category: 08 | Name: ﾊｲﾃﾞﾝﾎﾟﾘ
+ID: N08000000000037 | Category: 08 | Name: ★表面保護ﾃｰﾌﾟ[ﾁﾗｼ特価Y]-50×100×0.08
+ID: N08000000000042 | Category: 08 | Name: ｼｰﾙ ｢ｶｯﾀｰﾅｲﾌ使用厳禁｣
+ID: N08000000000043 | Category: 08 | Name: ﾉﾙﾏﾙﾍｷｻﾝ 16ﾘｯﾄﾙ 1缶
+ID: N08000000000044 | Category: 08 | Name: 液体高分子 NET.18kg
+ID: N08000000000045 | Category: 08 | Name: FJLN取扱説明書
+ID: N08000000000046 | Category: 08 | Name: ﾗｲﾝﾃｰﾌﾟ 白
+ID: N08000000000047 | Category: 08 | Name: ﾗｲﾝﾃｰﾌﾟ 青
+ID: N08000000000048 | Category: 08 | Name: ﾗｲﾝﾃｰﾌﾟ 黄
+ID: N08000000000049 | Category: 08 | Name: ﾗｲﾝﾃｰﾌﾟ 赤
+ID: N08000000000050 | Category: 08 | Name: ﾗｲﾝﾃｰﾌﾟ ﾄﾗ
+ID: N08000000000051 | Category: 08 | Name: 両面粘着ﾃｰﾌﾟ 20㍉巾
+ID: N08000000000052 | Category: 08 | Name: 表面保護ﾃｰﾌﾟ 100X180X0.06
+ID: N08000000000053 | Category: 08 | Name: ｼﾝｺｰ　VP452　同梱用木工ﾎﾞﾝﾄﾞ　50g
+ID: N09000000000002 | Category: 09 | Name: 三菱電機 V-08PQ7 給気ﾊﾟｲﾌﾟﾌｧﾝ
+ID: N09000000000003 | Category: 09 | Name: 三菱電機 V-08P8 排気ﾊﾟｲﾌﾟﾌｧﾝ
+ID: N09000000000005 | Category: 09 | Name: OD-261.773R
+ID: N09000000000006 | Category: 09 | Name: 神保電器 NKW01008PW
+ID: N09000000000007 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WTF14764W
+ID: N09000000000008 | Category: 09 | Name: 神保電器 JEC-BN-55V-PW
+ID: N09000000000009 | Category: 09 | Name: 神保電器 NKP-3UF-3-PW
+ID: N09000000000010 | Category: 09 | Name: 神保電器 NKP-3UF-2-PW
+ID: N09000000000011 | Category: 09 | Name: 神保電器 NKP-3UF-PW
+ID: N09000000000012 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WN3700
+ID: N09000000000013 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WTF13033WK
+ID: N09000000000014 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WTF7003W
+ID: N09000000000015 | Category: 09 | Name: ﾆﾁﾌ QLX 4-YCL
+ID: N09000000000016 | Category: 09 | Name: 矢崎電線 VFF2X2W WH
+ID: N09000000000017 | Category: 09 | Name: 矢崎電線 VFF2X2W BK
+ID: N09000000000018 | Category: 09 | Name: 矢崎電線 IV1.6B BK
+ID: N09000000000019 | Category: 09 | Name: 矢崎電線 IV1.6B RED
+ID: N09000000000020 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WH4415 ﾍﾞﾀｰ小型ｷｬｯﾌﾟ
+ID: N09000000000021 | Category: 09 | Name: ﾆﾁﾌ CE 5 絶縁被覆付閉端接続子5.5sp
+ID: N09000000000022 | Category: 09 | Name: ﾆﾁﾌ R 2-3 銅線用裸圧着端子(R型)2sq-3
+ID: N09000000000023 | Category: 09 | Name: ﾆﾁﾌ R 2-3.5 銅線用裸圧着端子(R型)2sq-3
+ID: N09000000000024 | Category: 09 | Name: 絶縁棒端子 TMEX TC-2-16 青色
+ID: N09000000000025 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ WH4021W
+ID: N09000000000026 | Category: 09 | Name: ﾆﾁﾌ 2Y-3 銅線用裸圧着端子(R型)2sq-3
+ID: N09000000000027 | Category: 09 | Name: WN1001SW 埋込ｺﾝｾﾝﾄ
+ID: N09000000000028 | Category: 09 | Name: ﾆﾁﾌ QLX 5-YCL
+ID: N09000000000029 | Category: 09 | Name: 結束ﾊﾞﾝﾄﾞ100LX2.5
+ID: N09000000000030 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ LSEB9501LE1
+ID: N09000000000031 | Category: 09 | Name: LSB100-0650MSCAW5M
+ID: N09000000000032 | Category: 09 | Name: OD361
+ID: N09000000000033 | Category: 09 | Name: 結束ﾊﾞﾝﾄﾞ150LX2.5
+ID: N09000000000034 | Category: 09 | Name: 結束ﾊﾞﾝﾄﾞ250LX2.5
+ID: N09000000000035 | Category: 09 | Name: 三角ﾀｯﾌﾟ(ｺﾝｾﾝﾄ)
+ID: N09000000000036 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ ﾊﾟｲﾌﾟﾌｧﾝ FY-08PD9
+ID: N09000000000037 | Category: 09 | Name: ﾊﾟﾅｿﾆｯｸ ﾊﾟｲﾌﾟﾌｧﾝ FY-08PS1BL
+ID: N09000000000038 | Category: 09 | Name: 照明 LSB150-0650NCAW-V3
+ID: N09000000000039 | Category: 09 | Name: WTF7001
+ID: N09000000000040 | Category: 09 | Name: NKP-1UFPW
+ID: N09000000000041 | Category: 09 | Name: BSC
+ID: N09000000000043 | Category: 09 | Name: ﾆﾄﾑｽﾞ G0102 P型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 10㎜幅
+ID: N09000000000044 | Category: 09 | Name: ﾆﾄﾑｽﾞ G0101 M型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 9㎜幅X6M
+ID: N09000000000045 | Category: 09 | Name: ﾑｰﾋﾞｰﾌﾟﾗｸﾞ
+ID: N09000000000046 | Category: 09 | Name: A-120-40 M10X85 黒
+ID: N09000000000047 | Category: 09 | Name: ALCP100K-140 ALCｽﾘｰﾌﾟﾊﾟｲﾌﾟｼﾞｮｲﾝﾄ
+ID: N09000000000048 | Category: 09 | Name: 312-771 ｳﾚﾀﾝ消音材100型
+ID: N09000000000049 | Category: 09 | Name: LOCK DOWEL E900P 1袋4入
+ID: N09000000000051 | Category: 09 | Name: LOCK DOWEL E900BP
+ID: N09000000000053 | Category: 09 | Name: ﾛｰﾙﾋﾟﾝ 8.0X70
+ID: N09000000000055 | Category: 09 | Name: ﾛｰﾙﾋﾟﾝ 8.0X30
+ID: N09000000000057 | Category: 09 | Name: ﾏｸﾞﾎﾞｰﾄﾞ BL3225 密度32㎏ 10枚入
+ID: N09000000000058 | Category: 09 | Name: ILS ｹｰｽ錠ｾｯﾄ ﾗｯﾁ
+ID: N09000000000061 | Category: 09 | Name: TRUSCO中山 ﾎﾟｲﾝﾄﾋﾞｽ用ｱﾙﾐﾌｯｸ
+ID: N09000000000063 | Category: 09 | Name: ｷｬｽﾀｰ 420S-RD 50㎜(ｺﾞﾑ車輪) 黒
+ID: N09000000000064 | Category: 09 | Name: MDｱｼﾞｬｽﾀｰ TR10XL75 ASSY
+ID: N09000000000065 | Category: 09 | Name: 防虫ﾊﾟｯｷﾝ C-70 L2000
+ID: N09000000000066 | Category: 09 | Name: ｽﾍﾟｰｽｼｭｯﾊﾟｰ架台
+ID: N09000000000067 | Category: 09 | Name: 調整ｽﾄﾗｲｸ CS2型親子用
+ID: N09000000000068 | Category: 09 | Name: ｽﾍﾟｰｽｼｭｯﾊﾟｰ
+ID: N09000000000069 | Category: 09 | Name: ｽﾍﾟｰｽｼｭｯﾊﾟｰ 預り在庫 2Links
+ID: N09000000000072 | Category: 09 | Name: ｺﾞﾑｺｰﾀﾞ
+ID: N09000000000073 | Category: 09 | Name: ｱｲﾎﾞﾘｰ角棒(見切り)
+ID: N09000000000075 | Category: 09 | Name: L型ｱﾝｸﾞﾙ ｼﾙﾊﾞｰ L800
+ID: N09000000000076 | Category: 09 | Name: L型ｱﾝｸﾞﾙ ﾌﾞﾗｯｸ L800
+ID: N09000000000077 | Category: 09 | Name: ｴﾌﾟﾄｼｰﾗｰ5X15X10
+ID: N09000000000079 | Category: 09 | Name: 床 天井 見切 (白) MJZ001
+ID: N09000000000081 | Category: 09 | Name: ﾀｲﾙｶｰﾍﾟｯﾄ NT87010
+ID: N09000000000082 | Category: 09 | Name: ﾀｲﾙｶｰﾍﾟｯﾄ NT-3000ECO
+ID: N09000000000083 | Category: 09 | Name: ﾀｲﾙｶｰﾍﾟｯﾄ NT31201
+ID: N09000000000085 | Category: 09 | Name: 三次元丁番 A ｳｹｶﾅｸﾞBK
+ID: N09000000000086 | Category: 09 | Name: 三次元丁番 A 扉金具BK
+ID: N09000000000087 | Category: 09 | Name: 三次元丁番 B ｳｹｶﾅｸﾞBK
+ID: N09000000000088 | Category: 09 | Name: 三次元丁番 B 扉金具BK
+ID: N09000000000089 | Category: 09 | Name: 三次元丁番 A ｳｹｶﾅｸﾞCG
+ID: N09000000000091 | Category: 09 | Name: 三次元丁番 B ｳｹｶﾅｸﾞCG
+ID: N09000000000092 | Category: 09 | Name: 三次元丁番 B 扉金具CG
+ID: N09000000000093 | Category: 09 | Name: 三次元丁番 ｹｰｽｶﾊﾞｰBK DH6
+ID: N09000000000094 | Category: 09 | Name: 三次元丁番 ｹｰｽｶﾊﾞ-CG DH6
+ID: N09000000000095 | Category: 09 | Name: ﾃﾞｽｸｺﾝｾﾝﾄ電源ﾕﾆｯﾄ一式(DRB/PaO-M)
+ID: N09000000000096 | Category: 09 | Name: ﾃﾞｽｸｺﾝｾﾝﾄ電源ﾕﾆｯﾄ一式(mamapod)
+ID: N09000000000098 | Category: 09 | Name: 穴埋めｷｬｯﾌﾟ D
+ID: N09000000000099 | Category: 09 | Name: 穴埋めｷｬｯﾌﾟ SW
+ID: N09000000000100 | Category: 09 | Name: 穴埋めｷｬｯﾌﾟ GO
+ID: N09000000000101 | Category: 09 | Name: 穴埋めｷｬｯﾌﾟ NK
+ID: N09000000000103 | Category: 09 | Name: ﾉｰﾌﾞﾗﾝﾄﾞ ｱｼﾞｬｽﾀ AJSH8
+ID: N09000000000105 | Category: 09 | Name: ﾕﾆｸﾛ平折 90mm L型金物
+ID: N09000000000106 | Category: 09 | Name: ｺｰｽｽﾚｯﾄﾞ 3.8X41
+ID: N09000000000107 | Category: 09 | Name: WF積層材 W/F C5XC5 1200X100X100
+ID: N09000000000112 | Category: 09 | Name: MDｱｼﾞｬｽﾀｰ TR10XL100
+ID: N09000000000114 | Category: 09 | Name: DL148S-2 打掛け(D-31)SUS70
+ID: N09000000000117 | Category: 09 | Name: 楽LOCK RL51
+ID: N09000000000118 | Category: 09 | Name: 楽LOCK RL54
+ID: N09000000000119 | Category: 09 | Name: 楽LOCK RL05
+ID: N09000000000120 | Category: 09 | Name: 楽LOCK RL56
+ID: N09000000000121 | Category: 09 | Name: S･P･C flooring SPC1 ﾎﾜｲﾄ
+ID: N09000000000122 | Category: 09 | Name: S･P･C flooring SPC4 ｸﾞﾚｰｼﾞｭ
+ID: N09000000000123 | Category: 09 | Name: 吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝC/FB-4040C-GY 20102
+ID: N09000000000124 | Category: 09 | Name: K100U-50-B8S ﾌｯﾄｷｬｽﾀｰ
+ID: N09000000000125 | Category: 09 | Name: ﾊｲﾗｲﾄ HW-12 570*1078
+ID: N09000000000126 | Category: 09 | Name: ﾗﾝﾅｰ L16N/TK28N
+ID: N09000000000127 | Category: 09 | Name: GBU-15.5 MPﾎﾜｲﾄ
+ID: N09000000000128 | Category: 09 | Name: ﾌｨｰﾛFR-100ﾊﾝﾄﾞﾙ L:1800 B2 穴無し
+ID: N09000000000129 | Category: 09 | Name: ﾌｨｰﾛｴﾝﾄﾞｷｬｯﾌﾟ生地 L/R ｼﾙﾊﾞｰ
+ID: N09000000000131 | Category: 09 | Name: ｺﾞﾑ戸当たり TS-20 ﾎﾜｲﾄ
+ID: N09000000000132 | Category: 09 | Name: L型ｽﾄﾗｲｸ 右勝手
+ID: N09000000000134 | Category: 09 | Name: BTK型(鋼･塗装) 棚受 67532 BTK-120
+ID: N09000000000135 | Category: 09 | Name: LGBC80610LE1 LEDﾌﾞﾗｹｯﾄ60形電球色
+ID: N09000000000137 | Category: 09 | Name: ﾓﾍｱｼｰﾙ ｸﾞﾚｰ P-009
+ID: N09000000000138 | Category: 09 | Name: ｱﾙﾐ戸当り 3.0X40X1990
+ID: N09000000000140 | Category: 09 | Name: ﾓﾍｱ #2500 ﾌﾞﾗｯｸ　6060
+ID: N09000000000141 | Category: 09 | Name: 120-022-809 IT1020-2020 ｲﾝｻｰﾄﾈｼﾞ
+ID: N09000000000142 | Category: 09 | Name: 120-040-847  IT2180-2160
+ID: N09000000000143 | Category: 09 | Name: ｷｬｽﾀｰ 413S-N 75㎜
+ID: N09000000000144 | Category: 09 | Name: 吸音ﾊﾟﾈﾙ45(4040) 1箱30枚入り WH
+ID: N09000000000147 | Category: 09 | Name: DMF3-EP-BL ｺﾝｾﾝﾄﾌﾟﾚｰﾄ
+ID: N09000000000148 | Category: 09 | Name: DMF3-EP-WT ｺﾝｾﾝﾄﾌﾟﾚｰﾄ
+ID: N09000000000149 | Category: 09 | Name: ﾉｰﾌﾞﾗﾝﾄﾞｱｼﾞｬｽﾀｰ AJSH6
+ID: N09000000000150 | Category: 09 | Name: IT2182-1250 締結金具TJ10用固定ねじ
+ID: N09000000000151 | Category: 09 | Name: ｶﾞﾗｽﾌｨﾙﾑ
+ID: N09000000000153 | Category: 09 | Name: PSEｼｰﾙ(BOXﾀｲﾌﾟ用)
+ID: N09000000000154 | Category: 09 | Name: PSEｼｰﾙ(ｳｫｰﾙﾀｲﾌﾟ)
+ID: N09000000000155 | Category: 09 | Name: 吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝC/FB-4040C-NBE
+ID: N09000000000156 | Category: 09 | Name: ﾆﾄﾑｽﾞ G0101 M型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 9㎜幅X1M
+ID: N09000000000158 | Category: 09 | Name: ｱｸﾘﾙBOX　芯組のみ　W120XH1731
+ID: N09000000000159 | Category: 09 | Name: ｱｸﾘﾙBOX　芯組のみ　W60XH1731
+ID: N09000000000160 | Category: 09 | Name: ﾀｲﾙｶｰﾍﾟｯﾄ　ｻﾝｹﾞﾂ　NT-31901
+ID: N09000000000161 | Category: 09 | Name: ｱｸﾘﾙBOX　芯組のみ　W60XH1600
+ID: N09000000000162 | Category: 09 | Name: ｱｸﾘﾙBOX　芯組のみ　W180XH1731
+ID: N09000000000163 | Category: 09 | Name: ｶﾊﾞｰ付きｷｬｽﾀｰ ﾅｲﾛﾝ車 K77-B-8S
+ID: N09000000000164 | Category: 09 | Name: ﾊｲﾗｲﾄ HW-12 570*1078/ﾗﾝﾅｰ L16N/TK28N
+ID: N09000000000165 | Category: 09 | Name: ﾓﾍｱ #2500 ﾌﾞﾗｯｸ　9090
+ID: N09000000000166 | Category: 09 | Name: ＰＡＯステッカー
+ID: N09000000000167 | Category: 09 | Name: ココミラー29x43㎝
+ID: N09000000000168 | Category: 09 | Name: 非常ボタンシール
+ID: N09000000000169 | Category: 09 | Name: ﾀｲﾄ材　ﾎｸｼｮｰ RE-30　17*17*2000
+ID: N09000000000170 | Category: 09 | Name: 隙間ｸｯｼｮﾝﾃｰﾌﾟE型（ｸｯｼｮﾝﾃｰﾌﾟ　K　BE-1155F）50M
+ID: N09000000000171 | Category: 09 | Name: 8010002192　PAOBABY鴨居・ﾚｰﾙ・部品箱
+ID: N09000000000172 | Category: 09 | Name: ハイライト　HW-12　568*1075
+ID: N09000000000173 | Category: 09 | Name: PANA ｽｲｯﾁ　FY-SV11W
+ID: N09000000000174 | Category: 09 | Name: LAN JIMBO 埋込ﾓｼﾞｭﾗｼﾞｬｯｸ　８極8心
+ID: N09000000000175 | Category: 09 | Name: 隙間ｸｯｼｮﾝﾃｰﾌﾟP型（ｸｯｼｮﾝﾃｰﾌﾟ　P　BE-1156F）50M
+ID: N09000000000176 | Category: 09 | Name: PAOBABY用鴨居
+ID: N09000000000177 | Category: 09 | Name: PAOBABYｽﾗｲﾄﾞ折れ戸用部品箱・ﾚｰﾙ
+ID: N09000000000178 | Category: 09 | Name: ｱｳﾄｾｯﾄﾚｰﾙ・金具SET
+ID: N09000000000179 | Category: 09 | Name: NT-327E（500*500）
+ID: N09000000000180 | Category: 09 | Name: ONESTEP吸音パネルBLACK　24枚入り
+ID: N09000000000181 | Category: 09 | Name: 天井埋込型換気扇　FY-27CK8
+ID: N09000000000182 | Category: 09 | Name: 呼び出しチャイムセットXP710A
+ID: N09000000000183 | Category: 09 | Name: 集成材棚板Ｂ形　WB　TG-100　450*150
+ID: N09000000000184 | Category: 09 | Name: HW-12 ﾙｰﾊﾞｰ 557x724
+ID: N09000000000185 | Category: 09 | Name: CJ-28S　ﾎﾜｲﾄ
+ID: N09000000000307 | Category: 09 | Name: 吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝ　FB-8060-NBE
+ID: N09000000000308 | Category: 09 | Name: ﾌｪﾙﾒﾉﾝ FB-4040C-CGY　ﾁｬｺｰﾙｸﾞﾚｰ
+ID: N09000000000310 | Category: 09 | Name: 2Y-3.5裸端子先開形
+ID: N09000000000311 | Category: 09 | Name: 強化ｶﾞﾗｽPAO用
+ID: N09000000000312 | Category: 09 | Name: ｻﾝｹﾞﾂ　ｶｰﾍﾟｯﾄ　NT31507
+ID: N09000000000313 | Category: 09 | Name: ｲｽﾄﾌﾛﾝﾎﾞｰﾄﾞ（額貼ﾀｲﾌﾟ）
+ID: N09000000000314 | Category: 09 | Name: 框　ﾄﾞｱ用　ｶﾞﾗｽ　450X1800X5
+ID: N09000000000316 | Category: 09 | Name: ｽﾃﾝﾚｽﾌｯｸ　DFHK-SQ30型
+ID: N09000000000317 | Category: 09 | Name: ｱﾙﾐｱﾝｸﾞﾙ 1.5X20X10 ﾌﾞﾗｯｸ L2000
+ID: N09000000000318 | Category: 09 | Name: ｻｯｼ用気密ﾊﾟｯｷﾝ　ｴﾌﾟﾄｼｰﾗｰ　5㎜X15㎜X10㎜
+ID: N09000000000319 | Category: 09 | Name: K-6114KN 4x8
+ID: N09000000000320 | Category: 09 | Name: ﾘｺｷｭｰﾌﾞｿﾌｧRFCB-38GN
+ID: N09000000000321 | Category: 09 | Name: ｲｽﾄﾌﾛﾝﾎﾞｰﾄﾞ 1009 900*1095(大京 9100003369)
+ID: N09000000000322 | Category: 09 | Name: ｲｽﾄﾌﾛﾝﾎﾞｰﾄﾞ 1009 900*918(大京 9100003369)
+ID: N09000000000323 | Category: 09 | Name: ｲｽﾄﾌﾛﾝﾎﾞｰﾄﾞ 1003 900*1095(大京 9100003369)
+ID: N09000000000324 | Category: 09 | Name: ﾎﾞﾝﾄﾞ MPX-1(ｸﾞﾚｰ) #57778
+ID: N09000000000325 | Category: 09 | Name: LGD3100LU1
+ID: N09000000000326 | Category: 09 | Name: WTA526289W
+ID: N09000000000327 | Category: 09 | Name: WTA575831W
+ID: N09000000000328 | Category: 09 | Name: WTA7101WK
+ID: N09000000000329 | Category: 09 | Name: WTL7006WK
+ID: N09000000000330 | Category: 09 | Name: ｺｲｽﾞﾐLEDﾗｲﾄ KAD7206W50
+ID: N09000000000331 | Category: 09 | Name: ボトムトナーDW800
+ID: N09000000000332 | Category: 09 | Name: 樹脂戸当たりｺﾞﾑ無し　JTY001NK
+ID: N09000000000334 | Category: 09 | Name: 新三平建設　自動消火装置　MYBUDDY MB-3.0-B3型
+ID: N09000000000335 | Category: 09 | Name: 新三平建設　自動消火装置　MYBUDDY　MB-2.0-B1型
+ID: N09000000000336 | Category: 09 | Name: 新三平建設　自動消火装置　MYBUDDY MB-2.1-B2型
+ID: N09000000000338 | Category: 09 | Name: 楽LOCK RL52
+ID: N10000000000027 | Category: 10 | Name: ｽﾁﾛｸﾞﾗｽPS80P t3.8X920X2100
+ID: N10000000000028 | Category: 10 | Name: ﾐﾗｰ 393 x 1995
+ID: N10000000000031 | Category: 10 | Name: ｱｸﾘﾙﾊﾟﾈﾙ t5.0X915X2000
+ID: N11000000000067 | Category: 11 | Name: 1012SR 後面【芯組】
+ID: N11000000000068 | Category: 11 | Name: 1012SR 左側面【芯組】
+ID: N11000000000069 | Category: 11 | Name: 1012SR 天井【芯組】
+ID: N11000000000072 | Category: 11 | Name: 1012SR 正面【芯組】
+ID: N11000000000073 | Category: 11 | Name: 1012用 ﾃﾞｽｸ【芯組】
+ID: N11000000000076 | Category: 11 | Name: 1012SR 後面【芯組】
+ID: N11000000000077 | Category: 11 | Name: 1012用 ﾃﾞｽｸ【芯組】
+ID: N11000000000078 | Category: 11 | Name: 1012SR 左側面【芯組】
+ID: N11000000000079 | Category: 11 | Name: 1012SR 正面【芯組】
+ID: N11000000000080 | Category: 11 | Name: 1012SR 天井【芯組】
+ID: N11000000000086 | Category: 11 | Name: 桧家　上框
+ID: N11000000000091 | Category: 11 | Name: ｱｸﾘﾙBOX　芯組のみ　W120X1780
+ID: N11000000000092 | Category: 11 | Name: 芯組のみ　左右方立　2700X380
+ID: N11000000000093 | Category: 11 | Name: 芯組のみ　中方立　2700X380
+ID: N11000000000094 | Category: 11 | Name: 芯組のみ　左右方立　2400X380
+ID: N11000000000095 | Category: 11 | Name: 芯組のみ　中方立　2400X380
+ID: N11000000000096 | Category: 11 | Name: 芯組のみ　CFPｺﾝｻﾙﾃｨﾝｸﾞ　PAO2000X1200　開扉
+ID: N11000000000097 | Category: 11 | Name: 芯組のみ　1012BR開扉
+ID: N11000000000098 | Category: 11 | Name: 芯組のみ　2000X1200　ﾃﾞｽｸ
+ID: N11000000000099 | Category: 11 | Name: 芯組のみ　木製ﾊﾟｰｿﾅﾙﾛｯｶｰ　底板
+ID: N11000000000100 | Category: 11 | Name: 芯組のみ　CFPｺﾝｻﾙﾃｨﾝｸﾞ　2000X1200　左側面(前、後)
+ID: N11000000000101 | Category: 11 | Name: ﾊﾟｰｿﾅﾙﾛｯｶｰ側板
+ID: N11000000000102 | Category: 11 | Name: 1210M左側面
+ID: N11000000000103 | Category: 11 | Name: 1210M右側面
+ID: N11000000000104 | Category: 11 | Name: 1210M正面
+ID: N11000000000105 | Category: 11 | Name: 1210M後面
+ID: N11000000000106 | Category: 11 | Name: 1210Mデスク
+ID: N11000000000107 | Category: 11 | Name: 1210M補強残
+ID: N11000000000108 | Category: 11 | Name: 1210M開扉
+ID: N12000000000142 | Category: 12 | Name: 9100004660　面材ｶｯﾄ
+ID: N12000000000143 | Category: 12 | Name: 9100004816　面材ｶｯﾄ
+ID: N12000000000144 | Category: 12 | Name: 9100004639 面材ｶｯﾄ
+ID: N12000000000145 | Category: 12 | Name: 9100004959　吉田プランニング　面材ｶｯﾄ
+ID: N12000000000146 | Category: 12 | Name: 9100004961 ﾒﾃﾞｨｱﾊﾞｳﾝﾄﾞ　面材ｶｯﾄ
+ID: N12000000000147 | Category: 12 | Name: 9100004731　大熊地区　面材ｶｯﾄ
+ID: N12000000000148 | Category: 12 | Name: 9100004780　いろは　面材ｶｯﾄ
+ID: N12000000000149 | Category: 12 | Name: 9100004752 ﾌﾛﾊﾞﾃﾞｨｰｽﾞ　面材ｶｯﾄ
+ID: N12000000000150 | Category: 12 | Name: 9100004815　中目黒　面材ｶｯﾄ
+ID: N12000000000151 | Category: 12 | Name: 9100004731 大熊地区　面材ｶｯﾄ　幕板
+ID: N12000000000152 | Category: 12 | Name: 2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ　可動棚
+ID: N12000000000153 | Category: 12 | Name: 2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ　可動棚
+ID: N12000000000154 | Category: 12 | Name: 2100011629-2 芯材ｶｯﾄ　ﾛｯｶｰ　可動棚
+ID: N12000000000155 | Category: 12 | Name: 2100011629-14 芯材ｶｯﾄ　可動棚
+ID: N12000000000156 | Category: 12 | Name: 2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ開扉
+ID: N12000000000157 | Category: 12 | Name: 2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ開扉
+ID: N12000000000158 | Category: 12 | Name: 2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ開扉
+ID: N12000000000159 | Category: 12 | Name: 2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ開扉
+ID: N12000000000160 | Category: 12 | Name: 2100011629-5　芯材ｶｯﾄ　ﾛｯｶｰ側板
+ID: N12000000000161 | Category: 12 | Name: 2100011629-1　芯材ｶｯﾄ　ﾛｯｶｰ側板
+ID: N12000000000162 | Category: 12 | Name: 2100011629-13　芯材ｶｯﾄ　ﾛｯｶｰ側板
+ID: N12000000000163 | Category: 12 | Name: 2100011629-9　芯材ｶｯﾄ　ﾛｯｶｰ側板
+ID: N12000000000164 | Category: 12 | Name: 2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ天地板
+ID: N12000000000165 | Category: 12 | Name: 2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ天地板
+ID: N12000000000166 | Category: 12 | Name: 2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ天地板
+ID: N12000000000167 | Category: 12 | Name: 2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ天地板
+ID: N12000000000168 | Category: 12 | Name: 2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ背板
+ID: N12000000000169 | Category: 12 | Name: 2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ背板
+ID: N12000000000170 | Category: 12 | Name: 2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ背板
+ID: N12000000000171 | Category: 12 | Name: 2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ背板
+ID: N12000000000172 | Category: 12 | Name: 2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ固定棚
+ID: N12000000000173 | Category: 12 | Name: 2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ固定棚
+ID: N12000000000174 | Category: 12 | Name: 2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ固定棚
+ID: N12000000000175 | Category: 12 | Name: 2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ固定棚
+ID: N12000000000176 | Category: 12 | Name: 2100011629-15　芯材ｶｯﾄ　ﾛｯｶｰ仕切板
+ID: N12000000000177 | Category: 12 | Name: 2100011629-7　芯材ｶｯﾄ　ﾛｯｶｰ仕切板
+ID: N12000000000178 | Category: 12 | Name: 2100011629-11　芯材ｶｯﾄ　ﾛｯｶｰ仕切板
+ID: N12000000000179 | Category: 12 | Name: 2100011629-3　芯材ｶｯﾄ　ﾛｯｶｰ仕切板
+ID: N12000000000180 | Category: 12 | Name: 9100003962　広島大学　PAOBABY1218
+ID: N12000000000181 | Category: 12 | Name: 9100004587 京急百貨店 PAOBABY1218
+ID: N12000000000182 | Category: 12 | Name: 9100004660　XGPATNERS　面材ｶｯﾄ　幕板
+ID: N12000000000183 | Category: 12 | Name: 9100004816　ﾜｼﾝﾄﾝﾎﾃﾙ桜木町　面材ｶｯﾄ　幕板
+ID: N12000000000184 | Category: 12 | Name: 9100004816　ﾜｼﾝﾄﾝﾎﾃﾙ桜木町　面材ｶｯﾄ　床面
+ID: N12000000000185 | Category: 12 | Name: 9100004660　XGPATNERS　面材ｶｯﾄ　床面
+ID: N12000000000186 | Category: 12 | Name: 9100004731　大熊地区　面材ｶｯﾄ　床面
+ID: N12000000000187 | Category: 12 | Name: 9100004815　中目黒　面材ｶｯﾄ　幕板
+ID: N12000000000188 | Category: 12 | Name: 9100004815　中目黒　面材ｶｯﾄ　床面
+ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+ID: N12000000000194 | Category: 12 | Name: 2100005082-5　棚板　CTW-9060KKA
+ID: N12000000000195 | Category: 12 | Name: 2100005082-7　棚板　CTW-9060WHP
+ID: N12000000000196 | Category: 12 | Name: 2100005082-4　棚板　CTW-9060DBP
+ID: N12000000000197 | Category: 12 | Name: 2100005082-3　棚板　CTW-1260MPP
+ID: N12000000000198 | Category: 12 | Name: 2100005082-3　棚板 CTW-1260DBP
+ID: N12000000000199 | Category: 12 | Name: 9100004587　PAOBABY1218　ドア②
+ID: N12000000000200 | Category: 12 | Name: 9100004653　PAO1218SR-F　床面
+ID: N12000000000201 | Category: 12 | Name: 2100012216-3　ｼｪﾙﾌ施工棚板　W800xD380
+ID: N12000000000202 | Category: 12 | Name: 9100004653　PAO1218SR-F　幕板
+ID: N12000000000203 | Category: 12 | Name: 2100012216-2　G1HV270AGO2　ｼｪﾙﾌ左右方立
+ID: N12000000000204 | Category: 12 | Name: 2100012216-1　G1IV270AGO1　中方立
+ID: N12000000000205 | Category: 12 | Name: 2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚
+ID: N12000000000206 | Category: 12 | Name: 210000934-1　G1IV240ASH1-N　中方立
+ID: N12000000000207 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　天井
+ID: N12000000000208 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　天井
+ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+ID: N12000000000210 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　左側面(前)
+ID: N12000000000211 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　右側面(前)
+ID: N12000000000212 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　正面
+ID: N12000000000213 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　後面
+ID: N12000000000214 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　右側面(後)
+ID: N12000000000215 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　ﾃﾞｽｸ
+ID: N12000000000216 | Category: 12 | Name: 9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　フロア－・見切り材
+ID: N12000000000217 | Category: 12 | Name: 9100004731　昼間貯蔵大熊地区　フロア・見切り材
+ID: N13000000000125 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X60X1590
+ID: N13000000000126 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X60X950
+ID: N13000000000128 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5x120x1600
+ID: N13000000000130 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X120X950
+ID: N13000000000131 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙT5x180x1731
+ID: N13000000000132 | Category: 13 | Name: ｽﾁﾛｸﾞﾗｽt3.8X60X1731
+ID: N13000000000133 | Category: 13 | Name: ｽﾁﾛｸﾞﾗｽt3.8X60X950
+ID: N13000000000135 | Category: 13 | Name: ｽﾁﾛｸﾞﾗｽt3.8X120X1731
+ID: N13000000000160 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X120X1731
+ID: N13000000000188 | Category: 13 | Name: ｽﾁﾛｸﾞﾗｽt3.8X60X1590
+ID: N13000000000189 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X60X1731
+ID: N13000000000191 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙt5X200X200
+ID: N13000000000200 | Category: 13 | Name: PAO1012BL 天井板 FTN508ZN
+ID: N13000000000201 | Category: 13 | Name: PAO1012BL 右側板 FTN508ZN
+ID: N13000000000202 | Category: 13 | Name: PAO1012BL ﾃﾞｽｸ FTN508ZN
+ID: N13000000000203 | Category: 13 | Name: PAO1012BL 正面 FTN508ZN
+ID: N13000000000204 | Category: 13 | Name: PAO1012BL 後面 FTN508ZN
+ID: N13000000000205 | Category: 13 | Name: ｱｸﾘﾙﾊﾟﾈﾙT5x150X1731
+ID: N13000000000211 | Category: 13 | Name: 飛沫防止ﾊﾟﾈﾙ用脚 120X200X5
+ID: N13000000000234 | Category: 13 | Name: ｱｸﾘﾙBOX用 (完成品)W120 L1731
+ID: N13000000000235 | Category: 13 | Name: ｱｸﾘﾙBOX用枠 W150 L1731
+ID: N13000000000289 | Category: 13 | Name: ｱｸﾘﾙBOX  （完成品）W120XL1600
+ID: N13000000000290 | Category: 13 | Name: ｱｸﾘﾙBOX (完成品)W60XL1600
+ID: N13000000000309 | Category: 13 | Name: ｱｸﾘﾙBOX用 (完成品)W60 L1731
+ID: N13000000000310 | Category: 13 | Name: 8010002583井上金庫販売㈱大阪支店吉村様ｱｸｼｱﾛｼﾞ㈱分PAO1210MIU/DRB-KK1210BK/本体KK 扉BK
+ID: N14000000000056 | Category: 14 | Name: CTW-9060 KKA
+ID: N14000000000057 | Category: 14 | Name: CTW-1260 MPP
+ID: N14000000000058 | Category: 14 | Name: CTW-1260 DBP
+ID: N14000000000059 | Category: 14 | Name: 2100012134-3　シモダイラ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　396x446
+ID: N14000000000060 | Category: 14 | Name: 2100012134-1　ｼﾓﾀﾞｲﾗ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　596x296
+ID: N14000000000061 | Category: 14 | Name: 2100012134-2　ｼﾓﾀﾞｲﾗ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　796x296
+ID: N14000000000062 | Category: 14 | Name: CTW-9060 TWH
+ID: N14000000000063 | Category: 14 | Name: CTW-1260 KKA
+ID: N14000000000064 | Category: 14 | Name: CTW-9060 BW
+ID: N14000000000065 | Category: 14 | Name: CTW-1260 BW
+ID: N17000000000001 | Category: 17 | Name: 住友PW PW色 ﾊﾟｰﾙﾎﾜｲﾄ
+ID: N17000000000002 | Category: 17 | Name: 住友VW VW色 ﾊﾞﾆﾗｳｯﾄﾞ
+ID: N17000000000003 | Category: 17 | Name: 住友TO TO色 ｻｰﾓｽｵｰｸ
+ID: N17000000000004 | Category: 17 | Name: 住友NO NO色 ﾉﾙﾃｵｰｸ
+ID: N17000000000005 | Category: 17 | Name: 住友CS CS色 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ
+ID: N17000000000006 | Category: 17 | Name: 住友MA MA色 ﾐﾃﾞｨｱﾑｱｶｼｱ
+ID: N17000000000007 | Category: 17 | Name: 住友UW UW色 ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ
+ID: N17000000000008 | Category: 17 | Name: 住友MW MW色 ﾏｰﾌﾞﾙｳｯﾄﾞ
+ID: N17000000000009 | Category: 17 | Name: 住友BA BA色 ﾌﾞﾗｯｸｱｶｼｱ
+ID: N17000000000010 | Category: 17 | Name: 住友LW  LW色 ﾚｻﾞｰﾎﾜｲﾄ
+ID: N17000000000011 | Category: 17 | Name: 住友NBL NBL色 ﾚｻﾞｰﾌﾞﾗｯｸ
+ID: N17000000000012 | Category: 17 | Name: 住友MC
+ID: N24000000000040 | Category: 24 | Name: 桧家　鏡板
+ID: N26000000000001 | Category: 26 | Name: ｼｪﾙﾌ 中方立 H2700 D380用 BW
+ID: N26000000000002 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2700 D380用 BW
+ID: N26000000000004 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2700 D380用 WM
+ID: N26000000000005 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W800 D380用3枚入 WM
+ID: N26000000000006 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2700 D380用 WM
+ID: N26000000000007 | Category: 26 | Name: ｼｪﾙﾌ 中方立 H2700 D240用 WM
+ID: N26000000000008 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2700 D240用 WM
+ID: N26000000000009 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W1200 D240用3枚入 WM
+ID: N26000000000010 | Category: 26 | Name: ｼｪﾙﾌ 追加棚板 W1200 D240用 WM
+ID: N26000000000011 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W600 D380用3枚入 SH
+ID: N26000000000012 | Category: 26 | Name: ｼｪﾙﾌ 追加棚板 W600 D380用 SH
+ID: N26000000000013 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W1200 D380用3枚入 MC
+ID: N26000000000014 | Category: 26 | Name: ｼｪﾙﾌ 追加棚板 W1200 D380用 MC
+ID: N26000000000015 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W600 D380用3枚入 BW
+ID: N26000000000016 | Category: 26 | Name: ｼｪﾙﾌ 可動棚板 W600 D380用 BW
+ID: N26000000000017 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W800 D380用3枚入 BW
+ID: N26000000000018 | Category: 26 | Name: 木製ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545-BW
+ID: N26000000000019 | Category: 26 | Name: 特注玄関収納　桜田工場長確認
+ID: N26000000000020 | Category: 26 | Name: 特注玄関収納　桜田工場長確認
+ID: N26000000000021 | Category: 26 | Name: PAO WORK BOX1人1012SR GO不燃
+ID: N26000000000022 | Category: 26 | Name: PAO WORK BOX1人1012BL GO不燃
+ID: N26000000000023 | Category: 26 | Name: ｼｪﾙﾌ 中方立 H2400 D380用 WH
+ID: N26000000000024 | Category: 26 | Name: MEET4ｿﾌｧ背-座LB-25
+ID: N26000000000025 | Category: 26 | Name: 棚板 20ｘ1200ｘ600 DBP
+ID: N26000000000026 | Category: 26 | Name: 棚板 20ｘ1200ｘ600 KKA
+ID: N26000000000027 | Category: 26 | Name: 棚板 20ｘ1200ｘ600 MPP
+ID: N26000000000028 | Category: 26 | Name: 棚板 20ｘ900ｘ600 DBP
+ID: N26000000000029 | Category: 26 | Name: 棚板 20ｘ900ｘ600 KKA
+ID: N26000000000030 | Category: 26 | Name: 棚板 20ｘ900ｘ600 MPP
+ID: N26000000000031 | Category: 26 | Name: 棚板 20ｘ900ｘ600 WHP
+ID: N26000000000032 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ1 RGFJLNS-1BW
+ID: N26000000000033 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ1 RGFJLNS-1GO
+ID: N26000000000034 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ1 RGFJLNS-1MPP
+ID: N26000000000035 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ1 RGFJLNS-1WH
+ID: N26000000000036 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ2 RGFJLNS-2GO
+ID: N26000000000037 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ2 RGFJLNS-2WH
+ID: N26000000000038 | Category: 26 | Name: 木製ﾛｯｶｰ Sﾊﾟｰﾂ3 RGFJLNS-3GO
+ID: N26000000000039 | Category: 26 | Name: PAO WORK BOX1人1218SR GO不燃
+ID: N26000000000040 | Category: 26 | Name: PAO WORK BOX6人2424R GO不燃
+ID: N26000000000041 | Category: 26 | Name: PAO WORK BOX6人2424R BW不燃
+ID: N26000000000043 | Category: 26 | Name: PAO WORK BOX1人1012SR GO不燃
+ID: N26000000000044 | Category: 26 | Name: ﾜｰｸﾌﾞｰｽ1212本体KK 扉KK 井上金庫
+ID: N26000000000045 | Category: 26 | Name: 棚板 20ｘ1200ｘ600 MPP
+ID: N26000000000046 | Category: 26 | Name: 棚板 20ｘ900ｘ600 DBP
+ID: N26000000000047 | Category: 26 | Name: 棚板 20ｘ900ｘ600 KKA
+ID: N26000000000048 | Category: 26 | Name: 棚板 20ｘ900ｘ600 MPP
+ID: N26000000000049 | Category: 26 | Name: 棚板 20ｘ900ｘ600 WHP
+ID: N26000000000050 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2400 D380用 SH
+ID: N26000000000051 | Category: 26 | Name: 特注G1IV270AMC1 終 ｼｪﾙﾌ 中方立 H2700 D380用
+ID: N26000000000052 | Category: 26 | Name: ｼｪﾙﾌ 中方立 H2400 D380用 SH
+ID: N26000000000053 | Category: 26 | Name: 特注G1HV270AMC2終 ｼｪﾙﾌ 左右方立 H2700 D380用
+ID: N26000000000054 | Category: 26 | Name: 特注 ｼｪﾙﾌ 施工棚板W800 D380用3枚入 MC
+ID: N26000000000055 | Category: 26 | Name: ｼｪﾙﾌ 左右方立 H2700 D380用 SH
+ID: N26000000000056 | Category: 26 | Name: ｼｪﾙﾌ 施工棚板W800 D380用3枚入 SH
+ID: N26000000000057 | Category: 26 | Name: 特注 ｼｪﾙﾌ 追加棚板 W800 D380用 MC
+ID: N26000000000058 | Category: 26 | Name: 特注 ｼｪﾙﾌ 可動棚板 W800 D380用 MC
+ID: N26000000000059 | Category: 26 | Name: ﾜｰｸﾌﾞｰｽ1212本体NA 扉WH 井上金庫
+ID: N26000000000060 | Category: 26 | Name: PAO WORK BOX1人1212SR GO不燃
+ID: N26000000000061 | Category: 26 | Name: PAO WORK SEMIOPEN2人1218N WH
+ID: N26000000000062 | Category: 26 | Name: PAO WORK SEMIOPEN2人1218N WH
+ID: N26000000000064 | Category: 26 | Name: 9100005616　三菱　1218　面材ｶｯﾄ
+ID: N26000000000065 | Category: 26 | Name: 9100005394　大塚　面材ｶｯﾄ
+ID: N26000000000066 | Category: 26 | Name: 9100005786　ＶCUBE　本社　面材ｶｯﾄ
+ID: N26000000000067 | Category: 26 | Name: 2100016926-4　施工棚板 380X600 LO
+ID: N26000000000068 | Category: 26 | Name: 2100016926-3 施工棚板 380X800 LO
+ID: N26000000000069 | Category: 26 | Name: 2100016926-6 施工棚板 380X1200 LO
+ID: N26000000000070 | Category: 26 | Name: 9100006829　大和ﾊｳｽﾌﾟﾛﾊﾟﾃｨ PAO1012SL-F
+ID: N26000000000071 | Category: 26 | Name: 9100006914　新宿ﾓﾉﾘｽ　PAO1012SR-F
+ID: N26000000000072 | Category: 26 | Name: 9100006831 FICT PAO1218SL-2T
+ID: N26000000000073 | Category: 26 | Name: 9100006811 造作家具
+ID: N26000000000074 | Category: 26 | Name: 9100006916 PAO1218SR-2T-F
+ID: N26000000000075 | Category: 26 | Name: 9100006915 PAO1018SR
+ID: N26000000000076 | Category: 26 | Name: 9100006910 PAOBABY1318
+ID: N26000000000077 | Category: 26 | Name: 9100006911 PAOBABY1318
+ID: N26000000000078 | Category: 26 | Name: 9100007061 PAO1012SR-F
+ID: N26000000000079 | Category: 26 | Name: 9100006561PAOBABY
+ID: N26000000000081 | Category: 26 | Name: 9100007293　HONODE.SUNS　ﾌﾛｱ
+ID: N26000000000084 | Category: 26 | Name: 9100007301 弘益ｶﾗｰ　ﾌﾛｱ
+ID: N26000000000085 | Category: 26 | Name: 2100016926-7 ｼｪﾙﾌｽﾘﾑ可動棚Ｗ600　LO
+ID: N26000000000086 | Category: 26 | Name: 2100016787-2 ｼｪﾙﾌ方立 GO
+ID: N26000000000087 | Category: 26 | Name: 2100016926-2 ｼｪﾙﾌ方立 LO

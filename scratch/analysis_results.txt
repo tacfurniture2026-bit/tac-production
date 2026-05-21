@@ -1,0 +1,87 @@
+=== DETAILED SEARCH RESULTS FOR MISSING CODES ===
+
+
+Target Row 956: Name='PAO WORK BOX1人1012BL GO不燃', Remark=''
+  [Exact Name Matches]
+    - Month: 2026年2月, Code: N12000000000143, ClassCode: 12-143, Remark: 
+    - Month: 2026年3月, Code: N26000000000036, ClassCode: 26-036, Remark: 
+
+Target Row 957: Name='PAO WORK BOX1人1012BL GO不燃', Remark=''
+  [Exact Name Matches]
+    - Month: 2026年2月, Code: N12000000000143, ClassCode: 12-143, Remark: 
+    - Month: 2026年3月, Code: N26000000000036, ClassCode: 26-036, Remark: 
+
+Target Row 958: Name='PAO CALMDOWN1290R GO', Remark=''
+
+Target Row 959: Name='PAO WORK BOX1人1012BL GO不燃', Remark=''
+  [Exact Name Matches]
+    - Month: 2026年2月, Code: N12000000000143, ClassCode: 12-143, Remark: 
+    - Month: 2026年3月, Code: N26000000000036, ClassCode: 26-036, Remark: 
+
+Target Row 960: Name='PAO WORK BOX1人1012SR GO不燃', Remark=''
+
+Target Row 961: Name='PAO WORK BOX1人1012SL GO不燃', Remark=''
+
+Target Row 962: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA', Remark='RGFJLNW-1KKA'
+  [Exact Name Matches]
+    - Month: 2026年3月, Code: N26000000000023, ClassCode: 26-023, Remark: 
+
+Target Row 963: Name='ｼｪﾙﾌ 中方立 H2400 D240用 BW', Remark='G1IV240BBW1-N'
+
+Target Row 964: Name='ｼｪﾙﾌ 左右方立 H2400 D240用 BW', Remark='G1HV240BBW2-N'
+
+Target Row 965: Name='ｼｪﾙﾌ 施工棚板W800 D240用3枚入 BW', Remark='G1E8003BBW3-N'
+
+Target Row 966: Name='ｼｪﾙﾌ 追加棚板 W800 D240用 BW', Remark='G1K8003BBW1-N'
+
+Target Row 967: Name='ｼｪﾙﾌ 可動棚板 W800 D240用 BW', Remark='G1S8003BBW1-N'
+
+Target Row 968: Name='ｼｪﾙﾌ 中方立 H2400 D380用', Remark='G1IV240AGO1'
+  [Fuzzy Matches (matching: 中方立, D380)]
+    - Month: 2026年3月, Code: N26000000000018, ClassCode: 26-018, Name: ｼｪﾙﾌ 中方立 H2400 D380用 SH, Remark: 
+    - Month: 2026年3月, Code: N26000000000028, ClassCode: 26-028, Name: 特注　ｼｪﾙﾌ 中方立 H2400 D380用 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000044, ClassCode: 26-044, Name: 9100005833 中方立 H2145 D380 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000059, ClassCode: 26-059, Name: 9100006011　特注中方立　H2030 D380　GO, Remark: 
+
+Target Row 969: Name='ｼｪﾙﾌ 左右方立 H2400 D380', Remark='G1HV240AGO2'
+  [Fuzzy Matches (matching: 左右方立, D380)]
+    - Month: 2026年1月, Code: N06000000000002, ClassCode: 06-002, Name: 1560 左右方立2枚入 D380用付属, Remark: 
+    - Month: 2026年3月, Code: N26000000000045, ClassCode: 26-045, Name: 9100005832 左右方立 H2145 D380 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000058, ClassCode: 26-058, Name: 9100006010　左右方立　H2050 D380 GO, Remark: 
+
+Target Row 970: Name='ｼｪﾙﾌ 施工棚板W800 D380用3', Remark='G1E8003AGO3'
+  [Fuzzy Matches (matching: 施工棚, D380)]
+    - Month: 2026年2月, Code: N12000000000201, ClassCode: 12-201, Name: 2100012216-3　ｼｪﾙﾌ施工棚板　W800xD380, Remark: 
+    - Month: 2026年3月, Code: N26000000000037, ClassCode: 26-037, Name: ｼｪﾙﾌ 施工棚板W800 D380用3枚入 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000038, ClassCode: 26-038, Name: ｼｪﾙﾌ 施工棚板W1200 D380用3枚入 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000043, ClassCode: 26-043, Name: 2100014093-4　施工棚板　W1200 D380, Remark: 
+    - Month: 2026年3月, Code: N26000000000054, ClassCode: 26-054, Name: 2100014662 施工棚板　W800D380 GO, Remark: 
+    - Month: 2026年3月, Code: N26000000000060, ClassCode: 26-060, Name: 2100014093-3　施工棚板 W800 D380 GO, Remark: 
+
+Target Row 971: Name='ｼｪﾙﾌ 追加棚板 W800 D380用', Remark='G1K8003AGO1'
+  [Fuzzy Matches (matching: 追加棚, D380)]
+    - Month: 2026年3月, Code: N26000000000039, ClassCode: 26-039, Name: ｼｪﾙﾌ 追加棚板 W1200 D380用 GO, Remark: 
+
+Target Row 972: Name='ｼｪﾙﾌ 可動棚板 W800 D380用', Remark='G1S8003AGO1'
+  [Fuzzy Matches (matching: 可動棚, D380)]
+    - Month: 2026年3月, Code: N26000000000053, ClassCode: 26-053, Name: 2100014871-1　可動棚　W600　D380　GO, Remark: 
+
+Target Row 973: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1BW', Remark='RGFJLNW-1BW'
+
+Target Row 974: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1GO', Remark='RGFJLNW-1GO'
+
+Target Row 975: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA', Remark='RGFJLNW-1KKA'
+  [Exact Name Matches]
+    - Month: 2026年3月, Code: N26000000000023, ClassCode: 26-023, Remark: 
+
+Target Row 976: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP', Remark='RGFJLNW-1MPP'
+
+Target Row 977: Name='木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH', Remark='RGFJLNW-1WH'
+  [Exact Name Matches]
+    - Month: 2026年3月, Code: N26000000000026, ClassCode: 26-026, Remark: 
+
+Target Row 978: Name='特注/PAO(1人用)9100002362', Remark=''
+
+Target Row 979: Name='特注/PAO(4人用)9100002363', Remark=''
+
+Target Row 980: Name='特注/PAO(6人用)9100002364', Remark=''

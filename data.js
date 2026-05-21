@@ -434,6 +434,56 @@ const DB = {
         this.save(this.KEYS.INV_SCAN_TEMP, []);
     },
 
+    // ========================================
+    // 棚卸バッチスキャン（オフライン・ローカル蓄積用）
+    // ========================================
+    LOCAL_BATCH_KEY: 'pms_local_batch_scans',
+
+    getLocalBatchScans() {
+        try {
+            const data = localStorage.getItem(this.LOCAL_BATCH_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            console.error('ローカルバッチ読み込みエラー', e);
+            return [];
+        }
+    },
+
+    saveLocalBatchScan(scanItem) {
+        const scans = this.getLocalBatchScans();
+        scans.push(scanItem);
+        localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
+    },
+
+    updateLocalBatchScan(productId, newQty) {
+        const scans = this.getLocalBatchScans();
+        // 最新のものを上書きする（通常はproductIdごとに1件を想定）
+        let found = false;
+        for (let i = scans.length - 1; i >= 0; i--) {
+            if (scans[i].productId === productId) {
+                scans[i].quantity = newQty;
+                scans[i].timestamp = new Date().toISOString();
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
+            return true;
+        }
+        return false;
+    },
+
+    deleteLocalBatchScan(productId) {
+        let scans = this.getLocalBatchScans();
+        scans = scans.filter(s => s.productId !== productId);
+        localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
+    },
+
+    clearLocalBatchScans() {
+        localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify([]));
+    },
+
     // 追加（競合回避：トランザクション使用）
     add(key, newItem) {
         // 即座にローカルに反映してリロード消失を防止（オプティミスティックUI保護）
@@ -567,11 +617,13 @@ const DB = {
 
     // 取得
     get(key) {
-        // Firebase使用時（キャッシュから取得）
+        // Firebase使用時（ロード完了している場合はキャッシュから取得）
         if (typeof useFirebase !== 'undefined' && useFirebase && key !== this.KEYS.CURRENT_USER) {
-            return this._cache[key] || [];
+            if (this._loaded[key]) {
+                return this._cache[key] || [];
+            }
         }
-        // ローカルストレージ
+        // 未ロード、オフライン時、またはローカル専用時はローカルストレージから取得
         const data = localStorage.getItem(key);
         try {
             const parsed = data ? JSON.parse(data) : [];

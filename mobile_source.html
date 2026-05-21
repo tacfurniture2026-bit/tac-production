@@ -249,7 +249,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.22</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.23</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -891,7 +891,7 @@
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.22</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.23</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -956,17 +956,24 @@
                                         style="font-size: 24px; padding: 16px; text-align: center;">
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-full"
-                                    style="font-size: 18px; padding: 16px;">✓ 棚卸登録</button>
+                                    style="font-size: 18px; padding: 16px;">✓ 端末に仮保存</button>
+                                
+                                <div style="margin-top: 20px;">
+                                    <button type="button" class="btn btn-success btn-full" id="inv-batch-send-btn"
+                                        style="font-size: 18px; padding: 16px; background-color: #10b981; border-color: #10b981;">
+                                        📤 サーバーへ一括送信 (<span id="inv-batch-count">0</span>件)
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
-                    <!-- 本日の棚卸履歴 -->
+                    <!-- 端末バッチデータ -->
                     <div class="card">
                         <div class="card-header">
-                            <h3>📜 本日の棚卸</h3>
+                            <h3>📜 端末バッチデータ（未送信）</h3>
                         </div>
-                        <div class="card-body" id="inv-today-logs">
-                            <p class="text-muted">履歴がありません</p>
+                        <div class="card-body" id="inv-local-batch-list">
+                            <p class="text-muted">データがありません</p>
                         </div>
                     </div>
                 </div>
@@ -1113,7 +1120,10 @@
                             <h1>☑ 棚卸スキャン確認</h1>
                             <p>仮登録された棚卸データの確認・修正・確定処理</p>
                         </div>
-                        <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary" onclick="if(typeof renderInvCheckPage === 'function') renderInvCheckPage()">🔄 マスタ再読込</button>
+                            <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1357,13 +1367,17 @@
                 </button>
 
                 <div class="nav-section-label">アカウント</div>
+                <button class="more-menu-item" id="mobile-reload-btn" onclick="forceReloadApp()">
+                    <span class="more-menu-icon">🔄</span>
+                    <span>最新に更新 (キャッシュクリア)</span>
+                </button>
                 <button class="more-menu-item logout" id="mobile-logout-btn"
                     onclick="if(confirm('ログアウトしますか？')){ localStorage.removeItem('pms_current_user'); location.reload(); }">
                     <span class="more-menu-icon">↩</span>
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.22
+                    Version: v5.23
                 </div>
             </div>
         </div>

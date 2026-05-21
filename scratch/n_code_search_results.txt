@@ -1,0 +1,145 @@
+=== GENERAL G1... CODES IN MASTER ===
+ID: N03000000000013 | Category: 03 | Name: ﾎﾞﾝﾚｯｸｽ BG143 BL色 4尺
+ID: N12000000000203 | Category: 12 | Name: 2100012216-2　G1HV270AGO2　ｼｪﾙﾌ左右方立
+ID: N12000000000204 | Category: 12 | Name: 2100012216-1　G1IV270AGO1　中方立
+ID: N12000000000205 | Category: 12 | Name: 2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚
+ID: N12000000000206 | Category: 12 | Name: 210000934-1　G1IV240ASH1-N　中方立
+ID: N26000000000051 | Category: 26 | Name: 特注G1IV270AMC1 終 ｼｪﾙﾌ 中方立 H2700 D380用
+ID: N26000000000053 | Category: 26 | Name: 特注G1HV270AMC2終 ｼｪﾙﾌ 左右方立 H2700 D380用
+
+=== GENERAL RGFJLNW CODES IN MASTER ===
+ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+=== GENERAL CALMDOWN CODES IN MASTER ===
+
+=== DETAILED TARGET MATCHES ===
+
+Target: PAO WORK BOX1人1012BL GO不燃 (keywords: ['PAO', '1012', 'BL', 'GO'])
+  Match: ID: N13000000000200 | Category: 13 | Name: PAO1012BL 天井板 FTN508ZN
+  Match: ID: N13000000000201 | Category: 13 | Name: PAO1012BL 右側板 FTN508ZN
+  Match: ID: N13000000000202 | Category: 13 | Name: PAO1012BL ﾃﾞｽｸ FTN508ZN
+  Match: ID: N13000000000203 | Category: 13 | Name: PAO1012BL 正面 FTN508ZN
+  Match: ID: N13000000000204 | Category: 13 | Name: PAO1012BL 後面 FTN508ZN
+  Match: ID: N26000000000022 | Category: 26 | Name: PAO WORK BOX1人1012BL GO不燃
+
+Target: PAO CALMDOWN1290R GO (keywords: ['CALMDOWN'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['CALMDOWN']):
+
+Target: PAO WORK BOX1人1012SR GO不燃 (keywords: ['PAO', '1012', 'SR', 'GO'])
+  Match: ID: N26000000000021 | Category: 26 | Name: PAO WORK BOX1人1012SR GO不燃
+  Match: ID: N26000000000043 | Category: 26 | Name: PAO WORK BOX1人1012SR GO不燃
+  Match: ID: N26000000000071 | Category: 26 | Name: 9100006914　新宿ﾓﾉﾘｽ　PAO1012SR-F
+  Match: ID: N26000000000078 | Category: 26 | Name: 9100007061 PAO1012SR-F
+
+Target: PAO WORK BOX1人1012SL GO不燃 (keywords: ['PAO', '1012', 'SL', 'GO'])
+  Match: ID: N26000000000070 | Category: 26 | Name: 9100006829　大和ﾊｳｽﾌﾟﾛﾊﾟﾃｨ PAO1012SL-F
+
+Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA (keywords: ['RGFJLNW', '1KKA'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['RGFJLNW']):
+    - ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+    - ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+    - ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+    - ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+    - ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+    - ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+Target: ｼｪﾙﾌ 中方立 H2400 D240用 BW (keywords: ['G1IV240', 'BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1IV240']):
+    - ID: N12000000000206 | Category: 12 | Name: 210000934-1　G1IV240ASH1-N　中方立
+
+Target: ｼｪﾙﾌ 左右方立 H2400 D240用 BW (keywords: ['G1HV240', 'BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1HV240']):
+
+Target: ｼｪﾙﾌ 施工棚板W800 D240用3枚入 BW (keywords: ['G1E8003', 'BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1E8003']):
+
+Target: ｼｪﾙﾌ 追加棚板 W800 D240用 BW (keywords: ['G1K8003', 'BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1K8003']):
+
+Target: ｼｪﾙﾌ 可動棚板 W800 D240用 BW (keywords: ['G1S8003', 'BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1S8003']):
+    - ID: N12000000000205 | Category: 12 | Name: 2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚
+
+Target: ｼｪﾙﾌ 中方立 H2400 D380用 (keywords: ['G1IV240', 'AGO'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1IV240']):
+    - ID: N12000000000206 | Category: 12 | Name: 210000934-1　G1IV240ASH1-N　中方立
+
+Target: ｼｪﾙﾌ 左右方立 H2400 D380 (keywords: ['G1HV240', 'AGO'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1HV240']):
+
+Target: ｼｪﾙﾌ 施工棚板W800 D380用3 (keywords: ['G1E8003', 'AGO'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1E8003']):
+
+Target: ｼｪﾙﾌ 追加棚板 W800 D380用 (keywords: ['G1K8003', 'AGO'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['G1K8003']):
+
+Target: ｼｪﾙﾌ 可動棚板 W800 D380用 (keywords: ['G1S8003', 'AGO'])
+  Match: ID: N12000000000205 | Category: 12 | Name: 2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚
+
+Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1BW (keywords: ['RGFJLNW', '1BW'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['RGFJLNW']):
+    - ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+    - ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+    - ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+    - ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+    - ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+    - ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1GO (keywords: ['RGFJLNW', '1GO'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['RGFJLNW']):
+    - ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+    - ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+    - ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+    - ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+    - ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+    - ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1MPP (keywords: ['RGFJLNW', '1MPP'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['RGFJLNW']):
+    - ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+    - ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+    - ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+    - ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+    - ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+    - ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+Target: 木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH (keywords: ['RGFJLNW', '1WH'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['RGFJLNW']):
+    - ID: N12000000000189 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚
+    - ID: N12000000000190 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板
+    - ID: N12000000000191 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚
+    - ID: N12000000000192 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板
+    - ID: N12000000000193 | Category: 12 | Name: 2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉
+    - ID: N12000000000209 | Category: 12 | Name: 2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板
+
+Target: 特注/PAO(1人用)9100002362 (keywords: ['9100002362'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['9100002362']):
+
+Target: 特注/PAO(4人用)9100002363 (keywords: ['9100002363'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['9100002363']):
+
+Target: 特注/PAO(6人用)9100002364 (keywords: ['9100002364'])
+  No direct match found. Broadening search...
+  Fuzzy matches (using ['9100002364']):

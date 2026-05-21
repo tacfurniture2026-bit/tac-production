@@ -5597,8 +5597,13 @@ function renderInvScanPage() {
     };
   }
 
-  // 本日の棚卸履歴を表示
-  renderTodayInvLogs();
+  const batchSendBtn = $('#inv-batch-send-btn');
+  if (batchSendBtn) {
+    batchSendBtn.onclick = sendBatchScans;
+  }
+
+  // 端末バッチ履歴を表示
+  renderLocalBatchScans();
 
   // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
   /*
@@ -5732,6 +5737,18 @@ function submitInventoryCount() {
     return;
   }
 
+  // 重複チェック (ローカルバッチ内)
+  const localScans = DB.getLocalBatchScans();
+  const existingScan = localScans.find(s => s.productId === productId);
+  if (existingScan) {
+    showDuplicateScanModal(productId, product.name, quantity, existingScan.quantity);
+    return;
+  }
+
+  proceedWithLocalBatchSave(productId, quantity, product.name);
+}
+
+function proceedWithLocalBatchSave(productId, quantity, productName) {
   let targetTimestamp = new Date().toISOString();
   let targetMonth = '';
   const monthInput = $('#inv-scan-month');
@@ -5741,10 +5758,18 @@ function submitInventoryCount() {
     targetMonth = getInventoryNextTargetMonth();
   }
 
-  // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
-  DB.saveTempScan(productId, quantity, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth, currentTerminalId);
+  const newScan = {
+    productId: productId,
+    quantity: quantity,
+    worker: currentUser ? currentUser.username : '',
+    workerName: currentUser ? currentUser.displayName : '',
+    timestamp: targetTimestamp,
+    month: targetMonth,
+    terminalId: currentTerminalId || ''
+  };
 
-  toast(`${product.name}の棚卸を仮登録しました（${quantity}個、締め処理待ち）`, 'success');
+  DB.saveLocalBatchScan(newScan);
+  toast(`${productName || productId}の棚卸を端末に仮保存しました（${quantity}個）`, 'success');
 
   // フォームリセット
   $('#inv-scan-product-id').value = '';
@@ -5753,7 +5778,7 @@ function submitInventoryCount() {
   $('#inv-scan-result').style.display = 'none';
 
   // 履歴更新
-  renderTodayInvLogs();
+  renderLocalBatchScans();
 
   // 連続スキャンモード（スマホ）
   if (isMobileDevice()) {
@@ -5761,52 +5786,178 @@ function submitInventoryCount() {
   }
 }
 
-function renderTodayInvLogs() {
-  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  const tempScans = DB.getTempScans() || [];
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const today = new Date().toISOString().split('T')[0];
+function showDuplicateScanModal(productId, productName, newQty, currentQty) {
+  const body = `
+    <div style="padding: 1rem;">
+      <p style="margin-bottom: 1.5rem; font-weight: 600; line-height: 1.5;">
+        ⚠️ この資材はすでにスキャンされています。<br>
+        <strong>${productName || productId}</strong><br>
+        現在端末に保存されている数量: <span style="font-size: 1.2rem; font-weight: bold; color: #d97706;">${currentQty}</span>
+      </p>
+      <p style="margin-bottom: 1rem; color: var(--color-text-muted);">どのように処理しますか？</p>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button class="btn btn-primary" onclick="handleDuplicateAction('${productId}', 'add', ${newQty}, ${currentQty}, '${productName}')" style="font-size: 1.1rem; padding: 12px;">
+          ➕ 追加する（${currentQty} + ${newQty} = ${currentQty + newQty}）
+        </button>
+        <div style="display: flex; gap: 0.75rem;">
+          <input type="number" id="duplicate-override-qty" class="form-input" value="${newQty}" style="width: 100px; text-align: center; font-size: 1.1rem; font-weight: bold;">
+          <button class="btn btn-warning" onclick="handleDuplicateAction('${productId}', 'overwrite', 0, 0, '${productName}')" style="flex: 1;">
+            ✍️ この数量で上書き修正
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
 
-  // ログインユーザーのusernameを取得
-  const myUsername = currentUser ? currentUser.username : '';
+  const footer = `
+    <button class="btn btn-secondary" onclick="handleDuplicateAction('${productId}', 'cancel', 0, 0, '${productName}')">❌ 登録しない（キャンセル）</button>
+  `;
 
-  const todayLogs = [
-    ...tempScans
-      .filter(t => t.terminalId === currentTerminalId || (!t.terminalId && (t.worker === myUsername || t.username === myUsername)))  // 端末IDでフィルタ（無ければ従来通りユーザー名）
-      .map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
-    ...logs.filter(log => {
-      if (log.terminalId === currentTerminalId) return true;
-      if (log.terminalId) return false;
-      // INV_LOGSにusernameフィールドがある場合はそれでフィルタ
-      if (log.username) return log.username === myUsername;
-      if (log.user) return log.user === myUsername;
-      // usernameフィールドがないログは表示しない（自分のものか判別不能）
-      return false;
-    })
-  ].filter(log => log.timestamp.startsWith(today)).reverse().slice(0, 20);
+  showModal('⚠️ スキャン重複確認', body, footer);
+}
+
+window.handleDuplicateAction = function(productId, action, newQty, currentQty, productName) {
+  hideModal();
   
-  const container = $('#inv-today-logs');
+  if (action === 'cancel') {
+    $('#inv-scan-product-id').value = '';
+    $('#inv-scan-quantity').value = '';
+    $('#inv-product-info').style.display = 'none';
+    $('#inv-scan-result').style.display = 'none';
+    toast('登録をキャンセルしました', 'info');
+    if (isMobileDevice()) setTimeout(() => startInvScanner(), 500);
+    return;
+  }
+  
+  if (action === 'add') {
+    const finalQty = currentQty + newQty;
+    DB.updateLocalBatchScan(productId, finalQty);
+    toast(`${productName || productId}の数量を ${finalQty} に更新しました`, 'success');
+  } else if (action === 'overwrite') {
+    const overrideInput = $('#duplicate-override-qty');
+    const finalQty = parseInt(overrideInput.value) || 0;
+    DB.updateLocalBatchScan(productId, finalQty);
+    toast(`${productName || productId}の数量を ${finalQty} に上書き修正しました`, 'success');
+  }
+  
+  // フォームリセット
+  $('#inv-scan-product-id').value = '';
+  $('#inv-scan-quantity').value = '';
+  $('#inv-product-info').style.display = 'none';
+  $('#inv-scan-result').style.display = 'none';
+  renderLocalBatchScans();
 
-  if (todayLogs.length === 0) {
-    container.innerHTML = '<p class="text-muted">本日の自分の履歴がありません</p>';
+  if (isMobileDevice()) setTimeout(() => startInvScanner(), 500);
+};
+
+function renderLocalBatchScans() {
+  const localScans = DB.getLocalBatchScans();
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  
+  const container = $('#inv-local-batch-list');
+  const countBadge = $('#inv-batch-count');
+  
+  if (countBadge) countBadge.textContent = localScans.length;
+
+  if (!container) return;
+
+  if (localScans.length === 0) {
+    container.innerHTML = '<p class="text-muted">未送信のデータはありません</p>';
     return;
   }
 
-  container.innerHTML = todayLogs.map(log => {
+  // 最新のものが上に来るように
+  const displayScans = [...localScans].reverse();
+
+  container.innerHTML = displayScans.map(log => {
     const product = products.find(p => p.id === log.productId);
-    const typeLabel = log.type === 'count_temp' ? '棚卸(仮)' : log.type === 'count' ? '棚卸' : log.type === 'in' ? '入庫' : '出庫';
     const time = new Date(log.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
     return `
-      <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
-        <div>
-          <div style="font-weight: 500;">${product?.name || log.productId}</div>
-          <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${typeLabel}: ${log.quantity}個</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem; border-left: 4px solid #10b981;">
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 1rem; color: var(--color-text-primary);">${product?.name || log.productId} <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">(${log.productId})</span></div>
+          <div style="font-size: 1.1rem; color: var(--color-primary); font-weight: bold; margin-top: 4px;">${log.quantity} 個</div>
+          <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">保存日時: ${time}</div>
         </div>
-        <div style="font-size: 0.75rem; color: var(--color-text-muted);">${time}</div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <button class="btn btn-sm btn-secondary" onclick="showEditLocalBatchItem('${log.productId}', ${log.quantity}, '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">修正</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteLocalBatchItem('${log.productId}', '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">削除</button>
+        </div>
       </div>
     `;
   }).join('');
 }
+
+window.deleteLocalBatchItem = function(productId, productName) {
+  if (confirm(`${productName} の端末バッチデータを削除しますか？`)) {
+    DB.deleteLocalBatchScan(productId);
+    toast('削除しました', 'success');
+    renderLocalBatchScans();
+  }
+};
+
+window.showEditLocalBatchItem = function(productId, currentQty, productName) {
+  const newQtyStr = prompt(`${productName} の新しい数量を入力してください:`, currentQty);
+  if (newQtyStr !== null && newQtyStr.trim() !== '') {
+    const newQty = parseInt(newQtyStr);
+    if (!isNaN(newQty) && newQty >= 0) {
+      DB.updateLocalBatchScan(productId, newQty);
+      toast('数量を修正しました', 'success');
+      renderLocalBatchScans();
+    } else {
+      alert('正しい数値を入力してください');
+    }
+  }
+};
+
+function sendBatchScans() {
+  const localScans = DB.getLocalBatchScans();
+  if (localScans.length === 0) {
+    toast('送信するデータがありません', 'info');
+    return;
+  }
+
+  // 1件ずつサーバー(Firebase + キャッシュ)に送信
+  let successCount = 0;
+  localScans.forEach(scan => {
+    DB.saveTempScan(
+      scan.productId, 
+      scan.quantity, 
+      scan.worker, 
+      scan.workerName, 
+      scan.timestamp, 
+      scan.month, 
+      scan.terminalId
+    );
+    successCount++;
+  });
+
+  toast(`送信完了: ${successCount}件のデータをサーバーへ一括送信しました`, 'success');
+
+  // 確認アラート
+  setTimeout(() => {
+    if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
+      DB.clearLocalBatchScans();
+      renderLocalBatchScans();
+      toast('端末のバッチデータを消去しました', 'info');
+    }
+  }, 300);
+}
+
+window.forceReloadApp = function() {
+  if (confirm('最新のシステムに更新するため、キャッシュをクリアして再読み込みしますか？\n（未送信の端末バッチデータは消えません）')) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 500);
+  }
+};
 
 // ========================================
 // 在庫検索画面
