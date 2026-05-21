@@ -74,8 +74,14 @@ function migrateCorruptedData() {
 migrateCorruptedData();
 
 // ========================================
-// グローバル変数
+// グローバル変数・設定
 // ========================================
+
+let currentTerminalId = localStorage.getItem('pms_terminal_id');
+if (!currentTerminalId) {
+    currentTerminalId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('pms_terminal_id', currentTerminalId);
+}
 
 let currentUser = null;
 let expandedOrders = new Set();
@@ -5736,7 +5742,7 @@ function submitInventoryCount() {
   }
 
   // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
-  DB.saveTempScan(productId, quantity, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
+  DB.saveTempScan(productId, quantity, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth, currentTerminalId);
 
   toast(`${product.name}の棚卸を仮登録しました（${quantity}個、締め処理待ち）`, 'success');
 
@@ -5766,9 +5772,11 @@ function renderTodayInvLogs() {
 
   const todayLogs = [
     ...tempScans
-      .filter(t => (t.worker === myUsername || t.username === myUsername))  // workerまたはusernameでフィルタ
+      .filter(t => t.terminalId === currentTerminalId || (!t.terminalId && (t.worker === myUsername || t.username === myUsername)))  // 端末IDでフィルタ（無ければ従来通りユーザー名）
       .map(t => ({ ...t, type: 'count_temp', timestamp: t.timestamp || new Date().toISOString() })),
     ...logs.filter(log => {
+      if (log.terminalId === currentTerminalId) return true;
+      if (log.terminalId) return false;
       // INV_LOGSにusernameフィールドがある場合はそれでフィルタ
       if (log.username) return log.username === myUsername;
       if (log.user) return log.user === myUsername;

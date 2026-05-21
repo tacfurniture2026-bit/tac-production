@@ -404,7 +404,7 @@ const DB = {
         return localScans.length > 0 ? localScans : cacheScans;
     },
 
-    saveTempScan(productId, quantity, worker, workerName, timestamp, month) {
+    saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
         const newScan = {
             id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
             productId: productId,
@@ -413,9 +413,10 @@ const DB = {
             workerName: workerName,
             timestamp: timestamp,
             month: month,
+            terminalId: terminalId || '',
             type: 'count_temp'
         };
-        // DB.add はトランザクションを使用するため、複数人の同時スキャンや連続スキャンでも競合せず蓄積される
+        // DB.add は個別の set() に更新されたため、複数人の同時スキャンや連続スキャンでも競合せず即時反映される
         this.add(this.KEYS.INV_SCAN_TEMP, newScan);
     },
 
@@ -446,20 +447,14 @@ const DB = {
 
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (currentData === null) return [newItem];
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                if (newItem.id && dataArray.some(d => d.id === newItem.id)) return; // ID重複防止
-                dataArray.push(newItem);
-                return dataArray;
-            }, (error, committed) => {
+            // オフライン時のキューイングをサポートするため、トランザクションではなく個別の child に対して set を行う
+            firebaseDB.ref(fbKey).child(newItem.id).set(newItem, (error) => {
                 if (error) {
                     console.error('Add failed:', error);
                     toast('追加に失敗しました', 'error');
                 }
             });
         } else {
-            // ローカルストレージは既に上で更新済みだが、再セーブを呼ぶ
             this.save(key, localData);
         }
     },
@@ -535,15 +530,8 @@ const DB = {
 
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (!currentData) return;
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                const i = dataArray.findIndex(item => item && item.id === id);
-                if (i !== -1) {
-                    dataArray[i] = updatedItem;
-                }
-                return dataArray;
-            }, (error, committed) => {
+            // オフライン対応のため、個別の child に対して update/set を行う
+            firebaseDB.ref(fbKey).child(id).set(updatedItem, (error) => {
                 if (error) {
                     console.error('Update failed:', error);
                     toast('更新に失敗しました: ' + error.message, 'error');
@@ -556,24 +544,24 @@ const DB = {
 
     // 削除（競合回避：トランザクション使用）
     delete(key, id) {
+        // 即座にローカルに反映してリロード消失を防止
+        let localData = this._cache[key] || [];
+        if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
+        const filteredLocal = localData.filter(item => item && item.id !== id);
+        this._cache[key] = filteredLocal;
+        localStorage.setItem(key, JSON.stringify(filteredLocal));
+
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).transaction((currentData) => {
-                if (!currentData) return;
-                const dataArray = Array.isArray(currentData) ? currentData : Object.values(currentData).filter(item => item !== null);
-                const filteredData = dataArray.filter(item => item && item.id !== id);
-                return filteredData;
-            }, (error, committed) => {
+            // オフライン対応のため、個別の child を削除する
+            firebaseDB.ref(fbKey).child(id).remove((error) => {
                 if (error) {
                     console.error('Delete failed:', error);
                     toast('削除に失敗しました: ' + error.message, 'error');
                 }
             });
         } else {
-            // ローカルストレージ
-            const data = this.get(key);
-            const filteredData = data.filter(item => item && item.id !== id);
-            this.save(key, filteredData);
+            this.save(key, filteredLocal);
         }
     },
 
