@@ -2779,7 +2779,8 @@ const DB = {
 
     deleteLocalBatchScan(productId) {
         let scans = this.getLocalBatchScans();
-        scans = scans.filter(s => String(s.productId) !== String(productId));
+        // IDが完全一致するものを除外。また、productId自体が存在しない不正なデータもついでに掃除する
+        scans = scans.filter(s => s && s.productId && String(s.productId) !== String(productId));
         localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
     },
 
@@ -2830,24 +2831,30 @@ const DB = {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             
-            // ルールによるPermission Deniedを防ぐため、update()ではなく個別のset()をPromise.allで実行する
-            const promises = newItems.map(item => {
-                return new Promise((resolve, reject) => {
-                    firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve();
-                        }
+            // ルールによるPermission Deniedやレートリミットを防ぐため、直列（1件ずつ順番に）set() を実行する
+            const processSequentially = async () => {
+                for (const item of newItems) {
+                    // Firebaseでは undefined なプロパティはエラーになるため削除
+                    Object.keys(item).forEach(k => item[k] === undefined && delete item[k]);
+                    
+                    await new Promise((resolve, reject) => {
+                        firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
+                            if (error) {
+                                console.error('Firebase set error for item:', item.id, error);
+                                reject(error);
+                            } else {
+                                resolve();
+                            }
+                        });
                     });
-                });
-            });
+                }
+            };
 
-            return Promise.all(promises)
+            return processSequentially()
                 .then(() => true)
                 .catch(error => {
-                    console.error('addMultiple failed (individual set):', error);
-                    toast('データの送信に失敗しました: ' + (error.message || error), 'error');
+                    console.error('addMultiple failed (sequential set):', error);
+                    toast('データの送信に一部失敗しました: ' + (error.message || error), 'error');
                     return Promise.reject(error);
                 });
         } else {
@@ -39662,6 +39669,7 @@ function renderLocalBatchScans() {
   container.innerHTML = displayScans.map(log => {
     const product = products.find(p => p.id === log.productId);
     const time = new Date(log.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    const safeProductId = String(log.productId).replace(/'/g, "\\'");
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem; border-left: 4px solid #10b981;">
         <div style="flex: 1;">
@@ -39670,15 +39678,19 @@ function renderLocalBatchScans() {
           <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">保存日時: ${time}</div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <button class="btn btn-sm btn-secondary" onclick="showEditLocalBatchItem('${log.productId}', ${log.quantity}, '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">修正</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteLocalBatchItem('${log.productId}', '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">削除</button>
+          <button class="btn btn-sm btn-secondary" onclick="showEditLocalBatchItem('${safeProductId}', ${log.quantity})" style="padding: 4px 8px; font-size: 0.75rem;">修正</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteLocalBatchItem('${safeProductId}')" style="padding: 4px 8px; font-size: 0.75rem;">削除</button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-window.deleteLocalBatchItem = function(productId, productName) {
+window.deleteLocalBatchItem = function(productId) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === productId);
+  const productName = product ? product.name : productId;
+  
   if (confirm(`${productName} の端末バッチデータを削除しますか？`)) {
     DB.deleteLocalBatchScan(productId);
     toast('削除しました', 'success');
@@ -39686,7 +39698,11 @@ window.deleteLocalBatchItem = function(productId, productName) {
   }
 };
 
-window.showEditLocalBatchItem = function(productId, currentQty, productName) {
+window.showEditLocalBatchItem = function(productId, currentQty) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === productId);
+  const productName = product ? product.name : productId;
+  
   const newQtyStr = prompt(`${productName} の新しい数量を入力してください:`, currentQty);
   if (newQtyStr !== null && newQtyStr.trim() !== '') {
     const newQty = parseInt(newQtyStr);
@@ -41680,7 +41696,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.27</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.28</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42322,7 +42338,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.27</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.28</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42808,7 +42824,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.27
+                    Version: v5.28
                 </div>
             </div>
         </div>

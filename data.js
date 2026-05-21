@@ -476,7 +476,8 @@ const DB = {
 
     deleteLocalBatchScan(productId) {
         let scans = this.getLocalBatchScans();
-        scans = scans.filter(s => String(s.productId) !== String(productId));
+        // IDが完全一致するものを除外。また、productId自体が存在しない不正なデータもついでに掃除する
+        scans = scans.filter(s => s && s.productId && String(s.productId) !== String(productId));
         localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify(scans));
     },
 
@@ -527,24 +528,30 @@ const DB = {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             
-            // ルールによるPermission Deniedを防ぐため、update()ではなく個別のset()をPromise.allで実行する
-            const promises = newItems.map(item => {
-                return new Promise((resolve, reject) => {
-                    firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve();
-                        }
+            // ルールによるPermission Deniedやレートリミットを防ぐため、直列（1件ずつ順番に）set() を実行する
+            const processSequentially = async () => {
+                for (const item of newItems) {
+                    // Firebaseでは undefined なプロパティはエラーになるため削除
+                    Object.keys(item).forEach(k => item[k] === undefined && delete item[k]);
+                    
+                    await new Promise((resolve, reject) => {
+                        firebaseDB.ref(fbKey).child(item.id).set(item, (error) => {
+                            if (error) {
+                                console.error('Firebase set error for item:', item.id, error);
+                                reject(error);
+                            } else {
+                                resolve();
+                            }
+                        });
                     });
-                });
-            });
+                }
+            };
 
-            return Promise.all(promises)
+            return processSequentially()
                 .then(() => true)
                 .catch(error => {
-                    console.error('addMultiple failed (individual set):', error);
-                    toast('データの送信に失敗しました: ' + (error.message || error), 'error');
+                    console.error('addMultiple failed (sequential set):', error);
+                    toast('データの送信に一部失敗しました: ' + (error.message || error), 'error');
                     return Promise.reject(error);
                 });
         } else {

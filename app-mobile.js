@@ -5881,6 +5881,7 @@ function renderLocalBatchScans() {
   container.innerHTML = displayScans.map(log => {
     const product = products.find(p => p.id === log.productId);
     const time = new Date(log.timestamp).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    const safeProductId = String(log.productId).replace(/'/g, "\\'");
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.5rem; border-left: 4px solid #10b981;">
         <div style="flex: 1;">
@@ -5889,15 +5890,19 @@ function renderLocalBatchScans() {
           <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px;">保存日時: ${time}</div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <button class="btn btn-sm btn-secondary" onclick="showEditLocalBatchItem('${log.productId}', ${log.quantity}, '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">修正</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteLocalBatchItem('${log.productId}', '${product?.name || log.productId}')" style="padding: 4px 8px; font-size: 0.75rem;">削除</button>
+          <button class="btn btn-sm btn-secondary" onclick="showEditLocalBatchItem('${safeProductId}', ${log.quantity})" style="padding: 4px 8px; font-size: 0.75rem;">修正</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteLocalBatchItem('${safeProductId}')" style="padding: 4px 8px; font-size: 0.75rem;">削除</button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-window.deleteLocalBatchItem = function(productId, productName) {
+window.deleteLocalBatchItem = function(productId) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === productId);
+  const productName = product ? product.name : productId;
+  
   if (confirm(`${productName} の端末バッチデータを削除しますか？`)) {
     DB.deleteLocalBatchScan(productId);
     toast('削除しました', 'success');
@@ -5905,7 +5910,11 @@ window.deleteLocalBatchItem = function(productId, productName) {
   }
 };
 
-window.showEditLocalBatchItem = function(productId, currentQty, productName) {
+window.showEditLocalBatchItem = function(productId, currentQty) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === productId);
+  const productName = product ? product.name : productId;
+  
   const newQtyStr = prompt(`${productName} の新しい数量を入力してください:`, currentQty);
   if (newQtyStr !== null && newQtyStr.trim() !== '') {
     const newQty = parseInt(newQtyStr);
