@@ -5917,31 +5917,36 @@ function sendBatchScans() {
     return;
   }
 
-  // 1件ずつサーバー(Firebase + キャッシュ)に送信
-  let successCount = 0;
-  localScans.forEach(scan => {
-    DB.saveTempScan(
-      scan.productId, 
-      scan.quantity, 
-      scan.worker, 
-      scan.workerName, 
-      scan.timestamp, 
-      scan.month, 
-      scan.terminalId
-    );
-    successCount++;
-  });
+  // 送信用のデータ配列を作成
+  const newScans = localScans.map(scan => ({
+    id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+    productId: scan.productId,
+    quantity: scan.quantity,
+    worker: scan.worker,
+    workerName: scan.workerName,
+    timestamp: scan.timestamp,
+    month: scan.month,
+    terminalId: scan.terminalId || '',
+    type: 'count_temp'
+  }));
 
-  toast(`送信完了: ${successCount}件のデータをサーバーへ一括送信しました`, 'success');
-
-  // 確認アラート
-  setTimeout(() => {
-    if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
-      DB.clearLocalBatchScans();
-      renderLocalBatchScans();
-      toast('端末のバッチデータを消去しました', 'info');
-    }
-  }, 300);
+  // 一括でFirebaseへ送信
+  DB.addMultiple(DB.KEYS.INV_SCAN_TEMP, newScans)
+    .then(() => {
+      toast(`送信完了: ${newScans.length}件のデータをサーバーへ一括送信しました`, 'success');
+      setTimeout(() => {
+        if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
+          DB.clearLocalBatchScans();
+          renderLocalBatchScans();
+          toast('端末のバッチデータを消去しました', 'info');
+        }
+      }, 300);
+    })
+    .catch(error => {
+      console.error('Batch send error:', error);
+      // エラー時はアラートを表示し、バッチデータは消さない
+      alert('送信に失敗しました。\nネットワーク環境を確認し、再度お試しください。');
+    });
 }
 
 window.forceReloadApp = function() {

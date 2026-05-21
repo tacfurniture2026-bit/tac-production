@@ -500,13 +500,52 @@ const DB = {
             // オフライン時のキューイングをサポートするため、トランザクションではなく個別の child に対して set を行う
             firebaseDB.ref(fbKey).child(newItem.id).set(newItem, (error) => {
                 if (error) {
-                    console.error('Add failed:', error);
-                    toast('追加に失敗しました', 'error');
+                    console.error('Add failed:', error, 'newItem:', newItem);
+                    toast('追加に失敗しました: ' + (error.message || error), 'error');
                 }
             });
         } else {
             this.save(key, localData);
         }
+    },
+
+    // 複数件の追加を安全に行う（競合回避のための update 使用）
+    addMultiple(key, newItems) {
+        if (!newItems || newItems.length === 0) return Promise.resolve(true);
+        
+        let localData = this._cache[key] || [];
+        if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
+        
+        newItems.forEach(newItem => {
+            if (newItem.id && !localData.some(d => d.id === newItem.id)) {
+                localData.push(newItem);
+            }
+        });
+        this._cache[key] = localData;
+        localStorage.setItem(key, JSON.stringify(localData));
+
+        return new Promise((resolve, reject) => {
+            if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
+                const fbKey = this.toFirebaseKey(key);
+                const updates = {};
+                newItems.forEach(item => {
+                    updates[item.id] = item;
+                });
+                // update() を使うことで、既存の他のキーを上書きせず、複数件を1回のリクエストで安全にマージする
+                firebaseDB.ref(fbKey).update(updates, (error) => {
+                    if (error) {
+                        console.error('addMultiple failed:', error, updates);
+                        toast('データの送信に失敗しました: ' + (error.message || error), 'error');
+                        reject(error);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            } else {
+                this.save(key, localData);
+                resolve(true);
+            }
+        });
     },
 
     // 一括追加（Promise対応・Firebase非同期対応）
