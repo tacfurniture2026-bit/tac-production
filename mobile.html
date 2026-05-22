@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.30】 -->
+    <!-- 【強制キャッシュバスティング v5.31】 -->
     <script>
         (function() {
             var currentVersion = '5.29';
@@ -41069,11 +41069,20 @@ function renderInvCheckPage() {
           <tr ${rowClass}>
             <td><strong>${item.productId}</strong></td>
             <td>${INV_CATEGORIES[item.category] || item.category}</td>
-            <td>${item.name}</td>
-            <td>¥${item.price.toLocaleString()}</td>
+            <td>
+              <input type="text" class="form-input" style="width: 100%; min-width: 140px; font-size: 14px; padding: 4px;"
+                     value="${item.name.replace(/"/g, '&quot;')}" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'name', this.value)">
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #64748b;">¥</span>
+                <input type="number" class="form-input text-right" style="width: 80px; font-size: 14px; padding: 4px; font-weight: bold;"
+                       value="${item.price}" min="0" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'price', this.value)">
+              </div>
+            </td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId}')">
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
             </td>
             <td>${item.prevQty}</td>
             <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
@@ -41084,7 +41093,7 @@ function renderInvCheckPage() {
             </td>
             <td>${statusBadge}</td>
             <td>
-              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
+              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
             </td>
           </tr>
         `;
@@ -41146,6 +41155,24 @@ window.deleteSingleTempScan = function(productId) {
   DB.deleteTempScan(productId);
   toast('仮スキャンデータから削除しました', 'success');
   renderInvCheckPage();
+};
+
+window.updateMasterFromInvCheck = function(productId, field, value) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  if (prodIndex === -1) {
+    toast('商品マスタが見つかりません', 'error');
+    return;
+  }
+  
+  if (field === 'price') {
+    products[prodIndex].price = parseInt(value) || 0;
+  } else if (field === 'name') {
+    products[prodIndex].name = value.trim();
+  }
+  
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast('商品マスタを更新しました', 'success');
 };
 
 // 単価未登録商品の価格設定モーダル
@@ -41722,7 +41749,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.30</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.31</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42364,7 +42391,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.30</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.31</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42618,6 +42645,7 @@ window.forceReloadMaster = function() {
                                         <option value="scanned">✓ 仮登録済</option>
                                         <option value="missing">⚠️ 未スキャン(漏れ)</option>
                                         <option value="unpriced">⚠️ 単価未登録</option>
+                                        <option value="fixed">不動品</option>
                                     </select>
                                 </div>
                                 <button type="button" class="btn btn-secondary" id="export-inv-check-btn" style="margin-top: 1.25rem;">⬇ CSV出力</button>
@@ -42850,7 +42878,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.30
+                    Version: v5.31
                 </div>
             </div>
         </div>

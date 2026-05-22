@@ -7291,11 +7291,20 @@ function renderInvCheckPage() {
           <tr ${rowClass}>
             <td><strong>${item.productId}</strong></td>
             <td>${INV_CATEGORIES[item.category] || item.category}</td>
-            <td>${item.name}</td>
-            <td>¥${item.price.toLocaleString()}</td>
+            <td>
+              <input type="text" class="form-input" style="width: 100%; min-width: 140px; font-size: 14px; padding: 4px;"
+                     value="${item.name.replace(/"/g, '&quot;')}" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'name', this.value)">
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="color: #64748b;">¥</span>
+                <input type="number" class="form-input text-right" style="width: 80px; font-size: 14px; padding: 4px; font-weight: bold;"
+                       value="${item.price}" min="0" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'price', this.value)">
+              </div>
+            </td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId}')">
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
             </td>
             <td>${item.prevQty}</td>
             <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
@@ -7306,7 +7315,7 @@ function renderInvCheckPage() {
             </td>
             <td>${statusBadge}</td>
             <td>
-              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId}')">削除</button>` : ''}
+              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
             </td>
           </tr>
         `;
@@ -7368,6 +7377,24 @@ window.deleteSingleTempScan = function(productId) {
   DB.deleteTempScan(productId);
   toast('仮スキャンデータから削除しました', 'success');
   renderInvCheckPage();
+};
+
+window.updateMasterFromInvCheck = function(productId, field, value) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  if (prodIndex === -1) {
+    toast('商品マスタが見つかりません', 'error');
+    return;
+  }
+  
+  if (field === 'price') {
+    products[prodIndex].price = parseInt(value) || 0;
+  } else if (field === 'name') {
+    products[prodIndex].name = value.trim();
+  }
+  
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast('商品マスタを更新しました', 'success');
 };
 
 // 単価未登録商品の価格設定モーダル
