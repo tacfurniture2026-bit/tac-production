@@ -7370,9 +7370,8 @@ window.saveSingleTempScan = function(productId) {
       existing.quantity = newQty;
       existing.worker = currentUser.username;
       existing.workerName = currentUser.displayName;
-      // 確実な保存と画面反映のため、一旦削除して追加する
-      DB.deleteTempScan(existing.id);
-      DB.add(DB.KEYS.INV_SCAN_TEMP, existing);
+      // INV_LOGSの既存データを直接updateする（Firebaseのルールでdeleteが弾かれるため）
+      DB.update(DB.KEYS.INV_LOGS, existing.id, existing);
   } else {
       DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
   }

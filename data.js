@@ -379,19 +379,8 @@ const DB = {
 
     // 棚卸仮スキャンデータ
     getTempScans() {
-        // INV_LOGSの count_temp と INV_SCAN_TEMP を統合して返す（マイグレーション過渡期対応）
         const logs = this.get(this.KEYS.INV_LOGS) || [];
-        const scanTemp = this.get(this.KEYS.INV_SCAN_TEMP) || [];
-        const fromLogs = logs.filter(log => log && log.type === 'count_temp');
-        
-        // 重複排除（id優先）
-        const merged = [...scanTemp];
-        fromLogs.forEach(log => {
-            if (!merged.some(m => m.id === log.id)) {
-                merged.push(log);
-            }
-        });
-        return merged;
+        return logs.filter(log => log && log.type === 'count_temp');
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
@@ -406,20 +395,21 @@ const DB = {
             terminalId: terminalId || '',
             type: 'count_temp'
         };
-        // DB.add は個別の set() に更新されたため、複数人の同時スキャンや連続スキャンでも競合せず即時反映される
-        this.add(this.KEYS.INV_SCAN_TEMP, newScan);
+        // Firebaseルールに合わせるため INV_LOGS に保存する
+        this.add(this.KEYS.INV_LOGS, newScan);
     },
 
     deleteTempScan(scanId) {
-        this.delete(this.KEYS.INV_SCAN_TEMP, scanId);
-        this.delete(this.KEYS.INV_LOGS, scanId); // 両方から削除
+        // Firebaseでremoveが禁止されている可能性を考慮し、deleteではなく論理削除(0に更新)するか、
+        // 少なくとも INV_LOGS からの削除を試みるがエラーはcatchする。
+        // ここは一旦 INV_LOGSのdeleteに戻す
+        this.delete(this.KEYS.INV_LOGS, scanId);
     },
 
     clearTempScans() {
         const tempScans = this.getTempScans();
         tempScans.forEach(scan => {
             if (scan && scan.id) {
-                this.delete(this.KEYS.INV_SCAN_TEMP, scan.id);
                 this.delete(this.KEYS.INV_LOGS, scan.id);
             }
         });
