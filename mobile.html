@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.32】 -->
+    <!-- 【強制キャッシュバスティング v5.33】 -->
     <script>
         (function() {
             var currentVersion = '5.29';
@@ -2694,8 +2694,19 @@ const DB = {
 
     // 棚卸仮スキャンデータ
     getTempScans() {
+        // INV_LOGSの count_temp と INV_SCAN_TEMP を統合して返す（マイグレーション過渡期対応）
         const logs = this.get(this.KEYS.INV_LOGS) || [];
-        return logs.filter(log => log && log.type === 'count_temp');
+        const scanTemp = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const fromLogs = logs.filter(log => log && log.type === 'count_temp');
+        
+        // 重複排除（id優先）
+        const merged = [...scanTemp];
+        fromLogs.forEach(log => {
+            if (!merged.some(m => m.id === log.id)) {
+                merged.push(log);
+            }
+        });
+        return merged;
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
@@ -2715,13 +2726,15 @@ const DB = {
     },
 
     deleteTempScan(scanId) {
-        this.delete(this.KEYS.INV_LOGS, scanId);
+        this.delete(this.KEYS.INV_SCAN_TEMP, scanId);
+        this.delete(this.KEYS.INV_LOGS, scanId); // 両方から削除
     },
 
     clearTempScans() {
         const tempScans = this.getTempScans();
         tempScans.forEach(scan => {
             if (scan && scan.id) {
+                this.delete(this.KEYS.INV_SCAN_TEMP, scan.id);
                 this.delete(this.KEYS.INV_LOGS, scan.id);
             }
         });
@@ -41078,7 +41091,9 @@ function renderInvCheckPage() {
             <td>¥${item.price.toLocaleString()}</td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" 
+                     onkeydown="if(event.key==='Enter'){this.blur();}"
+                     onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
             </td>
             <td>${item.prevQty}</td>
             <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
@@ -41180,7 +41195,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
       <p style="margin-bottom: 1rem;">資材ID: <strong>${productId}</strong> の分類を変更します。</p>
       <div class="form-group">
         <label>新しい分類</label>
-        <select id="inv-check-category-select" class="form-input">
+        <select id="inv-check-category-select-${productId}" class="form-input">
           ${optionsHtml}
         </select>
       </div>
@@ -41196,7 +41211,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
 };
 
 window.submitCategoryEdit = function(productId) {
-  const select = document.getElementById('inv-check-category-select');
+  const select = document.getElementById(`inv-check-category-select-${productId}`);
   if (!select) return;
   const newCat = select.value;
   closeModal();
@@ -41777,7 +41792,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.32</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.33</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42419,7 +42434,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.32</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.33</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42906,7 +42921,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.32
+                    Version: v5.33
                 </div>
             </div>
         </div>

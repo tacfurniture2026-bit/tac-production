@@ -379,8 +379,19 @@ const DB = {
 
     // 棚卸仮スキャンデータ
     getTempScans() {
+        // INV_LOGSの count_temp と INV_SCAN_TEMP を統合して返す（マイグレーション過渡期対応）
         const logs = this.get(this.KEYS.INV_LOGS) || [];
-        return logs.filter(log => log && log.type === 'count_temp');
+        const scanTemp = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const fromLogs = logs.filter(log => log && log.type === 'count_temp');
+        
+        // 重複排除（id優先）
+        const merged = [...scanTemp];
+        fromLogs.forEach(log => {
+            if (!merged.some(m => m.id === log.id)) {
+                merged.push(log);
+            }
+        });
+        return merged;
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
@@ -400,13 +411,15 @@ const DB = {
     },
 
     deleteTempScan(scanId) {
-        this.delete(this.KEYS.INV_LOGS, scanId);
+        this.delete(this.KEYS.INV_SCAN_TEMP, scanId);
+        this.delete(this.KEYS.INV_LOGS, scanId); // 両方から削除
     },
 
     clearTempScans() {
         const tempScans = this.getTempScans();
         tempScans.forEach(scan => {
             if (scan && scan.id) {
+                this.delete(this.KEYS.INV_SCAN_TEMP, scan.id);
                 this.delete(this.KEYS.INV_LOGS, scan.id);
             }
         });

@@ -7770,7 +7770,9 @@ function renderInvCheckPage() {
             <td>¥${item.price.toLocaleString()}</td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
-                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
+                     id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" 
+                     onkeydown="if(event.key==='Enter'){this.blur();}" 
+                     onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
             </td>
             <td>${item.prevQty}</td>
             <td style="font-weight: 600; color: ${item.diff > 0 ? '#16a34a' : item.diff < 0 ? '#dc2626' : 'inherit'};">
@@ -7841,7 +7843,9 @@ window.saveSingleTempScan = function(productId) {
       existing.quantity = newQty;
       existing.worker = currentUser.username;
       existing.workerName = currentUser.displayName;
-      DB.update(DB.KEYS.INV_LOGS, existing.id, existing);
+      // 統合後の修正: INV_SCAN_TEMP と INV_LOGS の両方を更新するか、SCAN_TEMPだけにするか
+      // getTempScans で INV_SCAN_TEMP を優先しているので、INV_SCAN_TEMP を更新する
+      DB.update(DB.KEYS.INV_SCAN_TEMP, existing.id, existing);
   } else {
       DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
   }
@@ -7888,7 +7892,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
       <p style="margin-bottom: 1rem;">資材ID: <strong>${productId}</strong> の分類を変更します。</p>
       <div class="form-group">
         <label>新しい分類</label>
-        <select id="inv-check-category-select" class="form-input">
+        <select id="inv-check-category-select-${productId}" class="form-input">
           ${optionsHtml}
         </select>
       </div>
@@ -7904,7 +7908,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
 };
 
 window.submitCategoryEdit = function(productId) {
-  const select = document.getElementById('inv-check-category-select');
+  const select = document.getElementById(`inv-check-category-select-${productId}`);
   if (!select) return;
   const newCat = select.value;
   closeModal();
