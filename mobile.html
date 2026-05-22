@@ -8,14 +8,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.42】 -->
+    <!-- 【強制キャッシュバスティング v5.43】 -->
     <script>
         (function() {
             var currentVersion = '5.29';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
-                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.42
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.43
                 window.location.replace(newUrl);
             }
         })();
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.42">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.43">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -41183,6 +41183,10 @@ function renderInvCheckPage() {
             <td>${statusBadge}</td>
             <td>
               ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; margin-left: ${item.isScanned ? '8px' : '0'}; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; user-select: none;">
+                <input type="checkbox" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
+                不動品
+              </label>
             </td>
           </tr>
         `;
@@ -41221,6 +41225,21 @@ function renderInvCheckPage() {
 }
 
 // Global functions for inline actions
+
+window.toggleFixedStatus = function(productId, isFixed) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  if (prodIndex === -1) {
+    toast('商品マスタが見つかりません', 'error');
+    return;
+  }
+  
+  products[prodIndex].isFixed = isFixed;
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast(`資材 ${productId} を不動品に${isFixed ? '設定' : '解除'}しました`, 'success');
+  renderInvCheckPage();
+};
+
 
 window.updateMasterFromInvCheck = function(productId, field, value) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
@@ -41846,7 +41865,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.42</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.43</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -41929,7 +41948,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.42</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.43</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
@@ -42488,7 +42507,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.42</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.43</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42975,7 +42994,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.42
+                    Version: v5.43
                 </div>
             </div>
         </div>

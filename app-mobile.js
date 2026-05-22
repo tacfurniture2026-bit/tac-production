@@ -7373,6 +7373,10 @@ function renderInvCheckPage() {
             <td>${statusBadge}</td>
             <td>
               ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; margin-left: ${item.isScanned ? '8px' : '0'}; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; user-select: none;">
+                <input type="checkbox" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
+                不動品
+              </label>
             </td>
           </tr>
         `;
@@ -7411,6 +7415,21 @@ function renderInvCheckPage() {
 }
 
 // Global functions for inline actions
+
+window.toggleFixedStatus = function(productId, isFixed) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  if (prodIndex === -1) {
+    toast('商品マスタが見つかりません', 'error');
+    return;
+  }
+  
+  products[prodIndex].isFixed = isFixed;
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  toast(`資材 ${productId} を不動品に${isFixed ? '設定' : '解除'}しました`, 'success');
+  renderInvCheckPage();
+};
+
 
 window.updateMasterFromInvCheck = function(productId, field, value) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
