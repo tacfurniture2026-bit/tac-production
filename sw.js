@@ -1,4 +1,4 @@
-// Self-destructing Service Worker (v5.36 cache buster)
+// Self-destructing Service Worker (v5.42 cache buster)
 // このファイルが読み込まれると、すべてのキャッシュを削除し、自分自身を解除します
 
 self.addEventListener('install', function (event) {
