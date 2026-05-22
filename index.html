@@ -15,14 +15,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.43">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.44">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v5.43">
+    <link rel="stylesheet" href="styles.css?v=v5.44">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -116,8 +116,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v5.43"></script>
-    <script src="app.js?v=v5.43"></script>
+    <script src="data.js?v=v5.44"></script>
+    <script src="app.js?v=v5.44"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -1182,7 +1182,10 @@
                             <h1>月次締め</h1>
                             <p>月末在庫の集計・確定</p>
                         </div>
-                        <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
+                            <button class="btn btn-danger" id="undo-inv-closing-btn">⏪ 締め取り消し</button>
+                        </div>
                     </div>
                 </div>
                 <div class="card" style="margin-bottom: 1.5rem;">

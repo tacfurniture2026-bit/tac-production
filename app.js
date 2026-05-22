@@ -6926,6 +6926,8 @@ function renderInvMonthlyPage() {
 
   $('#view-inv-monthly-btn').onclick = viewInvMonthlySummary;
   $('#run-inv-closing-btn').onclick = runInvMonthlyClosing;
+  const undoInvBtn = $('#undo-inv-closing-btn');
+  if (undoInvBtn) undoInvBtn.onclick = undoInvMonthlyClosing;
   
   if ($('#export-inv-monthly-btn')) {
     $('#export-inv-monthly-btn').onclick = exportInvMonthlyExcel;
@@ -7593,6 +7595,29 @@ function exportInvAnnualExcel() {
   } catch (err) {
     console.error('Excel出力エラー:', err);
     toast('Excel出力に失敗しました', 'error');
+  }
+}
+
+function undoInvMonthlyClosing() {
+  const month = $('#inv-closing-month').value;
+  if (!month) {
+    toast('年月を選択してください', 'error');
+    return;
+  }
+
+  if (!confirm(`${month}の月次締めを取り消しますか？\n（既に取り消し済みの場合は何も起こりません）`)) return;
+
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  const existingIdx = monthly.findIndex(m => m.month === month);
+
+  if (existingIdx >= 0) {
+    monthly.splice(existingIdx, 1);
+    DB.save(DB.KEYS.INV_MONTHLY, monthly);
+    toast(`${month}の月次締めを取り消しました`, 'success');
+    const resultContainer = $('#inv-monthly-result');
+    if (resultContainer) resultContainer.innerHTML = '';
+  } else {
+    toast(`${month}の締めデータは見つかりませんでした`, 'warning');
   }
 }
 

@@ -8,14 +8,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.43】 -->
+    <!-- 【強制キャッシュバスティング v5.44】 -->
     <script>
         (function() {
-            var currentVersion = '5.29';
+            var currentVersion = '5.44';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
-                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.43
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.44' + window.location.hash;
                 window.location.replace(newUrl);
             }
         })();
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.43">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.44">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -40160,6 +40160,8 @@ function renderInvMonthlyPage() {
 
   $('#view-inv-monthly-btn').onclick = viewInvMonthlySummary;
   $('#run-inv-closing-btn').onclick = runInvMonthlyClosing;
+  const undoInvBtn = $('#undo-inv-closing-btn');
+  if (undoInvBtn) undoInvBtn.onclick = undoInvMonthlyClosing;
 }
 
 function viewInvMonthlySummary() {
@@ -40408,6 +40410,29 @@ function displayInvMonthlyResult(result) {
       </div>
     </div>
   `;
+}
+
+function undoInvMonthlyClosing() {
+  const month = $('#inv-closing-month').value;
+  if (!month) {
+    toast('年月を選択してください', 'error');
+    return;
+  }
+
+  if (!confirm(`${month}の月次締めを取り消しますか？\n（既に取り消し済みの場合は何も起こりません）`)) return;
+
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  const existingIdx = monthly.findIndex(m => m.month === month);
+
+  if (existingIdx >= 0) {
+    monthly.splice(existingIdx, 1);
+    DB.save(DB.KEYS.INV_MONTHLY, monthly);
+    toast(`${month}の月次締めを取り消しました`, 'success');
+    const resultContainer = $('#inv-monthly-result');
+    if (resultContainer) resultContainer.innerHTML = '';
+  } else {
+    toast(`${month}の締めデータは見つかりませんでした`, 'warning');
+  }
 }
 
 function runInvMonthlyClosing() {
@@ -41948,7 +41973,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.43</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.44</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
@@ -42507,7 +42532,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.43</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.44</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42814,7 +42839,10 @@ window.forceReloadMaster = function() {
                             <h1>月次締め</h1>
                             <p>月末在庫の集計・確定</p>
                         </div>
-                        <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
+                            <button class="btn btn-danger" id="undo-inv-closing-btn">⏪ 締め取り消し</button>
+                        </div>
                     </div>
                 </div>
                 <div class="card" style="margin-bottom: 1.5rem;">
@@ -42994,7 +43022,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.43
+                    Version: v5.44
                 </div>
             </div>
         </div>
