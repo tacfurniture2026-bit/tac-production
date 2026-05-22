@@ -7881,18 +7881,6 @@ function renderInvCheckPage() {
 }
 
 // Global functions for inline actions
-};
-
-window.deleteSingleTempScan = function(productId) {
-  if (!confirm('仮スキャンデータを消去しますか？')) return;
-  const tempScans = DB.getTempScans() || [];
-  const scan = tempScans.find(s => s.productId === productId);
-  if (scan && scan.id) {
-      DB.delete(DB.KEYS.INV_LOGS, scan.id);
-  }
-  toast('仮スキャンデータから削除しました', 'success');
-  renderInvCheckPage();
-};
 
 window.updateMasterFromInvCheck = function(productId, field, value) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];

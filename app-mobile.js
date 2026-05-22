@@ -7411,11 +7411,6 @@ function renderInvCheckPage() {
 }
 
 // Global functions for inline actions
-  if (!confirm('仮スキャンデータを消去しますか？')) return;
-  DB.deleteTempScan(productId);
-  toast('仮スキャンデータから削除しました', 'success');
-  renderInvCheckPage();
-};
 
 window.updateMasterFromInvCheck = function(productId, field, value) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
