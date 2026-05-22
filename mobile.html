@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.33】 -->
+    <!-- 【強制キャッシュバスティング v5.34】 -->
     <script>
         (function() {
             var currentVersion = '5.29';
@@ -41154,9 +41154,20 @@ window.saveSingleTempScan = function(productId) {
   const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
   const timestamp = lastDay.toISOString();
 
-  // 既存のスキャンデータを一旦クリアして新しい合計値として保存（締め処理画面からの修正操作のため）
-  DB.deleteTempScan(productId);
-  DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  const tempScans = DB.getTempScans() || [];
+  const existing = tempScans.find(s => s.productId === productId && s.timestamp && s.timestamp.startsWith(selectedMonth));
+  
+  if (existing && existing.id) {
+      existing.quantity = newQty;
+      existing.worker = currentUser.username;
+      existing.workerName = currentUser.displayName;
+      // 確実な保存と画面反映のため、一旦削除して追加する
+      DB.deleteTempScan(existing.id);
+      DB.add(DB.KEYS.INV_SCAN_TEMP, existing);
+  } else {
+      DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  }
+
   toast('仮登録数量を保存しました', 'success');
   renderInvCheckPage();
 };
@@ -41203,7 +41214,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
   `;
   
   const footer = `
-    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
     <button class="btn btn-primary" onclick="submitCategoryEdit('${productId.replace(/'/g, "\\'")}')">保存する</button>
   `;
   
@@ -41214,7 +41225,7 @@ window.submitCategoryEdit = function(productId) {
   const select = document.getElementById(`inv-check-category-select-${productId}`);
   if (!select) return;
   const newCat = select.value;
-  closeModal();
+  hideModal();
   updateMasterFromInvCheck(productId, 'category', newCat);
 };
 
@@ -41792,7 +41803,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.33</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.34</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42434,7 +42445,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.33</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.34</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -42921,7 +42932,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.33
+                    Version: v5.34
                 </div>
             </div>
         </div>

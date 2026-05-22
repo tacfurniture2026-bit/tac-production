@@ -7843,9 +7843,9 @@ window.saveSingleTempScan = function(productId) {
       existing.quantity = newQty;
       existing.worker = currentUser.username;
       existing.workerName = currentUser.displayName;
-      // 統合後の修正: INV_SCAN_TEMP と INV_LOGS の両方を更新するか、SCAN_TEMPだけにするか
-      // getTempScans で INV_SCAN_TEMP を優先しているので、INV_SCAN_TEMP を更新する
-      DB.update(DB.KEYS.INV_SCAN_TEMP, existing.id, existing);
+      // 確実な保存と画面反映のため、一旦削除して追加する
+      DB.deleteTempScan(existing.id);
+      DB.add(DB.KEYS.INV_SCAN_TEMP, existing);
   } else {
       DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
   }
@@ -7900,7 +7900,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
   `;
   
   const footer = `
-    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
     <button class="btn btn-primary" onclick="submitCategoryEdit('${productId.replace(/'/g, "\\'")}')">保存する</button>
   `;
   
@@ -7911,7 +7911,7 @@ window.submitCategoryEdit = function(productId) {
   const select = document.getElementById(`inv-check-category-select-${productId}`);
   if (!select) return;
   const newCat = select.value;
-  closeModal();
+  hideModal();
   updateMasterFromInvCheck(productId, 'category', newCat);
 };
 

@@ -7363,9 +7363,20 @@ window.saveSingleTempScan = function(productId) {
   const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
   const timestamp = lastDay.toISOString();
 
-  // 既存のスキャンデータを一旦クリアして新しい合計値として保存（締め処理画面からの修正操作のため）
-  DB.deleteTempScan(productId);
-  DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  const tempScans = DB.getTempScans() || [];
+  const existing = tempScans.find(s => s.productId === productId && s.timestamp && s.timestamp.startsWith(selectedMonth));
+  
+  if (existing && existing.id) {
+      existing.quantity = newQty;
+      existing.worker = currentUser.username;
+      existing.workerName = currentUser.displayName;
+      // 確実な保存と画面反映のため、一旦削除して追加する
+      DB.deleteTempScan(existing.id);
+      DB.add(DB.KEYS.INV_SCAN_TEMP, existing);
+  } else {
+      DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+  }
+
   toast('仮登録数量を保存しました', 'success');
   renderInvCheckPage();
 };
@@ -7412,7 +7423,7 @@ window.showCategoryEditModal = function(productId, currentCategory) {
   `;
   
   const footer = `
-    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+    <button class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
     <button class="btn btn-primary" onclick="submitCategoryEdit('${productId.replace(/'/g, "\\'")}')">保存する</button>
   `;
   
@@ -7423,7 +7434,7 @@ window.submitCategoryEdit = function(productId) {
   const select = document.getElementById(`inv-check-category-select-${productId}`);
   if (!select) return;
   const newCat = select.value;
-  closeModal();
+  hideModal();
   updateMasterFromInvCheck(productId, 'category', newCat);
 };
 
