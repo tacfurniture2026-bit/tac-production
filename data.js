@@ -377,10 +377,39 @@ const DB = {
         }
     },
 
-    // 棚卸仮スキャンデータ
+    // 棚卸仮スキャンデータ（レガシーのINV_LOGSと、新しいINV_PRODUCTSの両方をマージして返す）
     getTempScans() {
         const logs = this.get(this.KEYS.INV_LOGS) || [];
-        return logs.filter(log => log && log.type === 'count_temp');
+        const legacyScans = logs.filter(log => log && log.type === 'count_temp');
+        
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const newScans = products
+            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .map(p => ({
+                id: p.tempId || p.id,
+                productId: p.id,
+                quantity: p.tempQty,
+                worker: p.tempWorker,
+                workerName: p.tempWorkerName,
+                timestamp: p.tempTimestamp,
+                month: p.tempMonth,
+                type: 'count_temp'
+            }));
+
+        // マージ（同じproductIdがある場合は新しいnewScansを優先）
+        const mergedMap = {};
+        legacyScans.forEach(scan => {
+            if (scan && scan.productId) {
+                mergedMap[scan.productId] = scan;
+            }
+        });
+        newScans.forEach(scan => {
+            if (scan && scan.productId) {
+                mergedMap[scan.productId] = scan; // 上書き
+            }
+        });
+        
+        return Object.values(mergedMap);
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {

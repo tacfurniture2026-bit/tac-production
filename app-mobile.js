@@ -6753,6 +6753,65 @@ function toggleProcessStatus(el, orderId, itemIndex, process) {
   }, 0);
 }
 
+window.saveSingleTempScan = function(productId) {
+  const input = document.getElementById(`inv-check-qty-${productId}`);
+  if (!input) return;
+  const newQty = parseInt(input.value) || 0;
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+
+  const [y, m] = selectedMonth.split('-');
+  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
+  const timestamp = lastDay.toISOString();
+  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || {};
+
+  // Firebase のルールエラーを回避しつつ古いデータも生かすため、新規・更新分はすべて INV_PRODUCTS に保存する
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  
+  if (prodIndex !== -1) {
+    products[prodIndex].tempQty = newQty;
+    products[prodIndex].tempWorker = user.username || 'unknown';
+    products[prodIndex].tempWorkerName = user.displayName || '不明な作業者';
+    products[prodIndex].tempTimestamp = timestamp;
+    products[prodIndex].tempMonth = selectedMonth;
+    delete products[prodIndex].tempId;
+    
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    toast('仮登録数量を保存しました', 'success');
+  } else {
+    toast('対象の資材が見つかりません', 'error');
+  }
+
+  renderInvCheckPage();
+};
+
+window.deleteSingleTempScan = function(productId) {
+  if (!confirm('仮スキャンデータを消去しますか？')) return;
+  
+  // INV_PRODUCTS 側のテンポラリデータを削除
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p.id === productId);
+  if (prodIndex !== -1) {
+    delete products[prodIndex].tempQty;
+    delete products[prodIndex].tempWorker;
+    delete products[prodIndex].tempWorkerName;
+    delete products[prodIndex].tempTimestamp;
+    delete products[prodIndex].tempMonth;
+    delete products[prodIndex].tempId;
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+  }
+
+  // もし INV_LOGS 側にも残っていたら念のため消去を試みる
+  const tempScans = DB.getTempScans() || [];
+  const scan = tempScans.find(s => s.productId === productId);
+  if (scan && scan.id && scan.id !== productId) {
+    DB.deleteTempScan(scan.id);
+  }
+  
+  toast('仮スキャンデータから削除しました', 'success');
+  renderInvCheckPage();
+};
+
 // 確実にグローバル公開
 window.toggleProcessStatus = toggleProcessStatus;
 
@@ -7352,36 +7411,6 @@ function renderInvCheckPage() {
 }
 
 // Global functions for inline actions
-window.saveSingleTempScan = function(productId) {
-  const input = document.getElementById(`inv-check-qty-${productId}`);
-  if (!input) return;
-  const newQty = parseInt(input.value) || 0;
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
-
-  // 末日のタイムスタンプ
-  const [y, m] = selectedMonth.split('-');
-  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-  const timestamp = lastDay.toISOString();
-
-  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || {};
-  const tempScans = DB.getTempScans() || [];
-  const existing = tempScans.find(s => s.productId === productId && s.timestamp && s.timestamp.startsWith(selectedMonth));
-  
-  if (existing && existing.id) {
-      existing.quantity = newQty;
-      existing.worker = user.username || 'unknown';
-      existing.workerName = user.displayName || '不明な作業者';
-      // INV_LOGSの既存データを直接updateする（Firebaseのルールでdeleteが弾かれるため）
-      DB.update(DB.KEYS.INV_LOGS, existing.id, existing);
-  } else {
-      DB.saveTempScan(productId, newQty, user.username || 'unknown', user.displayName || '不明な作業者', timestamp, selectedMonth);
-  }
-
-  toast('仮登録数量を保存しました', 'success');
-  renderInvCheckPage();
-};
-
-window.deleteSingleTempScan = function(productId) {
   if (!confirm('仮スキャンデータを消去しますか？')) return;
   DB.deleteTempScan(productId);
   toast('仮スキャンデータから削除しました', 'success');
