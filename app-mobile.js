@@ -7290,18 +7290,14 @@ function renderInvCheckPage() {
         return `
           <tr ${rowClass}>
             <td><strong>${item.productId}</strong></td>
-            <td>${INV_CATEGORIES[item.category] || item.category}</td>
             <td>
-              <input type="text" class="form-input" style="width: 100%; min-width: 140px; font-size: 14px; padding: 4px;"
-                     value="${item.name.replace(/"/g, '&quot;')}" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'name', this.value)">
-            </td>
-            <td>
-              <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">¥</span>
-                <input type="number" class="form-input text-right" style="width: 80px; font-size: 14px; padding: 4px; font-weight: bold;"
-                       value="${item.price}" min="0" onchange="updateMasterFromInvCheck('${item.productId.replace(/'/g, "\\'")}', 'price', this.value)">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                <span>${INV_CATEGORIES[item.category] || item.category}</span>
+                <button class="btn btn-sm btn-outline" style="padding: 2px 6px; font-size: 11px;" onclick="showCategoryEditModal('${item.productId.replace(/'/g, "\\'")}', '${item.category}')">✎</button>
               </div>
             </td>
+            <td>${item.name}</td>
+            <td>¥${item.price.toLocaleString()}</td>
             <td style="text-align: center;">
               <input type="number" class="form-input text-center" style="width: 100px; font-weight: bold; font-size: 15px; display: inline-block; padding: 4px;"
                      id="inv-check-qty-${item.productId}" value="${item.quantity}" min="0" onchange="saveSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">
@@ -7387,14 +7383,46 @@ window.updateMasterFromInvCheck = function(productId, field, value) {
     return;
   }
   
-  if (field === 'price') {
-    products[prodIndex].price = parseInt(value) || 0;
-  } else if (field === 'name') {
-    products[prodIndex].name = value.trim();
+  if (field === 'category') {
+    products[prodIndex].category = value;
   }
   
   DB.save(DB.KEYS.INV_PRODUCTS, products);
   toast('商品マスタを更新しました', 'success');
+  renderInvCheckPage();
+};
+
+window.showCategoryEditModal = function(productId, currentCategory) {
+  const optionsHtml = Object.keys(INV_CATEGORIES).map(catKey => 
+    `<option value="${catKey}" ${catKey === currentCategory ? 'selected' : ''}>${INV_CATEGORIES[catKey]}</option>`
+  ).join('');
+
+  const body = `
+    <div style="padding: 1rem;">
+      <p style="margin-bottom: 1rem;">資材ID: <strong>${productId}</strong> の分類を変更します。</p>
+      <div class="form-group">
+        <label>新しい分類</label>
+        <select id="inv-check-category-select" class="form-input">
+          ${optionsHtml}
+        </select>
+      </div>
+    </div>
+  `;
+  
+  const footer = `
+    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="submitCategoryEdit('${productId.replace(/'/g, "\\'")}')">保存する</button>
+  `;
+  
+  showModal('分類の編集', body, footer);
+};
+
+window.submitCategoryEdit = function(productId) {
+  const select = document.getElementById('inv-check-category-select');
+  if (!select) return;
+  const newCat = select.value;
+  closeModal();
+  updateMasterFromInvCheck(productId, 'category', newCat);
 };
 
 // 単価未登録商品の価格設定モーダル
