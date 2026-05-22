@@ -7833,7 +7833,8 @@ window.saveSingleTempScan = function(productId) {
   const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
   const timestamp = lastDay.toISOString();
 
-  const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+  // グローバル変数 currentUser を使用。なければローカルストレージから取得、それでもなければ空オブジェクト
+  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || {};
   
   // 既存の count_temp があれば更新、なければ追加
   const tempScans = DB.getTempScans() || [];
@@ -7841,12 +7842,12 @@ window.saveSingleTempScan = function(productId) {
   
   if (existing && existing.id) {
       existing.quantity = newQty;
-      existing.worker = currentUser.username;
-      existing.workerName = currentUser.displayName;
+      existing.worker = user.username || 'unknown';
+      existing.workerName = user.displayName || '不明な作業者';
       // INV_LOGSの既存データを直接updateする（Firebaseのルールでdeleteが弾かれるため）
       DB.update(DB.KEYS.INV_LOGS, existing.id, existing);
   } else {
-      DB.saveTempScan(productId, newQty, currentUser.username, currentUser.displayName, timestamp, selectedMonth);
+      DB.saveTempScan(productId, newQty, user.username || 'unknown', user.displayName || '不明な作業者', timestamp, selectedMonth);
   }
 
   toast('仮登録数量を保存しました', 'success');
