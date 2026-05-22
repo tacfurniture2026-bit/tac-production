@@ -7202,6 +7202,8 @@ function renderInvCheckPage() {
     statusFilter.onchange = renderInvCheckPage;
   }
   $('#confirm-inv-temp-btn').onclick = confirmInvTempData;
+  const undoConfirmBtn = $('#undo-confirm-inv-temp-btn');
+  if (undoConfirmBtn) undoConfirmBtn.onclick = undoConfirmInvTempData;
   const exportBtn = $('#export-inv-check-btn');
   if (exportBtn) {
     exportBtn.onclick = exportInvCheckToCsv;
@@ -7585,6 +7587,53 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
       onSaveCallback();
     };
   }
+}
+
+function undoConfirmInvTempData() {
+  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+  
+  if (!confirm(`${selectedMonth} の棚卸確定（締め処理）を取り消し、仮スキャン状態に戻しますか？\n（既に次月の棚卸を開始している場合など、データが競合する恐れがあります）`)) return;
+
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+
+  const targetNote = `棚卸確定締め(${selectedMonth})`;
+  const countLogs = logs.filter(l => l.note === targetNote && l.type === 'count');
+
+  if (countLogs.length === 0) {
+    toast(`${selectedMonth} の確定履歴が見つからないため、仮状態への復元はできません`, 'error');
+    return;
+  }
+
+  // 1. 商品マスタの仮データを復元
+  countLogs.forEach(log => {
+    const p = products.find(prod => prod.id === log.productId);
+    if (p && log.worker !== '自動(不動品)') {
+      p.tempQty = log.quantity;
+      p.tempWorker = log.worker === 'システム自動' ? 'System' : log.worker;
+      p.tempWorkerName = log.worker;
+      p.tempTimestamp = log.timestamp;
+      p.tempMonth = selectedMonth;
+      p.tempId = log.id;
+    }
+  });
+
+  // 2. 確定ログを削除
+  const newLogs = logs.filter(l => !(l.note === targetNote && l.type === 'count'));
+
+  // 3. INV_MONTHLYから該当月を削除
+  const monthlyIdx = monthly.findIndex(m => m.month === selectedMonth);
+  if (monthlyIdx >= 0) {
+    monthly.splice(monthlyIdx, 1);
+  }
+
+  DB.save(DB.KEYS.INV_LOGS, newLogs);
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_MONTHLY, monthly);
+
+  toast(`${selectedMonth} の棚卸確定を取り消し、仮状態に復元しました`, 'success');
+  renderInvCheckPage();
 }
 
 // Confirm temp data and close month

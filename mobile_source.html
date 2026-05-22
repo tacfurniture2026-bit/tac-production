@@ -8,14 +8,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.44】 -->
+    <!-- 【強制キャッシュバスティング v5.45】 -->
     <script>
         (function() {
-            var currentVersion = '5.44';
+            var currentVersion = '5.45';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
-                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.44' + window.location.hash;
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.45' + window.location.hash;
                 window.location.replace(newUrl);
             }
         })();
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.44">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.45">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -54,7 +54,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v5.44">
+    <link rel="stylesheet" href="styles-mobile.css?v=v5.45">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -181,8 +181,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v5.44"></script>
-    <script src="app-mobile.js?v=v5.44"></script>
+    <script src="data.js?v=v5.45"></script>
+    <script src="app-mobile.js?v=v5.45"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -235,6 +235,11 @@
                 <div class="login-header">
                     <div class="login-icon">🏭</div>
                     <h1>TAC製造部 生産管理</h1>
+                    <div class="logo">
+                    <span class="logo-icon">🏭</span>
+                    <span class="logo-text">TAC製造部</span>
+                </div>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.45</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -344,7 +349,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.44</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.45</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
@@ -903,7 +908,7 @@
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.44</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.45</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -1132,9 +1137,10 @@
                             <h1>☑ 棚卸スキャン確認</h1>
                             <p>仮登録された棚卸データの確認・修正・確定処理</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
+                            <button class="btn btn-danger" id="undo-confirm-inv-temp-btn">⏪ 確定取り消し</button>
                         </div>
                     </div>
                 </div>
@@ -1393,7 +1399,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.44
+                    Version: v5.45
                 </div>
             </div>
         </div>
