@@ -7828,19 +7828,20 @@ function renderInvCheckPage() {
           rowClass = 'style="background-color: #fff3cd; color: #856404;"';
         }
 
+        const badgeStyle = 'display: inline-block; min-width: 110px; text-align: center; padding: 4px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white;';
         let statusBadge = '';
         if (item.isAutoFixed) {
-          statusBadge = '<span style="background: #0ea5e9; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 不動品の為</span>';
+          statusBadge = `<span style="background: #0ea5e9; ${badgeStyle}">✓ 不動品の為</span>`;
         } else if (item.isScanned) {
-          statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+          statusBadge = `<span style="background: #16a34a; ${badgeStyle}">✓ 仮登録済</span>`;
         } else if (item.hasPrevQty) {
-          statusBadge = '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>';
+          statusBadge = `<span style="background: #b91c1c; ${badgeStyle}">⚠️ 未スキャン</span>`;
         } else {
-          statusBadge = '<span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 0のまま？(未確認)</span>';
+          statusBadge = `<span style="background: #d97706; ${badgeStyle}">⚠️ 未確認(0)</span>`;
         }
 
         if (item.price <= 0) {
-          statusBadge += ' <span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px;">⚠️ 単価未登録</span>';
+          statusBadge += ` <div style="margin-top: 4px;"><span style="background: #d97706; ${badgeStyle}">⚠️ 単価未登録</span></div>`;
         }
 
         return `
@@ -7869,11 +7870,13 @@ function renderInvCheckPage() {
             </td>
             <td>${statusBadge}</td>
             <td>
-              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
-              <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; margin-left: ${item.isScanned ? '8px' : '0'}; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; user-select: none;">
-                <input type="checkbox" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
-                不動品
-              </label>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                ${item.isScanned ? `<button class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 11px;" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">🗑️ 削除</button>` : ''}
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:11px; cursor:pointer; background: ${item.isFixed ? '#e0f2fe' : '#f1f5f9'}; color: ${item.isFixed ? '#0284c7' : '#475569'}; padding: 4px 8px; border-radius: 4px; border: 1px solid ${item.isFixed ? '#bae6fd' : '#cbd5e1'}; font-weight: ${item.isFixed ? 'bold' : 'normal'}; user-select: none; transition: all 0.2s ease; margin: 0;">
+                  <input type="checkbox" style="margin: 0; width: 14px; height: 14px; accent-color: #0284c7;" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
+                  不動品
+                </label>
+              </div>
             </td>
           </tr>
         `;
@@ -8055,6 +8058,26 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
       // 締め処理の続行
       onSaveCallback();
     };
+  }
+}
+
+function toggleFixedStatus(productId, isFixed) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const p = products.find(x => x.id === productId);
+  if (p) {
+    p.isFixed = isFixed;
+    if (isFixed) {
+      // 不動品チェックをONにした際、仮スキャンデータをクリアする
+      delete p.tempQty;
+      delete p.tempWorker;
+      delete p.tempWorkerName;
+      delete p.tempMonth;
+      delete p.tempTimestamp;
+      delete p.tempId;
+    }
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    toast(`商品「${p.name || productId}」の不動品設定を${isFixed ? '有効' : '無効'}にしました`, 'success');
+    renderInvCheckPage();
   }
 }
 

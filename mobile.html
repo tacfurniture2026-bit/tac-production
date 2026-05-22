@@ -8,14 +8,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.45】 -->
+    <!-- 【強制キャッシュバスティング v5.46】 -->
     <script>
         (function() {
-            var currentVersion = '5.45';
+            var currentVersion = '5.46';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
-                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.45' + window.location.hash;
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.46' + window.location.hash;
                 window.location.replace(newUrl);
             }
         })();
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.45">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.46">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -41168,19 +41168,20 @@ function renderInvCheckPage() {
           rowClass = 'style="background-color: #fff3cd; color: #856404;"';
         }
 
+        const badgeStyle = 'display: inline-block; min-width: 110px; text-align: center; padding: 4px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white;';
         let statusBadge = '';
         if (item.isAutoFixed) {
-          statusBadge = '<span style="background: #0ea5e9; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 不動品の為</span>';
+          statusBadge = `<span style="background: #0ea5e9; ${badgeStyle}">✓ 不動品の為</span>`;
         } else if (item.isScanned) {
-          statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
+          statusBadge = `<span style="background: #16a34a; ${badgeStyle}">✓ 仮登録済</span>`;
         } else if (item.hasPrevQty) {
-          statusBadge = '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>';
+          statusBadge = `<span style="background: #b91c1c; ${badgeStyle}">⚠️ 未スキャン</span>`;
         } else {
-          statusBadge = '<span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 0のまま？(未確認)</span>';
+          statusBadge = `<span style="background: #d97706; ${badgeStyle}">⚠️ 未確認(0)</span>`;
         }
 
         if (item.price <= 0) {
-          statusBadge += ' <span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 4px;">⚠️ 単価未登録</span>';
+          statusBadge += ` <div style="margin-top: 4px;"><span style="background: #d97706; ${badgeStyle}">⚠️ 単価未登録</span></div>`;
         }
 
         return `
@@ -41209,11 +41210,13 @@ function renderInvCheckPage() {
             </td>
             <td>${statusBadge}</td>
             <td>
-              ${item.isScanned ? `<button class="btn btn-sm btn-danger" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">削除</button>` : ''}
-              <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; margin-left: ${item.isScanned ? '8px' : '0'}; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; user-select: none;">
-                <input type="checkbox" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
-                不動品
-              </label>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                ${item.isScanned ? `<button class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 11px;" onclick="deleteSingleTempScan('${item.productId.replace(/'/g, "\\'")}')">🗑️ 削除</button>` : ''}
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:11px; cursor:pointer; background: ${item.isFixed ? '#e0f2fe' : '#f1f5f9'}; color: ${item.isFixed ? '#0284c7' : '#475569'}; padding: 4px 8px; border-radius: 4px; border: 1px solid ${item.isFixed ? '#bae6fd' : '#cbd5e1'}; font-weight: ${item.isFixed ? 'bold' : 'normal'}; user-select: none; transition: all 0.2s ease; margin: 0;">
+                  <input type="checkbox" style="margin: 0; width: 14px; height: 14px; accent-color: #0284c7;" ${item.isFixed ? 'checked' : ''} onchange="toggleFixedStatus('${item.productId.replace(/'/g, "\\'")}', this.checked)">
+                  不動品
+                </label>
+              </div>
             </td>
           </tr>
         `;
@@ -41396,6 +41399,26 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
       // 締め処理の続行
       onSaveCallback();
     };
+  }
+}
+
+function toggleFixedStatus(productId, isFixed) {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const p = products.find(x => x.id === productId);
+  if (p) {
+    p.isFixed = isFixed;
+    if (isFixed) {
+      // 不動品チェックをONにした際、仮スキャンデータをクリアする
+      delete p.tempQty;
+      delete p.tempWorker;
+      delete p.tempWorkerName;
+      delete p.tempMonth;
+      delete p.tempTimestamp;
+      delete p.tempId;
+    }
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    toast(`商品「${p.name || productId}」の不動品設定を${isFixed ? '有効' : '無効'}にしました`, 'success');
+    renderInvCheckPage();
   }
 }
 
@@ -41917,7 +41940,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.45</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.46</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42027,7 +42050,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.45</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.46</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
@@ -42586,7 +42609,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.45</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.46</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -43077,7 +43100,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.45
+                    Version: v5.46
                 </div>
             </div>
         </div>
