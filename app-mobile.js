@@ -7173,9 +7173,16 @@ function renderInvCheckPage() {
     const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
     const scan = tempScanMap[pid];
     const prevQty = prevStockMap[pid] || 0;
-    const currQty = scan ? scan.quantity : 0;
+    const isFixed = !!prod.isFixed;
+
+    let isAutoFixed = false;
+    if (!scan && isFixed) {
+      isAutoFixed = true;
+    }
+
+    const currQty = scan ? scan.quantity : (isAutoFixed ? prevQty : 0);
     const diff = currQty - prevQty;
-    const isScanned = !!scan;
+    const isScanned = !!scan || isAutoFixed;
 
     return {
       productId: pid,
@@ -7185,9 +7192,11 @@ function renderInvCheckPage() {
       quantity: currQty,
       prevQty: prevQty,
       diff: diff,
-      worker: scan ? (scan.workerName || scan.worker || '-') : '-',
-      workerId: scan ? (scan.worker || '-') : '-',
+      worker: scan ? (scan.workerName || scan.worker || '-') : (isAutoFixed ? '自動(不動品)' : '-'),
+      workerId: scan ? (scan.worker || '-') : (isAutoFixed ? 'SYSTEM' : '-'),
       isScanned: isScanned,
+      isAutoFixed: isAutoFixed,
+      isFixed: isFixed,
       hasPrevQty: prevQty > 0,
       isZeroCheck: (prevQty === 0 && !isScanned)
     };
@@ -7200,7 +7209,9 @@ function renderInvCheckPage() {
   const filterStatus = (statusFilter ? statusFilter.value : 'all') || 'all';
   let filteredItems = listItems;
   if (filterStatus === 'scanned') {
-    filteredItems = listItems.filter(item => item.isScanned);
+    filteredItems = listItems.filter(item => item.isScanned && !item.isAutoFixed);
+  } else if (filterStatus === 'fixed') {
+    filteredItems = listItems.filter(item => item.isFixed);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
   } else if (filterStatus === 'zerocheck') {
@@ -7262,7 +7273,9 @@ function renderInvCheckPage() {
         }
 
         let statusBadge = '';
-        if (item.isScanned) {
+        if (item.isAutoFixed) {
+          statusBadge = '<span style="background: #0ea5e9; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 不動品の為</span>';
+        } else if (item.isScanned) {
           statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">✓ 仮登録済</span>';
         } else if (item.hasPrevQty) {
           statusBadge = '<span style="background: #b91c1c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚠️ 未スキャン(漏れ)</span>';
@@ -7492,7 +7505,13 @@ function confirmInvTempData() {
     return;
   }
 
-  const missingCount = Object.keys(prevStockMap).filter(pid => prevStockMap[pid] > 0 && !currentTempScans.some(s => s.productId === pid)).length;
+  const missingCount = Object.keys(prevStockMap).filter(pid => {
+    if (prevStockMap[pid] <= 0) return false;
+    if (currentTempScans.some(s => s.productId === pid)) return false;
+    const prod = products.find(p => p.id === pid);
+    if (prod && prod.isFixed) return false; // 不動品は自動セットされるため漏れに含めない
+    return true;
+  }).length;
 
   let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
   if (missingCount > 0) {
@@ -7518,13 +7537,30 @@ function confirmInvTempData() {
       renderedProductIds.add(id);
     }
   });
+  products.forEach(p => {
+    if (p.isFixed && !p.id.startsWith('TEMP_')) {
+      renderedProductIds.add(p.id);
+    }
+  });
 
   const timestamp = new Date(year, month, 0, 23, 59, 59).toISOString(); // End of target month
 
   Array.from(renderedProductIds).forEach((pid, index) => {
     const tempScan = currentTempScans.find(s => s.productId === pid);
-    const qty = tempScan ? tempScan.quantity : 0;
-    const worker = tempScan ? (tempScan.workerName || tempScan.worker) : 'システム自動';
+    const prod = products.find(p => p.id === pid);
+    const isFixed = prod && prod.isFixed;
+    const prevQty = prevStockMap[pid] || 0;
+    
+    let qty = 0;
+    let worker = 'システム自動';
+    
+    if (tempScan) {
+      qty = tempScan.quantity;
+      worker = tempScan.workerName || tempScan.worker;
+    } else if (isFixed) {
+      qty = prevQty;
+      worker = '自動(不動品)';
+    }
     
     logs.push({
       id: Date.now() + index,
