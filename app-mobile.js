@@ -316,6 +316,10 @@ function emergencyRestoreProductsFromLogs() {
 window.refreshCurrentPage = function () {
   const activePage = localStorage.getItem('lastPage') || 'dashboard';
 
+  // 棚卸スキャン画面はカメラ起動中や入力中にFirebase同期による再描画が走ると
+  // 画面が点滅したり入力フォーカスが外れる不具合があるため、自動再描画をスキップする
+  if (activePage === 'inv-scan') return;
+
   switch (activePage) {
     case 'dashboard': renderDashboard(); break;
     case 'gantt': renderGantt(); break;
@@ -5935,23 +5939,28 @@ function sendBatchScans() {
     return;
   }
 
-  // 送信用のデータ配列を作成（IDが被らないようにindexを付加）
-  const newScans = localScans.map((scan, index) => ({
-    id: (Date.now() + index) + "_" + Math.random().toString(36).substr(2, 9),
-    productId: scan.productId,
-    quantity: scan.quantity,
-    worker: scan.worker,
-    workerName: scan.workerName,
-    timestamp: scan.timestamp,
-    month: scan.month,
-    terminalId: scan.terminalId || '',
-    type: 'count_temp'
-  }));
+  // INV_LOGSではなく、INV_PRODUCTSの仮データ(tempQty)として直接保存する
+  // これにより、PC側の単一スキャン保存(saveSingleTempScan)とデータ構造が一致し、消失バグを防ぐ
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  let updatedCount = 0;
 
-  // 一括でFirebaseへ送信 (権限エラーを回避するため、INV_SCAN_TEMP ではなく INV_LOGS に送信し、type: count_temp で識別する)
-  DB.addMultiple(DB.KEYS.INV_LOGS, newScans)
-    .then(() => {
-      toast(`送信完了: ${newScans.length}件のデータをサーバーへ送信しました`, 'success');
+  localScans.forEach(scan => {
+    const p = products.find(prod => prod.id === scan.productId);
+    if (p) {
+      p.tempQty = scan.quantity;
+      p.tempWorker = scan.worker || 'System';
+      p.tempWorkerName = scan.workerName || scan.worker;
+      p.tempTimestamp = scan.timestamp;
+      p.tempMonth = scan.month;
+      delete p.tempId;
+      updatedCount++;
+    }
+  });
+
+  if (updatedCount > 0) {
+    try {
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      toast(`送信完了: ${updatedCount}件のデータをサーバーへ送信しました`, 'success');
       setTimeout(() => {
         if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
           DB.clearLocalBatchScans();
@@ -5959,12 +5968,13 @@ function sendBatchScans() {
           toast('端末のバッチデータを消去しました', 'info');
         }
       }, 300);
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('Batch send error:', error);
-      // エラー時はアラートを表示し、バッチデータは消さない
-      alert('送信に失敗しました。\n・Wi-Fi接続が不安定\n・ログインセッションの有効期限切れ（一度ログアウトして再ログインしてください）\nなどの原因が考えられます。');
-    });
+      alert('送信に失敗しました。\n・Wi-Fi接続が不安定\nなどの原因が考えられます。');
+    }
+  } else {
+    toast('送信対象の資材がマスタに見つかりませんでした', 'error');
+  }
 }
 
 window.forceReloadApp = function() {
@@ -6824,13 +6834,6 @@ window.deleteSingleTempScan = function(productId) {
     delete products[prodIndex].tempMonth;
     delete products[prodIndex].tempId;
     DB.save(DB.KEYS.INV_PRODUCTS, products);
-  }
-
-  // もし INV_LOGS 側にも残っていたら念のため消去を試みる
-  const tempScans = DB.getTempScans() || [];
-  const scan = tempScans.find(s => s.productId === productId);
-  if (scan && scan.id && scan.id !== productId) {
-    DB.deleteTempScan(scan.id);
   }
   
   toast('仮スキャンデータから削除しました', 'success');
