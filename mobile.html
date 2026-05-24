@@ -8,14 +8,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v5.47】 -->
+    <!-- 【強制キャッシュバスティング v5.48】 -->
     <script>
         (function() {
-            var currentVersion = '5.47';
+            var currentVersion = 'v5.48';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
-                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=v5.47' + window.location.hash;
+                var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + currentVersion + window.location.hash;
                 window.location.replace(newUrl);
             }
         })();
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.47">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.48">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -41943,7 +41943,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.47</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.48</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42053,7 +42053,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.47</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.48</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
@@ -42612,7 +42612,7 @@ window.forceReloadMaster = function() {
             <!-- 棚卸スキャン -->
             <div id="page-inv-scan" class="page">
                 <div class="page-header">
-                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.47</span></h1>
+                    <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v5.48</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
                 <div class="qr-layout">
@@ -43103,7 +43103,7 @@ window.forceReloadMaster = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v5.47
+                    Version: v5.48
                 </div>
             </div>
         </div>
