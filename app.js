@@ -5917,22 +5917,28 @@ const INV_CATEGORIES = {
   '01': '基材',
   '02': '面材',
   '03': 'シート',
-  '04': '小口テープ',
+  '04': '木口ﾃｰﾌﾟ',
   '05': '金具',
-  '06': 'ダンボール',
+  '06': 'ﾀﾞﾝﾎﾞｰﾙ',
   '07': '接着剤',
   '08': '仕入備品',
   '09': 'PAO資材',
-  '10': '製品在庫',
-  '11': '工場部材',
-  '12': '外注資材',
-  '13': '副資材',
-  '14': '消耗品',
-  '15': '外注在庫',
-  '16': '仕掛品',
-  '17': '設備部品',
-  '24': '特注品',
-  '26': '仕掛在庫'
+  '10': '工場部材',
+  '11': '仕掛品芯組のみ',
+  '12': '仕掛品カット',
+  '13': '部材完成品',
+  '14': '製品在庫',
+  '15': 'シェルフ製品在庫',
+  '16': 'キャビネット製品在庫',
+  '17': 'ラミテック',
+  '18': '天野木工',
+  '19': 'いろは',
+  '20': 'Real',
+  '21': 'イイダアックス',
+  '22': '下請け預かり品',
+  '23': 'GRID不動品',
+  '24': '仕掛品フラッシュのみ',
+  '26': '仕掛品(未完成品)'
 };
 
 // 在庫スキャナー用
@@ -5993,7 +5999,14 @@ function renderInvScanPage() {
   // 資材ID入力時に商品情報を表示
   if (productIdInput) {
     productIdInput.oninput = () => {
-      const id = productIdInput.value.trim();
+      let id = productIdInput.value.trim();
+      // 旧バーコード(資材コード)入力時の自動変換
+      const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+      const prodByCode = products.find(p => p.materialCode === id);
+      if (prodByCode) {
+        id = prodByCode.id;
+        productIdInput.value = id;
+      }
       displayProductInfo(id);
     };
   }
@@ -6429,16 +6442,21 @@ function stopInvScanner() {
 function onInvQrScanned(decodedText) {
   stopInvScanner();
 
+  const rawScanned = decodedText.trim();
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p.id === rawScanned || p.materialCode === rawScanned);
+  const finalId = product ? product.id : rawScanned;
+
   const resultDiv = $('#inv-scan-result');
   const dataDiv = $('#inv-scan-data');
   const productIdInput = $('#inv-scan-product-id');
 
   // 資材IDをセット
-  productIdInput.value = decodedText.trim();
-  displayProductInfo(decodedText.trim());
+  productIdInput.value = finalId;
+  displayProductInfo(finalId);
 
   if (resultDiv) resultDiv.style.display = 'block';
-  if (dataDiv) dataDiv.innerHTML = `<div>読取ID: ${decodedText}</div>`;
+  if (dataDiv) dataDiv.innerHTML = `<div>読取データ: ${rawScanned}</div>`;
 
   if (navigator.vibrate) navigator.vibrate(100);
   toast('QRコードを読み取りました', 'success');
@@ -6690,9 +6708,9 @@ function calculateUsageStats() {
 function showAddInvProductModal() {
   $('#modal-title').textContent = '商品登録';
   $('#modal-body').innerHTML = `
-    <form id="inv-product-form">
+    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
       <div class="form-group">
-        <label>分類</label>
+        <label>識別コード分類(必須)</label>
         <select id="inv-prod-category" class="form-input" required>
           ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
     `<option value="${code}">${code}: ${name}</option>`
@@ -6700,15 +6718,35 @@ function showAddInvProductModal() {
         </select>
       </div>
       <div class="form-group">
-        <label>品名</label>
+        <label>品名(必須)</label>
         <input type="text" id="inv-prod-name" class="form-input" required>
       </div>
       <div class="form-group">
-        <label>単価</label>
-        <input type="number" id="inv-prod-price" class="form-input" min="0" required>
+        <label>資材区分</label>
+        <input type="text" id="inv-prod-material-type" class="form-input">
       </div>
       <div class="form-group">
-        <label><input type="checkbox" id="inv-prod-fixed"> 不動品</label>
+        <label>単価</label>
+        <input type="number" id="inv-prod-price" class="form-input" min="0" required value="0">
+      </div>
+      <div class="form-group">
+        <label>色/他</label>
+        <input type="text" id="inv-prod-color" class="form-input">
+      </div>
+      <div class="form-group">
+        <label>寸法 (巾/長さ/t厚み)</label>
+        <div style="display: flex; gap: 4px;">
+          <input type="text" id="inv-prod-width" class="form-input" placeholder="巾">
+          <input type="text" id="inv-prod-length" class="form-input" placeholder="長さ">
+          <input type="text" id="inv-prod-thickness" class="form-input" placeholder="t厚み">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>単位</label>
+        <input type="text" id="inv-prod-unit" class="form-input">
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="inv-prod-fixed"> 不動品（変動なし）</label>
       </div>
     </form>
   `;
@@ -6726,28 +6764,45 @@ function showAddInvProductModal() {
 function saveNewInvProduct() {
   const category = $('#inv-prod-category').value;
   const name = $('#inv-prod-name').value.trim();
-  const price = parseInt($('#inv-prod-price').value) || 0;
+  const price = parseFloat($('#inv-prod-price').value) || 0;
   const isFixed = $('#inv-prod-fixed').checked;
+  const materialType = $('#inv-prod-material-type').value.trim();
+  const colorOther = $('#inv-prod-color').value.trim();
+  const width = $('#inv-prod-width').value.trim();
+  const length = $('#inv-prod-length').value.trim();
+  const thickness = $('#inv-prod-thickness').value.trim();
+  const unit = $('#inv-prod-unit').value.trim();
 
   if (!name) {
     toast('品名を入力してください', 'error');
     return;
   }
 
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
 
   // ID自動採番
-  const prefix = 'N' + category;
-  const existingIds = products.filter(p => p.id.startsWith(prefix)).map(p => parseInt(p.id.substring(3)) || 0);
-  const nextNum = Math.max(0, ...existingIds) + 1;
-  const newId = prefix + String(nextNum).padStart(12, '0');
+  const existingNums = products
+    .filter(p => p.identClass === category || p.category === category || p.id.startsWith(category + '-'))
+    .map(p => parseInt(p.id.split('-')[1]) || 0);
+  const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+  const newIdentCode = `${category}-${nextNum}`;
+  const newMaterialCode = `N${category}${String(nextNum).padStart(13, '0')}`;
 
   products.push({
-    id: newId,
+    id: newIdentCode,
     name: name,
     category: category,
     price: price,
-    isFixed: isFixed
+    isFixed: isFixed,
+    materialCode: newMaterialCode,
+    materialType: materialType,
+    identClass: category,
+    identOrder: nextNum.toString(),
+    colorOther: colorOther,
+    width: width,
+    length: length,
+    thickness: thickness,
+    unit: unit
   });
   DB.save(DB.KEYS.INV_PRODUCTS, products);
 
@@ -6763,29 +6818,49 @@ function editInvProduct(id) {
 
   $('#modal-title').textContent = '商品編集';
   $('#modal-body').innerHTML = `
-    <form id="inv-product-form">
+    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
       <div class="form-group">
-        <label>資材ID</label>
+        <label>資材ID(識別コード)</label>
         <input type="text" class="form-input" value="${product.id}" disabled>
       </div>
       <div class="form-group">
-        <label>分類</label>
+        <label>識別コード分類(必須)</label>
         <select id="inv-prod-category" class="form-input" required>
           ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
-    `<option value="${code}" ${product.category === code ? 'selected' : ''}>${code}: ${name}</option>`
+    `<option value="${code}" ${product.identClass === code || product.category === code ? 'selected' : ''}>${code}: ${name}</option>`
   ).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label>品名</label>
+        <label>品名(必須)</label>
         <input type="text" id="inv-prod-name" class="form-input" value="${product.name}" required>
+      </div>
+      <div class="form-group">
+        <label>資材区分</label>
+        <input type="text" id="inv-prod-material-type" class="form-input" value="${product.materialType || ''}">
       </div>
       <div class="form-group">
         <label>単価</label>
         <input type="number" id="inv-prod-price" class="form-input" value="${product.price}" min="0" required>
       </div>
       <div class="form-group">
-        <label><input type="checkbox" id="inv-prod-fixed" ${product.isFixed ? 'checked' : ''}> 不動品</label>
+        <label>色/他</label>
+        <input type="text" id="inv-prod-color" class="form-input" value="${product.colorOther || ''}">
+      </div>
+      <div class="form-group">
+        <label>寸法 (巾/長さ/t厚み)</label>
+        <div style="display: flex; gap: 4px;">
+          <input type="text" id="inv-prod-width" class="form-input" value="${product.width || ''}" placeholder="巾">
+          <input type="text" id="inv-prod-length" class="form-input" value="${product.length || ''}" placeholder="長さ">
+          <input type="text" id="inv-prod-thickness" class="form-input" value="${product.thickness || ''}" placeholder="t厚み">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>単位</label>
+        <input type="text" id="inv-prod-unit" class="form-input" value="${product.unit || ''}" placeholder="例: 枚, 個, ヶ, 式">
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="inv-prod-fixed" ${product.isFixed ? 'checked' : ''}> 不動品（変動なし）</label>
       </div>
     </form>
   `;
@@ -6805,10 +6880,18 @@ function updateInvProduct(id) {
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return;
 
-  products[idx].category = $('#inv-prod-category').value;
+  const category = $('#inv-prod-category').value;
+  products[idx].identClass = category;
+  products[idx].category = category;
   products[idx].name = $('#inv-prod-name').value.trim();
-  products[idx].price = parseInt($('#inv-prod-price').value) || 0;
+  products[idx].price = parseFloat($('#inv-prod-price').value) || 0;
   products[idx].isFixed = $('#inv-prod-fixed').checked;
+  products[idx].materialType = $('#inv-prod-material-type').value.trim();
+  products[idx].colorOther = $('#inv-prod-color').value.trim();
+  products[idx].width = $('#inv-prod-width').value.trim();
+  products[idx].length = $('#inv-prod-length').value.trim();
+  products[idx].thickness = $('#inv-prod-thickness').value.trim();
+  products[idx].unit = $('#inv-prod-unit').value.trim();
 
   DB.save(DB.KEYS.INV_PRODUCTS, products);
   toast('更新しました', 'success');
@@ -7068,7 +7151,7 @@ function calculateInvMonthly(month) {
         productMap.set(pid, {
           productId: pid,
           name: log.productName || pid,
-          category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
+          category: pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99'),
           price: log.unitPrice || 0,
           prevQty: 0,
           currQty: log.quantity || 0,
@@ -7143,7 +7226,7 @@ function calculateInvMonthly(month) {
       const p = products.find(x => x.id === pid) || {
         id: pid,
         name: pid,
-        category: (pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99',
+        category: pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99'),
         price: 0,
         isFixed: false
       };
@@ -8080,6 +8163,33 @@ function toggleFixedStatus(productId, isFixed) {
     renderInvCheckPage();
   }
 }
+
+window.bulkDeleteInvTempScans = function() {
+  if (!confirm('本当にすべての仮スキャンデータを一括削除しますか？\\n（この操作は元に戻せません）')) return;
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  let deletedCount = 0;
+  
+  products.forEach(p => {
+    if (p.tempMonth) {
+      delete p.tempQty;
+      delete p.tempWorker;
+      delete p.tempWorkerName;
+      delete p.tempTimestamp;
+      delete p.tempMonth;
+      delete p.tempId;
+      deletedCount++;
+    }
+  });
+
+  if (deletedCount > 0) {
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    toast(`${deletedCount}件の仮スキャンデータを削除しました`, 'success');
+    renderInvCheckPage();
+  } else {
+    toast('削除する仮スキャンデータがありません', 'info');
+  }
+};
 
 function undoConfirmInvTempData() {
   const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);

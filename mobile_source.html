@@ -266,7 +266,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.43</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.49</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -1141,6 +1141,7 @@
                             <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
                             <button class="btn btn-danger" id="undo-confirm-inv-temp-btn">⏪ 確定取り消し</button>
+                            <button class="btn btn-danger admin-only" id="bulk-delete-inv-temp-btn" onclick="bulkDeleteInvTempScans()">🗑 一括削除</button>
                         </div>
                     </div>
                 </div>

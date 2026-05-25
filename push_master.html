@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Master Data Push</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h1>Pushing Master Data...</h1>
+  <div id="status">Loading data/new_master.json...</div>
+
+  <script>
+    async function pushData() {
+      try {
+        const response = await fetch('data/new_master.json');
+        if (!response.ok) throw new Error("Failed to load JSON file");
+        const masterData = await response.json();
+        
+        document.getElementById('status').innerText = `Loaded ${masterData.length} records. Pushing to Firebase...`;
+
+        if (!firebaseDB) {
+          throw new Error("Firebase DB not initialized.");
+        }
+
+        await firebaseDB.ref('INV_PRODUCTS').set(masterData);
+        document.getElementById('status').innerText = `Success! ${masterData.length} records pushed to Firebase.`;
+      } catch (err) {
+        document.getElementById('status').innerText = "Error: " + err.message;
+        console.error(err);
+      }
+    }
+
+    pushData();
+  </script>
+</body>
+</html>
