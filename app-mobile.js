@@ -5616,9 +5616,9 @@ function renderInvScanPage() {
   if (productIdInput) {
     productIdInput.oninput = () => {
       let id = productIdInput.value.trim();
-      // 旧バーコード(資材コード)入力時の自動変換
+      // 新・旧バーコード(識別コード・資材コード)入力時の自動変換
       const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-      const prodByCode = products.find(p => p.materialCode === id);
+      const prodByCode = products.find(p => p.identCode === id || p.id === id);
       if (prodByCode) {
         id = prodByCode.id;
         productIdInput.value = id;
@@ -5742,7 +5742,7 @@ function onInvQrScanned(decodedText) {
 
   const rawScanned = decodedText.trim();
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const product = products.find(p => p.id === rawScanned || p.materialCode === rawScanned);
+  const product = products.find(p => p.id === rawScanned || p.identCode === rawScanned);
   const finalId = product ? product.id : rawScanned;
 
   const resultDiv = $('#inv-scan-result');

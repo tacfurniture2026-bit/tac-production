@@ -6000,9 +6000,9 @@ function renderInvScanPage() {
   if (productIdInput) {
     productIdInput.oninput = () => {
       let id = productIdInput.value.trim();
-      // 旧バーコード(資材コード)入力時の自動変換
+      // 新バーコード(識別コード)または旧バーコード(資材コード)入力時の変換
       const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-      const prodByCode = products.find(p => p.materialCode === id);
+      const prodByCode = products.find(p => p.identCode === id || p.id === id);
       if (prodByCode) {
         id = prodByCode.id;
         productIdInput.value = id;
@@ -6444,7 +6444,7 @@ function onInvQrScanned(decodedText) {
 
   const rawScanned = decodedText.trim();
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const product = products.find(p => p.id === rawScanned || p.materialCode === rawScanned);
+  const product = products.find(p => p.id === rawScanned || p.identCode === rawScanned);
   const finalId = product ? product.id : rawScanned;
 
   const resultDiv = $('#inv-scan-result');
@@ -6650,7 +6650,7 @@ function renderInvProductsTable() {
 
     return `
     <tr class="${p.isFixed ? 'fixed-product-row' : ''}">
-      <td>${p.id}</td>
+      <td>${p.identCode || p.id}</td>
       <td>${INV_CATEGORIES[p.category] || p.category}</td>
       <td>${p.name}</td>
       <td>¥${p.price.toLocaleString()}</td>
@@ -6820,8 +6820,12 @@ function editInvProduct(id) {
   $('#modal-body').innerHTML = `
     <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
       <div class="form-group">
-        <label>資材ID(識別コード)</label>
+        <label>資材ID(システム内コード)</label>
         <input type="text" class="form-input" value="${product.id}" disabled>
+      </div>
+      <div class="form-group">
+        <label>識別コード(QR表示用)</label>
+        <input type="text" id="inv-prod-ident-code" class="form-input" value="${product.identCode || product.id}">
       </div>
       <div class="form-group">
         <label>識別コード分類(必須)</label>
@@ -6883,6 +6887,7 @@ function updateInvProduct(id) {
   const category = $('#inv-prod-category').value;
   products[idx].identClass = category;
   products[idx].category = category;
+  products[idx].identCode = $('#inv-prod-ident-code').value.trim();
   products[idx].name = $('#inv-prod-name').value.trim();
   products[idx].price = parseFloat($('#inv-prod-price').value) || 0;
   products[idx].isFixed = $('#inv-prod-fixed').checked;

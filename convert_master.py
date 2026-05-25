@@ -65,11 +65,12 @@ def convert_xlsx_to_json(filepath, json_path):
                             headers = row_data
                         else:
                             # 辞書にマッピング
-                            id_val = row_data[0] # 識別コード
-                            if not id_val: continue
+                            ident_val = row_data[0] # 識別コード
+                            material_val = row_data[4] # 資材コード
+                            if not material_val: continue
                             
                             product = {
-                                "id": id_val,
+                                "id": material_val, # システム主キーは資材コードとする
                                 "category": row_data[1], # identClass (09など) をセット
                                 "name": row_data[8],
                                 "price": float(row_data[15]) if row_data[15] else 0,

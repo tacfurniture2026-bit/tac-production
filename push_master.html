@@ -10,30 +10,33 @@
 </head>
 <body>
   <h1>Pushing Master Data...</h1>
-  <div id="status">Loading data/new_master.json...</div>
+  <div id="status">JSONファイルを選択してください:</div>
+  <input type="file" id="json-file" accept=".json">
 
   <script>
-    async function pushData() {
-      try {
-        const response = await fetch('data/new_master.json');
-        if (!response.ok) throw new Error("Failed to load JSON file");
-        const masterData = await response.json();
-        
-        document.getElementById('status').innerText = `Loaded ${masterData.length} records. Pushing to Firebase...`;
+    document.getElementById('json-file').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-        if (!firebaseDB) {
-          throw new Error("Firebase DB not initialized.");
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const masterData = JSON.parse(e.target.result);
+          document.getElementById('status').innerText = `Loaded ${masterData.length} records. Pushing to Firebase...`;
+
+          if (!firebaseDB) {
+            throw new Error("Firebase DB not initialized.");
+          }
+
+          await firebaseDB.ref('INV_PRODUCTS').set(masterData);
+          document.getElementById('status').innerText = `Success! ${masterData.length} records pushed to Firebase.`;
+        } catch (err) {
+          document.getElementById('status').innerText = "Error: " + err.message;
+          console.error(err);
         }
-
-        await firebaseDB.ref('INV_PRODUCTS').set(masterData);
-        document.getElementById('status').innerText = `Success! ${masterData.length} records pushed to Firebase.`;
-      } catch (err) {
-        document.getElementById('status').innerText = "Error: " + err.message;
-        console.error(err);
-      }
-    }
-
-    pushData();
+      };
+      reader.readAsText(file);
+    });
   </script>
 </body>
 </html>
