@@ -75,6 +75,7 @@ def process():
         
         items = []
         total_amount = 0
+        prev_total = 0
         summary = {}
         
         # エンコーディング対応 (cp932 -> utf-8-sig の順)
@@ -120,6 +121,7 @@ def process():
             prevQty = p_stock['qty']
             prevAmount = p_stock['amount']
             diff = currQty - prevQty
+            prev_total += prevAmount
             
             master_dict[primary_id] = {
                 'id': primary_id,
@@ -142,6 +144,7 @@ def process():
                 'productId': primary_id,
                 'name': name,
                 'category': cat_code,
+                'price': price,
                 'prevQty': prevQty,
                 'currQty': currQty,
                 'diff': diff,
@@ -179,6 +182,7 @@ def process():
             'items': items,
             'summary': summary,
             'total': total_amount,
+            'prevTotal': prev_total,
             'fixedTotal': fixed_total,
             'closedAt': timestamp_str
         })
