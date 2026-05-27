@@ -92,6 +92,8 @@ def process():
             })
             
             # For Monthly summary aggregation
+            if not cat_code:
+                cat_code = "NONE"
             if cat_code not in summary:
                 summary[cat_code] = {'categoryName': f'Category {cat_code}', 'amount': 0}
             summary[cat_code]['amount'] += amount
