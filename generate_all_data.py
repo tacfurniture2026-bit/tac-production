@@ -29,7 +29,11 @@ OUT_LOGS = 'data/new_logs_all.json'
 
 def is_fixed(row):
     col_p = row[15].strip() if len(row) > 15 else ""
+    col_i = row[8].strip() if len(row) > 8 else ""
     if "対象(不動品)" in col_p or "対象（不動品）" in col_p:
+        return True
+    col_i_norm = col_i.replace(" ", "").replace("　", "").replace("ｲﾋﾞｹﾝ", "イビケン")
+    if "イビケン" in col_i_norm or "ｲﾋﾞｹﾝ" in col_i:
         return True
     return False
 

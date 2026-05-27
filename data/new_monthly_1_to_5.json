@@ -1872,7 +1872,7 @@
         "diff": 8.0,
         "amount": 71588.8,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000201",
@@ -1884,7 +1884,7 @@
         "diff": 94.0,
         "amount": 1030099.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000202",
@@ -1896,7 +1896,7 @@
         "diff": 3.0,
         "amount": 26845.8,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000203",
@@ -1908,7 +1908,7 @@
         "diff": 48.0,
         "amount": 429532.8,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000204",
@@ -1920,7 +1920,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000205",
@@ -1932,7 +1932,7 @@
         "diff": 9.0,
         "amount": 88354.8,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000207",
@@ -1944,7 +1944,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000209",
@@ -1956,7 +1956,7 @@
         "diff": 247.0,
         "amount": 2210304.2,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000212",
@@ -1968,7 +1968,7 @@
         "diff": 35.0,
         "amount": 307545.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000213",
@@ -1980,7 +1980,7 @@
         "diff": 5.0,
         "amount": 44743.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000214",
@@ -1992,7 +1992,7 @@
         "diff": 52.0,
         "amount": 433290.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000215",
@@ -2004,7 +2004,7 @@
         "diff": 23.0,
         "amount": 252045.5,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000217",
@@ -2016,7 +2016,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000218",
@@ -11568,8 +11568,14 @@
       },
       "02": {
         "name": "面材",
-        "amount": 18492672.032700002,
-        "diff": 18492672.032700002,
+        "amount": 13598323.132700002,
+        "diff": 13598323.132700002,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5842785.359999998,
+        "diff": 5842785.359999998,
         "prevAmount": 0
       },
       "03": {
@@ -11588,12 +11594,6 @@
         "name": "金具",
         "amount": 5404941.572999998,
         "diff": 5404941.572999998,
-        "prevAmount": 0
-      },
-      "fixed": {
-        "name": "不動品",
-        "amount": 948436.4600000003,
-        "diff": 948436.4600000003,
         "prevAmount": 0
       },
       "06": {
@@ -11665,7 +11665,7 @@
     },
     "total": 51149252.17940003,
     "prevTotal": 3160047.6,
-    "fixedTotal": 948436.4600000003,
+    "fixedTotal": 5842785.359999998,
     "closedAt": "2026-01-31T23:59:59Z"
   },
   {
@@ -13541,7 +13541,7 @@
         "diff": 0.0,
         "amount": 71588.8,
         "prevAmount": 71588.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000201",
@@ -13553,7 +13553,7 @@
         "diff": -2.0,
         "amount": 1008182.0,
         "prevAmount": 1030099.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000202",
@@ -13565,7 +13565,7 @@
         "diff": 0.0,
         "amount": 26845.8,
         "prevAmount": 26845.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000203",
@@ -13577,7 +13577,7 @@
         "diff": 0.0,
         "amount": 429532.8,
         "prevAmount": 429532.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000204",
@@ -13589,7 +13589,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000205",
@@ -13601,7 +13601,7 @@
         "diff": 0.0,
         "amount": 88354.8,
         "prevAmount": 88354.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000207",
@@ -13613,7 +13613,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000209",
@@ -13625,7 +13625,7 @@
         "diff": 0.0,
         "amount": 2210304.2,
         "prevAmount": 2210304.2,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000212",
@@ -13637,7 +13637,7 @@
         "diff": 0.0,
         "amount": 307545.0,
         "prevAmount": 307545.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000213",
@@ -13649,7 +13649,7 @@
         "diff": 0.0,
         "amount": 44743.0,
         "prevAmount": 44743.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000214",
@@ -13661,7 +13661,7 @@
         "diff": 0.0,
         "amount": 433290.0,
         "prevAmount": 433290.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000215",
@@ -13673,7 +13673,7 @@
         "diff": 0.0,
         "amount": 252045.5,
         "prevAmount": 252045.5,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000217",
@@ -13685,7 +13685,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000218",
@@ -23549,9 +23549,15 @@
       },
       "02": {
         "name": "面材",
-        "amount": 20422877.6696,
-        "diff": 1699191.3669000007,
-        "prevAmount": 18723686.302699998
+        "amount": 15550445.769600004,
+        "diff": 1721108.3669000007,
+        "prevAmount": 13829337.402700003
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5820868.359999998,
+        "diff": -21917.0,
+        "prevAmount": 5842785.359999998
       },
       "03": {
         "name": "シート",
@@ -23570,12 +23576,6 @@
         "amount": 6706856.762399995,
         "diff": 1301915.1893999968,
         "prevAmount": 5404941.572999998
-      },
-      "fixed": {
-        "name": "不動品",
-        "amount": 948436.4600000003,
-        "diff": 0.0,
-        "prevAmount": 948436.4600000003
       },
       "06": {
         "name": "ﾀﾞﾝﾎﾞｰﾙ",
@@ -23628,7 +23628,7 @@
     },
     "total": 55979164.99587502,
     "prevTotal": 47280676.44940002,
-    "fixedTotal": 948436.4600000003,
+    "fixedTotal": 5820868.359999998,
     "closedAt": "2026-02-28T23:59:59Z"
   },
   {
@@ -25504,7 +25504,7 @@
         "diff": 0.0,
         "amount": 71588.8,
         "prevAmount": 71588.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000201",
@@ -25516,7 +25516,7 @@
         "diff": 0.0,
         "amount": 1008182.0,
         "prevAmount": 1008182.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000202",
@@ -25528,7 +25528,7 @@
         "diff": 0.0,
         "amount": 26845.8,
         "prevAmount": 26845.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000203",
@@ -25540,7 +25540,7 @@
         "diff": 0.0,
         "amount": 429532.8,
         "prevAmount": 429532.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000204",
@@ -25552,7 +25552,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000205",
@@ -25564,7 +25564,7 @@
         "diff": 0.0,
         "amount": 88354.8,
         "prevAmount": 88354.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000207",
@@ -25576,7 +25576,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000209",
@@ -25588,7 +25588,7 @@
         "diff": 0.0,
         "amount": 2210304.2,
         "prevAmount": 2210304.2,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000212",
@@ -25600,7 +25600,7 @@
         "diff": 0.0,
         "amount": 307545.0,
         "prevAmount": 307545.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000213",
@@ -25612,7 +25612,7 @@
         "diff": 0.0,
         "amount": 44743.0,
         "prevAmount": 44743.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000214",
@@ -25624,7 +25624,7 @@
         "diff": 0.0,
         "amount": 433290.0,
         "prevAmount": 433290.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000215",
@@ -25636,7 +25636,7 @@
         "diff": 0.0,
         "amount": 252045.5,
         "prevAmount": 252045.5,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000217",
@@ -25648,7 +25648,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000218",
@@ -37276,9 +37276,15 @@
       },
       "02": {
         "name": "面材",
-        "amount": 17397350.646500006,
+        "amount": 12524918.746500002,
         "diff": -3010510.3430999964,
-        "prevAmount": 20407860.989600003
+        "prevAmount": 15535429.089599999
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5831818.7799999975,
+        "diff": 10950.419999999925,
+        "prevAmount": 5820868.359999998
       },
       "03": {
         "name": "シート",
@@ -37297,12 +37303,6 @@
         "amount": 6454748.480799994,
         "diff": -252108.28160000034,
         "prevAmount": 6706856.762399995
-      },
-      "fixed": {
-        "name": "不動品",
-        "amount": 959386.8800000004,
-        "diff": 10950.420000000042,
-        "prevAmount": 948436.4600000003
       },
       "06": {
         "name": "ﾀﾞﾝﾎﾞｰﾙ",
@@ -37379,7 +37379,7 @@
     },
     "total": 50276658.578800015,
     "prevTotal": 57017133.91587503,
-    "fixedTotal": 959386.8800000004,
+    "fixedTotal": 5831818.7799999975,
     "closedAt": "2026-03-31T23:59:59Z"
   },
   {
@@ -39267,7 +39267,7 @@
         "diff": 0.0,
         "amount": 71588.8,
         "prevAmount": 71588.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000201",
@@ -39279,7 +39279,7 @@
         "diff": 0.0,
         "amount": 1008182.0,
         "prevAmount": 1008182.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000202",
@@ -39291,7 +39291,7 @@
         "diff": 0.0,
         "amount": 26845.8,
         "prevAmount": 26845.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000203",
@@ -39303,7 +39303,7 @@
         "diff": 0.0,
         "amount": 429532.8,
         "prevAmount": 429532.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000204",
@@ -39315,7 +39315,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000205",
@@ -39327,7 +39327,7 @@
         "diff": 0.0,
         "amount": 88354.8,
         "prevAmount": 88354.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000207",
@@ -39339,7 +39339,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000209",
@@ -39351,7 +39351,7 @@
         "diff": 0.0,
         "amount": 2210304.2,
         "prevAmount": 2210304.2,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000212",
@@ -39363,7 +39363,7 @@
         "diff": 0.0,
         "amount": 307545.0,
         "prevAmount": 307545.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000213",
@@ -39375,7 +39375,7 @@
         "diff": 0.0,
         "amount": 44743.0,
         "prevAmount": 44743.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000214",
@@ -39387,7 +39387,7 @@
         "diff": 50.0,
         "amount": 849915.0,
         "prevAmount": 433290.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000215",
@@ -39399,7 +39399,7 @@
         "diff": 0.0,
         "amount": 252045.5,
         "prevAmount": 252045.5,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000217",
@@ -39411,7 +39411,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000218",
@@ -49191,9 +49191,15 @@
       },
       "02": {
         "name": "面材",
-        "amount": 17511514.229,
-        "diff": 267032.6374999918,
-        "prevAmount": 17244481.591500007
+        "amount": 12222457.328999998,
+        "diff": -149592.36250000633,
+        "prevAmount": 12372049.691500004
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 6248443.7799999975,
+        "diff": 416625.0,
+        "prevAmount": 5831818.7799999975
       },
       "03": {
         "name": "シート",
@@ -49212,12 +49218,6 @@
         "amount": 6766648.317999998,
         "diff": 311899.8372000037,
         "prevAmount": 6454748.480799994
-      },
-      "fixed": {
-        "name": "不動品",
-        "amount": 959386.8800000004,
-        "diff": 0.0,
-        "prevAmount": 959386.8800000004
       },
       "06": {
         "name": "ﾀﾞﾝﾎﾞｰﾙ",
@@ -49276,7 +49276,7 @@
     },
     "total": 52471357.892475,
     "prevTotal": 46668729.97340001,
-    "fixedTotal": 959386.8800000004,
+    "fixedTotal": 6248443.7799999975,
     "closedAt": "2026-04-30T23:59:59Z"
   },
   {
@@ -51260,7 +51260,7 @@
         "diff": 0.0,
         "amount": 71588.8,
         "prevAmount": 71588.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000201",
@@ -51272,7 +51272,7 @@
         "diff": 0.0,
         "amount": 1008182.0,
         "prevAmount": 1008182.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000202",
@@ -51284,7 +51284,7 @@
         "diff": 0.0,
         "amount": 26845.8,
         "prevAmount": 26845.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000203",
@@ -51296,7 +51296,7 @@
         "diff": 0.0,
         "amount": 429532.8,
         "prevAmount": 429532.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000204",
@@ -51308,7 +51308,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000205",
@@ -51320,7 +51320,7 @@
         "diff": 0.0,
         "amount": 88354.8,
         "prevAmount": 88354.8,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000207",
@@ -51332,7 +51332,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000209",
@@ -51344,7 +51344,7 @@
         "diff": 0.0,
         "amount": 2210304.2,
         "prevAmount": 2210304.2,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000212",
@@ -51356,7 +51356,7 @@
         "diff": 0.0,
         "amount": 307545.0,
         "prevAmount": 307545.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000213",
@@ -51368,7 +51368,7 @@
         "diff": 0.0,
         "amount": 44743.0,
         "prevAmount": 44743.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000214",
@@ -51380,7 +51380,7 @@
         "diff": -91.0,
         "amount": 91657.5,
         "prevAmount": 849915.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000215",
@@ -51392,7 +51392,7 @@
         "diff": 0.0,
         "amount": 252045.5,
         "prevAmount": 252045.5,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000217",
@@ -51404,7 +51404,7 @@
         "diff": 0.0,
         "amount": 0.0,
         "prevAmount": 0.0,
-        "isFixed": false
+        "isFixed": true
       },
       {
         "productId": "N02000000000218",
@@ -62408,9 +62408,15 @@
       },
       "02": {
         "name": "面材",
-        "amount": 18838151.249,
-        "diff": 1527453.3000000007,
-        "prevAmount": 17310697.949
+        "amount": 14307351.849000003,
+        "diff": 2285710.8000000026,
+        "prevAmount": 12021641.049
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5490186.2799999975,
+        "diff": -758257.5,
+        "prevAmount": 6248443.7799999975
       },
       "03": {
         "name": "シート",
@@ -62429,12 +62435,6 @@
         "amount": 6819203.082199998,
         "diff": 70179.26420000009,
         "prevAmount": 6749023.817999998
-      },
-      "fixed": {
-        "name": "不動品",
-        "amount": 959386.8800000004,
-        "diff": 0.0,
-        "prevAmount": 959386.8800000004
       },
       "06": {
         "name": "ﾀﾞﾝﾎﾞｰﾙ",
@@ -62505,7 +62505,7 @@
     },
     "total": 56570109.261699975,
     "prevTotal": 47560591.240475,
-    "fixedTotal": 959386.8800000004,
+    "fixedTotal": 5490186.2799999975,
     "closedAt": "2026-05-31T23:59:59Z"
   }
 ]
