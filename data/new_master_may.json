@@ -1,0 +1,8746 @@
+[
+  {
+    "id": "N01000000000023",
+    "identCode": "01-023",
+    "name": "LVL 30X14X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000024",
+    "identCode": "01-024",
+    "name": "LVL 30X17.7X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000026",
+    "identCode": "01-026",
+    "name": "LVL 30X21.5X2002",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000027",
+    "identCode": "01-027",
+    "name": "LVL 30X21.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000029",
+    "identCode": "01-029",
+    "name": "LVL 30X21X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000030",
+    "identCode": "01-030",
+    "name": "LVL 30X22.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000032",
+    "identCode": "01-032",
+    "name": "LVL 30X22X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000036",
+    "identCode": "01-036",
+    "name": "LVL 30X24.5X2430 ｼｪﾙﾌ用 3C",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000038",
+    "identCode": "01-038",
+    "name": "LVL 30X24.5X2995  ｼｪﾙﾌ用 片面3C",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000039",
+    "identCode": "01-039",
+    "name": "LVL 30X25.5X2002 (t29.7)",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000040",
+    "identCode": "01-040",
+    "name": "LVL 30X25.5X2430 (t29.7)",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000043",
+    "identCode": "01-043",
+    "name": "LVL 30X26.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000045",
+    "identCode": "01-045",
+    "name": "LVL 30X26X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000048",
+    "identCode": "01-048",
+    "name": "LVL 30X27.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000051",
+    "identCode": "01-051",
+    "name": "LVL 30x33.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000052",
+    "identCode": "01-052",
+    "name": "LVL 35X30X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000053",
+    "identCode": "01-053",
+    "name": "LVL 40x21x2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000060",
+    "identCode": "01-060",
+    "name": "LVL/RD貼  30X21.5X2002",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000061",
+    "identCode": "01-061",
+    "name": "LVL/RD貼  30X25.5X2002",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000063",
+    "identCode": "01-063",
+    "name": "LVL/RD貼 ｼｬｸﾘ付 30X27.5X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000068",
+    "identCode": "01-068",
+    "name": "MDF 15X4X6",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000069",
+    "identCode": "01-069",
+    "name": "MDF 2.5X3X7",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000073",
+    "identCode": "01-073",
+    "name": "MDF 4X4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000074",
+    "identCode": "01-074",
+    "name": "MDF 5.5X4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000078",
+    "identCode": "01-078",
+    "name": "MDF t18X4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000079",
+    "identCode": "01-079",
+    "name": "MDF t21X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000083",
+    "identCode": "01-083",
+    "name": "MDF t27㎜X4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000086",
+    "identCode": "01-086",
+    "name": "MDF t5.5X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000087",
+    "identCode": "01-087",
+    "name": "MDF t9X4X6",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000088",
+    "identCode": "01-088",
+    "name": "ﾊｲﾍﾞｽﾄｳｯﾄﾞMDF 21X920X3950",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000089",
+    "identCode": "01-089",
+    "name": "PB t12X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000093",
+    "identCode": "01-093",
+    "name": "PB t15X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000095",
+    "identCode": "01-095",
+    "name": "PB t18X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000096",
+    "identCode": "01-096",
+    "name": "PB t20X4'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000098",
+    "identCode": "01-098",
+    "name": "ﾌｧﾙｶﾀ 15X4X8",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000100",
+    "identCode": "01-100",
+    "name": "ﾌｧﾙｶﾀ ﾗﾝﾊﾞｰｺｱ  t15X3'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000101",
+    "identCode": "01-101",
+    "name": "ﾌｧﾙｶﾀ ﾗﾝﾊﾞｰｺｱ  t18X4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000102",
+    "identCode": "01-102",
+    "name": "ﾌｧﾙｶﾀ合板 t18X3'X6'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000104",
+    "identCode": "01-104",
+    "name": "合板 t9X910X1820",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000105",
+    "identCode": "01-105",
+    "name": "合板 12X910X1820",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000109",
+    "identCode": "01-109",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ 500X1000X15.6",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000110",
+    "identCode": "01-110",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X26",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000111",
+    "identCode": "01-111",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X35",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000112",
+    "identCode": "01-112",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№60E 500X1000X45",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000113",
+    "identCode": "01-113",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X21",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000114",
+    "identCode": "01-114",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X24.5",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000115",
+    "identCode": "01-115",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№80E 500X1000X14.5",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000116",
+    "identCode": "01-116",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ№80E 329X1315X28",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000125",
+    "identCode": "01-125",
+    "name": "LVL 29.7X21.5X2002",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000127",
+    "identCode": "01-127",
+    "name": "LVL 40x27.5x2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000128",
+    "identCode": "01-128",
+    "name": "LVL t30X30X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000137",
+    "identCode": "01-137",
+    "name": "LVL　30X25.5X1960",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000139",
+    "identCode": "01-139",
+    "name": "MDF 2.5X3'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000142",
+    "identCode": "01-142",
+    "name": "ﾌｧﾙｶﾀ　t12x4'X8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000143",
+    "identCode": "01-143",
+    "name": "MDF　18*3'*8'",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000144",
+    "identCode": "01-144",
+    "name": "ﾆｭｰﾀﾞｲｽｺｱ500x1000x35.4",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000145",
+    "identCode": "01-145",
+    "name": "MDF 4x4x8",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000146",
+    "identCode": "01-146",
+    "name": "MDF1240x3900xt21",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000147",
+    "identCode": "01-147",
+    "name": "MDF(WH/SH)5.5X4X6",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000148",
+    "identCode": "01-148",
+    "name": "LVL 14.5x30x2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N01000000000150",
+    "identCode": "01-150",
+    "name": "LVL30X44X2430",
+    "category": "01",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000001",
+    "identCode": "02-001",
+    "name": "片面化粧MDF t2.5X3'X8' BW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000002",
+    "identCode": "02-002",
+    "name": "片面化粧MDF t2.5X3'X9' BW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000004",
+    "identCode": "02-004",
+    "name": "片面化粧MDF t2.5X3'X8' CS",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000005",
+    "identCode": "02-005",
+    "name": "片面化粧MDF t2.5X3'X8' GO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000006",
+    "identCode": "02-006",
+    "name": "片面化粧MDF t2.5X3'X9' GO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000007",
+    "identCode": "02-007",
+    "name": "片面化粧MDF t2.5X3'X8' LO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000008",
+    "identCode": "02-008",
+    "name": "片面化粧MDF t2.5X3'X9' LO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000009",
+    "identCode": "02-009",
+    "name": "片面化粧MDF t2.5X3'X8' MC",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000010",
+    "identCode": "02-010",
+    "name": "片面化粧MDF t2.5X3'X9' MC",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000011",
+    "identCode": "02-011",
+    "name": "片面化粧MDF t2.5X3'X6' MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000012",
+    "identCode": "02-012",
+    "name": "片面化粧MDF t2.5X3X7 MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000014",
+    "identCode": "02-014",
+    "name": "片面化粧MDF 2.5X3X7 NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000017",
+    "identCode": "02-017",
+    "name": "片面化粧MDF 2.5X3X7 RD",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000020",
+    "identCode": "02-020",
+    "name": "片面化粧MDF t2.5X3'X9' SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000021",
+    "identCode": "02-021",
+    "name": "片面化粧MDFt2.5X3X8 SY",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000022",
+    "identCode": "02-022",
+    "name": "片面化粧MDF t2.5X3'X8' WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000023",
+    "identCode": "02-023",
+    "name": "片面化粧MDF t2.5X3'X9' WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000024",
+    "identCode": "02-024",
+    "name": "片面化粧MDF t2.5X3'X8' WM",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000025",
+    "identCode": "02-025",
+    "name": "片面化粧MDF t2.5X3'X9' WM",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000027",
+    "identCode": "02-027",
+    "name": "片面化粧MDF 2.5X3X7 WW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000028",
+    "identCode": "02-028",
+    "name": "片面化粧MDF t2.5X3'X8' LW ﾚｻﾞｰﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000029",
+    "identCode": "02-029",
+    "name": "片面化粧MDF t2.5X3'X8' MW ﾏｰﾌﾞﾙｳｯﾄﾞ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000030",
+    "identCode": "02-030",
+    "name": "片面化粧MDF t2.5X3'X8' NO ﾉﾙﾃｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000031",
+    "identCode": "02-031",
+    "name": "片面化粧MDF t2.5X3'X8' BA ﾌﾞﾗｯｸｱｶｼｱ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000033",
+    "identCode": "02-033",
+    "name": "片面化粧MDF t2.5X3'X8' MA ﾐﾃﾞｨｱﾑｱｶｼｱ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000034",
+    "identCode": "02-034",
+    "name": "片面化粧MDF t2.5X3'X8' NBL ﾈｵﾌﾞﾗｯｸﾚｻﾞｰ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000035",
+    "identCode": "02-035",
+    "name": "片面化粧MDF t2.5X3'X8' PW ﾊﾟｰﾙﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000036",
+    "identCode": "02-036",
+    "name": "片面化粧MDF t2.5X3'X8' TO ｻｰﾓｽｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000037",
+    "identCode": "02-037",
+    "name": "片面化粧MDF t2.5X3'X8' UW ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000038",
+    "identCode": "02-038",
+    "name": "片面化粧MDF t2.5X3'X8' \nﾊﾞﾆﾗｳｯﾄﾞ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000041",
+    "identCode": "02-041",
+    "name": "片面化粧MDF t4X4'X6' NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000051",
+    "identCode": "02-051",
+    "name": "MDF化粧天板 t18X405X2450 BR",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000052",
+    "identCode": "02-052",
+    "name": "MDF化粧天板 t18X405X2450 BW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000055",
+    "identCode": "02-055",
+    "name": "化粧MDF t18X4'X7' BW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000056",
+    "identCode": "02-056",
+    "name": "MDF化粧天板 t18X405X2450 CW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000057",
+    "identCode": "02-057",
+    "name": "化粧MDF t18X3'X6' CW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000058",
+    "identCode": "02-058",
+    "name": "MDF化粧天板 t18X405X2450 GO",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000062",
+    "identCode": "02-062",
+    "name": "MDF化粧天板 t18X405X2450 GW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000063",
+    "identCode": "02-063",
+    "name": "MDF化粧天板 t18X405X2450 LCB",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000064",
+    "identCode": "02-064",
+    "name": "化粧MDF t18X920X1850 LCB",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000066",
+    "identCode": "02-066",
+    "name": "化粧MDF t18X920X1850 LCW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000067",
+    "identCode": "02-067",
+    "name": "MDF化粧天板 t18X405X2450 LO",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000069",
+    "identCode": "02-069",
+    "name": "MDF化粧天板 t18X405X2450 MC",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000070",
+    "identCode": "02-070",
+    "name": "化粧MDF t18X4'X8' MC",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000072",
+    "identCode": "02-072",
+    "name": "MDF化粧天板 t18X405X2450 SH",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000074",
+    "identCode": "02-074",
+    "name": "MDF化粧天板 t18X405X2450 SP",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000076",
+    "identCode": "02-076",
+    "name": "MDF t18x4'x8' SP",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000080",
+    "identCode": "02-080",
+    "name": "MDF化粧天板 t18X405X2450 WM",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000083",
+    "identCode": "02-083",
+    "name": "化粧MDF t18X4'X8' WM",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000084",
+    "identCode": "02-084",
+    "name": "化粧MDF t18X3'X6' ｽｴｯﾄｸﾛﾏ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000086",
+    "identCode": "02-086",
+    "name": "MDF化粧天板 t18X405X2450 CS色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000088",
+    "identCode": "02-088",
+    "name": "MDF化粧天板 t18X405X2450 住友MC",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000089",
+    "identCode": "02-089",
+    "name": "MDF化粧天板 t18X405X2450 MW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000090",
+    "identCode": "02-090",
+    "name": "MDF化粧天板 t18X405X2450 NO色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000091",
+    "identCode": "02-091",
+    "name": "MDF化粧天板 t18X405X2450 BA色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000092",
+    "identCode": "02-092",
+    "name": "MDF化粧天板 t18X405X2450 MA色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000093",
+    "identCode": "02-093",
+    "name": "MDF化粧天板 t18X405X2450NBL色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000094",
+    "identCode": "02-094",
+    "name": "MDF化粧天板 t18X405X2450 TO色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000095",
+    "identCode": "02-095",
+    "name": "MDF化粧天板 t18X405X2450 UW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000097",
+    "identCode": "02-097",
+    "name": "MDF t18X4'X6' BSH-254",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000098",
+    "identCode": "02-098",
+    "name": "MDF t18X3'X6' BR/ｸﾞﾚ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000099",
+    "identCode": "02-099",
+    "name": "MDF t18x4'x8' BW",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000100",
+    "identCode": "02-100",
+    "name": "MDF t18x4'x8' LO",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000104",
+    "identCode": "02-104",
+    "name": "MDF t18x4'x8' WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000105",
+    "identCode": "02-105",
+    "name": "MDF t18X3'X6' WS4002ES/TWﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000106",
+    "identCode": "02-106",
+    "name": "MDF t18X3'X6' WS5188E/TWﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000110",
+    "identCode": "02-110",
+    "name": "MDF t18X3'X8' 表BA色 / 裏ｼｰﾄ貼 ﾌﾞﾗｯｸｱｶｼｱ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000139",
+    "identCode": "02-139",
+    "name": "PB両面化粧板 t15X4'X8' SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000141",
+    "identCode": "02-141",
+    "name": "PB両面化粧板 t15X4'X6' WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000142",
+    "identCode": "02-142",
+    "name": "PB両面化粧板 t15X4'X8' WH",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000151",
+    "identCode": "02-151",
+    "name": "化粧PB t18X3'X8' LCB",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000153",
+    "identCode": "02-153",
+    "name": "PB t18X3'X8' 表CS色 / 裏ｼｰﾄ貼 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000157",
+    "identCode": "02-157",
+    "name": "PB t18X3'X8' 表NO色 / 裏ｼｰﾄ貼 ﾉﾙﾃｵｰｸ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000165",
+    "identCode": "02-165",
+    "name": "ﾗｯﾋﾟﾝｸﾞ平貼 t18X3'X8' 表:GW色/裏:ｸﾞﾚ",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000168",
+    "identCode": "02-168",
+    "name": "PB両面化粧板 t20X4'X6' SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000169",
+    "identCode": "02-169",
+    "name": "PB両面化粧板 t20X4'X6' WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000170",
+    "identCode": "02-170",
+    "name": "両面WM PB t20X4'X6'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000172",
+    "identCode": "02-172",
+    "name": "LVS化粧天板 t18X405X2450 CS色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000173",
+    "identCode": "02-173",
+    "name": "LVS化粧天板 t18X405X2450LW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000174",
+    "identCode": "02-174",
+    "name": "LVS化粧天板 t18X405X2436 MW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000175",
+    "identCode": "02-175",
+    "name": "LVS化粧天板 t18X405X2450 MW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000176",
+    "identCode": "02-176",
+    "name": "LVS化粧天板 t18X405X2450 NO色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000177",
+    "identCode": "02-177",
+    "name": "LVS化粧天板 t18X405X2450 SP色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000178",
+    "identCode": "02-178",
+    "name": "LVS化粧天板 t18X405X2450 BA色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000179",
+    "identCode": "02-179",
+    "name": "LVS化粧天板 t18X405X2450MA色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000180",
+    "identCode": "02-180",
+    "name": "LVS化粧天板 t18X405X2450 NBL色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000181",
+    "identCode": "02-181",
+    "name": "LVS化粧天板 t18X405X2450 TO色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000182",
+    "identCode": "02-182",
+    "name": "LVS化粧天板 t18X405X2450 UW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000183",
+    "identCode": "02-183",
+    "name": "LVS化粧天板 t18X405X2450 VW色",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000184",
+    "identCode": "02-184",
+    "name": "低ﾒﾗ t2.5X4'X8' BW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000185",
+    "identCode": "02-185",
+    "name": "低ﾒﾗ t2.5X4'X8' C",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000186",
+    "identCode": "02-186",
+    "name": "低ﾒﾗ t2.5X4'X8' DB",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000187",
+    "identCode": "02-187",
+    "name": "低ﾒﾗ t2.5X4'X8' EC",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000188",
+    "identCode": "02-188",
+    "name": "低ﾒﾗ t2.5X4'X8' GO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000189",
+    "identCode": "02-189",
+    "name": "低ﾒﾗ t2.5X4X8 MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000190",
+    "identCode": "02-190",
+    "name": "低ﾒﾗ t2.5X4'X6'  NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000191",
+    "identCode": "02-191",
+    "name": "低ﾒﾗ t2.5X4'X8'  NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000193",
+    "identCode": "02-193",
+    "name": "低ﾒﾗ 2.5X4X8 WH(ﾎﾜｲﾄﾋｯｺﾘｰ)",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000194",
+    "identCode": "02-194",
+    "name": "低ﾒﾗ t2.5X4'X8' TWH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000195",
+    "identCode": "02-195",
+    "name": "低ﾒﾗ t2.5X4'X8' BK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000196",
+    "identCode": "02-196",
+    "name": "低ﾒﾗ t4X4'X6' MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000197",
+    "identCode": "02-197",
+    "name": "低ﾒﾗ t4X4'X6'  NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000198",
+    "identCode": "02-198",
+    "name": "低ﾒﾗ t4X4'X8'  NK",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000200",
+    "identCode": "02-200",
+    "name": "VRTB-5860D4 ﾚｲﾕｰﾙﾕｰｶﾘ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000201",
+    "identCode": "02-201",
+    "name": "VRTB-5835D4 ｶｯﾌｪｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000202",
+    "identCode": "02-202",
+    "name": "VRTB-5757D4 ｽﾓｰｸﾄﾞｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000203",
+    "identCode": "02-203",
+    "name": "RT-3562TX ｺｰｼﾞｰｻﾝﾄﾞ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000204",
+    "identCode": "02-204",
+    "name": "VRTB-5833D4 ｶｯﾌｪｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000205",
+    "identCode": "02-205",
+    "name": "VRT5832D4 ｶｯﾌｪｵｰｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000207",
+    "identCode": "02-207",
+    "name": "VRT-7250U4 ｼｭｶﾞｰﾋﾟﾝｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000209",
+    "identCode": "02-209",
+    "name": "VRT-7023U4 ｸﾘｰﾐｰﾍﾞｰｼﾞｭ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000212",
+    "identCode": "02-212",
+    "name": "VRTB-3509AS4 ｴﾄﾅ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000213",
+    "identCode": "02-213",
+    "name": "VRTB-5841D4 ﾌﾟﾘﾏﾌﾞﾗｯｸﾁｪﾘｰ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000214",
+    "identCode": "02-214",
+    "name": "RT-1981TX ﾋﾟｭｱﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000215",
+    "identCode": "02-215",
+    "name": "RT-5769TX ｱｯｿｳｫｰﾙﾅｯﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000217",
+    "identCode": "02-217",
+    "name": "EBI-8902FT6 ﾌﾞﾗｯｸ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": true
+  },
+  {
+    "id": "N02000000000218",
+    "identCode": "02-218",
+    "name": "FTN-508ZN",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000219",
+    "identCode": "02-219",
+    "name": "TJY-542K",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000220",
+    "identCode": "02-220",
+    "name": "FTN-2001ZNS",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000221",
+    "identCode": "02-221",
+    "name": "FJ-2060ZJN67",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000222",
+    "identCode": "02-222",
+    "name": "FX-5068ZJD67S",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000223",
+    "identCode": "02-223",
+    "name": "FJ-2055ZJD67S",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000224",
+    "identCode": "02-224",
+    "name": "EFN-2055ZD",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000227",
+    "identCode": "02-227",
+    "name": "FKJ-6000 4'X8'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000228",
+    "identCode": "02-228",
+    "name": "TJ-10240",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000229",
+    "identCode": "02-229",
+    "name": "FKM-6400ZGN 3'X8' 裏ｻﾝﾀﾞｰあり",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000235",
+    "identCode": "02-235",
+    "name": "ｱｲｶﾒﾗﾐﾝ K-6000KN(白) t0.9㎜X4'X8'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000251",
+    "identCode": "02-251",
+    "name": "EFN-2054ZD",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000252",
+    "identCode": "02-252",
+    "name": "化粧MDF t18X4'X8' SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000253",
+    "identCode": "02-253",
+    "name": "K-6530KN 4*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000254",
+    "identCode": "02-254",
+    "name": "K-6530KN 3*6",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000255",
+    "identCode": "02-255",
+    "name": "K-6629KN 3*6",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000256",
+    "identCode": "02-256",
+    "name": "K-6627KN 3*6",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000257",
+    "identCode": "02-257",
+    "name": "K-6627KN 4*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000258",
+    "identCode": "02-258",
+    "name": "ｱｲｶ ﾒﾗﾐﾝ CNY10301K 4X8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000259",
+    "identCode": "02-259",
+    "name": "ｾﾙｻｽ FTN2054ZD 3*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000260",
+    "identCode": "02-260",
+    "name": "ｾﾙｻｽ FTN509ZD 3*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000261",
+    "identCode": "02-261",
+    "name": "CFN10243ZD",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000262",
+    "identCode": "02-262",
+    "name": "FKM6400ZGDS 4X8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000263",
+    "identCode": "02-263",
+    "name": "K-6628KN 4*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000264",
+    "identCode": "02-264",
+    "name": "面材 片面強化紙貼 MW色 t2.5X4'X8'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000280",
+    "identCode": "02-280",
+    "name": "K-6630KN 0.95X4X8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000281",
+    "identCode": "02-281",
+    "name": "FX-5068ZGDS　4'X8'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000282",
+    "identCode": "02-282",
+    "name": "片面化粧MDF t2.5X3'X9' PW ﾊﾟｰﾙﾎﾜｲﾄ",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000285",
+    "identCode": "02-285",
+    "name": "低ﾒﾗ　EC　20X4'X6'",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000286",
+    "identCode": "02-286",
+    "name": "FKM6527ZGN",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000287",
+    "identCode": "02-287",
+    "name": "FKM6627ZGN",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000288",
+    "identCode": "02-288",
+    "name": "両面化粧MDF SPW 3X8Xt18",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000289",
+    "identCode": "02-289",
+    "name": "両面化粧MDF SMA 3X8Xt18",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000290",
+    "identCode": "02-290",
+    "name": "両面化粧MDF SVW 3X8Xt18",
+    "category": "02",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000292",
+    "identCode": "02-292",
+    "name": "片面化粧MDF t2.5X3'X8' SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000294",
+    "identCode": "02-294",
+    "name": "片面化粧MDFt2.5X3X8 BW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000308",
+    "identCode": "02-308",
+    "name": "片面化粧MDF t2.5x4x8 GO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000309",
+    "identCode": "02-309",
+    "name": "低ﾒﾗ　t2.5x4x8　RUS",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000310",
+    "identCode": "02-310",
+    "name": "K-6629KN　4*8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000311",
+    "identCode": "02-311",
+    "name": "MDF 4'X8'Xt2.5 ｼｰﾄ片面生 片面GO貼り",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000312",
+    "identCode": "02-312",
+    "name": "LVL 14.5x30x2430",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000313",
+    "identCode": "02-313",
+    "name": "ABSｴｯｼﾞ　2x43P　GO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000314",
+    "identCode": "02-314",
+    "name": "FJ-817（4X8サイズ)",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000315",
+    "identCode": "02-315",
+    "name": "片面化粧MDF　裏面VS貼り　t2.5x3x7　MW色",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000316",
+    "identCode": "02-316",
+    "name": "片面化粧MDF　t2.5X4X8 MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000317",
+    "identCode": "02-317",
+    "name": "両面化粧MDF　t18x3x8 NBL",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000318",
+    "identCode": "02-318",
+    "name": "両面化粧MDF　t18x3x8 BA",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000319",
+    "identCode": "02-319",
+    "name": "両面化粧MDF t18x4x8 BW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000320",
+    "identCode": "02-320",
+    "name": "両面MDF t18x3x8 MW",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000321",
+    "identCode": "02-321",
+    "name": "両面化粧MDF　t18x3x8　NBL",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000322",
+    "identCode": "02-322",
+    "name": "両面化粧MDF　t18x3x8 NO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000323",
+    "identCode": "02-323",
+    "name": "両面化粧MDF　t18x4x8　LO",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000324",
+    "identCode": "02-324",
+    "name": "FJ-802ZN 3x8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000325",
+    "identCode": "02-325",
+    "name": "FKJ6626ZNN74",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000326",
+    "identCode": "02-326",
+    "name": "FKJ6600ZNN74",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000327",
+    "identCode": "02-327",
+    "name": "FKJ6608ZNN74",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000328",
+    "identCode": "02-328",
+    "name": "FKJ6623ZNN74",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000329",
+    "identCode": "02-329",
+    "name": "15x4x6 WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000330",
+    "identCode": "02-330",
+    "name": "15x4x6 SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000331",
+    "identCode": "02-331",
+    "name": "20x4x6 WH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000332",
+    "identCode": "02-332",
+    "name": "20x4x6 SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000333",
+    "identCode": "02-333",
+    "name": "5x4x6 WH/SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000334",
+    "identCode": "02-334",
+    "name": "15x4x8 SH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000335",
+    "identCode": "02-335",
+    "name": "FJ-120222JD67 935x2455x3",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000336",
+    "identCode": "02-336",
+    "name": "F1965ZGH",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000337",
+    "identCode": "02-337",
+    "name": "K-6115KN 4X8",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N02000000000338",
+    "identCode": "02-338",
+    "name": "ｺﾝﾊﾟﾈ　12X3X6",
+    "category": "02",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000001",
+    "identCode": "03-001",
+    "name": "1949-122 3尺 ﾚｷﾞｭﾗｰ柄 ﾐﾃﾞｨｱﾑﾊﾟｰﾁHD",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000004",
+    "identCode": "03-004",
+    "name": "NK 4尺 (ﾅﾁｭﾗﾙｳｫｰｸ)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000010",
+    "identCode": "03-010",
+    "name": "ﾎﾞﾝﾚｯｸｽ BS002 WG色 4尺",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000011",
+    "identCode": "03-011",
+    "name": "ﾎﾞﾝﾚｯｸｽ BG003 BG色 4尺",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000013",
+    "identCode": "03-013",
+    "name": "ﾎﾞﾝﾚｯｸｽ BG143 BL色 4尺",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000015",
+    "identCode": "03-015",
+    "name": "NE80120 W750 WM",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000017",
+    "identCode": "03-017",
+    "name": "ﾘｱｰﾙ 2038-152 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000020",
+    "identCode": "03-020",
+    "name": "ﾘｱﾌﾟﾗｽ 2038-R52 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)旧価格",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000021",
+    "identCode": "03-021",
+    "name": "ﾘｱﾌﾟﾗｽ 2038-R52 SH 4尺 (ｽﾓｰｸﾋｯｺﾘｰ)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000022",
+    "identCode": "03-022",
+    "name": "ﾘｱﾌﾟﾗｽ 2038-R45 WH 4尺 (ﾎﾜｲﾄﾋｯｺﾘｰ)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000023",
+    "identCode": "03-023",
+    "name": "ﾘｱﾌﾟﾗｽ 2443-R16 LO 4尺 (ﾗｲﾄｵｰｸ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000024",
+    "identCode": "03-024",
+    "name": "ﾘｱﾌﾟﾗｽ 2417-R06 BW 4尺 (ﾋﾞﾀｰｳｫｰﾙﾅｯﾄ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000025",
+    "identCode": "03-025",
+    "name": "ﾘｱﾌﾟﾗｽ 2430-R36 MC 4尺 (ﾐﾃﾞｨｱﾑﾁｪﾘｰ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000026",
+    "identCode": "03-026",
+    "name": "ﾘｱﾌﾟﾗｽ 2658-R54 GO 4尺  (ｸﾞﾚｰｼﾞｭｵｰｸ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000027",
+    "identCode": "03-027",
+    "name": "三京化成 住友BR 3尺 (ﾌﾞﾗｯｸﾛｰｽﾞ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000030",
+    "identCode": "03-030",
+    "name": "WS-5156E 住友CW 3尺 (ｸﾘｰﾑﾎﾜｲﾄ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000032",
+    "identCode": "03-032",
+    "name": "幅3尺ｼｰﾄ 250M/1巻 MA色 (住友MA)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000034",
+    "identCode": "03-034",
+    "name": "幅3尺ｼｰﾄ 250M/1巻 PW色 (住友PW)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000036",
+    "identCode": "03-036",
+    "name": "幅3尺ｼｰﾄ 250M/1巻 NO色 (住友NO)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000039",
+    "identCode": "03-039",
+    "name": "WS-906E LCW 3尺 (ﾚｻﾞｰ調ﾎﾜｲﾄ)",
+    "category": "03",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000045",
+    "identCode": "03-045",
+    "name": "新WG",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000057",
+    "identCode": "03-057",
+    "name": "住友UW UW色 ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ 3尺",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000059",
+    "identCode": "03-059",
+    "name": "VE-504C 3尺　ｸﾞﾚｰ",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000060",
+    "identCode": "03-060",
+    "name": "VE-501C ﾍﾞﾀｼﾛ　3尺",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000062",
+    "identCode": "03-062",
+    "name": "ｼｰﾄ 2432-R21　SY",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000063",
+    "identCode": "03-063",
+    "name": "幅3尺ｼｰﾄ　250m/1巻　NBL色(住友NBL)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000064",
+    "identCode": "03-064",
+    "name": "幅3尺ｼｰﾄ　250m/1巻　MW色(住友MW)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000065",
+    "identCode": "03-065",
+    "name": "幅3尺ｼｰﾄ　250m/1巻　VW色(住友VW)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000066",
+    "identCode": "03-066",
+    "name": "幅3尺ｼｰﾄ　250m/1巻　BA色(住友BA)",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000067",
+    "identCode": "03-067",
+    "name": "VE-504C ｸﾞﾚｰ 4尺幅",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000068",
+    "identCode": "03-068",
+    "name": "VE-501C ﾎﾜｲﾄ 4尺幅",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000069",
+    "identCode": "03-069",
+    "name": "幅3尺ｼｰﾄ 350ｍ/1巻 ＴＯ",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000070",
+    "identCode": "03-070",
+    "name": "幅3尺ｼｰﾄ 350ｍ/1巻 CS",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N03000000000071",
+    "identCode": "03-071",
+    "name": "幅3尺ｼｰﾄ 350ｍ/1巻 LW",
+    "category": "03",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000002",
+    "identCode": "04-002",
+    "name": "ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 28㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000003",
+    "identCode": "04-003",
+    "name": "ﾀﾞｯﾌﾟﾃｰﾌﾟ 44㎜幅 0.5㎜厚\nﾗｽﾃｨｯｸ色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000004",
+    "identCode": "04-004",
+    "name": "ﾀﾞｯﾌﾟﾃｰﾌﾟ 44㎜幅 0.5㎜厚\nｴｸﾘｭ色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000005",
+    "identCode": "04-005",
+    "name": "ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 36㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000006",
+    "identCode": "04-006",
+    "name": "ﾀﾞｯﾌﾟ t0.5 ｴｸﾘｭ 24㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000007",
+    "identCode": "04-007",
+    "name": "ﾀﾞｯﾌﾟ t0.5 ﾗｽﾃｨｯｸ 24㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000008",
+    "identCode": "04-008",
+    "name": "18㎜巾 ﾁｮｰｸﾄﾞｽｸﾋﾗ色(CS)\nABS 1X18ｴｯｼﾞ ﾛｰｶﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000009",
+    "identCode": "04-009",
+    "name": "18㎜巾ﾊﾞﾆﾗｳｯﾄﾞ色(VW)\nABS 1X18ｴｯｼﾞ ﾛｰｶﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000010",
+    "identCode": "04-010",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nTO色 ｻｰﾓｽｵｰｸ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000011",
+    "identCode": "04-011",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nNO色 ﾉﾙﾃｵｰｸ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000012",
+    "identCode": "04-012",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nMA色 ﾐﾃﾞｨｱﾑｱｶｼｱ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000014",
+    "identCode": "04-014",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nMW色 ﾏｰﾌﾞﾙｳｯﾄﾞ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000015",
+    "identCode": "04-015",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nBA色 ﾌﾞﾗｯｸｱｶｼｱ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000016",
+    "identCode": "04-016",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nCS色 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000017",
+    "identCode": "04-017",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nVW色 ﾊﾞﾆﾗｳｯﾄﾞ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000018",
+    "identCode": "04-018",
+    "name": "ﾛｰｶﾝ 21㎜巾 1㎜厚 300M/1巻 \nNBL色 住友新色 ﾚｻﾞｰﾌﾞﾗｯｸ",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000025",
+    "identCode": "04-025",
+    "name": "MW40-2110-S0344E \n21㎜X1㎜厚 BC(MC)",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000026",
+    "identCode": "04-026",
+    "name": "MW40-2110-S0350E \n21㎜X1㎜厚 住友MC",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000027",
+    "identCode": "04-027",
+    "name": "MW40-2110-S0349E \n21㎜X1㎜厚 SPW",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000028",
+    "identCode": "04-028",
+    "name": "MW40-2110-S0345E \n21㎜X1㎜厚 BW",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000029",
+    "identCode": "04-029",
+    "name": "MW40-2110-S0342E \n21㎜X1㎜厚 SH",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000030",
+    "identCode": "04-030",
+    "name": "MW40-2110-S0347E \n21㎜X1㎜厚 GW",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000031",
+    "identCode": "04-031",
+    "name": "MW40-2110-S0343E \n21㎜X1㎜厚 LO",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000032",
+    "identCode": "04-032",
+    "name": "MW40-2110-S0348E \n21㎜X1㎜厚 BR",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000033",
+    "identCode": "04-033",
+    "name": "MW40-2110-S0346E \n21㎜X1㎜厚 CW",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000034",
+    "identCode": "04-034",
+    "name": "SC40-2110-N0110Q \n21㎜X1㎜厚 LCW",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000035",
+    "identCode": "04-035",
+    "name": "SC40-2110-N0111Q \n21㎜X1㎜厚 LCB",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000039",
+    "identCode": "04-039",
+    "name": "TA-4670 24㎜巾 白",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000042",
+    "identCode": "04-042",
+    "name": "WA-4153 22㎜巾\nﾀﾞｰｸﾌﾞﾗｳﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000059",
+    "identCode": "04-059",
+    "name": "SC40-3320-3029 \n33㎜巾 WM",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000061",
+    "identCode": "04-061",
+    "name": "ﾛｰｶﾝt2㎜ 30㎜巾 \nﾀﾞｰｸﾌﾞﾗｳﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000062",
+    "identCode": "04-062",
+    "name": "ﾛｰｶﾝt2㎜ 30㎜巾 \nｴｸﾘｭ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000063",
+    "identCode": "04-063",
+    "name": "ﾛｰｶﾝt2㎜ 30㎜巾 \n店研WH 3601-501",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000064",
+    "identCode": "04-064",
+    "name": "ﾛｰｶﾝt2㎜ 43㎜巾 \n店研WH",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000065",
+    "identCode": "04-065",
+    "name": "ﾛｰｶﾝt2㎜ 23㎜巾 ﾗｽﾃｨｯｸ\nMW40-2320-S0429E",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000067",
+    "identCode": "04-067",
+    "name": "ﾛｰｶﾝt2㎜ 23㎜巾 \nﾀﾞｰｸﾌﾞﾗｳﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000068",
+    "identCode": "04-068",
+    "name": "ﾛｰｶﾝt2㎜ 43㎜巾 \nﾀﾞｰｸﾌﾞﾗｳﾝ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000069",
+    "identCode": "04-069",
+    "name": "ﾛｰｶﾝt2㎜ 23㎜巾 \n店研 WH",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000070",
+    "identCode": "04-070",
+    "name": "ﾛｰｶﾝt2㎜ 23㎜巾 \nｴｸﾘｭ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000071",
+    "identCode": "04-071",
+    "name": "MW40-2110-S0286E\n21㎜×1.0㎜厚 WH",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000072",
+    "identCode": "04-072",
+    "name": "MW40-2110-S0124V\n 21㎜×1.0㎜厚 GO",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000073",
+    "identCode": "04-073",
+    "name": "SC40-2310-3029\n23X1㎜厚 WM",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000079",
+    "identCode": "04-079",
+    "name": "TA-4670 33㎜巾 白",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000081",
+    "identCode": "04-081",
+    "name": "TA-4670 53㎜巾 白",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000083",
+    "identCode": "04-083",
+    "name": "MW40-4520-4027",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000084",
+    "identCode": "04-084",
+    "name": "ﾛｰｶﾝ 2㎜厚 43㎜幅  GO色(昆山GO)",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000085",
+    "identCode": "04-085",
+    "name": "ｴｯｼﾞﾃｰﾌﾟ0.5㎜厚 43㎜幅 GO色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000086",
+    "identCode": "04-086",
+    "name": "MW40-3620-5874E \nﾛｰｶﾝ2㎜ 36㎜巾 NK色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000087",
+    "identCode": "04-087",
+    "name": "ﾛｰｶﾝ 43㎜幅 2㎜厚 BW色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000088",
+    "identCode": "04-088",
+    "name": "ﾃｰﾌﾟ 43㎜幅 0.5㎜厚 BW色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000089",
+    "identCode": "04-089",
+    "name": "ﾃｰﾌﾟ TA-4612 45㎜幅",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000090",
+    "identCode": "04-090",
+    "name": "ﾃｰﾌﾟ WA-4275 SY 40㎜幅",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000091",
+    "identCode": "04-091",
+    "name": "MW40-4520-004ME 45巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000094",
+    "identCode": "04-094",
+    "name": "MW40-4520-4030",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000096",
+    "identCode": "04-096",
+    "name": "小口ﾃｰﾌﾟ WS-266E 0.5㎜厚 36㎜幅 WW",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000098",
+    "identCode": "04-098",
+    "name": "新柄ﾎﾜｲﾄ木目調 2㎜厚 \n43㎜幅 NWH",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000099",
+    "identCode": "04-099",
+    "name": "新柄ﾎﾜｲﾄ木目調 0.5㎜厚 \n43㎜幅 NWH",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000100",
+    "identCode": "04-100",
+    "name": "SC40-4520-3052",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000101",
+    "identCode": "04-101",
+    "name": "MW40-3920-5998V",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000102",
+    "identCode": "04-102",
+    "name": "SC40-3920-3052",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000103",
+    "identCode": "04-103",
+    "name": "ﾛｰｶﾝ 2㎜厚 43㎜幅 ﾋﾟﾝｸ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000104",
+    "identCode": "04-104",
+    "name": "小口ﾃｰﾌﾟ 0.5㎜厚43㎜幅 ﾋﾟﾝｸ",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000105",
+    "identCode": "04-105",
+    "name": "ﾚｻﾞｰﾎﾜｲﾄ(LW)ABS\n1.0X21ｴｯｼﾞ ﾚｻﾞｰ調N",
+    "category": "04",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000106",
+    "identCode": "04-106",
+    "name": "SC40-4520-3013 白",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000107",
+    "identCode": "04-107",
+    "name": "ｿﾌﾄｴｯｼﾞ NK色 TV29C",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000109",
+    "identCode": "04-109",
+    "name": "MW40-4520-4042",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000112",
+    "identCode": "04-112",
+    "name": "TA-4670 44㎜巾 白",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000113",
+    "identCode": "04-113",
+    "name": "WA-4147",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000116",
+    "identCode": "04-116",
+    "name": "ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 30㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000117",
+    "identCode": "04-117",
+    "name": "ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 42㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000118",
+    "identCode": "04-118",
+    "name": "ｴｯｼﾞﾃｰﾌﾟ 店研ｾﾒﾝﾄ色 28㎜巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000129",
+    "identCode": "04-129",
+    "name": "MW40-3320-4047 \n33X2㎜厚 SH(試作)",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000145",
+    "identCode": "04-145",
+    "name": "MW40-4520-4025",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000164",
+    "identCode": "04-164",
+    "name": "MW40-4320-4063(積層柄)",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000165",
+    "identCode": "04-165",
+    "name": "MW40-2320-4063(積層柄)",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000166",
+    "identCode": "04-166",
+    "name": "MW40-4320-M035IV",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000167",
+    "identCode": "04-167",
+    "name": "ﾛｰｶﾝ SC40-3920-3013 2㎜厚39㎜幅",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000168",
+    "identCode": "04-168",
+    "name": "ｴｯｼﾞﾃｰﾌﾟ RUS 0.5X22巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000169",
+    "identCode": "04-169",
+    "name": "WS-862E SH 2.0X33巾",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000170",
+    "identCode": "04-170",
+    "name": "MW40-2320-4027 NK",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000171",
+    "identCode": "04-171",
+    "name": "MW40-2320-4051 MW",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000172",
+    "identCode": "04-172",
+    "name": "ﾃｰﾌﾟ28mm幅0.45厚　EC(秋田工場より)",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000176",
+    "identCode": "04-176",
+    "name": "WA-005ME　0.5mm×24mm",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000177",
+    "identCode": "04-177",
+    "name": "木口ﾃｰﾌﾟ　WA-009ME 0.5x24㎜",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000178",
+    "identCode": "04-178",
+    "name": "ｿﾌﾄｴｯｼﾞMW色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000179",
+    "identCode": "04-179",
+    "name": "ﾃ-ﾌﾟ　巾17　WH色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000180",
+    "identCode": "04-180",
+    "name": "ﾃｰﾌﾟ　巾20　WH",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000181",
+    "identCode": "04-181",
+    "name": "ﾃｰﾌﾟ　巾22　WH色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000182",
+    "identCode": "04-182",
+    "name": "ﾃｰﾌﾟ　巾17　SH色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000183",
+    "identCode": "04-183",
+    "name": "ﾃｰﾌﾟ　巾22　SH色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N04000000000184",
+    "identCode": "04-184",
+    "name": "MW40-3920-4025 DB色",
+    "category": "04",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000002",
+    "identCode": "05-002",
+    "name": "(+) 木ﾈｼﾞ皿ﾋﾞｽ M2.7X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000009",
+    "identCode": "05-009",
+    "name": "3.8 x 25 ﾋﾞｽ ｼﾙﾊﾞｰ ｳｹｶﾅｸﾞ用ｻﾗﾀｯﾋﾟﾝｸﾞCG",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000010",
+    "identCode": "05-010",
+    "name": "3.8X51 ｺｰｽﾚｯﾄﾞ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000011",
+    "identCode": "05-011",
+    "name": "33用ｱｼﾞｬｽﾀｰ 黒",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000012",
+    "identCode": "05-012",
+    "name": "33用ｱｼﾞｬｽﾀｰ 白",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000013",
+    "identCode": "05-013",
+    "name": "504-JP-SP-3C/12 \nФ50 双輪ｷｬｽﾀｰ SP付",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000016",
+    "identCode": "05-016",
+    "name": "A-614R-22 面付錠 + L金具ﾋﾞｽ2本ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000017",
+    "identCode": "05-017",
+    "name": "A-614R-22 面付錠 CL33-B 別番200通り",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000018",
+    "identCode": "05-018",
+    "name": "AD501･502用ｶﾊﾞｰｷｬｯﾌﾟ 黒 200-024-441",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000019",
+    "identCode": "05-019",
+    "name": "AD501･502用ｶﾊﾞｰｷｬｯﾌﾟ 白 200-024-440",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000020",
+    "identCode": "05-020",
+    "name": "AD-502-P ｱｼﾞｬｽﾀｰ 白 200-140-088",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000021",
+    "identCode": "05-021",
+    "name": "AD-502-P-BZC ｱｼﾞｬｽﾀｰ 黒 200-140-089",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000022",
+    "identCode": "05-022",
+    "name": "AKM001 ﾄｲﾚ用明かり取り窓",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000023",
+    "identCode": "05-023",
+    "name": "ATOM 60PMF-PU-CC-3C \nｽﾄｯﾌﾟ無 Φ60",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000038",
+    "identCode": "05-038",
+    "name": "FJL用 ｱｼﾞｬｽﾀｰｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000039",
+    "identCode": "05-039",
+    "name": "FJL用 ﾈｸﾀｲ掛け",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000040",
+    "identCode": "05-040",
+    "name": "FJL用 ﾊﾝｶﾞｰﾊﾟｲﾌﾟ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000041",
+    "identCode": "05-041",
+    "name": "FJL用 ﾊﾝｶﾞｰﾊﾟｲﾌﾟｿｹｯﾄ(2個ｾｯﾄ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000042",
+    "identCode": "05-042",
+    "name": "FJL用 把手（229835 ﾌｧｲﾝﾊﾝﾄﾞﾙ-N 120)(いつもの)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000052",
+    "identCode": "05-052",
+    "name": "GRIDﾋﾝｼﾞ MWA6HN7C99",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000054",
+    "identCode": "05-054",
+    "name": "HAFELE ｶﾊﾞｰｷｬｯﾌﾟU型 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000055",
+    "identCode": "05-055",
+    "name": "HAFELE ｶﾊﾞｰｷｬｯﾌﾟU型 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000059",
+    "identCode": "05-059",
+    "name": "HRP001 上部ﾛｰﾗｰｶｯﾌﾟ ﾋﾞｽｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000068",
+    "identCode": "05-068",
+    "name": "L金具+ﾋﾞｽ 2本ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000078",
+    "identCode": "05-078",
+    "name": "TK用 ｱｼﾞｬｽﾀｰ本体 B K(UF2DT兼用) 1273-2",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000079",
+    "identCode": "05-079",
+    "name": "TK用 ｱｼﾞｬｽﾀｰ本体 WH (UF2DT兼用) 1273-1",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000084",
+    "identCode": "05-084",
+    "name": "Y-52 14mm ｽﾊﾟﾅ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000085",
+    "identCode": "05-085",
+    "name": "Zﾜｯｼｬｰ Zｷｬｯﾌﾟ Z83 ｱｲﾎﾞﾘｰ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000087",
+    "identCode": "05-087",
+    "name": "ｱｸﾘﾙﾐﾗｰ 2㎜厚 248X148ｻｲｽﾞ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000090",
+    "identCode": "05-090",
+    "name": "ｱｼﾞｬｽﾀｰ調整ｽﾊﾟﾅ 13H",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000091",
+    "identCode": "05-091",
+    "name": "ｱｼﾞｬｽﾀｰ用 ﾌﾟﾚｰﾄ (UF2DT兼用) 1274",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000104",
+    "identCode": "05-104",
+    "name": "可動ｶｳﾝﾀｰ ｷｬｽﾀｰｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000106",
+    "identCode": "05-106",
+    "name": "金ﾀﾞﾎﾞ 5 x 7 x 15\n005468 差込棚ﾀﾞﾎﾞ 5X8X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000107",
+    "identCode": "05-107",
+    "name": "ｶﾊﾞｰｷｬｯﾌﾟU型ｾｯﾄ 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000108",
+    "identCode": "05-108",
+    "name": "ｶﾊﾞｰｷｬｯﾌﾟU型ｾｯﾄ 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000111",
+    "identCode": "05-111",
+    "name": "ｶﾑﾛｯｸｶﾊﾞｰｷｬｯﾌﾟｾｯﾄ 黒",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000112",
+    "identCode": "05-112",
+    "name": "ｶﾑﾛｯｸｶﾊﾞｰｷｬｯﾌﾟｾｯﾄ 白",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000115",
+    "identCode": "05-115",
+    "name": "ｷｬﾋﾞﾈｯﾄﾌﾗｯﾌﾟ扉ﾋﾝｼﾞﾍﾞｰｽ取付治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000116",
+    "identCode": "05-116",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 A仕様 SH",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000117",
+    "identCode": "05-117",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 A仕様 WH",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000120",
+    "identCode": "05-120",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 C仕様 SH",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000121",
+    "identCode": "05-121",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 C仕様 WH",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000123",
+    "identCode": "05-123",
+    "name": "ｹｰｽ錠ｾｯﾄ ILS",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000125",
+    "identCode": "05-125",
+    "name": "ｺｰﾅｰﾌﾟﾚｰﾄ ｾｯﾄ",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000126",
+    "identCode": "05-126",
+    "name": "ｺｰﾅｰﾌﾟﾚｰﾄ 単体",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000127",
+    "identCode": "05-127",
+    "name": "ｺｰﾅｰﾌﾟﾚｰﾄ治具(下穴ﾃﾝﾌﾟﾚｰﾄ)",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000128",
+    "identCode": "05-128",
+    "name": "極低頭木ねじ NI 2.7X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000129",
+    "identCode": "05-129",
+    "name": "ｺﾈｸﾃｨﾝｸﾞﾎﾞﾙﾄ",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000138",
+    "identCode": "05-138",
+    "name": "ｼｪﾙﾌﾌﾗｯﾌﾟ扉ﾋﾝｼﾞﾍﾞｰｽ取付治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000140",
+    "identCode": "05-140",
+    "name": "ｼﾞｮｲﾝﾄﾋﾟﾝ 9039822",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000141",
+    "identCode": "05-141",
+    "name": "ｼﾘﾝﾀﾞｰ錠 507型",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000142",
+    "identCode": "05-142",
+    "name": "ｼﾘﾝﾀﾞｰ錠 YM103-22",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000143",
+    "identCode": "05-143",
+    "name": "ｽｰﾊﾟｰﾀﾞﾎﾞSPL 12ФX70",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000144",
+    "identCode": "05-144",
+    "name": "ｽﾃｯﾌﾟﾃｰﾌﾞﾙ用金具(BK/WH)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000146",
+    "identCode": "05-146",
+    "name": "ｽﾃﾝﾚｽ 小ねじ ﾄﾗｽ 4x15",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000150",
+    "identCode": "05-150",
+    "name": "ｽﾗｲﾄﾞﾚｰﾙ 711-20WT500",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000153",
+    "identCode": "05-153",
+    "name": "ｽﾘﾑ可動棚受け 120-022-835",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000154",
+    "identCode": "05-154",
+    "name": "ｽﾚﾝﾀﾞｰ2000 ｽﾘﾑ粗目造作ﾋﾞｽ 3.3X25",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000155",
+    "identCode": "05-155",
+    "name": "ｽﾚﾝﾀﾞｰ2000 ｽﾘﾑ粗目造作ﾋﾞｽ 3.3X40",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000156",
+    "identCode": "05-156",
+    "name": "ｽﾚﾝﾀﾞｰｽﾚｯﾄﾞﾋﾞｽ 3.7X55",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000157",
+    "identCode": "05-157",
+    "name": "ｾｯﾄｷｬｯﾌﾟｶﾊﾞｰ GO",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000158",
+    "identCode": "05-158",
+    "name": "ｾｯﾄｷｬｯﾌﾟﾜｯｼｬｰ ﾍﾞｰｼﾞｭ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000159",
+    "identCode": "05-159",
+    "name": "ﾀｲﾀｽ ｼｽﾃﾑ5 TLｼｬﾌﾄ MT05441YA",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000160",
+    "identCode": "05-160",
+    "name": "ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾊﾞｰｷｬｯﾌﾟ 黒 MT01026LA",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000161",
+    "identCode": "05-161",
+    "name": "ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾊﾞｰｷｬｯﾌﾟ白 MT01026WA",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000163",
+    "identCode": "05-163",
+    "name": "ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾑ22 MT05657ZN",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000165",
+    "identCode": "05-165",
+    "name": "ﾀﾞｲﾔﾙﾛｯｸ=AL224E(V)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000166",
+    "identCode": "05-166",
+    "name": "ﾀｵﾙ掛け",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000167",
+    "identCode": "05-167",
+    "name": "ﾀｷｹﾞﾝ ｶﾑ 黒-ﾋﾞｽ頭 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000169",
+    "identCode": "05-169",
+    "name": "ﾀｷｹﾞﾝ ｶﾑ 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000173",
+    "identCode": "05-173",
+    "name": "ﾀｷｹﾞﾝ ｼｬﾌﾄKD-3",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000175",
+    "identCode": "05-175",
+    "name": "ﾀｯﾋﾟﾝｸﾞﾅﾍﾞﾋﾞｽ M4X20",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000176",
+    "identCode": "05-176",
+    "name": "ﾀﾞﾎﾞRM6 25㎜ (木ﾀﾞﾎﾞ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000177",
+    "identCode": "05-177",
+    "name": "ﾀﾞﾎﾞRM8 25㎜ (木ﾀﾞﾎﾞ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000178",
+    "identCode": "05-178",
+    "name": "ﾀﾞﾎﾞRS8 30㎜ (木ﾀﾞﾎﾞ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000181",
+    "identCode": "05-181",
+    "name": "ﾄﾗｽ A ﾀｯﾋﾟﾝｸﾞ 6X30 ﾕﾆｸﾛ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000184",
+    "identCode": "05-184",
+    "name": "+ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000187",
+    "identCode": "05-187",
+    "name": "ﾄﾗｽﾋﾞｽ M4X25",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000188",
+    "identCode": "05-188",
+    "name": "ﾄﾗｽﾋﾞｽ M4X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000190",
+    "identCode": "05-190",
+    "name": "ﾄﾞﾛﾜｰﾌﾛﾝﾄｱｼﾞｬｽﾀｰM4\n前板調整ｶﾑ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000191",
+    "identCode": "05-191",
+    "name": "ﾅﾍﾞ A ﾀｯﾋﾟﾝｸﾞ 4X25",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000194",
+    "identCode": "05-194",
+    "name": "ﾅﾍﾞﾀｯﾋﾟﾝｸﾞﾋﾞｽ M4X50",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000196",
+    "identCode": "05-196",
+    "name": "ﾅﾍﾞﾀｯﾋﾟﾝｸﾞ ﾕﾆｸﾛ M3X12",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000198",
+    "identCode": "05-198",
+    "name": "ﾅﾍﾞﾋﾞｽ M5X30",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000199",
+    "identCode": "05-199",
+    "name": "ﾅﾍﾞﾋﾞｽ M6X30",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000202",
+    "identCode": "05-202",
+    "name": "ﾊﾟｰｿﾅﾙﾛｯｶｰ用ﾋﾝｼﾞ座金ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000203",
+    "identCode": "05-203",
+    "name": "ﾊｰﾌｪﾚ ｼﾘﾝﾀﾞｰ錠ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000204",
+    "identCode": "05-204",
+    "name": "ﾊｰﾌｪﾚ ﾋﾝｼﾞ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000205",
+    "identCode": "05-205",
+    "name": "ﾊｰﾌｪﾚ ﾏｽﾀｰｷｰ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000206",
+    "identCode": "05-206",
+    "name": "ﾊｰﾌｪﾚ 座金",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000208",
+    "identCode": "05-208",
+    "name": "ﾊﾟｲﾌﾟﾊﾝｶﾞｰ受け",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000209",
+    "identCode": "05-209",
+    "name": "ﾊﾞﾝﾎﾟﾝ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000213",
+    "identCode": "05-213",
+    "name": "ﾋﾞｽ M3X35",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000215",
+    "identCode": "05-215",
+    "name": "ﾋﾝｼﾞ 248-0G49-051-TL",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000220",
+    "identCode": "05-220",
+    "name": "ﾌﾟｯｼｭｵｰﾌﾟﾝﾚｰﾙ受け L 9146999",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000221",
+    "identCode": "05-221",
+    "name": "ﾌﾟｯｼｭｵｰﾌﾟﾝﾚｰﾙ受け R 9144841",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000222",
+    "identCode": "05-222",
+    "name": "ﾌﾟｯｼｭｵｰﾌﾟﾝ引出ﾚｰﾙ水平取付治具",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000224",
+    "identCode": "05-224",
+    "name": "ﾌﾗｯﾌﾟｱｯﾌﾟｽﾃｰ取付治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000225",
+    "identCode": "05-225",
+    "name": "ﾌﾗｯﾌﾟｽﾃｰ取付治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000226",
+    "identCode": "05-226",
+    "name": "ﾌﾗｯﾌﾟﾀﾞｳﾝｽﾃｰ取付治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000230",
+    "identCode": "05-230",
+    "name": "ﾎﾞｯｸｽｷｬｯﾁ ｸﾛﾒｰﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000231",
+    "identCode": "05-231",
+    "name": "ﾏｸﾞﾈﾗｯﾁ ML30S型",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000233",
+    "identCode": "05-233",
+    "name": "ﾐｽﾄﾎﾜｲﾄ丸型DSC-100CWﾃﾞｻﾞｲﾝ明窓",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000237",
+    "identCode": "05-237",
+    "name": "ﾓﾍｱ ｼｰﾙ ｸﾞﾚｰ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000239",
+    "identCode": "05-239",
+    "name": "ﾕﾆｸﾛ (+) Aﾄﾗｽ 4 x 35",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000240",
+    "identCode": "05-240",
+    "name": "ﾕﾆｸﾛ 4X12",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000246",
+    "identCode": "05-246",
+    "name": "ﾕﾆｸﾛ木ねじ 皿 2.7X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000251",
+    "identCode": "05-251",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾋﾞｽ\n(+)超極低頭Aﾀｯﾋﾟﾝｸﾞ 3X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000253",
+    "identCode": "05-253",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=1168",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000255",
+    "identCode": "05-255",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=568",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000256",
+    "identCode": "05-256",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物 : ｱﾙﾐｼﾞｮｲﾅｰ L=768",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000266",
+    "identCode": "05-266",
+    "name": "引出前板用取付ﾋﾞｽｾｯﾄ 黒 229272",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000267",
+    "identCode": "05-267",
+    "name": "引出前板用取付ﾋﾞｽｾｯﾄ 白 229271",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000270",
+    "identCode": "05-270",
+    "name": "化粧天板同梱ﾋﾞｽ M3.5X30 (4本入)黒 227664",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000271",
+    "identCode": "05-271",
+    "name": "化粧天板同梱ﾋﾞｽ M3.5X30 (4本入)白 227663",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000274",
+    "identCode": "05-274",
+    "name": "簡易三角ﾄﾞﾗｲﾊﾞｰ 昆山",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000275",
+    "identCode": "05-275",
+    "name": "簡易三角ﾄﾞﾗｲﾊﾞｰ 大昌産業",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000277",
+    "identCode": "05-277",
+    "name": "鬼目ﾅｯﾄ A M6X13",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000278",
+    "identCode": "05-278",
+    "name": "鬼目ﾅｯﾄ D M6X13",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000279",
+    "identCode": "05-279",
+    "name": "鬼目ﾅｯﾄ D M6X20",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000280",
+    "identCode": "05-280",
+    "name": "鬼目ﾅｯﾄ D M8X25 0048250X",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000281",
+    "identCode": "05-281",
+    "name": "鬼目ﾅｯﾄB M8XL13.5",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000282",
+    "identCode": "05-282",
+    "name": "居室収納用 幕板固定L金具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000286",
+    "identCode": "05-286",
+    "name": "躯体ﾋﾞｽ M3.8X51 (4本入)黒 219420",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000287",
+    "identCode": "05-287",
+    "name": "躯体ﾋﾞｽ M3.8X51 (4本入)白 219421",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000288",
+    "identCode": "05-288",
+    "name": "鍵受けL金具",
+    "category": "05",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N05000000000289",
+    "identCode": "05-289",
+    "name": "差込ﾀﾞﾎﾞL型 TM ｾｯﾄ 黒 623660",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000290",
+    "identCode": "05-290",
+    "name": "差込ﾀﾞﾎﾞL型 TM ｾｯﾄ 白 623670",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000291",
+    "identCode": "05-291",
+    "name": "差込ﾀﾞﾎﾞｾｯﾄ (4入) 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000292",
+    "identCode": "05-292",
+    "name": "差込ﾀﾞﾎﾞｾｯﾄ (4入) 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000293",
+    "identCode": "05-293",
+    "name": "差込ﾀﾞﾎﾞ丸型 M 白 623420",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000294",
+    "identCode": "05-294",
+    "name": "差込ﾀﾞﾎﾞ丸型 黒 623420",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000296",
+    "identCode": "05-296",
+    "name": "差込棚ﾀﾞﾎﾞ L型 L",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000297",
+    "identCode": "05-297",
+    "name": "差込棚ﾀﾞﾎﾞ L型 R",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000300",
+    "identCode": "05-300",
+    "name": "座金 BATPOH34",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000307",
+    "identCode": "05-307",
+    "name": "0994582 ｻﾗﾀｯﾋﾟﾝｸﾞ4x25(+)ｸﾛﾒｰﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000309",
+    "identCode": "05-309",
+    "name": "皿ﾀｯﾋﾟﾝｸﾞﾈｼﾞ 4 x 20",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000318",
+    "identCode": "05-318",
+    "name": "施工棚板用 L金具ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000320",
+    "identCode": "05-320",
+    "name": "台輪L金具ｾｯﾄ　（特厚金折3Ｘ45Ｘ45　ねじセット）",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000322",
+    "identCode": "05-322",
+    "name": "大昌産業Φ60双輪ｷｬｽﾀｰｽﾄｯﾊﾟｰあり",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000323",
+    "identCode": "05-323",
+    "name": "大昌産業Φ60双輪ｷｬｽﾀｰｽﾄｯﾊﾟｰなし",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000327",
+    "identCode": "05-327",
+    "name": "棚板用ｶﾑﾛｯｸ 白 9064890",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000337",
+    "identCode": "05-337",
+    "name": "鍋ﾀｯﾋﾟﾝｸﾞﾋﾞｽ M4X16",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000338",
+    "identCode": "05-338",
+    "name": "背板ｼﾞｮｲﾅｰ ﾀﾞｰｸ L=2250",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000339",
+    "identCode": "05-339",
+    "name": "背板ｼﾞｮｲﾅｰ ﾎﾜｲﾄ L=2250",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000341",
+    "identCode": "05-341",
+    "name": "配線孔ｷｬｯﾌﾟ 丸型 φ45",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000347",
+    "identCode": "05-347",
+    "name": "桧家用明窓",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000348",
+    "identCode": "05-348",
+    "name": "木ﾀﾞﾎﾞ 2個ﾊﾞﾝﾎﾟﾝ2個ｾｯﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000352",
+    "identCode": "05-352",
+    "name": "木鍋ﾋﾞｽ M3X12",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000354",
+    "identCode": "05-354",
+    "name": "両開扉ﾌﾟｯｼｭｵｰﾌﾟﾝ取付下穴治具",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000355",
+    "identCode": "05-355",
+    "name": "両開扉ﾌﾟｯｼｭﾗｯﾁ取付下穴治具",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000356",
+    "identCode": "05-356",
+    "name": "連結ﾋﾞｽ M4X25 (8本入) 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000357",
+    "identCode": "05-357",
+    "name": "連結ﾋﾞｽ M4X25 (8本入) 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000358",
+    "identCode": "05-358",
+    "name": "連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X30",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000359",
+    "identCode": "05-359",
+    "name": "連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X35",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000360",
+    "identCode": "05-360",
+    "name": "連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X45",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000361",
+    "identCode": "05-361",
+    "name": "連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X50",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000362",
+    "identCode": "05-362",
+    "name": "連結ﾎﾞﾙﾄ Aﾀｲﾌﾟ M6X55",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000363",
+    "identCode": "05-363",
+    "name": "連結金具 ｷｬｯﾌﾟ ﾍﾞｰｼﾞｭ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000364",
+    "identCode": "05-364",
+    "name": "連結金具 ｷｬｯﾌﾟ 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000365",
+    "identCode": "05-365",
+    "name": "連結金具 ｷｬｯﾌﾟ 茶",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000366",
+    "identCode": "05-366",
+    "name": "連結金具 ｷｬｯﾌﾟ 白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000367",
+    "identCode": "05-367",
+    "name": "連結金具ｷｬｯﾌﾟ ﾒｰﾌﾟﾙ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000369",
+    "identCode": "05-369",
+    "name": "連結金具ﾅｯﾄ A M6X14",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000370",
+    "identCode": "05-370",
+    "name": "連結金具ﾅｯﾄ D M6X19",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000371",
+    "identCode": "05-371",
+    "name": "連結金具ﾜｯｼｬｰ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000375",
+    "identCode": "05-375",
+    "name": "ﾕﾆｸﾛ 3.5X25 艶消し黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000379",
+    "identCode": "05-379",
+    "name": "木工ﾀﾞﾎﾞ 10X50",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000381",
+    "identCode": "05-381",
+    "name": "ﾓﾀﾞﾝﾌﾟﾚｰﾄ WCF8203BK 黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000382",
+    "identCode": "05-382",
+    "name": "ｷｬｽﾀｰ自在車ｺﾞﾑﾌﾟﾚｰﾄ式 Φ50",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000383",
+    "identCode": "05-383",
+    "name": "ﾊﾟﾅｿﾆｯｸ DH0211 ﾀﾞｸﾄ本体 1M　白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000384",
+    "identCode": "05-384",
+    "name": "ﾊﾟﾅｿﾆｯｸ DH0231K ﾌｨｰﾄﾞｲﾝｷｬｯﾌﾟ配線ﾀﾞｸﾄ用",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000385",
+    "identCode": "05-385",
+    "name": "ﾊﾟﾅｿﾆｯｸ DH0232 ｴﾝﾄﾞｷｬｯﾌﾟ配線ﾀﾞｸﾄ用",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000386",
+    "identCode": "05-386",
+    "name": "ｸﾘｰﾝS7400 H680 42Φ 141粉体",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000387",
+    "identCode": "05-387",
+    "name": "ﾀﾞｲｺｰ  DPN-4128 Y　LEDﾍﾟﾝﾀﾞﾝﾄ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000393",
+    "identCode": "05-393",
+    "name": "M4X25 (ﾎﾞﾙﾄ&ﾅｯﾄｾｯﾄ) 551-413",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000394",
+    "identCode": "05-394",
+    "name": "ACﾓｰﾀｰﾌｧﾝ MU825S-13",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000397",
+    "identCode": "05-397",
+    "name": "NC-1506 ﾊﾞﾈ白",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000398",
+    "identCode": "05-398",
+    "name": "M4袋ﾅｯﾄ 93-317",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000399",
+    "identCode": "05-399",
+    "name": "ﾅﾍﾞ小ねじ M4X45(ﾅﾍﾞ頭ﾎﾞﾙﾄ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000400",
+    "identCode": "05-400",
+    "name": "L金具固定用 M3X15 (ﾎﾞﾙﾄ&ﾅｯﾄｾｯﾄ) 551-601",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000403",
+    "identCode": "05-403",
+    "name": "差込棚ﾀﾞﾎﾞ L型 L　黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000404",
+    "identCode": "05-404",
+    "name": "差込棚ﾀﾞﾎﾞ L型 R　黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000405",
+    "identCode": "05-405",
+    "name": "PSEシール　mamapod",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000408",
+    "identCode": "05-408",
+    "name": "平角 ﾋﾞﾆｰﾙ 3×10ﾃｰﾌﾟ付ﾎﾜｲﾄ 2m 36051",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000409",
+    "identCode": "05-409",
+    "name": "ｽﾚﾝﾀﾞｰ2000　M3.8×75mm",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000410",
+    "identCode": "05-410",
+    "name": "ｽﾘﾑｽﾚｯﾄﾞM3.8×65mm",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000411",
+    "identCode": "05-411",
+    "name": "BEST No.610N-H40",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000412",
+    "identCode": "05-412",
+    "name": "LGBC81651LE1　LEDﾌﾞﾗｹｯﾄ60形電球色",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000413",
+    "identCode": "05-413",
+    "name": "ST1-109S030　PSE対応ACﾌｧﾝ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000414",
+    "identCode": "05-414",
+    "name": "109-049E　ﾌｨﾝｶﾞｰｶﾞｰﾄﾞﾌｨﾙﾀｰｾｯﾄ　80mm用",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000415",
+    "identCode": "05-415",
+    "name": "戸当ゴムD-187-25　黒",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000422",
+    "identCode": "05-422",
+    "name": "スガツネ 締結金具 固定ねじ  IT2182-1180 鋼 ニッケルめっき",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000423",
+    "identCode": "05-423",
+    "name": "ｽﾃﾝ　(+)ﾄﾗｽ小ねじ　4X20",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000424",
+    "identCode": "05-424",
+    "name": "303721 BSﾗｲﾝ引手ｽﾃﾝ艶消しL=2006mm",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000425",
+    "identCode": "05-425",
+    "name": "303720 BSﾗｲﾝ引手ﾌﾞﾗｯｸ艶消しL=2006mm",
+    "category": "05",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000426",
+    "identCode": "05-426",
+    "name": "神保電器 JEC-BN-55V-PW",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000427",
+    "identCode": "05-427",
+    "name": "スライド折れ戸金具・カップ",
+    "category": "05",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000428",
+    "identCode": "05-428",
+    "name": "K-77-B-8S　黒　PA M8X15(PAOﾃﾞｽｸ用ｷｬｽﾀｰ)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000430",
+    "identCode": "05-430",
+    "name": "G2L4001AKL　ﾗｲﾃｨｸﾞﾊﾟﾈﾙ400用金物",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000431",
+    "identCode": "05-431",
+    "name": "G2L8001AKL ﾗｲﾃｨｸﾞﾊﾟﾈﾙ800用金物",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000434",
+    "identCode": "05-434",
+    "name": "鑑押えとビス（2296*960*3.0）",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000435",
+    "identCode": "05-435",
+    "name": "G2L6001AKL　ﾗｲﾃｨｸﾞﾊﾟﾈﾙ600用金物",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000436",
+    "identCode": "05-436",
+    "name": "G4LC001AKL ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ1200用金物",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000437",
+    "identCode": "05-437",
+    "name": "ｱﾙﾐZ型B2　1*10.5*11.5*11.5　4070MM",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000438",
+    "identCode": "05-438",
+    "name": "ｱﾙﾐｼﾞｮｲﾅｰｺ-10　ｺ型　B2　1820mm",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000439",
+    "identCode": "05-439",
+    "name": "ｱﾙﾐｼﾞｮｲﾅｰｺ-10　ｺ型　B2　2730mm",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000440",
+    "identCode": "05-440",
+    "name": "G61-5008AS　ｱﾙﾐ",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000442",
+    "identCode": "05-442",
+    "name": "ｴｱﾀｲﾄ　E-800-2N-800",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000444",
+    "identCode": "05-444",
+    "name": "引出ﾌﾟｯｼｭｵｰﾌﾟﾝﾚｰﾙ(L/R)",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000445",
+    "identCode": "05-445",
+    "name": "木ﾀﾞﾎﾞ　12x50",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N05000000000446",
+    "identCode": "05-446",
+    "name": "ｼﾘｺｰﾝｼｰﾗﾝﾄ　ｸﾘｱ　K25245Y",
+    "category": "05",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000001",
+    "identCode": "06-001",
+    "name": "1570 左右方立2枚 W240",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000002",
+    "identCode": "06-002",
+    "name": "1560 左右方立2枚入 D380用付属",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000003",
+    "identCode": "06-003",
+    "name": "1740 ｼｪﾙﾌ左右方立2枚入2400 380用中板",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000004",
+    "identCode": "06-004",
+    "name": "1680 ｼｪﾙﾌ中方立1枚入2400 380用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000005",
+    "identCode": "06-005",
+    "name": "1730 ｼｪﾙﾌ左右方立2枚入れ 2400 380用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000006",
+    "identCode": "06-006",
+    "name": "1690 GRID 2枚入 2400用240用中板",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000010",
+    "identCode": "06-010",
+    "name": "1700 GRID 2枚入 2400用 240用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000012",
+    "identCode": "06-012",
+    "name": "1770 GRID 1枚入 2400用 240用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000016",
+    "identCode": "06-016",
+    "name": "ｷｬﾋﾞﾈｯﾄ本体 H450 532X389X84",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000018",
+    "identCode": "06-018",
+    "name": "2410 ｷｬﾋﾞﾈｯﾄ本体ｼﾞｮｲﾅｰ付H770",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000019",
+    "identCode": "06-019",
+    "name": "2420 ｷｬﾋﾞﾈｯﾄ本体(ｼﾞｮｲﾅｰ付)H900",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000020",
+    "identCode": "06-020",
+    "name": "2425 ｷｬﾋﾞﾈｯﾄ本体(ｼﾞｮｲﾅｰ付)付属",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000024",
+    "identCode": "06-024",
+    "name": "ｷｬﾋﾞﾈｯﾄ可動棚板 \n353X60X768",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000026",
+    "identCode": "06-026",
+    "name": "引出ﾕﾆｯﾄ 350X70X360",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000027",
+    "identCode": "06-027",
+    "name": "引出ﾕﾆｯﾄ 350X70X560",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000028",
+    "identCode": "06-028",
+    "name": "引出ﾕﾆｯﾄ 350X70X760",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000030",
+    "identCode": "06-030",
+    "name": "2220 引き出しﾕﾆｯﾄ 350×140×560",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000031",
+    "identCode": "06-031",
+    "name": "2230 引き出しﾕﾆｯﾄ 350×140×760",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000032",
+    "identCode": "06-032",
+    "name": "引出ﾕﾆｯﾄ H70付属 (四角)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000034",
+    "identCode": "06-034",
+    "name": "2235 引き出しﾕﾆｯﾄ H140付属",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000036",
+    "identCode": "06-036",
+    "name": "2020 台輪 60*75*767",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000037",
+    "identCode": "06-037",
+    "name": "2010 台輪 60*75*375",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000038",
+    "identCode": "06-038",
+    "name": "2030 化粧天板 405*18*402",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000039",
+    "identCode": "06-039",
+    "name": "2040 化粧天板 405*18*802",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000040",
+    "identCode": "06-040",
+    "name": "2050 化粧天板 405*18*1202",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000043",
+    "identCode": "06-043",
+    "name": "2080 化粧天板 405*18*2402",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000044",
+    "identCode": "06-044",
+    "name": "ﾌﾗｯﾌﾟ扉 296X1196",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000049",
+    "identCode": "06-049",
+    "name": "1510 ﾌﾗｯﾌﾟｶﾞﾗｽ扉F8030A用 800*300",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000050",
+    "identCode": "06-050",
+    "name": "1490 ﾌﾗｯﾌﾟｶﾞﾗｽ扉F8045A",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000051",
+    "identCode": "06-051",
+    "name": "施工棚板 3枚入 236X370",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000052",
+    "identCode": "06-052",
+    "name": "1850 施工棚板3枚ｾｯﾄW376D570",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000053",
+    "identCode": "06-053",
+    "name": "施工棚板 3枚入 236X570",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000054",
+    "identCode": "06-054",
+    "name": "施工棚板 3枚入 236X1170",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000055",
+    "identCode": "06-055",
+    "name": "施工棚板 3枚ｾｯﾄ 付属 W240",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000056",
+    "identCode": "06-056",
+    "name": "施工棚板 3枚入 376X1170",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000057",
+    "identCode": "06-057",
+    "name": "1830 施工棚板3枚ｾｯﾄW376D370",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000058",
+    "identCode": "06-058",
+    "name": "施工棚板 3枚ｾｯﾄ 付属 W380",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000059",
+    "identCode": "06-059",
+    "name": "1840 施工棚板3枚ｾｯﾄW376D770",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000060",
+    "identCode": "06-060",
+    "name": "1810 施工棚板3枚ｾｯﾄW236D770",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000061",
+    "identCode": "06-061",
+    "name": "1890 引き出し前板 146*396",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000062",
+    "identCode": "06-062",
+    "name": "引き出し前板 (146X596)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000063",
+    "identCode": "06-063",
+    "name": "1910 引き出し前板 146*796",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000064",
+    "identCode": "06-064",
+    "name": "引き出し前板 (296X396)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000066",
+    "identCode": "06-066",
+    "name": "1950 引き出し前板 296*796",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000067",
+    "identCode": "06-067",
+    "name": "1960 開き扉(396*446)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000068",
+    "identCode": "06-068",
+    "name": "1970 開き扉(396*596)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000069",
+    "identCode": "06-069",
+    "name": "1980 開き扉(396*896)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000070",
+    "identCode": "06-070",
+    "name": "開き扉 (596X446)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000071",
+    "identCode": "06-071",
+    "name": "開き扉 (596X596)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000072",
+    "identCode": "06-072",
+    "name": "1920 開き扉(596×896)",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000074",
+    "identCode": "06-074",
+    "name": "ｶﾞﾗｽ扉 付属 W450",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000075",
+    "identCode": "06-075",
+    "name": "ｶﾞﾗｽ扉 付属 W300",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000076",
+    "identCode": "06-076",
+    "name": "1460 ｶﾞﾗｽ扉T4045A用(400*450)",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000077",
+    "identCode": "06-077",
+    "name": "1470 ｶﾞﾗｽ扉T4060A用400*600",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000079",
+    "identCode": "06-079",
+    "name": "ｶﾞﾗｽ扉 1205X300",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000080",
+    "identCode": "06-080",
+    "name": "1610 追加棚板･可動棚板 W236D770",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000081",
+    "identCode": "06-081",
+    "name": "1640 追加棚板･可動棚板 W376 D570",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000082",
+    "identCode": "06-082",
+    "name": "1620 追加棚板･可動棚板 W236D1170",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000083",
+    "identCode": "06-083",
+    "name": "1650　追加棚板・可動棚板W376D1170",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000085",
+    "identCode": "06-085",
+    "name": "追加棚板 可動棚板 \n1枚付属 W380",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000086",
+    "identCode": "06-086",
+    "name": "追加棚板 可動棚板 \n1枚付属 W240",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000087",
+    "identCode": "06-087",
+    "name": "追加棚板 可動棚板 \n1枚 236X370",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000088",
+    "identCode": "06-088",
+    "name": "2440 追加棚板･可動棚板 W376D770",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000089",
+    "identCode": "06-089",
+    "name": "1600 追加棚板･可動棚板 W236 D570",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000091",
+    "identCode": "06-091",
+    "name": "ｽﾘﾑ可動棚板5枚 \n368X50X568",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000092",
+    "identCode": "06-092",
+    "name": "固定棚板 365X20X370",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000093",
+    "identCode": "06-093",
+    "name": "固定棚板 365X20X770",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000102",
+    "identCode": "06-102",
+    "name": "2530 可動ｶｳﾝﾀｰ梱包(小)",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000104",
+    "identCode": "06-104",
+    "name": "ﾊｲﾀｲﾌﾟ 899X66X978",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000106",
+    "identCode": "06-106",
+    "name": "2500 木製ﾚｼﾞ台",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000117",
+    "identCode": "06-117",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ本体 838X1493",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000121",
+    "identCode": "06-121",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ半切ﾊﾟｯﾄﾞ 392X80",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000122",
+    "identCode": "06-122",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾊﾟｯﾄﾞ 392X1489",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000123",
+    "identCode": "06-123",
+    "name": "兼用残り材ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙﾊﾟｯﾄﾞ 392X844",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000126",
+    "identCode": "06-126",
+    "name": "PAO部品箱使用(電源ﾕﾆｯﾄ用 225X195X67)",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000127",
+    "identCode": "06-127",
+    "name": "2660 FJLN部品箱 351*156*70",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000128",
+    "identCode": "06-128",
+    "name": "2670 FJLN①1802*556*53",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000129",
+    "identCode": "06-129",
+    "name": "2680 FJLN①用ﾊﾟｯﾄ 548*1782",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000130",
+    "identCode": "06-130",
+    "name": "2690 FJLN②用1850*401*72",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000131",
+    "identCode": "06-131",
+    "name": "2700 FJLN②用ﾊﾟｯﾄ393*1830",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000166",
+    "identCode": "06-166",
+    "name": "ｷｬﾋﾞﾈｯﾄ棚板3枚入り W400用",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000167",
+    "identCode": "06-167",
+    "name": "ｷｬﾋﾞﾈｯﾄ棚板3枚入り W800用",
+    "category": "06",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N06000000000180",
+    "identCode": "06-180",
+    "name": "DRB(IU PAO)用ﾀﾞﾝﾎﾞｰﾙ　2Pテープ貼り",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000181",
+    "identCode": "06-181",
+    "name": "3170 DBﾌﾗｯﾌﾟｶﾞﾗｽ扉F6030A用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000183",
+    "identCode": "06-183",
+    "name": "追加棚板･可動棚板(1枚入り) W376D370",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000184",
+    "identCode": "06-184",
+    "name": "DRB(IU PAO)用ﾀﾞﾝﾎﾞｰﾙ　1Pテープ貼り",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000185",
+    "identCode": "06-185",
+    "name": "ｿﾌｧｰﾜｺﾞﾝ用ﾀﾞﾝﾎﾞｰﾙ",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000186",
+    "identCode": "06-186",
+    "name": "ｶﾞﾗｽ扉　T3045A",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000187",
+    "identCode": "06-187",
+    "name": "1650　追加棚板・可動棚板 W376 D1170",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000188",
+    "identCode": "06-188",
+    "name": "ﾀﾞﾝﾎﾞｰﾙ　ｷｬﾋﾞﾈｯﾄ部品箱A・B",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000189",
+    "identCode": "06-189",
+    "name": "ﾀﾞﾝﾎﾞｰﾙ　ｷｬﾋﾞﾈｯﾄ部品箱C",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000190",
+    "identCode": "06-190",
+    "name": "外寸　715X270X424(H)無地・クリア",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000191",
+    "identCode": "06-191",
+    "name": "ﾌﾗｯﾌﾟｶﾞﾗｽ扉F6045A用",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000193",
+    "identCode": "06-193",
+    "name": "組立机用ﾀﾞﾝﾎﾞｰﾙ",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000194",
+    "identCode": "06-194",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　Ｌ2290",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000195",
+    "identCode": "06-195",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2300",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000196",
+    "identCode": "06-196",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2410",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000197",
+    "identCode": "06-197",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2420",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000198",
+    "identCode": "06-198",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2400",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000199",
+    "identCode": "06-199",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2425",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000200",
+    "identCode": "06-200",
+    "name": "台輪　梱包材　2010",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000201",
+    "identCode": "06-201",
+    "name": "台輪　梱包材　2020",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000202",
+    "identCode": "06-202",
+    "name": "固定・可動棚　梱包材　2260",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000203",
+    "identCode": "06-203",
+    "name": "固定・可動棚　梱包材　2270",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000204",
+    "identCode": "06-204",
+    "name": "引出　梱包材　2200",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000205",
+    "identCode": "06-205",
+    "name": "引出　梱包材　2230",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000206",
+    "identCode": "06-206",
+    "name": "引出　梱包材　2025角当",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000207",
+    "identCode": "06-207",
+    "name": "引出　梱包材　2235角当",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000208",
+    "identCode": "06-208",
+    "name": "引出　梱包材　2205ﾚｰﾙ箱",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000209",
+    "identCode": "06-209",
+    "name": "引出　梱包材　2235ﾚｰﾙ箱",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000210",
+    "identCode": "06-210",
+    "name": "ﾀﾞﾝﾎﾞｰﾙ　ﾚｰﾙ用　H300",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000211",
+    "identCode": "06-211",
+    "name": "ﾀﾞﾝﾎﾞｰﾙ　ﾚｰﾙ用　H150",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N06000000000212",
+    "identCode": "06-212",
+    "name": "木製ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545BW　ﾀﾞﾝﾎﾞｰﾙ",
+    "category": "06",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000001",
+    "identCode": "07-001",
+    "name": "ﾎｯﾄﾒﾙﾄ Jowat 280.00 15kg",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000002",
+    "identCode": "07-002",
+    "name": "速乾ｽﾌﾟﾚｰ NVN2 14㎏",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000003",
+    "identCode": "07-003",
+    "name": "RT-91 2.5㎏",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000004",
+    "identCode": "07-004",
+    "name": "ｱｲｶ ｱｲﾎﾞﾝ AX623-L 20KG",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000005",
+    "identCode": "07-005",
+    "name": "FESTOOL  EVA nature 48x-KA 65",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000006",
+    "identCode": "07-006",
+    "name": "ｱｲﾒﾙﾄ W-9 15kg",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000007",
+    "identCode": "07-007",
+    "name": "ｱｲｶ Aibon W2702 ISOﾍﾟｰﾙ缶 18kg",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000008",
+    "identCode": "07-008",
+    "name": "PUR HM706.1.00 20kgﾊﾟｳﾁ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000009",
+    "identCode": "07-009",
+    "name": "ｸﾗｲﾍﾞﾘｯﾄPUR HM 706.0.08 20kgﾊﾟｳﾁ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000010",
+    "identCode": "07-010",
+    "name": "ｸﾗｲﾍﾞﾘｯﾄ Cleaner 761.8 20kgﾍﾟｰﾙ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000011",
+    "identCode": "07-011",
+    "name": "PUR HM706.0.08 1.8kgﾊﾟｳﾁ*6",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000012",
+    "identCode": "07-012",
+    "name": "ｸﾗｲﾍﾞﾘｯﾄ 761.1 18KG　cleaner",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000013",
+    "identCode": "07-013",
+    "name": "ｸﾗｲﾍﾞﾘｯﾄ　Cleaner　761.7　20kgﾊﾟｳﾁ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000014",
+    "identCode": "07-014",
+    "name": "ｸﾗｲﾍﾞﾘｯﾄ 822.2 5kg　cleaner",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000017",
+    "identCode": "07-017",
+    "name": "コニシ　ﾎﾞﾝﾄﾞｸﾞﾚ　MPX-1　＃57778",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000018",
+    "identCode": "07-018",
+    "name": "両面ﾃｰﾌﾟ　一般用　5x15x10Ｍ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N07000000000019",
+    "identCode": "07-019",
+    "name": "ﾎﾞﾝﾄﾞMPX-1　ﾎﾜｲﾄ",
+    "category": "07",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000001",
+    "identCode": "08-001",
+    "name": "両面粘着ﾃｰﾌﾟ 10㍉巾",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000002",
+    "identCode": "08-002",
+    "name": "両面粘着ﾃｰﾌﾟ 30㍉巾",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000005",
+    "identCode": "08-005",
+    "name": "OPPﾃｰﾌﾟ(3M透明ﾃｰﾌﾟ)",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000006",
+    "identCode": "08-006",
+    "name": "ｴｱｷｬｯﾌﾟ ﾌﾟﾁﾌﾟﾁH37 42M巻",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000008",
+    "identCode": "08-008",
+    "name": "ｼﾝｺｰ VP-452 20g 同梱用木工ﾎﾞﾝﾄﾞ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000018",
+    "identCode": "08-018",
+    "name": "ｽﾄﾚｯﾁﾌｨﾙﾑ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000019",
+    "identCode": "08-019",
+    "name": "養生ﾃｰﾌﾟ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000030",
+    "identCode": "08-030",
+    "name": "ﾜｲﾄﾞｻﾝﾀﾞｰ用ﾍﾟｰﾊﾟｰP80 470X1670",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000033",
+    "identCode": "08-033",
+    "name": "取扱注意 OPPﾃｰﾌﾞ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000034",
+    "identCode": "08-034",
+    "name": "ｽﾄﾚｯﾁﾊﾞｲﾝﾀﾞｰ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000036",
+    "identCode": "08-036",
+    "name": "ﾊｲﾃﾞﾝﾎﾟﾘ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000037",
+    "identCode": "08-037",
+    "name": "★表面保護ﾃｰﾌﾟ[ﾁﾗｼ特価Y]-50×100×0.08",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000042",
+    "identCode": "08-042",
+    "name": "ｼｰﾙ ｢ｶｯﾀｰﾅｲﾌ使用厳禁｣",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000043",
+    "identCode": "08-043",
+    "name": "ﾉﾙﾏﾙﾍｷｻﾝ 16ﾘｯﾄﾙ 1缶",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000044",
+    "identCode": "08-044",
+    "name": "液体高分子 NET.18kg",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000046",
+    "identCode": "08-046",
+    "name": "ﾗｲﾝﾃｰﾌﾟ 白",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000047",
+    "identCode": "08-047",
+    "name": "ﾗｲﾝﾃｰﾌﾟ 青",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000048",
+    "identCode": "08-048",
+    "name": "ﾗｲﾝﾃｰﾌﾟ 黄",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000049",
+    "identCode": "08-049",
+    "name": "ﾗｲﾝﾃｰﾌﾟ 赤",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000050",
+    "identCode": "08-050",
+    "name": "ﾗｲﾝﾃｰﾌﾟ ﾄﾗ",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000052",
+    "identCode": "08-052",
+    "name": "表面保護ﾃｰﾌﾟ 100X180X0.06",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N08000000000053",
+    "identCode": "08-053",
+    "name": "ｼﾝｺｰ　VP452　同梱用木工ﾎﾞﾝﾄﾞ　50g",
+    "category": "08",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000002",
+    "identCode": "09-002",
+    "name": "三菱電機 V-08PQ7 給気ﾊﾟｲﾌﾟﾌｧﾝ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000003",
+    "identCode": "09-003",
+    "name": "三菱電機 V-08P8 排気ﾊﾟｲﾌﾟﾌｧﾝ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000005",
+    "identCode": "09-005",
+    "name": "AD7206W50",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000006",
+    "identCode": "09-006",
+    "name": "神保電器 NKW01008PW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000007",
+    "identCode": "09-007",
+    "name": "ﾊﾟﾅｿﾆｯｸ WTF14764W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000008",
+    "identCode": "09-008",
+    "name": "神保電器 JEC-BN-55V-PW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000009",
+    "identCode": "09-009",
+    "name": "神保電器 NKP-3UF-3-PW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000010",
+    "identCode": "09-010",
+    "name": "神保電器 NKP-3UF-2-PW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000011",
+    "identCode": "09-011",
+    "name": "神保電器 NKP-3UF-PW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000012",
+    "identCode": "09-012",
+    "name": "ﾊﾟﾅｿﾆｯｸ WN3700",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000013",
+    "identCode": "09-013",
+    "name": "ﾊﾟﾅｿﾆｯｸ WTF13033WK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000014",
+    "identCode": "09-014",
+    "name": "ﾊﾟﾅｿﾆｯｸ WTF7003W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000015",
+    "identCode": "09-015",
+    "name": "ﾆﾁﾌ QLX 4-YCL",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000016",
+    "identCode": "09-016",
+    "name": "矢崎電線 VFF2X2W WH",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000017",
+    "identCode": "09-017",
+    "name": "矢崎電線 VFF2X2W BK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000018",
+    "identCode": "09-018",
+    "name": "矢崎電線 IV1.6B BK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000019",
+    "identCode": "09-019",
+    "name": "矢崎電線 IV1.6B RED",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000020",
+    "identCode": "09-020",
+    "name": "ﾊﾟﾅｿﾆｯｸ WH4415 ﾍﾞﾀｰ小型ｷｬｯﾌﾟ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000021",
+    "identCode": "09-021",
+    "name": "ﾆﾁﾌ CE 5 絶縁被覆付閉端接続子5.5sp",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000022",
+    "identCode": "09-022",
+    "name": "ﾆﾁﾌ R 2-3 銅線用裸圧着端子(R型)2sq-3",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000023",
+    "identCode": "09-023",
+    "name": "ﾆﾁﾌ R 2-3.5 銅線用裸圧着端子(R型)2sq-3",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000024",
+    "identCode": "09-024",
+    "name": "絶縁棒端子 TMEX TC-2-16 青色",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000025",
+    "identCode": "09-025",
+    "name": "ﾊﾟﾅｿﾆｯｸ WH4021W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000026",
+    "identCode": "09-026",
+    "name": "ﾆﾁﾌ 2Y-3 銅線用裸圧着端子(R型)2sq-3",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000027",
+    "identCode": "09-027",
+    "name": "WN1001SW 埋込ｺﾝｾﾝﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000028",
+    "identCode": "09-028",
+    "name": "ﾆﾁﾌ QLX 5-YCL",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000029",
+    "identCode": "09-029",
+    "name": "結束ﾊﾞﾝﾄﾞ100LX2.5",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000030",
+    "identCode": "09-030",
+    "name": "ﾊﾟﾅｿﾆｯｸ LSEB9501LE1",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000031",
+    "identCode": "09-031",
+    "name": "LSB100-0650MSCAW5M",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000032",
+    "identCode": "09-032",
+    "name": "OD361",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000033",
+    "identCode": "09-033",
+    "name": "結束ﾊﾞﾝﾄﾞ150LX2.5",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000034",
+    "identCode": "09-034",
+    "name": "結束ﾊﾞﾝﾄﾞ250LX2.5",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000035",
+    "identCode": "09-035",
+    "name": "三角ﾀｯﾌﾟ(ｺﾝｾﾝﾄ)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000036",
+    "identCode": "09-036",
+    "name": "ﾊﾟﾅｿﾆｯｸ ﾊﾟｲﾌﾟﾌｧﾝ FY-08PD9",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000037",
+    "identCode": "09-037",
+    "name": "ﾊﾟﾅｿﾆｯｸ ﾊﾟｲﾌﾟﾌｧﾝ FY-08PS1BL",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000038",
+    "identCode": "09-038",
+    "name": "照明 LSB150-0650NCAW-V3",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000039",
+    "identCode": "09-039",
+    "name": "WTF7001",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000040",
+    "identCode": "09-040",
+    "name": "NKP-1UFPW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000041",
+    "identCode": "09-041",
+    "name": "BSC",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000043",
+    "identCode": "09-043",
+    "name": "ﾆﾄﾑｽﾞ G0102 P型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 10㎜幅",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000044",
+    "identCode": "09-044",
+    "name": "ﾆﾄﾑｽﾞ G0101 M型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 9㎜幅X6M",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000045",
+    "identCode": "09-045",
+    "name": "ﾑｰﾋﾞｰﾌﾟﾗｸﾞ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000046",
+    "identCode": "09-046",
+    "name": "A-120-40 M10X85 黒",
+    "category": "09",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N09000000000047",
+    "identCode": "09-047",
+    "name": "ALCP100K-140 ALCｽﾘｰﾌﾟﾊﾟｲﾌﾟｼﾞｮｲﾝﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000048",
+    "identCode": "09-048",
+    "name": "312-771 ｳﾚﾀﾝ消音材100型",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000049",
+    "identCode": "09-049",
+    "name": "LOCK DOWEL E900P 1袋4入",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000051",
+    "identCode": "09-051",
+    "name": "LOCK DOWEL E900BP",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000053",
+    "identCode": "09-053",
+    "name": "ﾛｰﾙﾋﾟﾝ 8.0X70",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000055",
+    "identCode": "09-055",
+    "name": "ﾛｰﾙﾋﾟﾝ 8.0X30",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000057",
+    "identCode": "09-057",
+    "name": "ﾏｸﾞﾎﾞｰﾄﾞ BL3225 密度32㎏ 10枚入",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000058",
+    "identCode": "09-058",
+    "name": "ILS ｹｰｽ錠ｾｯﾄ ﾗｯﾁ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000061",
+    "identCode": "09-061",
+    "name": "TRUSCO中山 ﾎﾟｲﾝﾄﾋﾞｽ用ｱﾙﾐﾌｯｸ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000063",
+    "identCode": "09-063",
+    "name": "ｷｬｽﾀｰ 420S-RD 50㎜(ｺﾞﾑ車輪) 黒",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000064",
+    "identCode": "09-064",
+    "name": "MDｱｼﾞｬｽﾀｰ TR10XL75 ASSY",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000065",
+    "identCode": "09-065",
+    "name": "防虫ﾊﾟｯｷﾝ C-70 L2000",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000066",
+    "identCode": "09-066",
+    "name": "ｽﾍﾟｰｽｼｭｯﾊﾟｰ架台",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000067",
+    "identCode": "09-067",
+    "name": "調整ｽﾄﾗｲｸ CS2型親子用",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000068",
+    "identCode": "09-068",
+    "name": "ｽﾍﾟｰｽｼｭｯﾊﾟｰ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000069",
+    "identCode": "09-069",
+    "name": "ｽﾍﾟｰｽｼｭｯﾊﾟｰ 預り在庫 2Links",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000072",
+    "identCode": "09-072",
+    "name": "ｺﾞﾑｺｰﾀﾞ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000073",
+    "identCode": "09-073",
+    "name": "ｱｲﾎﾞﾘｰ角棒(見切り)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000075",
+    "identCode": "09-075",
+    "name": "L型ｱﾝｸﾞﾙ ｼﾙﾊﾞｰ L800",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000076",
+    "identCode": "09-076",
+    "name": "L型ｱﾝｸﾞﾙ ﾌﾞﾗｯｸ L800",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000077",
+    "identCode": "09-077",
+    "name": "ｴﾌﾟﾄｼｰﾗｰ5X15X10",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000079",
+    "identCode": "09-079",
+    "name": "床 天井 見切 (白) MJZ001",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000081",
+    "identCode": "09-081",
+    "name": "ﾀｲﾙｶｰﾍﾟｯﾄ NT87010",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000082",
+    "identCode": "09-082",
+    "name": "ﾀｲﾙｶｰﾍﾟｯﾄ NT-3000ECO",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000083",
+    "identCode": "09-083",
+    "name": "ﾀｲﾙｶｰﾍﾟｯﾄ NT31201",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000085",
+    "identCode": "09-085",
+    "name": "三次元丁番 A ｳｹｶﾅｸﾞBK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000086",
+    "identCode": "09-086",
+    "name": "三次元丁番 A 扉金具BK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000087",
+    "identCode": "09-087",
+    "name": "三次元丁番 B ｳｹｶﾅｸﾞBK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000088",
+    "identCode": "09-088",
+    "name": "三次元丁番 B 扉金具BK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000089",
+    "identCode": "09-089",
+    "name": "三次元丁番 A ｳｹｶﾅｸﾞCG",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000091",
+    "identCode": "09-091",
+    "name": "三次元丁番 B ｳｹｶﾅｸﾞCG",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000092",
+    "identCode": "09-092",
+    "name": "三次元丁番 B 扉金具CG",
+    "category": "09",
+    "price": 6.0,
+    "isFixed": true
+  },
+  {
+    "id": "N09000000000093",
+    "identCode": "09-093",
+    "name": "三次元丁番 ｹｰｽｶﾊﾞｰBK DH6",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000094",
+    "identCode": "09-094",
+    "name": "三次元丁番 ｹｰｽｶﾊﾞ-CG DH6",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000095",
+    "identCode": "09-095",
+    "name": "ﾃﾞｽｸｺﾝｾﾝﾄ電源ﾕﾆｯﾄ一式(DRB/PaO-M)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000096",
+    "identCode": "09-096",
+    "name": "ﾃﾞｽｸｺﾝｾﾝﾄ電源ﾕﾆｯﾄ一式(mamapod)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000098",
+    "identCode": "09-098",
+    "name": "穴埋めｷｬｯﾌﾟ D",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000099",
+    "identCode": "09-099",
+    "name": "穴埋めｷｬｯﾌﾟ SW",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000100",
+    "identCode": "09-100",
+    "name": "穴埋めｷｬｯﾌﾟ GO",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000101",
+    "identCode": "09-101",
+    "name": "穴埋めｷｬｯﾌﾟ NK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000103",
+    "identCode": "09-103",
+    "name": "ﾉｰﾌﾞﾗﾝﾄﾞ ｱｼﾞｬｽﾀ AJSH8",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000105",
+    "identCode": "09-105",
+    "name": "ﾕﾆｸﾛ平折 90mm L型金物",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000106",
+    "identCode": "09-106",
+    "name": "ｺｰｽｽﾚｯﾄﾞ 3.8X41",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000107",
+    "identCode": "09-107",
+    "name": "WF積層材 W/F C5XC5 1200X100X100",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000112",
+    "identCode": "09-112",
+    "name": "MDｱｼﾞｬｽﾀｰ TR10XL100",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000114",
+    "identCode": "09-114",
+    "name": "DL148S-2 打掛け(D-31)SUS70",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000117",
+    "identCode": "09-117",
+    "name": "楽LOCK RL51",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000118",
+    "identCode": "09-118",
+    "name": "楽LOCK RL54",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000119",
+    "identCode": "09-119",
+    "name": "楽LOCK RL05",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000120",
+    "identCode": "09-120",
+    "name": "楽LOCK RL56",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000121",
+    "identCode": "09-121",
+    "name": "S･P･C flooring SPC1 ﾎﾜｲﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000122",
+    "identCode": "09-122",
+    "name": "S･P･C flooring SPC4 ｸﾞﾚｰｼﾞｭ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000123",
+    "identCode": "09-123",
+    "name": "吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝC/FB-4040C-GY 20102",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000124",
+    "identCode": "09-124",
+    "name": "K100U-50-B8S ﾌｯﾄｷｬｽﾀｰ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000125",
+    "identCode": "09-125",
+    "name": "ﾊｲﾗｲﾄ HW-12 570*1078",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000126",
+    "identCode": "09-126",
+    "name": "ﾗﾝﾅｰ L16N/TK28N",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000127",
+    "identCode": "09-127",
+    "name": "GBU-15.5 MPﾎﾜｲﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000128",
+    "identCode": "09-128",
+    "name": "ﾌｨｰﾛFR-100ﾊﾝﾄﾞﾙ L:1800 B2 穴無し",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000129",
+    "identCode": "09-129",
+    "name": "ﾌｨｰﾛｴﾝﾄﾞｷｬｯﾌﾟ生地 L/R ｼﾙﾊﾞｰ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000131",
+    "identCode": "09-131",
+    "name": "ｺﾞﾑ戸当たり TS-20 ﾎﾜｲﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000132",
+    "identCode": "09-132",
+    "name": "L型ｽﾄﾗｲｸ 右勝手",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000134",
+    "identCode": "09-134",
+    "name": "BTK型(鋼･塗装) 棚受 67532 BTK-120",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000135",
+    "identCode": "09-135",
+    "name": "LGBC80610LE1 LEDﾌﾞﾗｹｯﾄ60形電球色",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000137",
+    "identCode": "09-137",
+    "name": "ﾓﾍｱｼｰﾙ ｸﾞﾚｰ P-009",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000138",
+    "identCode": "09-138",
+    "name": "ｱﾙﾐ戸当り 3.0X40X1990",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000140",
+    "identCode": "09-140",
+    "name": "ﾓﾍｱ #2500 ﾌﾞﾗｯｸ　6060",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000141",
+    "identCode": "09-141",
+    "name": "120-022-809 IT1020-2020 ｲﾝｻｰﾄﾈｼﾞ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000142",
+    "identCode": "09-142",
+    "name": "120-040-847  IT2180-2160",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000143",
+    "identCode": "09-143",
+    "name": "ｷｬｽﾀｰ 413S-N 75㎜",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000144",
+    "identCode": "09-144",
+    "name": "吸音ﾊﾟﾈﾙ45(4040) 1箱30枚入り WH",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000145",
+    "identCode": "09-145",
+    "name": "ｽﾗｲﾄﾞ折れ戸金具一式",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000147",
+    "identCode": "09-147",
+    "name": "DMF3-EP-BL ｺﾝｾﾝﾄﾌﾟﾚｰﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000148",
+    "identCode": "09-148",
+    "name": "DMF3-EP-WT ｺﾝｾﾝﾄﾌﾟﾚｰﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000149",
+    "identCode": "09-149",
+    "name": "ﾉｰﾌﾞﾗﾝﾄﾞｱｼﾞｬｽﾀｰ AJSH6",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000150",
+    "identCode": "09-150",
+    "name": "IT2182-1250 締結金具TJ10用固定ねじ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000151",
+    "identCode": "09-151",
+    "name": "ｶﾞﾗｽﾌｨﾙﾑ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000153",
+    "identCode": "09-153",
+    "name": "PSEｼｰﾙ(BOXﾀｲﾌﾟ用)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000154",
+    "identCode": "09-154",
+    "name": "PSEｼｰﾙ(ｳｫｰﾙﾀｲﾌﾟ)",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000155",
+    "identCode": "09-155",
+    "name": "吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝC/FB-4040C-NBE",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000156",
+    "identCode": "09-156",
+    "name": "ﾆﾄﾑｽﾞ G0101 M型 ﾄﾞｱ･窓用気密ﾊﾟｯｷﾝ 9㎜幅X1M",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000158",
+    "identCode": "09-158",
+    "name": "ｱｸﾘﾙBOX　芯組のみ　W120XH1731",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000159",
+    "identCode": "09-159",
+    "name": "ｱｸﾘﾙBOX　芯組のみ　W60XH1731",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000160",
+    "identCode": "09-160",
+    "name": "ﾀｲﾙｶｰﾍﾟｯﾄ　ｻﾝｹﾞﾂ　NT-31901",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000161",
+    "identCode": "09-161",
+    "name": "ｱｸﾘﾙBOX　芯組のみ　W60XH1600",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000162",
+    "identCode": "09-162",
+    "name": "ｱｸﾘﾙBOX　芯組のみ　W180XH1731",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000163",
+    "identCode": "09-163",
+    "name": "ｶﾊﾞｰ付きｷｬｽﾀｰ ﾅｲﾛﾝ車 K77-B-8S",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000164",
+    "identCode": "09-164",
+    "name": "ﾊｲﾗｲﾄ HW-12 570*1078/ﾗﾝﾅｰ L16N/TK28N",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000165",
+    "identCode": "09-165",
+    "name": "ﾓﾍｱ #2500 ﾌﾞﾗｯｸ　9090",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000166",
+    "identCode": "09-166",
+    "name": "ＰＡＯステッカー",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000167",
+    "identCode": "09-167",
+    "name": "ココミラー29x43㎝",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000168",
+    "identCode": "09-168",
+    "name": "非常ボタンシール",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000169",
+    "identCode": "09-169",
+    "name": "ﾀｲﾄ材　ﾎｸｼｮｰ RE-30　17*17*2000",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000170",
+    "identCode": "09-170",
+    "name": "隙間ｸｯｼｮﾝﾃｰﾌﾟE型（ｸｯｼｮﾝﾃｰﾌﾟ　K　BE-1155F）50M",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000171",
+    "identCode": "09-171",
+    "name": "8010002192　PAOBABY鴨居・ﾚｰﾙ・部品箱",
+    "category": "09",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000172",
+    "identCode": "09-172",
+    "name": "ハイライト　HW-12　568*1075",
+    "category": "09",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000173",
+    "identCode": "09-173",
+    "name": "PANA ｽｲｯﾁ　FY-SV11W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000174",
+    "identCode": "09-174",
+    "name": "LAN JIMBO 埋込ﾓｼﾞｭﾗｼﾞｬｯｸ　８極8心",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000175",
+    "identCode": "09-175",
+    "name": "隙間ｸｯｼｮﾝﾃｰﾌﾟP型（ｸｯｼｮﾝﾃｰﾌﾟ　P　BE-1156F）50M",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000176",
+    "identCode": "09-176",
+    "name": "PAOBABY用鴨居",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000177",
+    "identCode": "09-177",
+    "name": "PAOBABYｽﾗｲﾄﾞ折れ戸用部品箱・ﾚｰﾙ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000178",
+    "identCode": "09-178",
+    "name": "ｱｳﾄｾｯﾄﾚｰﾙ・金具SET",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000179",
+    "identCode": "09-179",
+    "name": "NT-327E（500*500）",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000180",
+    "identCode": "09-180",
+    "name": "ONESTEP吸音パネルBLACK　24枚入り",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000181",
+    "identCode": "09-181",
+    "name": "集成材棚板Ｂ形　WB　TG-100　450*150",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000181",
+    "identCode": "09-181",
+    "name": "天井埋込型換気扇　FY-27CK8",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000182",
+    "identCode": "09-182",
+    "name": "呼び出しチャイムセットXP710A",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000183",
+    "identCode": "09-183",
+    "name": "集成材棚板Ｂ形　WB　TG-100　450*150",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000184",
+    "identCode": "09-184",
+    "name": "HW-12 ﾙｰﾊﾞｰ 557x724",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000185",
+    "identCode": "09-185",
+    "name": "CJ-28S　ﾎﾜｲﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000307",
+    "identCode": "09-307",
+    "name": "吸音ﾊﾟﾈﾙﾌｪﾙﾒﾉﾝ　FB-8060-NBE",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000308",
+    "identCode": "09-308",
+    "name": "ﾌｪﾙﾒﾉﾝ FB-4040C-CGY　ﾁｬｺｰﾙｸﾞﾚｰ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000310",
+    "identCode": "09-310",
+    "name": "2Y-3.5裸端子先開形",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000311",
+    "identCode": "09-311",
+    "name": "強化ｶﾞﾗｽPAO用",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000312",
+    "identCode": "09-312",
+    "name": "ｻﾝｹﾞﾂ　ｶｰﾍﾟｯﾄ　NT31507",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000313",
+    "identCode": "09-313",
+    "name": "ｲｽﾄﾌﾛﾝﾎﾞｰﾄﾞ（額貼ﾀｲﾌﾟ）",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000314",
+    "identCode": "09-314",
+    "name": "框　ﾄﾞｱ用　ｶﾞﾗｽ　450X1800X5",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000315",
+    "identCode": "09-315",
+    "name": "換気SW　Panasonic　FY-SV11WC",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000316",
+    "identCode": "09-316",
+    "name": "ｽﾃﾝﾚｽﾌｯｸ　DFHK-SQ30型",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000317",
+    "identCode": "09-317",
+    "name": "ｱﾙﾐｱﾝｸﾞﾙ 1.5X20X10 ﾌﾞﾗｯｸ L2000",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000318",
+    "identCode": "09-318",
+    "name": "ｻｯｼ用気密ﾊﾟｯｷﾝ　ｴﾌﾟﾄｼｰﾗｰ　5㎜X15㎜X10㎜",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000319",
+    "identCode": "09-319",
+    "name": "K-6114KN 4x8",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000320",
+    "identCode": "09-320",
+    "name": "ﾗｲﾄ LGD3100LU1",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000321",
+    "identCode": "09-321",
+    "name": "ｽｲｯﾁ WTA525289W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000322",
+    "identCode": "09-322",
+    "name": "ｽｲｯﾁ WTA575831W",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000323",
+    "identCode": "09-323",
+    "name": "ｺﾝｾﾝﾄ WTF13033WK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000324",
+    "identCode": "09-324",
+    "name": "ﾌﾟﾚｰﾄ WTA7101WK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000325",
+    "identCode": "09-325",
+    "name": "ﾌﾟﾚｰﾄ WTA7112WK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000326",
+    "identCode": "09-326",
+    "name": "ﾌﾟﾚｰﾄ WTL7006WK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000327",
+    "identCode": "09-327",
+    "name": "ﾘｺｷｭｰﾌﾞｿﾌｧｰ RFCB-38GN",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000328",
+    "identCode": "09-328",
+    "name": "ｲｽﾄﾌﾛﾝﾎﾝﾄﾞ1009 900x1095x25",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000329",
+    "identCode": "09-329",
+    "name": "ｲｽﾄﾌﾛﾝﾎﾝﾄﾞ1009　900x918x25",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000330",
+    "identCode": "09-330",
+    "name": "ｲｽﾄﾌﾛﾝﾎﾝﾄﾞ1003 900x1095x25",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000331",
+    "identCode": "09-331",
+    "name": "ボトムトナーDW800",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000332",
+    "identCode": "09-332",
+    "name": "樹脂戸当たりｺﾞﾑ無し　JTY001NK",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000334",
+    "identCode": "09-334",
+    "name": "新三平建設　自動消火装置　MYBUDDY MB-3.0-B3型",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000335",
+    "identCode": "09-335",
+    "name": "新三平建設　自動消火装置　MYBUDDY　MB-2.0-B1型",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000336",
+    "identCode": "09-336",
+    "name": "新三平建設　自動消火装置　MYBUDDY MB-2.1-B2型",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000338",
+    "identCode": "09-338",
+    "name": "楽LOCK RL52",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000339",
+    "identCode": "09-339",
+    "name": "ALC用スリーブ　100UNIX",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000341",
+    "identCode": "09-341",
+    "name": "ｷｬﾌﾞﾀｲﾔｹｰﾌﾞﾙ丸形VCTF中　D2.0sqX3.17A300V",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000342",
+    "identCode": "09-342",
+    "name": "天井埋込形ﾅﾉｲｰ発生機　FY-10S",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000343",
+    "identCode": "09-343",
+    "name": "黒色ｸﾛﾒｰﾄ(BC)+Aｻﾗ　3.5x20　丁番羽根用",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000344",
+    "identCode": "09-344",
+    "name": "0994582　TPA+皿　丁番用ﾋﾞｽ　4x25 ｸﾛﾒｰﾄ",
+    "category": "09",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000345",
+    "identCode": "09-345",
+    "name": "鉄板 W1720 D200 t3.2㎜ 素地４角5R　ｻﾞｲﾏｯｸｽ用",
+    "category": "09",
+    "price": 5.0,
+    "isFixed": false
+  },
+  {
+    "id": "N09000000000346",
+    "identCode": "09-346",
+    "name": "鉄板 W2060 D200 t3.2㎜ 素地４角5R",
+    "category": "09",
+    "price": 5.0,
+    "isFixed": false
+  },
+  {
+    "id": "N10000000000027",
+    "identCode": "10-027",
+    "name": "ｽﾁﾛｸﾞﾗｽPS80P t3.8X920X2100",
+    "category": "10",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N10000000000028",
+    "identCode": "10-028",
+    "name": "ﾐﾗｰ 393 x 1995",
+    "category": "10",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N10000000000031",
+    "identCode": "10-031",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙ t5.0X915X2000",
+    "category": "10",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000067",
+    "identCode": "11-067",
+    "name": "1012SR 後面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000068",
+    "identCode": "11-068",
+    "name": "1012SR 左側面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000069",
+    "identCode": "11-069",
+    "name": "1012SR 天井【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000072",
+    "identCode": "11-072",
+    "name": "1012SR 正面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000073",
+    "identCode": "11-073",
+    "name": "1012用 ﾃﾞｽｸ【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000076",
+    "identCode": "11-076",
+    "name": "1012SR 後面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000077",
+    "identCode": "11-077",
+    "name": "1012用 ﾃﾞｽｸ【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000078",
+    "identCode": "11-078",
+    "name": "1012SR 左側面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000079",
+    "identCode": "11-079",
+    "name": "1012SR 正面【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000080",
+    "identCode": "11-080",
+    "name": "1012SR 天井【芯組】",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000086",
+    "identCode": "11-086",
+    "name": "桧家　上框",
+    "category": "11",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000091",
+    "identCode": "11-091",
+    "name": "ｱｸﾘﾙBOX　芯組のみ　W120X1780",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000092",
+    "identCode": "11-092",
+    "name": "芯組のみ　左右方立　2700X380",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000093",
+    "identCode": "11-093",
+    "name": "芯組のみ　中方立　2700X380",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000094",
+    "identCode": "11-094",
+    "name": "芯組のみ　左右方立　2400X380",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000095",
+    "identCode": "11-095",
+    "name": "芯組のみ　中方立　2400X380",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000096",
+    "identCode": "11-096",
+    "name": "芯組のみ　CFPｺﾝｻﾙﾃｨﾝｸﾞ　PAO2000X1200　開扉",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000097",
+    "identCode": "11-097",
+    "name": "芯組のみ　1012BR開扉",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000098",
+    "identCode": "11-098",
+    "name": "芯組のみ　2000X1200　ﾃﾞｽｸ",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000099",
+    "identCode": "11-099",
+    "name": "芯組のみ　木製ﾊﾟｰｿﾅﾙﾛｯｶｰ　底板",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000100",
+    "identCode": "11-100",
+    "name": "芯組のみ　CFPｺﾝｻﾙﾃｨﾝｸﾞ　2000X1200　左側面(前、後)",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000101",
+    "identCode": "11-101",
+    "name": "ﾊﾟｰｿﾅﾙﾛｯｶｰ側板",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000102",
+    "identCode": "11-102",
+    "name": "1210M左側面",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000103",
+    "identCode": "11-103",
+    "name": "1210M右側面",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000104",
+    "identCode": "11-104",
+    "name": "1210M正面",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000105",
+    "identCode": "11-105",
+    "name": "1210M後面",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000106",
+    "identCode": "11-106",
+    "name": "1210Mデスク",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000107",
+    "identCode": "11-107",
+    "name": "1210M補強残",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N11000000000108",
+    "identCode": "11-108",
+    "name": "1210M開扉",
+    "category": "11",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000142",
+    "identCode": "12-142",
+    "name": "9100004660　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000143",
+    "identCode": "12-143",
+    "name": "9100004816　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000144",
+    "identCode": "12-144",
+    "name": "9100004639 面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000145",
+    "identCode": "12-145",
+    "name": "9100004959　吉田プランニング　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000146",
+    "identCode": "12-146",
+    "name": "9100004961 ﾒﾃﾞｨｱﾊﾞｳﾝﾄﾞ　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000147",
+    "identCode": "12-147",
+    "name": "9100004731　大熊地区　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000148",
+    "identCode": "12-148",
+    "name": "9100004780　いろは　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000149",
+    "identCode": "12-149",
+    "name": "9100004752 ﾌﾛﾊﾞﾃﾞｨｰｽﾞ　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000150",
+    "identCode": "12-150",
+    "name": "9100004815　中目黒　面材ｶｯﾄ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000151",
+    "identCode": "12-151",
+    "name": "9100004731 大熊地区　面材ｶｯﾄ　幕板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000152",
+    "identCode": "12-152",
+    "name": "2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ　可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000153",
+    "identCode": "12-153",
+    "name": "2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ　可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000154",
+    "identCode": "12-154",
+    "name": "2100011629-2 芯材ｶｯﾄ　ﾛｯｶｰ　可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000155",
+    "identCode": "12-155",
+    "name": "2100011629-14 芯材ｶｯﾄ　可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000156",
+    "identCode": "12-156",
+    "name": "2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ開扉",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000157",
+    "identCode": "12-157",
+    "name": "2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ開扉",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000158",
+    "identCode": "12-158",
+    "name": "2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ開扉",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000159",
+    "identCode": "12-159",
+    "name": "2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ開扉",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000160",
+    "identCode": "12-160",
+    "name": "2100011629-5　芯材ｶｯﾄ　ﾛｯｶｰ側板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000161",
+    "identCode": "12-161",
+    "name": "2100011629-1　芯材ｶｯﾄ　ﾛｯｶｰ側板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000162",
+    "identCode": "12-162",
+    "name": "2100011629-13　芯材ｶｯﾄ　ﾛｯｶｰ側板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000163",
+    "identCode": "12-163",
+    "name": "2100011629-9　芯材ｶｯﾄ　ﾛｯｶｰ側板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000164",
+    "identCode": "12-164",
+    "name": "2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ天地板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000165",
+    "identCode": "12-165",
+    "name": "2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ天地板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000166",
+    "identCode": "12-166",
+    "name": "2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ天地板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000167",
+    "identCode": "12-167",
+    "name": "2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ天地板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000168",
+    "identCode": "12-168",
+    "name": "2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ背板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000169",
+    "identCode": "12-169",
+    "name": "2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ背板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000170",
+    "identCode": "12-170",
+    "name": "2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ背板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000171",
+    "identCode": "12-171",
+    "name": "2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ背板",
+    "category": "12",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000172",
+    "identCode": "12-172",
+    "name": "2100011629-6　芯材ｶｯﾄ　ﾛｯｶｰ固定棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000173",
+    "identCode": "12-173",
+    "name": "2100011629-2　芯材ｶｯﾄ　ﾛｯｶｰ固定棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000174",
+    "identCode": "12-174",
+    "name": "2100011629-14　芯材ｶｯﾄ　ﾛｯｶｰ固定棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000175",
+    "identCode": "12-175",
+    "name": "2100011629-10　芯材ｶｯﾄ　ﾛｯｶｰ固定棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000176",
+    "identCode": "12-176",
+    "name": "2100011629-15　芯材ｶｯﾄ　ﾛｯｶｰ仕切板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000177",
+    "identCode": "12-177",
+    "name": "2100011629-7　芯材ｶｯﾄ　ﾛｯｶｰ仕切板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000178",
+    "identCode": "12-178",
+    "name": "2100011629-11　芯材ｶｯﾄ　ﾛｯｶｰ仕切板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000179",
+    "identCode": "12-179",
+    "name": "2100011629-3　芯材ｶｯﾄ　ﾛｯｶｰ仕切板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000180",
+    "identCode": "12-180",
+    "name": "9100003962　広島大学　PAOBABY1218",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000181",
+    "identCode": "12-181",
+    "name": "9100004587 京急百貨店 PAOBABY1218",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000182",
+    "identCode": "12-182",
+    "name": "9100004660　XGPATNERS　面材ｶｯﾄ　幕板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000183",
+    "identCode": "12-183",
+    "name": "9100004816　ﾜｼﾝﾄﾝﾎﾃﾙ桜木町　面材ｶｯﾄ　幕板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000184",
+    "identCode": "12-184",
+    "name": "9100004816　ﾜｼﾝﾄﾝﾎﾃﾙ桜木町　面材ｶｯﾄ　床面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000185",
+    "identCode": "12-185",
+    "name": "9100004660　XGPATNERS　面材ｶｯﾄ　床面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000186",
+    "identCode": "12-186",
+    "name": "9100004731　大熊地区　面材ｶｯﾄ　床面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000187",
+    "identCode": "12-187",
+    "name": "9100004815　中目黒　面材ｶｯﾄ　幕板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000188",
+    "identCode": "12-188",
+    "name": "9100004815　中目黒　面材ｶｯﾄ　床面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000189",
+    "identCode": "12-189",
+    "name": "2100009534-5　木製ﾛｯｶｰ RGFJLNW　可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000190",
+    "identCode": "12-190",
+    "name": "2100009534-5　木製ﾛｯｶｰ　RGFJLNW　天地板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000191",
+    "identCode": "12-191",
+    "name": "2100009534-5　木製ﾛｯｶｰ　RGFJLNW　固定棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000192",
+    "identCode": "12-192",
+    "name": "2100009534-4　木製ﾛｯｶｰ　RGFJLNW　側板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000193",
+    "identCode": "12-193",
+    "name": "2100009534-4　木製ﾛｯｶｰ　RGFJLNW　開扉",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000194",
+    "identCode": "12-194",
+    "name": "2100005082-5　棚板　CTW-9060KKA",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000195",
+    "identCode": "12-195",
+    "name": "2100005082-7　棚板　CTW-9060WHP",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000196",
+    "identCode": "12-196",
+    "name": "2100005082-4　棚板　CTW-9060DBP",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000197",
+    "identCode": "12-197",
+    "name": "2100005082-3　棚板　CTW-1260MPP",
+    "category": "12",
+    "price": 9.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000198",
+    "identCode": "12-198",
+    "name": "2100005082-3　棚板 CTW-1260DBP",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000199",
+    "identCode": "12-199",
+    "name": "9100004587　PAOBABY1218　ドア②",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000200",
+    "identCode": "12-200",
+    "name": "9100004653　PAO1218SR-F　床面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000201",
+    "identCode": "12-201",
+    "name": "2100012216-3　ｼｪﾙﾌ施工棚板　W800xD380",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000202",
+    "identCode": "12-202",
+    "name": "9100004653　PAO1218SR-F　幕板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000203",
+    "identCode": "12-203",
+    "name": "2100012216-2　G1HV270AGO2　ｼｪﾙﾌ左右方立",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000204",
+    "identCode": "12-204",
+    "name": "2100012216-1　G1IV270AGO1　中方立",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000205",
+    "identCode": "12-205",
+    "name": "2100012216-4　G1S8003AGO1　ｼｪﾙﾌ可動棚",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000206",
+    "identCode": "12-206",
+    "name": "210000934-1　G1IV240ASH1-N　中方立",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000207",
+    "identCode": "12-207",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　天井",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000208",
+    "identCode": "12-208",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　天井",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000209",
+    "identCode": "12-209",
+    "name": "2100009534-5　木製ﾛｯｶｰRGFJLNW-2GO 背板",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000210",
+    "identCode": "12-210",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　左側面(前)",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000211",
+    "identCode": "12-211",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　右側面(前)",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000212",
+    "identCode": "12-212",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　正面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000213",
+    "identCode": "12-213",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　後面",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000214",
+    "identCode": "12-214",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　右側面(後)",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000215",
+    "identCode": "12-215",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　ﾃﾞｽｸ",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000216",
+    "identCode": "12-216",
+    "name": "9100004653　ｸﾞﾛｰﾊﾞﾙｸﾞﾛｰｽﾞ　フロア－・見切り材",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N12000000000217",
+    "identCode": "12-217",
+    "name": "9100004731　昼間貯蔵大熊地区　フロア・見切り材",
+    "category": "12",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000125",
+    "identCode": "13-125",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X60X1590",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000126",
+    "identCode": "13-126",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X60X950",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000128",
+    "identCode": "13-128",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5x120x1600",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000130",
+    "identCode": "13-130",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X120X950",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000131",
+    "identCode": "13-131",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙT5x180x1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000132",
+    "identCode": "13-132",
+    "name": "ｽﾁﾛｸﾞﾗｽt3.8X60X1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000133",
+    "identCode": "13-133",
+    "name": "ｽﾁﾛｸﾞﾗｽt3.8X60X950",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000135",
+    "identCode": "13-135",
+    "name": "ｽﾁﾛｸﾞﾗｽt3.8X120X1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000160",
+    "identCode": "13-160",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X120X1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000188",
+    "identCode": "13-188",
+    "name": "ｽﾁﾛｸﾞﾗｽt3.8X60X1590",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000189",
+    "identCode": "13-189",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X60X1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000191",
+    "identCode": "13-191",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙt5X200X200",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000200",
+    "identCode": "13-200",
+    "name": "PAO1012BL 天井板 FTN508ZN",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000201",
+    "identCode": "13-201",
+    "name": "PAO1012BL 右側板 FTN508ZN",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000202",
+    "identCode": "13-202",
+    "name": "PAO1012BL ﾃﾞｽｸ FTN508ZN",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000203",
+    "identCode": "13-203",
+    "name": "PAO1012BL 正面 FTN508ZN",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000204",
+    "identCode": "13-204",
+    "name": "PAO1012BL 後面 FTN508ZN",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000205",
+    "identCode": "13-205",
+    "name": "ｱｸﾘﾙﾊﾟﾈﾙT5x150X1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000211",
+    "identCode": "13-211",
+    "name": "飛沫防止ﾊﾟﾈﾙ用脚 120X200X5",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000226",
+    "identCode": "13-226",
+    "name": "ｱｸﾘﾙBOX完成品 W120 L1600",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000234",
+    "identCode": "13-234",
+    "name": "ｱｸﾘﾙBOX用 (完成品)W120 L1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000235",
+    "identCode": "13-235",
+    "name": "ｱｸﾘﾙBOX用枠 W150 L1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000289",
+    "identCode": "13-289",
+    "name": "ｱｸﾘﾙBOX  （完成品）W120XL1600",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000290",
+    "identCode": "13-290",
+    "name": "ｱｸﾘﾙBOX (完成品)W60XL1600",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000309",
+    "identCode": "13-309",
+    "name": "ｱｸﾘﾙBOX用 (完成品)W60 L1731",
+    "category": "13",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N13000000000310",
+    "identCode": "13-310",
+    "name": "8010002583井上金庫販売㈱大阪支店吉村様ｱｸｼｱﾛｼﾞ㈱分PAO1210MIU/DRB-KK1210BK/本体KK 扉BK",
+    "category": "13",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000040",
+    "identCode": "14-040",
+    "name": "CTW-9060MPP",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000056",
+    "identCode": "14-056",
+    "name": "CTW-9060 KKA",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000057",
+    "identCode": "14-057",
+    "name": "CTW-1260 MPP",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000058",
+    "identCode": "14-058",
+    "name": "CTW-1260DBP",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000059",
+    "identCode": "14-059",
+    "name": "2100012134-3　シモダイラ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　396x446",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000060",
+    "identCode": "14-060",
+    "name": "2100012134-1　ｼﾓﾀﾞｲﾗ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　596x296",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000061",
+    "identCode": "14-061",
+    "name": "2100012134-2　ｼﾓﾀﾞｲﾗ　ﾌﾗｯﾌﾟｶﾞﾗｽ扉　796x296",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000062",
+    "identCode": "14-062",
+    "name": "CTW-9060 TWH",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000063",
+    "identCode": "14-063",
+    "name": "CTW-1260 KKA",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000064",
+    "identCode": "14-064",
+    "name": "CTW-9060 BW",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000065",
+    "identCode": "14-065",
+    "name": "CTW-1260 BW",
+    "category": "14",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000066",
+    "identCode": "14-066",
+    "name": "9100007340　積水化学工業/ﾊｲﾑｽｲｰﾄ京都",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000067",
+    "identCode": "14-067",
+    "name": "9100008166 ｸﾙﾄﾝ/京都　扉のみ",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000068",
+    "identCode": "14-068",
+    "name": "9100008191　ﾄﾖｾｯﾄ/倉敷",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000069",
+    "identCode": "14-069",
+    "name": "9100007841　ｽﾍﾟｰｽﾓｰﾙ/大井町物件",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000070",
+    "identCode": "14-070",
+    "name": "9100007872　ｾﾝｼｮ-/本社",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000071",
+    "identCode": "14-071",
+    "name": "9100007844　ｸﾙﾄﾝ/新潟物件",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000072",
+    "identCode": "14-072",
+    "name": "2100018854-6　CTW-9060CMP 完成品",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000073",
+    "identCode": "14-073",
+    "name": "2100018854-3 CTW-1235DBP　完成品",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N14000000000074",
+    "identCode": "14-074",
+    "name": "2100018854-2　CTW-1245WHP",
+    "category": "14",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000001",
+    "identCode": "17-001",
+    "name": "住友PW PW色 ﾊﾟｰﾙﾎﾜｲﾄ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000002",
+    "identCode": "17-002",
+    "name": "住友VW VW色 ﾊﾞﾆﾗｳｯﾄﾞ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000003",
+    "identCode": "17-003",
+    "name": "住友TO TO色 ｻｰﾓｽｵｰｸ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000004",
+    "identCode": "17-004",
+    "name": "住友NO NO色 ﾉﾙﾃｵｰｸ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000005",
+    "identCode": "17-005",
+    "name": "住友CS CS色 ﾁｮｰｸﾄﾞｽｸﾋﾟﾗ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000006",
+    "identCode": "17-006",
+    "name": "住友MA MA色 ﾐﾃﾞｨｱﾑｱｶｼｱ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000007",
+    "identCode": "17-007",
+    "name": "住友UW UW色 ｱﾝﾊﾞｰｳｫｰﾙﾅｯﾄ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000008",
+    "identCode": "17-008",
+    "name": "住友MW MW色 ﾏｰﾌﾞﾙｳｯﾄﾞ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000009",
+    "identCode": "17-009",
+    "name": "住友BA BA色 ﾌﾞﾗｯｸｱｶｼｱ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000010",
+    "identCode": "17-010",
+    "name": "住友LW  LW色 ﾚｻﾞｰﾎﾜｲﾄ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000011",
+    "identCode": "17-011",
+    "name": "住友NBL NBL色 ﾚｻﾞｰﾌﾞﾗｯｸ",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N17000000000012",
+    "identCode": "17-012",
+    "name": "住友MC",
+    "category": "17",
+    "price": 3.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000040",
+    "identCode": "24-040",
+    "name": "桧家　鏡板",
+    "category": "24",
+    "price": 1.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000041",
+    "identCode": "24-041",
+    "name": "9100007875　ｻﾞｲﾏｯｸｽ/大森ｾﾝﾀｰﾋﾞﾙ　床面仕掛",
+    "category": "24",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000042",
+    "identCode": "24-042",
+    "name": "9100007860 ﾊﾟﾅｿﾆｯｸew/汐留23階　ｶｰﾍﾟｯﾄ仕掛",
+    "category": "24",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000043",
+    "identCode": "24-043",
+    "name": "2100017686　ｿﾌｧ-　仕掛",
+    "category": "24",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000044",
+    "identCode": "24-044",
+    "name": "9100007860　ｽﾍﾟｰｽｼｭｯﾊﾟｰ組立済み　仕掛",
+    "category": "24",
+    "price": 10.0,
+    "isFixed": false
+  },
+  {
+    "id": "N24000000000045",
+    "identCode": "24-045",
+    "name": "9100007875　ｻﾞｲﾏｯｸｽ用天井点検口の枠　仕掛",
+    "category": "24",
+    "price": 10.0,
+    "isFixed": false
+  }
+]
