@@ -10598,103 +10598,103 @@
     ],
     "summary": {
       "01": {
-        "name": "Category 01",
+        "name": "基材",
         "amount": 6109111.25,
         "diff": 6109111.25,
         "prevAmount": 0
       },
       "02": {
-        "name": "Category 02",
+        "name": "面材",
         "amount": 13598323.132700002,
         "diff": 13598323.132700002,
         "prevAmount": 0
       },
       "fixed": {
-        "name": "Category fixed",
+        "name": "不動品",
         "amount": 5842785.359999998,
         "diff": 5842785.359999998,
         "prevAmount": 0
       },
       "03": {
-        "name": "Category 03",
+        "name": "シート",
         "amount": 4576878.63,
         "diff": 4576878.63,
         "prevAmount": 0
       },
       "04": {
-        "name": "Category 04",
+        "name": "木口ﾃｰﾌﾟ",
         "amount": 3918809.7969999993,
         "diff": 3918809.7969999993,
         "prevAmount": 0
       },
       "05": {
-        "name": "Category 05",
+        "name": "金具",
         "amount": 5404941.572999998,
         "diff": 5404941.572999998,
         "prevAmount": 0
       },
       "06": {
-        "name": "Category 06",
+        "name": "ﾀﾞﾝﾎﾞｰﾙ",
         "amount": 665229.4300000002,
         "diff": 665229.4300000002,
         "prevAmount": 0
       },
       "07": {
-        "name": "Category 07",
+        "name": "接着剤",
         "amount": 325442.19999999995,
         "diff": 325442.19999999995,
         "prevAmount": 0
       },
       "08": {
-        "name": "Category 08",
+        "name": "仕入備品",
         "amount": 69609.099,
         "diff": 69609.099,
         "prevAmount": 0
       },
       "09": {
-        "name": "Category 09",
+        "name": "PAO資材",
         "amount": 5166225.3157,
         "diff": 5166225.3157,
         "prevAmount": 0
       },
       "10": {
-        "name": "Category 10",
+        "name": "工場部材",
         "amount": 530250.0,
         "diff": 530250.0,
         "prevAmount": 0
       },
       "11": {
-        "name": "Category 11",
+        "name": "仕掛品芯組のみ",
         "amount": 0.0,
         "diff": 0.0,
         "prevAmount": 0
       },
       "13": {
-        "name": "Category 13",
+        "name": "部材完成品",
         "amount": 133522.0,
         "diff": 133522.0,
         "prevAmount": 0
       },
       "17": {
-        "name": "Category 17",
+        "name": "ラミテック",
         "amount": 662459.0,
         "diff": 662459.0,
         "prevAmount": 0
       },
       "24": {
-        "name": "Category 24",
+        "name": "仕掛品フラッシュのみ",
         "amount": 0.0,
         "diff": 0.0,
         "prevAmount": 0
       },
       "26": {
-        "name": "Category 26",
+        "name": "仕掛品ボーリング",
         "amount": 4099590.0,
         "diff": 939542.3999999999,
         "prevAmount": 3160047.6
       },
       "12": {
-        "name": "Category 12",
+        "name": "仕掛品カット",
         "amount": 46075.392,
         "diff": 46075.392,
         "prevAmount": 0
@@ -21589,85 +21589,85 @@
     ],
     "summary": {
       "01": {
-        "name": "Category 01",
+        "name": "基材",
         "amount": 5827426.29,
         "diff": -281684.95999999996,
         "prevAmount": 6109111.25
       },
       "02": {
-        "name": "Category 02",
+        "name": "面材",
         "amount": 15550445.769600004,
         "diff": 1721108.3669000007,
         "prevAmount": 13829337.402700003
       },
       "fixed": {
-        "name": "Category fixed",
+        "name": "不動品",
         "amount": 5820868.359999998,
         "diff": -21917.0,
         "prevAmount": 5842785.359999998
       },
       "03": {
-        "name": "Category 03",
+        "name": "シート",
         "amount": 5012080.56,
         "diff": 435201.9299999997,
         "prevAmount": 4576878.63
       },
       "04": {
-        "name": "Category 04",
+        "name": "木口ﾃｰﾌﾟ",
         "amount": 3838610.7166999998,
         "diff": -80199.08029999956,
         "prevAmount": 3918809.7969999993
       },
       "05": {
-        "name": "Category 05",
+        "name": "金具",
         "amount": 6706856.762399995,
         "diff": 1301915.1893999968,
         "prevAmount": 5404941.572999998
       },
       "06": {
-        "name": "Category 06",
+        "name": "ﾀﾞﾝﾎﾞｰﾙ",
         "amount": 535350.5,
         "diff": -129878.93000000017,
         "prevAmount": 665229.4300000002
       },
       "07": {
-        "name": "Category 07",
+        "name": "接着剤",
         "amount": 361304.26999999996,
         "diff": 35862.07000000001,
         "prevAmount": 325442.19999999995
       },
       "08": {
-        "name": "Category 08",
+        "name": "仕入備品",
         "amount": 128666.0614,
         "diff": 59056.962400000004,
         "prevAmount": 69609.099
       },
       "09": {
-        "name": "Category 09",
+        "name": "PAO資材",
         "amount": 7508817.050774999,
         "diff": 2342591.735074999,
         "prevAmount": 5166225.3157
       },
       "10": {
-        "name": "Category 10",
+        "name": "工場部材",
         "amount": 561156.0,
         "diff": 30906.0,
         "prevAmount": 530250.0
       },
       "12": {
-        "name": "Category 12",
+        "name": "仕掛品カット",
         "amount": 3211689.4050000003,
         "diff": 3165614.0130000003,
         "prevAmount": 46075.392
       },
       "13": {
-        "name": "Category 13",
+        "name": "部材完成品",
         "amount": 278930.69,
         "diff": 145408.69,
         "prevAmount": 133522.0
       },
       "17": {
-        "name": "Category 17",
+        "name": "ラミテック",
         "amount": 636962.5599999999,
         "diff": -25496.44000000006,
         "prevAmount": 662459.0
@@ -34179,109 +34179,109 @@
     ],
     "summary": {
       "01": {
-        "name": "Category 01",
+        "name": "基材",
         "amount": 5510351.940000001,
         "diff": -317074.3499999987,
         "prevAmount": 5827426.29
       },
       "02": {
-        "name": "Category 02",
+        "name": "面材",
         "amount": 12524918.746500002,
         "diff": -3010510.3430999964,
         "prevAmount": 15535429.089599999
       },
       "fixed": {
-        "name": "Category fixed",
+        "name": "不動品",
         "amount": 5831818.7799999975,
         "diff": 10950.419999999925,
         "prevAmount": 5820868.359999998
       },
       "03": {
-        "name": "Category 03",
+        "name": "シート",
         "amount": 4932664.260000001,
         "diff": -79416.29999999888,
         "prevAmount": 5012080.56
       },
       "04": {
-        "name": "Category 04",
+        "name": "木口ﾃｰﾌﾟ",
         "amount": 3654094.4529999993,
         "diff": -184516.26370000048,
         "prevAmount": 3838610.7166999998
       },
       "05": {
-        "name": "Category 05",
+        "name": "金具",
         "amount": 6454748.480799994,
         "diff": -252108.28160000034,
         "prevAmount": 6706856.762399995
       },
       "06": {
-        "name": "Category 06",
+        "name": "ﾀﾞﾝﾎﾞｰﾙ",
         "amount": 493195.12000000005,
         "diff": -42155.37999999995,
         "prevAmount": 535350.5
       },
       "07": {
-        "name": "Category 07",
+        "name": "接着剤",
         "amount": 235743.09,
         "diff": -125561.17999999996,
         "prevAmount": 361304.26999999996
       },
       "08": {
-        "name": "Category 08",
+        "name": "仕入備品",
         "amount": 110203.423,
         "diff": -18462.63840000001,
         "prevAmount": 128666.0614
       },
       "09": {
-        "name": "Category 09",
+        "name": "PAO資材",
         "amount": 5182846.825099998,
         "diff": -2325970.225675001,
         "prevAmount": 7508817.050774999
       },
       "10": {
-        "name": "Category 10",
+        "name": "工場部材",
         "amount": 370872.0,
         "diff": -190284.0,
         "prevAmount": 561156.0
       },
       "11": {
-        "name": "Category 11",
+        "name": "仕掛品芯組のみ",
         "amount": 0.0,
         "diff": 0.0,
         "prevAmount": 0.0
       },
       "12": {
-        "name": "Category 12",
+        "name": "仕掛品カット",
         "amount": 0.0,
         "diff": -3211689.4050000003,
         "prevAmount": 3211689.4050000003
       },
       "13": {
-        "name": "Category 13",
+        "name": "部材完成品",
         "amount": 269862.91000000003,
         "diff": -9067.77999999997,
         "prevAmount": 278930.69
       },
       "14": {
-        "name": "Category 14",
+        "name": "製品在庫",
         "amount": 662055.0,
         "diff": 662055.0,
         "prevAmount": 0
       },
       "17": {
-        "name": "Category 17",
+        "name": "ラミテック",
         "amount": 588224.0,
         "diff": -48738.55999999994,
         "prevAmount": 636962.5599999999
       },
       "24": {
-        "name": "Category 24",
+        "name": "仕掛品フラッシュのみ",
         "amount": 0.0,
         "diff": 0.0,
         "prevAmount": 0.0
       },
       "26": {
-        "name": "Category 26",
+        "name": "仕掛品ボーリング",
         "amount": 3455059.5504000005,
         "diff": 2402073.9504000004,
         "prevAmount": 1052985.5999999999
@@ -45110,91 +45110,91 @@
     ],
     "summary": {
       "01": {
-        "name": "Category 01",
+        "name": "基材",
         "amount": 5611909.46,
         "diff": 101557.51999999862,
         "prevAmount": 5510351.940000001
       },
       "02": {
-        "name": "Category 02",
+        "name": "面材",
         "amount": 12222457.328999998,
         "diff": -149592.36250000633,
         "prevAmount": 12372049.691500004
       },
       "fixed": {
-        "name": "Category fixed",
+        "name": "不動品",
         "amount": 6248443.7799999975,
         "diff": 416625.0,
         "prevAmount": 5831818.7799999975
       },
       "03": {
-        "name": "Category 03",
+        "name": "シート",
         "amount": 5157350.879999999,
         "diff": 224686.61999999825,
         "prevAmount": 4932664.260000001
       },
       "04": {
-        "name": "Category 04",
+        "name": "木口ﾃｰﾌﾟ",
         "amount": 3695226.2989999996,
         "diff": 41131.84600000037,
         "prevAmount": 3654094.4529999993
       },
       "05": {
-        "name": "Category 05",
+        "name": "金具",
         "amount": 6766648.317999998,
         "diff": 311899.8372000037,
         "prevAmount": 6454748.480799994
       },
       "06": {
-        "name": "Category 06",
+        "name": "ﾀﾞﾝﾎﾞｰﾙ",
         "amount": 616752.46,
         "diff": 123557.33999999991,
         "prevAmount": 493195.12000000005
       },
       "07": {
-        "name": "Category 07",
+        "name": "接着剤",
         "amount": 243187.80000000002,
         "diff": 7444.710000000021,
         "prevAmount": 235743.09
       },
       "08": {
-        "name": "Category 08",
+        "name": "仕入備品",
         "amount": 155273.39029999994,
         "diff": 45069.967299999946,
         "prevAmount": 110203.423
       },
       "09": {
-        "name": "Category 09",
+        "name": "PAO資材",
         "amount": 5144612.424174997,
         "diff": -38234.40092500113,
         "prevAmount": 5182846.825099998
       },
       "10": {
-        "name": "Category 10",
+        "name": "工場部材",
         "amount": 987477.0,
         "diff": 616605.0,
         "prevAmount": 370872.0
       },
       "13": {
-        "name": "Category 13",
+        "name": "部材完成品",
         "amount": 225648.14,
         "diff": -44214.77000000002,
         "prevAmount": 269862.91000000003
       },
       "14": {
-        "name": "Category 14",
+        "name": "製品在庫",
         "amount": 14463.199999999999,
         "diff": -647591.8,
         "prevAmount": 662055.0
       },
       "17": {
-        "name": "Category 17",
+        "name": "ラミテック",
         "amount": 475457.5,
         "diff": -112766.5,
         "prevAmount": 588224.0
       },
       "26": {
-        "name": "Category 26",
+        "name": "仕掛品ボーリング",
         "amount": 4906449.9120000005,
         "diff": 4906449.9120000005,
         "prevAmount": 0
@@ -57233,103 +57233,103 @@
     ],
     "summary": {
       "01": {
-        "name": "Category 01",
+        "name": "基材",
         "amount": 6546792.225,
         "diff": 934882.7649999997,
         "prevAmount": 5611909.46
       },
       "02": {
-        "name": "Category 02",
+        "name": "面材",
         "amount": 14307351.849000003,
         "diff": 2285710.8000000026,
         "prevAmount": 12021641.049
       },
       "fixed": {
-        "name": "Category fixed",
+        "name": "不動品",
         "amount": 5490186.2799999975,
         "diff": -758257.5,
         "prevAmount": 6248443.7799999975
       },
       "03": {
-        "name": "Category 03",
+        "name": "シート",
         "amount": 5076459.9799999995,
         "diff": -80890.89999999944,
         "prevAmount": 5157350.879999999
       },
       "04": {
-        "name": "Category 04",
+        "name": "木口ﾃｰﾌﾟ",
         "amount": 4001227.6149999993,
         "diff": 306001.31599999964,
         "prevAmount": 3695226.2989999996
       },
       "05": {
-        "name": "Category 05",
+        "name": "金具",
         "amount": 6819203.082199998,
         "diff": 70179.26420000009,
         "prevAmount": 6749023.817999998
       },
       "06": {
-        "name": "Category 06",
+        "name": "ﾀﾞﾝﾎﾞｰﾙ",
         "amount": 812768.2099999998,
         "diff": 196015.74999999988,
         "prevAmount": 616752.46
       },
       "07": {
-        "name": "Category 07",
+        "name": "接着剤",
         "amount": 456561.41000000003,
         "diff": 213373.61000000002,
         "prevAmount": 243187.80000000002
       },
       "08": {
-        "name": "Category 08",
+        "name": "仕入備品",
         "amount": 139096.19,
         "diff": -16177.200299999939,
         "prevAmount": 155273.39029999994
       },
       "09": {
-        "name": "Category 09",
+        "name": "PAO資材",
         "amount": 9035282.290500002,
         "diff": 3676545.826325005,
         "prevAmount": 5358736.464174997
       },
       "10": {
-        "name": "Category 10",
+        "name": "工場部材",
         "amount": 816433.5,
         "diff": -171043.5,
         "prevAmount": 987477.0
       },
       "11": {
-        "name": "Category 11",
+        "name": "仕掛品芯組のみ",
         "amount": 0.0,
         "diff": 0.0,
         "prevAmount": 0.0
       },
       "12": {
-        "name": "Category 12",
+        "name": "仕掛品カット",
         "amount": 0,
         "diff": 0.0,
         "prevAmount": 0.0
       },
       "13": {
-        "name": "Category 13",
+        "name": "部材完成品",
         "amount": 331616.33,
         "diff": 105968.19,
         "prevAmount": 225648.14
       },
       "14": {
-        "name": "Category 14",
+        "name": "製品在庫",
         "amount": 1827090.0,
         "diff": 1812626.8,
         "prevAmount": 14463.199999999999
       },
       "17": {
-        "name": "Category 17",
+        "name": "ラミテック",
         "amount": 557116.0,
         "diff": 81658.5,
         "prevAmount": 475457.5
       },
       "24": {
-        "name": "Category 24",
+        "name": "仕掛品フラッシュのみ",
         "amount": 352924.3,
         "diff": 352924.3,
         "prevAmount": 0.0

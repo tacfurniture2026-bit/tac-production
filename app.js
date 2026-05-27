@@ -7137,6 +7137,12 @@ function calculateInvMonthly(month) {
   
   // 当月がすでに締め済みか確認
   const isClosed = monthly.some(m => m.month === month);
+  if (isClosed) {
+    const savedData = monthly.find(m => m.month === month);
+    if (savedData && savedData.items) {
+      return savedData;
+    }
+  }
 
   // 当月のログをフィルタ
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));

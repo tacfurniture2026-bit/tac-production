@@ -11,6 +11,18 @@ MONTHS = {
     '5月': ('2026-05', '2026-05-31T23:59:59Z')
 }
 
+INV_CATEGORIES = {
+  '01': '基材', '02': '面材', '03': 'シート', '04': '木口ﾃｰﾌﾟ',
+  '05': '金具', '06': 'ﾀﾞﾝﾎﾞｰﾙ', '07': '接着剤', '08': '仕入備品',
+  '09': 'PAO資材', '10': '工場部材', '11': '仕掛品芯組のみ',
+  '12': '仕掛品カット', '13': '部材完成品', '14': '製品在庫',
+  '15': 'シェルフ製品在庫', '16': 'キャビネット製品在庫',
+  '17': 'ラミテック', '18': '天野木工', '19': 'いろは',
+  '20': 'Real', '21': 'イイダアックス', '22': '下請け預かり品',
+  '23': 'GRID不動品', '24': '仕掛品フラッシュのみ',
+  '25': '仕掛品縁貼り', '26': '仕掛品ボーリング', '99': 'その他'
+}
+
 OUT_MASTER = 'data/new_master_may.json'
 OUT_MONTHLY = 'data/new_monthly_1_to_5.json'
 OUT_LOGS = 'data/new_logs_all.json'
@@ -120,7 +132,8 @@ def process():
             
             catKey = 'fixed' if fixed_flag else cat_code
             if catKey not in summary:
-                summary[catKey] = {'name': f'Category {catKey}', 'amount': 0, 'diff': 0, 'prevAmount': 0}
+                catName = '不動品' if fixed_flag else INV_CATEGORIES.get(cat_code, f'分類{cat_code}')
+                summary[catKey] = {'name': catName, 'amount': 0, 'diff': 0, 'prevAmount': 0}
             summary[catKey]['amount'] += amount
             summary[catKey]['prevAmount'] += prevAmount
             
