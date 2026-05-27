@@ -1618,7 +1618,7 @@
   {
     "id": "N02000000000293",
     "identCode": "02-293",
-    "name": "�g�����p����ް�",
+    "name": "組立机用ﾀﾞﾝﾎﾞｰﾙ",
     "category": "02",
     "price": 400.0,
     "isFixed": false
@@ -1642,7 +1642,7 @@
   {
     "id": "N02000000000296",
     "identCode": "02-296",
-    "name": "����ȯā@����ށ@2410",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2410",
     "category": "02",
     "price": 108.5,
     "isFixed": false
@@ -1650,7 +1650,7 @@
   {
     "id": "N02000000000297",
     "identCode": "02-297",
-    "name": "����ȯā@����ށ@2420",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2420",
     "category": "02",
     "price": 115.0,
     "isFixed": false
@@ -1658,7 +1658,7 @@
   {
     "id": "N02000000000298",
     "identCode": "02-298",
-    "name": "����ȯā@����ށ@2400",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2400",
     "category": "02",
     "price": 56.5,
     "isFixed": false
@@ -1666,7 +1666,7 @@
   {
     "id": "N02000000000299",
     "identCode": "02-299",
-    "name": "����ȯā@����ށ@2425",
+    "name": "ｷｬﾋﾞﾈｯﾄ　梱包材　2425",
     "category": "02",
     "price": 90.0,
     "isFixed": false
@@ -1674,7 +1674,7 @@
   {
     "id": "N02000000000300",
     "identCode": "02-300",
-    "name": "��ց@����ށ@2010",
+    "name": "台輪　梱包材　2010",
     "category": "02",
     "price": 180.0,
     "isFixed": false
@@ -1682,7 +1682,7 @@
   {
     "id": "N02000000000301",
     "identCode": "02-301",
-    "name": "��ց@����ށ@2020",
+    "name": "台輪　梱包材　2020",
     "category": "02",
     "price": 204.0,
     "isFixed": false
@@ -1690,7 +1690,7 @@
   {
     "id": "N02000000000302",
     "identCode": "02-302",
-    "name": "�Œ�E���I�@����ށ@2260",
+    "name": "固定・可動棚　梱包材　2260",
     "category": "02",
     "price": 234.0,
     "isFixed": false
@@ -1698,7 +1698,7 @@
   {
     "id": "N02000000000303",
     "identCode": "02-303",
-    "name": "�Œ�E���I�@����ށ@2270",
+    "name": "固定・可動棚　梱包材　2270",
     "category": "02",
     "price": 234.0,
     "isFixed": false
@@ -1706,7 +1706,7 @@
   {
     "id": "N02000000000304",
     "identCode": "02-304",
-    "name": "���o�@����ށ@2200",
+    "name": "引出　梱包材　2200",
     "category": "02",
     "price": 108.5,
     "isFixed": false
@@ -1714,7 +1714,7 @@
   {
     "id": "N02000000000305",
     "identCode": "02-305",
-    "name": "���o�@����ށ@2230",
+    "name": "引出　梱包材　2230",
     "category": "02",
     "price": 124.0,
     "isFixed": false
@@ -1722,7 +1722,7 @@
   {
     "id": "N02000000000306",
     "identCode": "02-306",
-    "name": "���o�@����ށ@2025�p��",
+    "name": "引出　梱包材　2025角当",
     "category": "02",
     "price": 85.0,
     "isFixed": false
@@ -2954,7 +2954,7 @@
   {
     "id": "N05000000000024",
     "identCode": "05-024",
-    "name": "ATOM 60PMF-PU-SP-CC-3C \n�į�ߗL ��60",
+    "name": "ATOM 60PMF-PU-SP-CC-3C \nｽﾄｯﾌﾟ有 Φ60",
     "category": "05",
     "price": 260.0,
     "isFixed": false
@@ -3002,7 +3002,7 @@
   {
     "id": "N05000000000049",
     "identCode": "05-049",
-    "name": "G-60PPU/12 �U60�o�֎O�p��ڰ� SP��",
+    "name": "G-60PPU/12 Ф60双輪三角ﾌﾟﾚｰﾄ SP無",
     "category": "05",
     "price": 354.9,
     "isFixed": false
@@ -3018,7 +3018,7 @@
   {
     "id": "N05000000000053",
     "identCode": "05-053",
-    "name": "GS-60PPU/12 �U60�o�֎O�p��ڰ� SP�L",
+    "name": "GS-60PPU/12 Ф60双輪三角ﾌﾟﾚｰﾄ SP有",
     "category": "05",
     "price": 410.6,
     "isFixed": false
@@ -3186,7 +3186,7 @@
   {
     "id": "N05000000000118",
     "identCode": "05-118",
-    "name": "����ȯĕ��i�� B�d�l SH",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 B仕様 SH",
     "category": "05",
     "price": 791.5,
     "isFixed": false
@@ -3194,7 +3194,7 @@
   {
     "id": "N05000000000119",
     "identCode": "05-119",
-    "name": "����ȯĕ��i�� B�d�l WH",
+    "name": "ｷｬﾋﾞﾈｯﾄ部品箱 B仕様 WH",
     "category": "05",
     "price": 791.5,
     "isFixed": false
@@ -3402,7 +3402,7 @@
   {
     "id": "N05000000000162",
     "identCode": "05-162",
-    "name": "���� ����5 ��15 MT05644ZN",
+    "name": "ﾀｲﾀｽ ｼｽﾃﾑ5 ｶﾑ15 MT05644ZN",
     "category": "05",
     "price": 8.0,
     "isFixed": false
@@ -3498,7 +3498,7 @@
   {
     "id": "N05000000000182",
     "identCode": "05-182",
-    "name": "�׽� �Ƹ� 4X25",
+    "name": "ﾄﾗｽｺ ﾕﾆｸﾛ 4X25",
     "category": "05",
     "price": 2.0,
     "isFixed": false
@@ -3530,7 +3530,7 @@
   {
     "id": "N05000000000189",
     "identCode": "05-189",
-    "name": "�׽�޽ M4X20",
+    "name": "ﾄﾗｽﾋﾞｽ M4X20",
     "category": "05",
     "price": 2.0,
     "isFixed": false
@@ -3586,7 +3586,7 @@
   {
     "id": "N05000000000201",
     "identCode": "05-201",
-    "name": "Ư�� (+) A �� 3.5X12",
+    "name": "ﾆｯｹﾙ (+) A ｻﾗ 3.5X12",
     "category": "05",
     "price": 8.0,
     "isFixed": false
@@ -3730,7 +3730,7 @@
   {
     "id": "N05000000000238",
     "identCode": "05-238",
-    "name": "�Ƹ� (+) A�� 3.5 x 14",
+    "name": "ﾕﾆｸﾛ (+) Aｻﾗ 3.5 x 14",
     "category": "05",
     "price": 2.0,
     "isFixed": false
@@ -4018,7 +4018,7 @@
   {
     "id": "N05000000000321",
     "identCode": "05-321",
-    "name": "��֓����p���� 12����",
+    "name": "台輪同梱用ﾀﾞﾎﾞ 12入り",
     "category": "05",
     "price": 20.0,
     "isFixed": false
@@ -4378,7 +4378,7 @@
   {
     "id": "N05000000000406",
     "identCode": "05-406",
-    "name": "������߯������� 350�o L 9271058",
+    "name": "ｸﾜﾄﾞﾛﾌﾟｯｼｭｵｰﾌﾟﾝ 350㎜ L 9271058",
     "category": "05",
     "price": 693.0,
     "isFixed": false
@@ -4386,7 +4386,7 @@
   {
     "id": "N05000000000407",
     "identCode": "05-407",
-    "name": "������߯������� 350�o R 9271059",
+    "name": "ｸﾜﾄﾞﾛﾌﾟｯｼｭｵｰﾌﾟﾝ 350㎜ R 9271059",
     "category": "05",
     "price": 693.0,
     "isFixed": false
@@ -4458,7 +4458,7 @@
   {
     "id": "N05000000000419",
     "identCode": "05-419",
-    "name": "�������ݸށ@4X25�@10�{���",
+    "name": "ﾅﾍﾞﾀｯﾋﾟﾝｸﾞ　4X25　10本ｾｯﾄ",
     "category": "05",
     "price": 20.0,
     "isFixed": false
@@ -4466,7 +4466,7 @@
   {
     "id": "N05000000000420",
     "identCode": "05-420",
-    "name": "�o�փL���X�^�[ �v���[�g���@MSP-4040 �X�g�b�p�[�� 96-391",
+    "name": "双輪キャスター プレート式　MSP-4040 ストッパー無 96-391",
     "category": "05",
     "price": 152.0,
     "isFixed": false
@@ -4474,7 +4474,7 @@
   {
     "id": "N05000000000421",
     "identCode": "05-421",
-    "name": "�o�փL���X�^�[ �v���[�g���@MSP-40S40 �X�g�b�p�[�L 96-392",
+    "name": "双輪キャスター プレート式　MSP-40S40 ストッパー有 96-392",
     "category": "05",
     "price": 197.0,
     "isFixed": false
@@ -4618,7 +4618,7 @@
   {
     "id": "N05000000000443",
     "identCode": "05-443",
-    "name": "ײèݸ����ٗp�����F��мޮ�ŰL=755",
+    "name": "ﾗｲﾃｨﾝｸﾞﾊﾟﾈﾙ用金物：ｱﾙﾐｼﾞｮｲﾅｰL=755",
     "category": "05",
     "price": 256.0,
     "isFixed": false
@@ -5602,7 +5602,7 @@
   {
     "id": "N08000000000045",
     "identCode": "08-045",
-    "name": "FJLN�戵������",
+    "name": "FJLN取扱説明書",
     "category": "08",
     "price": 394.0,
     "isFixed": false
@@ -5650,7 +5650,7 @@
   {
     "id": "N08000000000051",
     "identCode": "08-051",
-    "name": "���ʔS��ð�� 20�_��",
+    "name": "両面粘着ﾃｰﾌﾟ 20㍉巾",
     "category": "08",
     "price": 250.0,
     "isFixed": false
@@ -7522,7 +7522,7 @@
   {
     "id": "N26000000000036",
     "identCode": "26-036",
-    "name": "PAO WORK BOX1�l1012BL GO�s�R",
+    "name": "PAO WORK BOX1人1012BL GO不燃",
     "category": "26",
     "price": 486000.0,
     "isFixed": false
@@ -7530,7 +7530,7 @@
   {
     "id": "N26000000000021",
     "identCode": "26-021",
-    "name": "�ؐ�ۯ�� W�߰�2 RGFJLNW-2GO",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ2 RGFJLNW-2GO",
     "category": "26",
     "price": 0,
     "isFixed": false
@@ -7538,7 +7538,7 @@
   {
     "id": "N26000000000023",
     "identCode": "26-023",
-    "name": "�ؐ�ۯ�� W�߰�1 RGFJLNW-1KKA",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1KKA",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -7570,7 +7570,7 @@
   {
     "id": "N26000000000026",
     "identCode": "26-026",
-    "name": "�ؐ�ۯ�� W�߰�1 RGFJLNW-1WH",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ1 RGFJLNW-1WH",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -7578,7 +7578,7 @@
   {
     "id": "N02000000000307",
     "identCode": "02-307",
-    "name": "���o�@����ށ@2235�p��",
+    "name": "引出　梱包材　2235角当",
     "category": "02",
     "price": 62.0,
     "isFixed": false
@@ -8482,7 +8482,7 @@
   {
     "id": "N26000000000001",
     "identCode": "26-001",
-    "name": "�ؐ��߰���ۯ��RGP4545-BW",
+    "name": "木製ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545-BW",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8490,7 +8490,7 @@
   {
     "id": "N26000000000002",
     "identCode": "26-002",
-    "name": "�ؐ��߰���ۯ��RGP4545-BW",
+    "name": "木製ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545-BW",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8498,7 +8498,7 @@
   {
     "id": "N26000000000004",
     "identCode": "26-004",
-    "name": "PAO WORK BOX6�l2424R BW�s�R",
+    "name": "PAO WORK BOX6人2424R BW不燃",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8506,7 +8506,7 @@
   {
     "id": "N26000000000005",
     "identCode": "26-005",
-    "name": "�I�� 20��1200��600 DBP",
+    "name": "棚板 20ｘ1200ｘ600 DBP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8514,7 +8514,7 @@
   {
     "id": "N26000000000006",
     "identCode": "26-006",
-    "name": "�I�� 20��1200��600 KKA",
+    "name": "棚板 20ｘ1200ｘ600 KKA",
     "category": "26",
     "price": 1280.0,
     "isFixed": false
@@ -8522,7 +8522,7 @@
   {
     "id": "N26000000000007",
     "identCode": "26-007",
-    "name": "�I�� 20��1200��600 MPP",
+    "name": "棚板 20ｘ1200ｘ600 MPP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8530,7 +8530,7 @@
   {
     "id": "N26000000000008",
     "identCode": "26-008",
-    "name": "�I�� 20��900��600 DBP",
+    "name": "棚板 20ｘ900ｘ600 DBP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8538,7 +8538,7 @@
   {
     "id": "N26000000000009",
     "identCode": "26-009",
-    "name": "�I�� 20��900��600 KKA",
+    "name": "棚板 20ｘ900ｘ600 KKA",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8546,7 +8546,7 @@
   {
     "id": "N26000000000010",
     "identCode": "26-010",
-    "name": "�I�� 20��900��600 MPP",
+    "name": "棚板 20ｘ900ｘ600 MPP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8554,7 +8554,7 @@
   {
     "id": "N26000000000011",
     "identCode": "26-011",
-    "name": "�I�� 20��900��600 WHP",
+    "name": "棚板 20ｘ900ｘ600 WHP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8562,7 +8562,7 @@
   {
     "id": "N26000000000012",
     "identCode": "26-012",
-    "name": "PAO WORK BOX6�l2424R GO�Ⴡ��",
+    "name": "PAO WORK BOX6人2424R GO低メラ",
     "category": "26",
     "price": 633000.0,
     "isFixed": false
@@ -8570,7 +8570,7 @@
   {
     "id": "N26000000000013",
     "identCode": "26-013",
-    "name": "�I�� 20��1200��600 MPP",
+    "name": "棚板 20ｘ1200ｘ600 MPP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8578,7 +8578,7 @@
   {
     "id": "N26000000000014",
     "identCode": "26-014",
-    "name": "�I�� 20��900��600 DBP",
+    "name": "棚板 20ｘ900ｘ600 DBP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8586,7 +8586,7 @@
   {
     "id": "N26000000000015",
     "identCode": "26-015",
-    "name": "�I�� 20��900��600 KKA",
+    "name": "棚板 20ｘ900ｘ600 KKA",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8594,7 +8594,7 @@
   {
     "id": "N26000000000016",
     "identCode": "26-016",
-    "name": "�I�� 20��900��600 MPP",
+    "name": "棚板 20ｘ900ｘ600 MPP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8602,7 +8602,7 @@
   {
     "id": "N26000000000017",
     "identCode": "26-017",
-    "name": "�I�� 20��900��600 WHP",
+    "name": "棚板 20ｘ900ｘ600 WHP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8610,7 +8610,7 @@
   {
     "id": "N26000000000018",
     "identCode": "26-018",
-    "name": "���� ������ H2400 D380�p SH",
+    "name": "ｼｪﾙﾌ 中方立 H2400 D380用 SH",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8618,7 +8618,7 @@
   {
     "id": "N26000000000019",
     "identCode": "26-019",
-    "name": "PAO WORK BOX4�l1618R WH�s�R",
+    "name": "PAO WORK BOX4人1618R WH不燃",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8626,7 +8626,7 @@
   {
     "id": "N26000000000020",
     "identCode": "26-020",
-    "name": "�ؐ�ۯ�� W�߰�2 RGFJLNW-2BW",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ2 RGFJLNW-2BW",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8634,7 +8634,7 @@
   {
     "id": "N26000000000022",
     "identCode": "26-022",
-    "name": "�ؐ�ۯ�� W�߰�3 RGFJLNW-3GO",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ3 RGFJLNW-3GO",
     "category": "26",
     "price": 0,
     "isFixed": false
@@ -8642,7 +8642,7 @@
   {
     "id": "N26000000000024",
     "identCode": "26-024",
-    "name": "�ؐ�ۯ�� W�߰�2 RGFJLNW-2KKA",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ2 RGFJLNW-2KKA",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8650,7 +8650,7 @@
   {
     "id": "N26000000000025",
     "identCode": "26-025",
-    "name": "�ؐ�ۯ�� W�߰�2 RGFJLNW-2MPP",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ2 RGFJLNW-2MPP",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8658,7 +8658,7 @@
   {
     "id": "N26000000000027",
     "identCode": "26-027",
-    "name": "�ؐ�ۯ�� W�߰�2 RGFJLNW-2WH",
+    "name": "木製ﾛｯｶｰ Wﾊﾟｰﾂ2 RGFJLNW-2WH",
     "category": "26",
     "price": 0.0,
     "isFixed": false
@@ -8666,7 +8666,7 @@
   {
     "id": "N26000000000028",
     "identCode": "26-028",
-    "name": "�����@���� ������ H2400 D380�p GO",
+    "name": "特注　ｼｪﾙﾌ 中方立 H2400 D380用 GO",
     "category": "26",
     "price": 8773.0,
     "isFixed": false
@@ -8674,7 +8674,7 @@
   {
     "id": "N26000000000029",
     "identCode": "26-029",
-    "name": "PAO WORK BOX1�l1012SL WH�s�R",
+    "name": "PAO WORK BOX1人1012SL WH不燃",
     "category": "26",
     "price": 493000.0,
     "isFixed": false
@@ -8682,7 +8682,7 @@
   {
     "id": "N26000000000030",
     "identCode": "26-030",
-    "name": "2,3�p�l���̂�",
+    "name": "2,3パネルのみ",
     "category": "26",
     "price": 50000.0,
     "isFixed": false
@@ -8690,7 +8690,7 @@
   {
     "id": "N26000000000031",
     "identCode": "26-031",
-    "name": "ܰ��ް�1210�{��KK ��BK ������",
+    "name": "ﾜｰｸﾌﾞｰｽ1210本体KK 扉BK 井上金庫",
     "category": "26",
     "price": 105000.0,
     "isFixed": false
@@ -8698,7 +8698,7 @@
   {
     "id": "N26000000000032",
     "identCode": "26-032",
-    "name": "PAOSEMI-1�l�̧�w-��LB�F�w��",
+    "name": "PAOSEMI-1人ｿﾌｧ背-座LB色指定",
     "category": "26",
     "price": 236500.0,
     "isFixed": false
@@ -8706,7 +8706,7 @@
   {
     "id": "N26000000000033",
     "identCode": "26-033",
-    "name": "PAOSEMI-2�l�̧�w-��LB�F�w��",
+    "name": "PAOSEMI-2人ｿﾌｧ背-座LB色指定",
     "category": "26",
     "price": 380000.0,
     "isFixed": false
@@ -8714,7 +8714,7 @@
   {
     "id": "N26000000000034",
     "identCode": "26-034",
-    "name": "PAO BABY �x���`�Ȃ�1218N WH",
+    "name": "PAO BABY ベンチなし1218N WH",
     "category": "26",
     "price": 384000.0,
     "isFixed": false
@@ -8722,7 +8722,7 @@
   {
     "id": "N26000000000035",
     "identCode": "26-035",
-    "name": "PAO WORK BOX1�l1012BR GO�s�R",
+    "name": "PAO WORK BOX1人1012BR GO不燃",
     "category": "26",
     "price": 486000.0,
     "isFixed": false
@@ -8730,7 +8730,7 @@
   {
     "id": "N26000000000037",
     "identCode": "26-037",
-    "name": "���� �{�H�I��W800 D380�p3���� GO",
+    "name": "ｼｪﾙﾌ 施工棚板W800 D380用3枚入 GO",
     "category": "26",
     "price": 5564.16,
     "isFixed": false
@@ -8738,7 +8738,7 @@
   {
     "id": "N26000000000038",
     "identCode": "26-038",
-    "name": "���� �{�H�I��W1200 D380�p3���� GO",
+    "name": "ｼｪﾙﾌ 施工棚板W1200 D380用3枚入 GO",
     "category": "26",
     "price": 7723.52,
     "isFixed": false
@@ -8746,7 +8746,7 @@
   {
     "id": "N26000000000039",
     "identCode": "26-039",
-    "name": "���� �ǉ��I�� W1200 D380�p GO",
+    "name": "ｼｪﾙﾌ 追加棚板 W1200 D380用 GO",
     "category": "26",
     "price": 2556.8,
     "isFixed": false
@@ -8754,7 +8754,7 @@
   {
     "id": "N26000000000040",
     "identCode": "26-040",
-    "name": "PAO WORK BOX1�l1012BR GO�s�R",
+    "name": "PAO WORK BOX1人1012BR GO不燃",
     "category": "26",
     "price": 493000.0,
     "isFixed": false
@@ -8762,7 +8762,7 @@
   {
     "id": "N26000000000041",
     "identCode": "26-041",
-    "name": "�ؐ��@�߰���ۯ�� RGP4545BW�@����",
+    "name": "木製　ﾊﾟｰｿﾅﾙﾛｯｶｰ RGP4545BW　幕板",
     "category": "26",
     "price": 1040.0,
     "isFixed": false
@@ -8770,7 +8770,7 @@
   {
     "id": "N26000000000043",
     "identCode": "26-043",
-    "name": "2100014093-4�@�{�H�I�@W1200 D380",
+    "name": "2100014093-4　施工棚板　W1200 D380",
     "category": "26",
     "price": 7723.52,
     "isFixed": false
@@ -8778,7 +8778,7 @@
   {
     "id": "N26000000000044",
     "identCode": "26-044",
-    "name": "9100005833 ������ H2145 D380 GO",
+    "name": "9100005833 中方立 H2145 D380 GO",
     "category": "26",
     "price": 5614.72,
     "isFixed": false
@@ -8786,7 +8786,7 @@
   {
     "id": "N26000000000045",
     "identCode": "26-045",
-    "name": "9100005832 ���E���� H2145 D380 GO",
+    "name": "9100005832 左右方立 H2145 D380 GO",
     "category": "26",
     "price": 10264.96,
     "isFixed": false
@@ -8794,7 +8794,7 @@
   {
     "id": "N26000000000046",
     "identCode": "26-046",
-    "name": "9100005785�@V-CUBE�{�Љ^�p PAO1012BR-F ���E���A���ʁA��ʁA�V��A�޽��A�J��",
+    "name": "9100005785　V-CUBE本社運用 PAO1012BR-F 左右側板、正面、後面、天井、ﾃﾞｽｸ、開扉",
     "category": "26",
     "price": 77760.0,
     "isFixed": false
@@ -8802,7 +8802,7 @@
   {
     "id": "N26000000000047",
     "identCode": "26-047",
-    "name": "2100008134�@�߰���ۯ��RGP4545 BW�@���I",
+    "name": "2100008134　ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545 BW　可動棚",
     "category": "26",
     "price": 1040.0,
     "isFixed": false
@@ -8810,7 +8810,7 @@
   {
     "id": "N26000000000048",
     "identCode": "26-048",
-    "name": "2100008076�@�߰���ۯ��RGP4545BW�@���I",
+    "name": "2100008076　ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545BW　可動棚",
     "category": "26",
     "price": 1040.0,
     "isFixed": false
@@ -8818,7 +8818,7 @@
   {
     "id": "N26000000000049",
     "identCode": "26-049",
-    "name": "2100008076�@�߰���ۯ��RGP4545BW�@�E����",
+    "name": "2100008076　ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545BW　右側板",
     "category": "26",
     "price": 1040.0,
     "isFixed": false
@@ -8826,7 +8826,7 @@
   {
     "id": "N26000000000050",
     "identCode": "26-050",
-    "name": "2100008076�@�߰���ۯ��RGP4545BW�@������",
+    "name": "2100008076　ﾊﾟｰｿﾅﾙﾛｯｶｰRGP4545BW　左側板",
     "category": "26",
     "price": 1040.0,
     "isFixed": false
@@ -8834,7 +8834,7 @@
   {
     "id": "N26000000000051",
     "identCode": "26-051",
-    "name": "�ؐ�ۯ��RGFJLNW-B�@���i��",
+    "name": "木製ﾛｯｶｰRGFJLNW-B　部品箱",
     "category": "26",
     "price": 2400.0,
     "isFixed": false
@@ -8842,7 +8842,7 @@
   {
     "id": "N26000000000052",
     "identCode": "26-052",
-    "name": "9100005616 SEMI1218S�@�O�H�жف@���E�A����(���E)�A���(���E)�A�V��(���E��)�A�޽��A����",
+    "name": "9100005616 SEMI1218S　三菱ｹﾐｶﾙ　左右、正面(左右)、後面(左右)、天井(左右中)、ﾃﾞｽｸ、鴨居",
     "category": "26",
     "price": 152000.0,
     "isFixed": false
@@ -8850,7 +8850,7 @@
   {
     "id": "N26000000000053",
     "identCode": "26-053",
-    "name": "2100014871-1�@���I�@W600�@D380�@GO",
+    "name": "2100014871-1　可動棚　W600　D380　GO",
     "category": "26",
     "price": 1463.68,
     "isFixed": false
@@ -8858,7 +8858,7 @@
   {
     "id": "N26000000000054",
     "identCode": "26-054",
-    "name": "2100014662 �{�H�I�@W800D380 GO",
+    "name": "2100014662 施工棚板　W800D380 GO",
     "category": "26",
     "price": 5564.16,
     "isFixed": false
@@ -8866,7 +8866,7 @@
   {
     "id": "N26000000000055",
     "identCode": "26-055",
-    "name": "9100006013�@��Ű�I�@GO",
+    "name": "9100006013　ｺｰﾅｰ棚　GO",
     "category": "26",
     "price": 480.0,
     "isFixed": false
@@ -8874,7 +8874,7 @@
   {
     "id": "N26000000000056",
     "identCode": "26-056",
-    "name": "9100005784 ���l�s��������پ��� PAOBABY1218�@���E�A���ʁA���(���E)�A�h�A�@�A�h�A�A",
+    "name": "9100005784 横浜市総合ﾘﾊﾋﾞﾙｾﾝﾀｰ PAOBABY1218　左右、正面、後面(左右)、ドア①、ドア②",
     "category": "26",
     "price": 153600.0,
     "isFixed": false
@@ -8882,7 +8882,7 @@
   {
     "id": "N26000000000057",
     "identCode": "26-057",
-    "name": "9100005394�@��ˉ��w������Ё@�����H��@PAO1012BR-F�@���E���A���ʁA��A�V��A�޽��A�J��",
+    "name": "9100005394　大塚化学株式会社　徳島工場　PAO1012BR-F　左右側板、正面、後板、天井、ﾃﾞｽｸ、開扉",
     "category": "26",
     "price": 197200.0,
     "isFixed": false
@@ -8890,7 +8890,7 @@
   {
     "id": "N26000000000058",
     "identCode": "26-058",
-    "name": "9100006010�@���E�����@H2050 D380 GO",
+    "name": "9100006010　左右方立　H2050 D380 GO",
     "category": "26",
     "price": 10264.96,
     "isFixed": false
@@ -8898,7 +8898,7 @@
   {
     "id": "N26000000000059",
     "identCode": "26-059",
-    "name": "9100006011�@�����������@H2030 D380�@GO",
+    "name": "9100006011　特注中方立　H2030 D380　GO",
     "category": "26",
     "price": 5614.72,
     "isFixed": false
@@ -8906,7 +8906,7 @@
   {
     "id": "N26000000000060",
     "identCode": "26-060",
-    "name": "2100014093-3�@�{�H�I�� W800 D380 GO",
+    "name": "2100014093-3　施工棚板 W800 D380 GO",
     "category": "26",
     "price": 5564.16,
     "isFixed": false
@@ -8914,7 +8914,7 @@
   {
     "id": "N26000000000061",
     "identCode": "26-061",
-    "name": "9100005785 VCUBE�ʍ޶��",
+    "name": "9100005785 VCUBE面材ｶｯﾄ",
     "category": "26",
     "price": 19440.0,
     "isFixed": false
@@ -8922,7 +8922,7 @@
   {
     "id": "N26000000000062",
     "identCode": "26-062",
-    "name": "9100005784�@���l �ʍ޶��",
+    "name": "9100005784　横浜 面材ｶｯﾄ",
     "category": "26",
     "price": 30720.0,
     "isFixed": false
@@ -8930,7 +8930,7 @@
   {
     "id": "N26000000000064",
     "identCode": "26-064",
-    "name": "9100005616�@�O�H�@1218�@�ʍ޶��",
+    "name": "9100005616　三菱　1218　面材ｶｯﾄ",
     "category": "26",
     "price": 15200.0,
     "isFixed": false
@@ -8938,7 +8938,7 @@
   {
     "id": "N26000000000065",
     "identCode": "26-065",
-    "name": "9100005394�@��ˁ@�ʍ޶��",
+    "name": "9100005394　大塚　面材ｶｯﾄ",
     "category": "26",
     "price": 19720.0,
     "isFixed": false
@@ -8946,7 +8946,7 @@
   {
     "id": "N26000000000066",
     "identCode": "26-066",
-    "name": "9100005786�@�uCUBE�@�{�Ё@�ʍ޶��",
+    "name": "9100005786　ＶCUBE　本社　面材ｶｯﾄ",
     "category": "26",
     "price": 19440.0,
     "isFixed": false
@@ -9026,7 +9026,7 @@
   {
     "id": "N26000000000073",
     "identCode": "26-073",
-    "name": "9100006811 ����Ƌ�",
+    "name": "9100006811 造作家具",
     "category": "26",
     "price": 42000.0,
     "isFixed": false
@@ -9034,7 +9034,7 @@
   {
     "id": "N26000000000070",
     "identCode": "26-070",
-    "name": "9100006829�@��aʳ������è PAO1012SL-F",
+    "name": "9100006829　大和ﾊｳｽﾌﾟﾛﾊﾟﾃｨ PAO1012SL-F",
     "category": "26",
     "price": 364000.0,
     "isFixed": false
@@ -9066,7 +9066,7 @@
   {
     "id": "N26000000000071",
     "identCode": "26-071",
-    "name": "9100006914�@�V�h��ؽ�@PAO1012SR-F",
+    "name": "9100006914　新宿ﾓﾉﾘｽ　PAO1012SR-F",
     "category": "26",
     "price": 345100.0,
     "isFixed": false
@@ -9098,7 +9098,7 @@
   {
     "id": "N26000000000081",
     "identCode": "26-081",
-    "name": "9100007293�@HONODE.SUNS�@�۱",
+    "name": "9100007293　HONODE.SUNS　ﾌﾛｱ",
     "category": "26",
     "price": 345100.0,
     "isFixed": false
@@ -9106,7 +9106,7 @@
   {
     "id": "N26000000000084",
     "identCode": "26-084",
-    "name": "9100007301 �O�v�װ�@�۱",
+    "name": "9100007301 弘益ｶﾗｰ　ﾌﾛｱ",
     "category": "26",
     "price": 350000.0,
     "isFixed": false
@@ -9114,7 +9114,7 @@
   {
     "id": "N26000000000086",
     "identCode": "26-086",
-    "name": "2100016787-2 ���̕��� GO",
+    "name": "2100016787-2 ｼｪﾙﾌ方立 GO",
     "category": "26",
     "price": 4723.6,
     "isFixed": false
@@ -9122,7 +9122,7 @@
   {
     "id": "N26000000000087",
     "identCode": "26-087",
-    "name": "2100016926-2 ���̕��� LO",
+    "name": "2100016926-2 ｼｪﾙﾌ方立 LO",
     "category": "26",
     "price": 4723.6,
     "isFixed": false
@@ -9130,7 +9130,7 @@
   {
     "id": "N26000000000068",
     "identCode": "26-068",
-    "name": "2100016926-3 �{�H�I�� 380X800 LO",
+    "name": "2100016926-3 施工棚板 380X800 LO",
     "category": "26",
     "price": 6085.8,
     "isFixed": false
@@ -9138,7 +9138,7 @@
   {
     "id": "N26000000000067",
     "identCode": "26-067",
-    "name": "2100016926-4�@�{�H�I�� 380X600 LO",
+    "name": "2100016926-4　施工棚板 380X600 LO",
     "category": "26",
     "price": 4926.6,
     "isFixed": false
@@ -9146,7 +9146,7 @@
   {
     "id": "N26000000000069",
     "identCode": "26-069",
-    "name": "2100016926-6 �{�H�I�� 380X1200 LO",
+    "name": "2100016926-6 施工棚板 380X1200 LO",
     "category": "26",
     "price": 8447.6,
     "isFixed": false
@@ -9154,7 +9154,7 @@
   {
     "id": "N26000000000085",
     "identCode": "26-085",
-    "name": "2100016926-7 ���̽�щ��I�v600�@LO",
+    "name": "2100016926-7 ｼｪﾙﾌｽﾘﾑ可動棚Ｗ600　LO",
     "category": "26",
     "price": 3864.0,
     "isFixed": false

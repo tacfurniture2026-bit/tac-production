@@ -2,7 +2,6 @@ import csv
 import json
 import os
 import glob
-from datetime import datetime
 
 MONTHS = {
     '1月': ('2026-01', '2026-01-31T23:59:59Z'),
@@ -17,19 +16,13 @@ OUT_MONTHLY = 'data/new_monthly_1_to_5.json'
 OUT_LOGS = 'data/new_logs_all.json'
 
 def is_fixed(row):
-    # P列 (インデックス15) が「対象(不動品)」または「対象（不動品）」
-    # I列 (インデックス8) に「ｲﾋﾞｹﾝ」が含まれる
     col_p = row[15].strip() if len(row) > 15 else ""
     col_i = row[8].strip() if len(row) > 8 else ""
-    
     if "対象(不動品)" in col_p or "対象（不動品）" in col_p:
         return True
-    
-    # 全角・半角の違いやスペースを無視してチェック
     col_i_norm = col_i.replace(" ", "").replace("　", "").replace("ｲﾋﾞｹﾝ", "イビケン")
     if "イビケン" in col_i_norm or "ｲﾋﾞｹﾝ" in col_i:
         return True
-        
     return False
 
 def parseFloatSafely(val):
@@ -44,6 +37,9 @@ def process():
     monthly_data = []
     logs = []
     master_dict = {}
+    
+    # 履歴を保持する辞書: { productId: { 'qty': 0, 'amount': 0 } }
+    prev_stock = {}
     
     csv_files = glob.glob('inventory_data/*.csv')
     csv_files = sorted(csv_files)
@@ -69,13 +65,15 @@ def process():
         total_amount = 0
         summary = {}
         
-        # 5月期だけShift-JISではなくUTF-8の場合があるので判定
-        encodings = ['utf-8', 'shift_jis']
+        # エンコーディング対応 (cp932 -> utf-8-sig の順)
+        encodings = ['cp932', 'utf-8-sig', 'shift_jis']
         lines = []
         for enc in encodings:
             try:
-                with open(file, 'r', encoding=enc, errors='replace') as f:
+                # errors='strict' にして、デコードできない場合は例外を発生させる
+                with open(file, 'r', encoding=enc, errors='strict') as f:
                     lines = list(csv.reader(f))
+                print(f"  -> Successfully read with {enc}")
                 break
             except Exception as e:
                 pass
@@ -93,23 +91,24 @@ def process():
             
             if not ident and not mat_code: continue
             
-            # Index 13: 単価
             price = parseFloatSafely(row[13]) if len(row) > 13 else 0
-            # Index 18: 数量
-            actualQty = parseFloatSafely(row[18]) if len(row) > 18 else 0
-            # Index 20: 合計金額(1%増し)
-            actualAmount = parseFloatSafely(row[20]) if len(row) > 20 else 0
+            currQty = parseFloatSafely(row[18]) if len(row) > 18 else 0
+            amount = parseFloatSafely(row[20]) if len(row) > 20 else 0
             
-            # フォールバック
-            if actualAmount == 0 and price > 0 and actualQty > 0:
-                actualAmount = price * actualQty * 1.01 # 1%増し
+            if amount == 0 and price > 0 and currQty > 0:
+                amount = price * currQty * 1.01
                 
-            total_amount += actualAmount
+            total_amount += amount
             fixed_flag = is_fixed(row)
             
             primary_id = mat_code if mat_code else ident
             
-            # Master dict (5月分が最新になるように上書き)
+            # 前月在庫の取得
+            p_stock = prev_stock.get(primary_id, {'qty': 0, 'amount': 0})
+            prevQty = p_stock['qty']
+            prevAmount = p_stock['amount']
+            diff = currQty - prevQty
+            
             master_dict[primary_id] = {
                 'id': primary_id,
                 'identCode': ident,
@@ -119,41 +118,48 @@ def process():
                 'isFixed': fixed_flag
             }
             
-            if cat_code not in summary:
-                summary[cat_code] = {'categoryName': f'Category {cat_code}', 'amount': 0}
-            summary[cat_code]['amount'] += actualAmount
+            catKey = 'fixed' if fixed_flag else cat_code
+            if catKey not in summary:
+                summary[catKey] = {'name': f'Category {catKey}', 'amount': 0, 'diff': 0, 'prevAmount': 0}
+            summary[catKey]['amount'] += amount
+            summary[catKey]['prevAmount'] += prevAmount
             
+            # アプリ(calculateInvMonthly)が期待するキー名を使用する
             items.append({
-                'id': primary_id,
+                'productId': primary_id,
                 'name': name,
                 'category': cat_code,
-                'actualQty': actualQty,
-                'price': price,
-                'actualAmount': actualAmount,
-                'diffQty': 0,
-                'diffAmount': 0,
-                'note': '',
-                'type': 'inventory',
+                'prevQty': prevQty,
+                'currQty': currQty,
+                'diff': diff,
+                'amount': amount,
+                'prevAmount': prevAmount,
                 'isFixed': fixed_flag
             })
             
-            # Generate logs if there is inventory
-            if actualQty > 0 or i > 0:  # create log for all items in the CSV to reset count to 0 if actualQty=0
+            if currQty > 0 or i > 0:
                 logs.append({
                     'id': log_id_counter,
                     'productId': primary_id,
                     'type': 'count',
-                    'quantity': actualQty,
+                    'quantity': currQty,
                     'timestamp': timestamp_str,
                     'note': f'{month_str}期末棚卸',
                     'userId': 1,
                     'unitPrice': price,
-                    'amountWithTax': actualAmount,
+                    'amountWithTax': amount,
                     'productName': name
                 })
                 log_id_counter += 1
                 
-        fixed_total = sum(it['actualAmount'] for it in items if it.get('isFixed'))
+            # 次の月のための前月在庫の更新
+            prev_stock[primary_id] = {'qty': currQty, 'amount': amount}
+                
+        # summary の diff を計算
+        for k in summary:
+            summary[k]['diff'] = summary[k]['amount'] - summary[k]['prevAmount']
+                
+        fixed_total = sum(it['amount'] for it in items if it.get('isFixed'))
         
         monthly_data.append({
             'month': month_str,
@@ -165,7 +171,6 @@ def process():
         })
         print(f"  -> Total Amount for {month_str}: {total_amount:,.2f}")
 
-    # Output files
     master_list = list(master_dict.values())
     
     with open(OUT_MASTER, 'w', encoding='utf-8') as f:
