@@ -1245,7 +1245,7 @@
     "name": "VRTB-5860D4 ﾚｲﾕｰﾙﾕｰｶﾘ",
     "category": "02",
     "price": 8860.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000201",
@@ -1253,7 +1253,7 @@
     "name": "VRTB-5835D4 ｶｯﾌｪｵｰｸ",
     "category": "02",
     "price": 10850.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000202",
@@ -1261,7 +1261,7 @@
     "name": "VRTB-5757D4 ｽﾓｰｸﾄﾞｵｰｸ",
     "category": "02",
     "price": 8860.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000203",
@@ -1269,7 +1269,7 @@
     "name": "RT-3562TX ｺｰｼﾞｰｻﾝﾄﾞ",
     "category": "02",
     "price": 8860.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000204",
@@ -1277,7 +1277,7 @@
     "name": "VRTB-5833D4 ｶｯﾌｪｵｰｸ",
     "category": "02",
     "price": 9300.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000205",
@@ -1285,7 +1285,7 @@
     "name": "VRT5832D4 ｶｯﾌｪｵｰｸ",
     "category": "02",
     "price": 9720.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000207",
@@ -1293,7 +1293,7 @@
     "name": "VRT-7250U4 ｼｭｶﾞｰﾋﾟﾝｸ",
     "category": "02",
     "price": 0.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000209",
@@ -1301,7 +1301,7 @@
     "name": "VRT-7023U4 ｸﾘｰﾐｰﾍﾞｰｼﾞｭ",
     "category": "02",
     "price": 8860.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000212",
@@ -1309,7 +1309,7 @@
     "name": "VRTB-3509AS4 ｴﾄﾅ",
     "category": "02",
     "price": 8700.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000213",
@@ -1317,7 +1317,7 @@
     "name": "VRTB-5841D4 ﾌﾟﾘﾏﾌﾞﾗｯｸﾁｪﾘｰ",
     "category": "02",
     "price": 8860.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000214",
@@ -1325,7 +1325,7 @@
     "name": "RT-1981TX ﾋﾟｭｱﾎﾜｲﾄ",
     "category": "02",
     "price": 8250.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000215",
@@ -1333,7 +1333,7 @@
     "name": "RT-5769TX ｱｯｿｳｫｰﾙﾅｯﾄ",
     "category": "02",
     "price": 10850.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000217",
@@ -1341,7 +1341,7 @@
     "name": "EBI-8902FT6 ﾌﾞﾗｯｸ",
     "category": "02",
     "price": 0.0,
-    "isFixed": true
+    "isFixed": false
   },
   {
     "id": "N02000000000218",
