@@ -2811,7 +2811,7 @@ function submitNewOrder() {
 // QR出力
 // ========================================
 
-function printQrCodes() {
+async function printQrCodes() {
   const checkboxes = document.querySelectorAll('.order-checkbox:checked');
   if (checkboxes.length === 0) {
     toast('QRコードを出力する指示書を選択してください', 'warning');
@@ -2825,32 +2825,59 @@ function printQrCodes() {
   orders.forEach(order => {
     if (order.items) {
       order.items.forEach(item => {
-        if (item.processes) {
-          item.processes.forEach(process => {
-            const qrText = JSON.stringify({
-              project: order.projectName,
-              product: order.productName,
-              bom: item.bomName,
-              process: process
-            });
-            qrDataList.push({
-              orderNo: order.orderNo || '',
-              projectName: order.projectName,
-              productName: order.productName,
-              bomName: item.bomName,
-              process: process,
-              text: qrText
-            });
-          });
-        }
+        // 工程ごとはやめて部材ごとに1つにする
+        const qrText = JSON.stringify({
+          project: order.projectName,
+          product: order.productName,
+          bom: item.bomName
+        });
+        qrDataList.push({
+          orderNo: order.orderNo || '',
+          projectName: order.projectName,
+          productName: order.productName,
+          bomName: item.bomName,
+          text: qrText
+        });
       });
     }
   });
 
   if (qrDataList.length === 0) {
-    toast('出力する工程データがありません', 'warning');
+    toast('出力するデータがありません', 'warning');
     return;
   }
+
+  // 別ウィンドウでのスクリプト実行エラーを防ぐため、親ウィンドウで画像データ(Base64)化する
+  const tempDiv = document.createElement('div');
+  tempDiv.style.display = 'none';
+  document.body.appendChild(tempDiv);
+
+  toast('QRコードを生成中...', 'info');
+
+  for (let data of qrDataList) {
+    tempDiv.innerHTML = '';
+    new QRCode(tempDiv, {
+      text: data.text,
+      width: 128,
+      height: 128,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.M
+    });
+    
+    // 生成完了を少し待つ (マシンスペック等に配慮して長めに)
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    const canvas = tempDiv.querySelector('canvas');
+    const img = tempDiv.querySelector('img');
+    if (canvas && canvas.toDataURL) {
+      data.dataUrl = canvas.toDataURL('image/png');
+    } else if (img && img.src && img.src.startsWith('data:')) {
+      data.dataUrl = img.src;
+    }
+  }
+
+  document.body.removeChild(tempDiv);
 
   const printWindow = window.open('', '_blank');
   
@@ -2860,56 +2887,88 @@ function printQrCodes() {
     <head>
       <meta charset="UTF-8">
       <title>QRコード印刷</title>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
       <style>
-        body { font-family: 'Noto Sans JP', sans-serif; margin: 0; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
-        .qr-card { border: 1px solid #ccc; padding: 15px; text-align: center; border-radius: 8px; page-break-inside: avoid; }
-        .qr-card h4 { margin: 0 0 5px 0; font-size: 14px; color: #333; }
-        .qr-card p { margin: 2px 0; font-size: 11px; color: #666; text-align: left; }
-        .qr-code { margin-top: 10px; display: flex; justify-content: center; }
+        @page { size: A4; margin: 10mm; }
+        body { font-family: 'Noto Sans JP', sans-serif; margin: 0; padding: 0; }
+        .grid { 
+          display: grid; 
+          grid-template-columns: repeat(3, 1fr); 
+          gap: 15px; 
+          padding: 10px;
+        }
+        .qr-card { 
+          border: 1px dashed #999; 
+          padding: 12px; 
+          text-align: center; 
+          border-radius: 4px; 
+          page-break-inside: avoid; 
+          box-sizing: border-box;
+          background: #fff;
+        }
+        .qr-card h4 { 
+          margin: 0 0 8px 0; 
+          font-size: 13px; 
+          color: #000; 
+          border-bottom: 1px solid #ccc; 
+          padding-bottom: 4px; 
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis; 
+        }
+        .qr-card p { 
+          margin: 4px 0; 
+          font-size: 11px; 
+          color: #333; 
+          text-align: left; 
+          font-weight: bold;
+        }
+        .qr-code { 
+          margin-top: 10px; 
+          display: flex; 
+          justify-content: center; 
+        }
+        .qr-code img { 
+          width: 90px; 
+          height: 90px; 
+          display: block; 
+        }
+        .no-print { 
+          text-align: center; 
+          margin-bottom: 20px; 
+          padding: 20px; 
+          background: #f8fafc; 
+          border-bottom: 1px solid #e2e8f0;
+        }
         @media print {
-          body { padding: 0; }
           .no-print { display: none; }
+          .grid { padding: 0; gap: 10px; }
+          .qr-card { border: 1px solid #000; }
         }
       </style>
     </head>
     <body>
-      <div class="no-print" style="margin-bottom: 20px;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0ea5e9; color: white; border: none; border-radius: 4px;">🖨️ 印刷する</button>
+      <div class="no-print">
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 16px; cursor: pointer; background: #0ea5e9; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ A4サイズで印刷する</button>
+        <p style="color: #666; font-size: 12px; margin-top: 10px;">印刷ダイアログで「背景のグラフィック」を有効にし、レイアウトが崩れる場合は「倍率」を調整してください。</p>
       </div>
       <div class="grid">
   `;
 
-  qrDataList.forEach((data, index) => {
+  qrDataList.forEach(data => {
     html += `
       <div class="qr-card">
         <h4>${data.projectName}</h4>
         <p><strong>品名:</strong> ${data.productName}</p>
         <p><strong>部材:</strong> ${data.bomName}</p>
-        <p><strong>工程:</strong> <span style="font-size:14px; font-weight:bold; color:#000;">${data.process}</span></p>
-        <div id="qr-${index}" class="qr-code"></div>
+        <div class="qr-code">
+          ${data.dataUrl ? `<img src="${data.dataUrl}" alt="QR Code">` : '<span style="color:red; font-size:10px;">QR生成失敗</span>'}
+        </div>
       </div>
     `;
   });
 
   html += `
       </div>
-      <script>
-        const qrDataList = ${JSON.stringify(qrDataList)};
-        window.onload = () => {
-          qrDataList.forEach((data, index) => {
-            new QRCode(document.getElementById('qr-' + index), {
-              text: data.text,
-              width: 128,
-              height: 128,
-              colorDark : "#000000",
-              colorLight : "#ffffff",
-              correctLevel : QRCode.CorrectLevel.M
-            });
-          });
-        };
-      </script>
     </body>
     </html>
   `;

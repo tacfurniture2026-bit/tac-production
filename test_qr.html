@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Test QR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div id="test"></div>
+  <script>
+    async function run() {
+      const tempDiv = document.createElement('div');
+      document.body.appendChild(tempDiv);
+      new QRCode(tempDiv, { text: "Hello", width: 128, height: 128 });
+      await new Promise(r => setTimeout(r, 50));
+      const canvas = tempDiv.querySelector('canvas');
+      if (canvas) {
+        document.getElementById('test').innerHTML = `<img src="${canvas.toDataURL('image/png')}">`;
+      } else {
+        document.getElementById('test').innerText = "Canvas not found";
+      }
+    }
+    window.onload = run;
+  </script>
+</body>
+</html>

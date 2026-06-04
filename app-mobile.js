@@ -988,17 +988,15 @@ function onQrCodeScanned(decodedText) {
   let projectName = '';
   let productName = '';
   let bomName = '';
-  let processName = '';
   let parsed = false;
 
-  // 1. JSON形式を試す {"project":"...","product":"...","bom":"...","process":"..."}
+  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
   try {
     const json = JSON.parse(decodedText);
     if (json.project || json.projectName) {
       projectName = (json.project || json.projectName || '').trim();
       productName = (json.product || json.productName || '').trim();
       bomName = (json.bom || json.bomName || json.item || '').trim();
-      processName = (json.process || json.processName || '').trim();
       parsed = true;
     }
   } catch (e) { /* not JSON */ }
@@ -1067,7 +1065,6 @@ function onQrCodeScanned(decodedText) {
         ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
         ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
         ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
-        ${processName ? `<div><strong>工程:</strong> ${processName}</div>` : ''}
       `;
     } else {
       dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
@@ -1076,7 +1073,7 @@ function onQrCodeScanned(decodedText) {
 
   // 指示書自動選択
   if (parsed && (projectName || productName)) {
-    selectFromQrData(projectName, productName, bomName, processName);
+    selectFromQrData(projectName, productName, bomName);
   } else {
     toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
   }
@@ -1088,7 +1085,7 @@ function onQrCodeScanned(decodedText) {
   toast('QRコードを読み取りました', 'success');
 }
 
-function selectFromQrData(projectName, productName, bomName, processName = '') {
+function selectFromQrData(projectName, productName, bomName) {
   const orders = DB.get(DB.KEYS.ORDERS);
 
   // 現場名と品名で指示書を検索
@@ -1116,37 +1113,7 @@ function selectFromQrData(projectName, productName, bomName, processName = '') {
       const itemSelect = $('#qr-item');
       itemSelect.value = item.id;
       updateQrProcessSelect();
-      
-      // 工程が指定されていれば自動登録
-      if (processName) {
-        setTimeout(() => {
-          const processContainer = $('#qr-process-buttons');
-          const btn = processContainer.querySelector(`[data-process="${processName}"]`);
-          if (btn) {
-            if (btn.classList.contains('completed') || btn.disabled) {
-              toast(`【${processName}】は既に完了しています`, 'info');
-              return;
-            }
-            selectProcess(btn, processName);
-            
-            // 自動登録
-            if (registerProgress(order.id, item.id, processName)) {
-              toast(`【${processName}】の実績を登録しました！`, 'success');
-              if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // 成功バイブ
-              
-              // 履歴とボタン再描画
-              updateQrProcessSelect();
-              renderQrPage(); // 履歴リストを更新
-            } else {
-              toast('実績登録に失敗しました', 'error');
-            }
-          } else {
-            toast(`部材は選択されましたが、工程「${processName}」が見つかりません`, 'warning');
-          }
-        }, 100);
-      } else {
-        toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
-      }
+      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
     } else {
       toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
