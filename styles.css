@@ -18,9 +18,9 @@
     --color-text-inverse: #FFFFFF;
 
     /* アクセント */
-    --color-accent-primary: #0071C1;
-    --color-accent-secondary: #005A9E;
-    --color-accent-gradient: #0071C1;
+    --color-accent-primary: #A48D78;
+    --color-accent-secondary: #8b7765;
+    --color-accent-gradient: #A48D78;
 
     --color-success: #10B981;
     --color-warning: #F59E0B;
@@ -70,9 +70,9 @@ body.dark-mode {
     --color-text-muted: #9CA3AF;
     --color-text-inverse: #1F2937;
 
-    --color-accent-primary: #3B82F6;
-    --color-accent-secondary: #60A5FA;
-    --color-accent-gradient: #3B82F6;
+    --color-accent-primary: #A48D78;
+    --color-accent-secondary: #c9b3a0;
+    --color-accent-gradient: #A48D78;
 
     /* アイコンフィルタ（白化） */
     --icon-filter: grayscale(100%) brightness(10);
@@ -233,7 +233,7 @@ body {
    ======================================== */
 
 .sidebar {
-    width: var(--sidebar-width-collapsed);
+    width: var(--sidebar-width-expanded);
     background: var(--color-bg-secondary);
     display: flex;
     flex-direction: column;
@@ -245,10 +245,6 @@ body {
     transition: width var(--transition-base);
     overflow: hidden;
     border-right: 1px solid var(--color-border);
-}
-
-.sidebar.expanded {
-    width: var(--sidebar-width-expanded);
 }
 
 .sidebar-header {
@@ -271,12 +267,8 @@ body {
     font-weight: 700;
     color: var(--color-text-primary);
     white-space: nowrap;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.sidebar.expanded .logo-text {
     opacity: 1;
+    transition: opacity var(--transition-fast);
 }
 
 .sidebar-nav {
@@ -294,12 +286,8 @@ body {
     color: var(--color-text-muted);
     margin-top: 0.5rem;
     white-space: nowrap;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.sidebar.expanded .nav-section {
     opacity: 1;
+    transition: opacity var(--transition-fast);
 }
 
 .nav-item {
@@ -321,7 +309,7 @@ body {
 }
 
 .nav-item.active {
-    background: rgba(0, 113, 193, 0.1); /* --color-accent-primary with opacity */
+    background: rgba(164, 141, 120, 0.1); /* --color-accent-primary with opacity */
     color: var(--color-accent-primary);
     border-left: 3px solid var(--color-accent-primary);
 }
@@ -331,21 +319,18 @@ body {
     flex-shrink: 0;
     width: 28px;
     text-align: center;
-    /* アイコンフィルタ（カラー制御） */
-    filter: var(--icon-filter);
+    /* アイコンフィルタ解除 */
+    filter: none;
 }
 
 .nav-item.active .nav-icon {
-    filter: grayscale(0%) sepia(100%) hue-rotate(185deg) saturate(500%) brightness(1); /* Approximate blue */
+    filter: none; 
+    color: var(--color-accent-primary);
 }
 
 .nav-item span:not(.nav-icon) {
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.sidebar.expanded .nav-item span:not(.nav-icon) {
     opacity: 1;
+    transition: opacity var(--transition-fast);
 }
 
 .logout-btn {
@@ -371,12 +356,8 @@ body {
     display: flex;
     flex-direction: column;
     margin-bottom: 0.5rem;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-}
-
-.sidebar.expanded .user-info {
     opacity: 1;
+    transition: opacity var(--transition-fast);
 }
 
 .user-name {
@@ -396,7 +377,7 @@ body {
 
 .main-content {
     flex: 1;
-    margin-left: var(--sidebar-width-collapsed);
+    margin-left: var(--sidebar-width-expanded);
     padding: 1.5rem;
     background: var(--color-bg-primary);
     min-height: 100vh;
