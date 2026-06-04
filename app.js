@@ -2879,79 +2879,65 @@ async function printQrCodes() {
 
   document.body.removeChild(tempDiv);
 
-  const printWindow = window.open('', '_blank');
-  
+  let printArea = document.getElementById('print-area');
+  if (!printArea) {
+    printArea = document.createElement('div');
+    printArea.id = 'print-area';
+    document.body.appendChild(printArea);
+  }
+
   let html = `
-    <!DOCTYPE html>
-    <html lang="ja">
-    <head>
-      <meta charset="UTF-8">
-      <title>QRコード印刷</title>
-      <style>
+    <style>
+      #print-area { display: none; }
+      @media print {
+        body > *:not(#print-area) { display: none !important; }
+        #print-area { display: block !important; }
         @page { size: A4; margin: 10mm; }
-        body { font-family: 'Noto Sans JP', sans-serif; margin: 0; padding: 0; }
         .grid { 
-          display: grid; 
-          grid-template-columns: repeat(3, 1fr); 
-          gap: 15px; 
-          padding: 10px;
+          display: grid !important; 
+          grid-template-columns: repeat(3, 1fr) !important; 
+          gap: 15px !important; 
+          padding: 10px !important;
         }
         .qr-card { 
-          border: 1px dashed #999; 
-          padding: 12px; 
-          text-align: center; 
-          border-radius: 4px; 
-          page-break-inside: avoid; 
-          box-sizing: border-box;
-          background: #fff;
+          border: 1px solid #000 !important; 
+          padding: 12px !important; 
+          text-align: center !important; 
+          border-radius: 4px !important; 
+          page-break-inside: avoid !important; 
+          box-sizing: border-box !important;
+          background: #fff !important;
         }
         .qr-card h4 { 
-          margin: 0 0 8px 0; 
-          font-size: 13px; 
-          color: #000; 
-          border-bottom: 1px solid #ccc; 
-          padding-bottom: 4px; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis; 
+          margin: 0 0 8px 0 !important; 
+          font-size: 13px !important; 
+          color: #000 !important; 
+          border-bottom: 1px solid #ccc !important; 
+          padding-bottom: 4px !important; 
+          white-space: nowrap !important; 
+          overflow: hidden !important; 
+          text-overflow: ellipsis !important; 
         }
         .qr-card p { 
-          margin: 4px 0; 
-          font-size: 11px; 
-          color: #333; 
-          text-align: left; 
-          font-weight: bold;
+          margin: 4px 0 !important; 
+          font-size: 11px !important; 
+          color: #333 !important; 
+          text-align: left !important; 
+          font-weight: bold !important;
         }
         .qr-code { 
-          margin-top: 10px; 
-          display: flex; 
-          justify-content: center; 
+          margin-top: 10px !important; 
+          display: flex !important; 
+          justify-content: center !important; 
         }
         .qr-code img { 
-          width: 90px; 
-          height: 90px; 
-          display: block; 
+          width: 90px !important; 
+          height: 90px !important; 
+          display: block !important; 
         }
-        .no-print { 
-          text-align: center; 
-          margin-bottom: 20px; 
-          padding: 20px; 
-          background: #f8fafc; 
-          border-bottom: 1px solid #e2e8f0;
-        }
-        @media print {
-          .no-print { display: none; }
-          .grid { padding: 0; gap: 10px; }
-          .qr-card { border: 1px solid #000; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="no-print">
-        <button onclick="window.print()" style="padding: 12px 24px; font-size: 16px; cursor: pointer; background: #0ea5e9; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ A4サイズで印刷する</button>
-        <p style="color: #666; font-size: 12px; margin-top: 10px;">印刷ダイアログで「背景のグラフィック」を有効にし、レイアウトが崩れる場合は「倍率」を調整してください。</p>
-      </div>
-      <div class="grid">
+      }
+    </style>
+    <div class="grid">
   `;
 
   qrDataList.forEach(data => {
