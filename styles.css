@@ -4,48 +4,48 @@
 
 :root {
     /* ライトモード（デフォルト） */
-    --color-bg-primary: #F4F7F9;
+    --color-bg-primary: #F4F6F8;
     --color-bg-secondary: #FFFFFF;
-    --color-bg-tertiary: #F3F4F6;
+    --color-bg-tertiary: #F9FAFB;
     --color-bg-card: #FFFFFF;
-    --color-bg-hover: #E8ECF0;
-    --color-border: #D1D5DB;
-    --color-border-light: #E5E7EB;
+    --color-bg-hover: #F0F4F8;
+    --color-border: #E2E8F0;
+    --color-border-light: #F1F5F9;
 
-    --color-text-primary: #1F2937;
-    --color-text-secondary: #4B5563;
-    --color-text-muted: #9CA3AF;
+    --color-text-primary: #1E293B;
+    --color-text-secondary: #475569;
+    --color-text-muted: #94A3B8;
     --color-text-inverse: #FFFFFF;
 
     /* アクセント */
-    --color-accent-primary: #0B2D48;
-    --color-accent-secondary: #1a3f5c;
-    --color-accent-gradient: linear-gradient(135deg, #0B2D48 0%, #1a3f5c 100%);
+    --color-accent-primary: #0071C1;
+    --color-accent-secondary: #005A9E;
+    --color-accent-gradient: #0071C1;
 
-    --color-success: #8CC63F;
-    --color-warning: #F7941D;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
     --color-danger: #EF4444;
     --color-info: #3B82F6;
 
-    /* アイコンフィルタ（黒系） */
-    --icon-filter: grayscale(100%) brightness(0.2);
+    /* アイコンフィルタ（青系または黒系） */
+    --icon-filter: grayscale(100%) brightness(0.3);
 
     /* タイポグラフィ */
-    --font-sans: 'Inter',
-        'Noto Sans JP',
-        -apple-system,
-        BlinkMacSystemFont,
+    --font-sans: 'Noto Sans JP',
+        'Inter',
+        'Hiragino Kaku Gothic ProN',
+        'Meiryo',
         sans-serif;
 
     /* スペース・サイズ */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
     --radius-full: 9999px;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
     --transition-fast: 0.15s ease;
     --transition-base: 0.25s ease;
@@ -72,13 +72,10 @@ body.dark-mode {
 
     --color-accent-primary: #3B82F6;
     --color-accent-secondary: #60A5FA;
-    --color-accent-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --color-accent-gradient: #3B82F6;
 
     /* アイコンフィルタ（白化） */
     --icon-filter: grayscale(100%) brightness(10);
-
-    /* サイドバーの背景もダークモード時は少し変える */
-    --color-accent-gradient: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
 }
 
 * {
@@ -178,11 +175,12 @@ body {
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: linear-gradient(135deg, #0B2D48 0%, #1a3f5c 50%, #0B2D48 100%);
+    background: var(--color-bg-primary);
 }
 
 .login-icon {
-    filter: grayscale(100%) brightness(2);
+    filter: none;
+    color: var(--color-accent-primary);
 }
 
 .login-card {
@@ -236,7 +234,7 @@ body {
 
 .sidebar {
     width: var(--sidebar-width-collapsed);
-    background: var(--color-accent-gradient);
+    background: var(--color-bg-secondary);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -246,6 +244,7 @@ body {
     z-index: 100;
     transition: width var(--transition-base);
     overflow: hidden;
+    border-right: 1px solid var(--color-border);
 }
 
 .sidebar.expanded {
@@ -257,20 +256,20 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--color-border);
     min-height: 60px;
 }
 
 .logo-icon {
     font-size: 1.5rem;
     flex-shrink: 0;
-    filter: grayscale(100%) brightness(2);
+    filter: none;
 }
 
 .logo-text {
     font-size: 1rem;
     font-weight: 700;
-    color: white;
+    color: var(--color-text-primary);
     white-space: nowrap;
     opacity: 0;
     transition: opacity var(--transition-fast);
@@ -292,7 +291,7 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-muted);
     margin-top: 0.5rem;
     white-space: nowrap;
     opacity: 0;
@@ -308,22 +307,23 @@ body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-secondary);
     text-decoration: none;
     transition: all var(--transition-fast);
     cursor: pointer;
     white-space: nowrap;
+    border-left: 3px solid transparent;
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
 }
 
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-right: 3px solid white;
+    background: rgba(0, 113, 193, 0.1); /* --color-accent-primary with opacity */
+    color: var(--color-accent-primary);
+    border-left: 3px solid var(--color-accent-primary);
 }
 
 .nav-icon {
@@ -331,8 +331,12 @@ body {
     flex-shrink: 0;
     width: 28px;
     text-align: center;
-    /* サイドバーアイコンは常に白、またはフィルタ制御 */
-    filter: grayscale(100%) brightness(10);
+    /* アイコンフィルタ（カラー制御） */
+    filter: var(--icon-filter);
+}
+
+.nav-item.active .nav-icon {
+    filter: grayscale(0%) sepia(100%) hue-rotate(185deg) saturate(500%) brightness(1); /* Approximate blue */
 }
 
 .nav-item span:not(.nav-icon) {
@@ -350,15 +354,17 @@ body {
     width: 100%;
     justify-content: flex-start;
     margin-top: 0.5rem;
+    color: var(--color-text-secondary);
 }
 
 .logout-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
 }
 
 .sidebar-footer {
     padding: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--color-border);
 }
 
 .user-info {
@@ -376,12 +382,12 @@ body {
 .user-name {
     font-weight: 600;
     font-size: 0.875rem;
-    color: white;
+    color: var(--color-text-primary);
 }
 
 .user-role {
     font-size: 0.6875rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-muted);
 }
 
 /* ========================================
@@ -440,9 +446,10 @@ body {
 .card {
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     overflow: hidden;
     margin-bottom: 1.5rem;
+    border-top: 3px solid var(--color-accent-primary);
 }
 
 .card-header {
@@ -657,7 +664,7 @@ textarea.form-input {
 }
 
 .btn-primary {
-    background: var(--color-accent-gradient);
+    background: var(--color-accent-primary);
     color: white;
 }
 
@@ -776,7 +783,7 @@ textarea.form-input {
 
 .progress-bar-fill {
     height: 100%;
-    background: var(--color-accent-gradient);
+    background: var(--color-accent-primary);
     border-radius: var(--radius-full);
     transition: width var(--transition-base);
 }
