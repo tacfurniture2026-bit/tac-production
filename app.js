@@ -2808,6 +2808,117 @@ function submitNewOrder() {
 }
 
 // ========================================
+// QR出力
+// ========================================
+
+function printQrCodes() {
+  const checkboxes = document.querySelectorAll('.order-checkbox:checked');
+  if (checkboxes.length === 0) {
+    toast('QRコードを出力する指示書を選択してください', 'warning');
+    return;
+  }
+
+  const idsToPrint = Array.from(checkboxes).map(cb => parseInt(cb.value));
+  const orders = DB.get(DB.KEYS.ORDERS).filter(o => idsToPrint.includes(o.id));
+
+  let qrDataList = [];
+  orders.forEach(order => {
+    if (order.items) {
+      order.items.forEach(item => {
+        if (item.processes) {
+          item.processes.forEach(process => {
+            const qrText = JSON.stringify({
+              project: order.projectName,
+              product: order.productName,
+              bom: item.bomName,
+              process: process
+            });
+            qrDataList.push({
+              orderNo: order.orderNo || '',
+              projectName: order.projectName,
+              productName: order.productName,
+              bomName: item.bomName,
+              process: process,
+              text: qrText
+            });
+          });
+        }
+      });
+    }
+  });
+
+  if (qrDataList.length === 0) {
+    toast('出力する工程データがありません', 'warning');
+    return;
+  }
+
+  const printWindow = window.open('', '_blank');
+  
+  let html = `
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <title>QRコード印刷</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+      <style>
+        body { font-family: 'Noto Sans JP', sans-serif; margin: 0; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .qr-card { border: 1px solid #ccc; padding: 15px; text-align: center; border-radius: 8px; page-break-inside: avoid; }
+        .qr-card h4 { margin: 0 0 5px 0; font-size: 14px; color: #333; }
+        .qr-card p { margin: 2px 0; font-size: 11px; color: #666; text-align: left; }
+        .qr-code { margin-top: 10px; display: flex; justify-content: center; }
+        @media print {
+          body { padding: 0; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0ea5e9; color: white; border: none; border-radius: 4px;">🖨️ 印刷する</button>
+      </div>
+      <div class="grid">
+  `;
+
+  qrDataList.forEach((data, index) => {
+    html += `
+      <div class="qr-card">
+        <h4>${data.projectName}</h4>
+        <p><strong>品名:</strong> ${data.productName}</p>
+        <p><strong>部材:</strong> ${data.bomName}</p>
+        <p><strong>工程:</strong> <span style="font-size:14px; font-weight:bold; color:#000;">${data.process}</span></p>
+        <div id="qr-${index}" class="qr-code"></div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+      <script>
+        const qrDataList = ${JSON.stringify(qrDataList)};
+        window.onload = () => {
+          qrDataList.forEach((data, index) => {
+            new QRCode(document.getElementById('qr-' + index), {
+              text: data.text,
+              width: 128,
+              height: 128,
+              colorDark : "#000000",
+              colorLight : "#ffffff",
+              correctLevel : QRCode.CorrectLevel.M
+            });
+          });
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+}
+
+// ========================================
 // CSV一括登録 & 一括削除
 // ========================================
 

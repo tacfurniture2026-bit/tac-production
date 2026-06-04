@@ -495,9 +495,9 @@ const DB = {
         localStorage.setItem(this.LOCAL_BATCH_KEY, JSON.stringify([]));
     },
 
-    // 追加（競合回避：トランザクション使用）
+    // 追加（競合回避：トランザクション使用から全体同期へ変更）
     add(key, newItem) {
-        // 即座にローカルに反映してリロード消失を防止（オプティミスティックUI保護）
+        // 即座にローカルに反映してリロード消失を防止
         let localData = this._cache[key] || [];
         if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
         if (newItem.id && !localData.some(d => d.id === newItem.id)) {
@@ -506,18 +506,8 @@ const DB = {
             localStorage.setItem(key, JSON.stringify(localData));
         }
 
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            // オフライン時のキューイングをサポートするため、トランザクションではなく個別の child に対して set を行う
-            firebaseDB.ref(fbKey).child(newItem.id).set(newItem, (error) => {
-                if (error) {
-                    console.error('Add failed:', error, 'newItem:', newItem);
-                    toast('追加に失敗しました: ' + (error.message || error), 'error');
-                }
-            });
-        } else {
-            this.save(key, localData);
-        }
+        // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
+        this.save(key, localData);
     },
 
     // 複数件の追加を安全に行う（競合回避のための update 使用）
@@ -627,7 +617,7 @@ const DB = {
         }
     },
 
-    // 更新（競合回避：トランザクション使用）
+    // 更新（競合回避：全体同期へ変更）
     update(key, id, updatedItem) {
         // 即座にローカルに反映してリロード消失を防止
         let localData = this._cache[key] || [];
@@ -639,21 +629,11 @@ const DB = {
             localStorage.setItem(key, JSON.stringify(localData));
         }
 
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            // オフライン対応のため、個別の child に対して update/set を行う
-            firebaseDB.ref(fbKey).child(id).set(updatedItem, (error) => {
-                if (error) {
-                    console.error('Update failed:', error);
-                    toast('更新に失敗しました: ' + error.message, 'error');
-                }
-            });
-        } else {
-            this.save(key, localData);
-        }
+        // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
+        this.save(key, localData);
     },
 
-    // 削除（競合回避：トランザクション使用）
+    // 削除（競合回避：全体同期へ変更）
     delete(key, id) {
         // 即座にローカルに反映してリロード消失を防止
         let localData = this._cache[key] || [];
@@ -662,18 +642,8 @@ const DB = {
         this._cache[key] = filteredLocal;
         localStorage.setItem(key, JSON.stringify(filteredLocal));
 
-        if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
-            const fbKey = this.toFirebaseKey(key);
-            // オフライン対応のため、個別の child を削除する
-            firebaseDB.ref(fbKey).child(id).remove((error) => {
-                if (error) {
-                    console.error('Delete failed:', error);
-                    toast('削除に失敗しました: ' + error.message, 'error');
-                }
-            });
-        } else {
-            this.save(key, filteredLocal);
-        }
+        // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
+        this.save(key, filteredLocal);
     },
 
     // 取得
