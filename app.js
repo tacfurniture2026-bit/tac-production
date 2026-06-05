@@ -1994,6 +1994,9 @@ function renderOrders() {
         return `
           <tr id="order-row-${o.id}" style="${rowStyle}">
             <td><input type="checkbox" class="order-checkbox" value="${o.id}"></td>
+            <td style="text-align: center;">
+              <input type="checkbox" onchange="toggleOrderDistributed(${o.id}, this.checked)" ${o.isDistributed ? 'checked' : ''} style="transform: scale(1.3); cursor: pointer;" title="現場に配布済み">
+            </td>
             <td>${o.orderNo || '-'}</td>
             <td>${o.projectName || '(名称なし)'}</td>
             <td>
@@ -2039,6 +2042,17 @@ function renderOrders() {
   } catch (e) {
     console.error('Fatal error in renderOrders:', e);
     toast('一覧描画エラー: ' + e.message, 'error');
+  }
+}
+
+// 配布状態の切り替え
+function toggleOrderDistributed(id, isDistributed) {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const index = orders.findIndex(o => o.id === id);
+  if (index !== -1) {
+    orders[index].isDistributed = isDistributed;
+    DB.set(DB.KEYS.ORDERS, orders);
+    toast(isDistributed ? '配布済みにしました' : '未配布に戻しました', 'success');
   }
 }
 
@@ -2983,7 +2997,7 @@ function exportOrdersToCsv() {
   }
 
   // ヘッダー
-  let csvContent = 'id,orderNo,projectName,productName,quantity,color,startDate,dueDate,progress,status,note1,note2,note3,note4,note5\n';
+  let csvContent = 'id,orderNo,projectName,productName,quantity,color,startDate,dueDate,progress,status,isDistributed,note1,note2,note3,note4,note5\n';
 
   orders.forEach(o => {
     // 備考の展開 (最大5個まで出力してみる)
@@ -3018,6 +3032,7 @@ function exportOrdersToCsv() {
       o.dueDate,
       progress,
       status,
+      o.isDistributed ? '配布済' : '',
       n1, n2, n3, n4, n5
     ].map(escape).join(',') + '\n';
   });
@@ -3175,7 +3190,7 @@ function importOrdersFromCsv(input) {
         color: 5,
         startDate: 6,
         dueDate: 7,
-        notesStart: 10
+        notesStart: headerCols.includes('isdistributed') ? 11 : 10 // 配布列がある場合は11から
       };
     }
 
