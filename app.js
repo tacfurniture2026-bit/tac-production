@@ -2865,11 +2865,11 @@ function printQrCodes() {
 
       new QRCode(tempDiv, {
         text: safeText,
-        width: 128,
-        height: 128,
+        width: 256,
+        height: 256,
         colorDark : "#000000",
         colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
+        correctLevel : QRCode.CorrectLevel.L
       });
       
       // 非同期での待機を排除（同期処理としてCanvasから画像化する）
