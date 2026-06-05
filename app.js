@@ -2859,8 +2859,12 @@ function printQrCodes() {
   for (let data of qrDataList) {
     try {
       tempDiv.innerHTML = '';
+      
+      // qrcode.jsがマルチバイト文字（日本語）の文字長計算でエラーを起こすのを防ぐためのエンコード処理
+      const safeText = unescape(encodeURIComponent(data.text));
+
       new QRCode(tempDiv, {
-        text: data.text,
+        text: safeText,
         width: 128,
         height: 128,
         colorDark : "#000000",
@@ -2877,8 +2881,8 @@ function printQrCodes() {
         data.dataUrl = img.src;
       }
     } catch (e) {
-      console.error('QR生成エラー:', e);
-      toast('QRコードの生成に失敗しました', 'danger');
+      console.error('QR生成エラー:', e, 'Data:', data.text);
+      toast(`QRコードの生成に失敗しました: ${e.message}`, 'danger');
       return;
     }
   }
