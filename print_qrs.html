@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>品名QRコード印刷 - TAC製造部</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         :root {
             --color-primary: #0B2D48;
@@ -281,8 +282,16 @@
 
                 const catName = CATEGORY_NAMES[prod.category] || prod.category;
                 
-                // QRコードAPIのURL（URLエンコードをしっかりと行う）
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(prod.id)}`;
+                // QRコードをローカルで生成
+                let qrDataUrl = '';
+                try {
+                    const qr = qrcode(0, 'L');
+                    qr.addData(prod.id);
+                    qr.make();
+                    qrDataUrl = qr.createDataURL(4, 0);
+                } catch (e) {
+                    console.error("QR生成エラー:", e);
+                }
 
                 const cardHtml = `
                     <div class="qr-card">
@@ -294,7 +303,7 @@
                             <div class="product-id">${prod.id}</div>
                         </div>
                         <div class="qr-image-container">
-                            <img class="qr-image" src="${qrUrl}" alt="${prod.id}">
+                            <img class="qr-image" src="${qrDataUrl}" alt="${prod.id}">
                         </div>
                     </div>
                 `;

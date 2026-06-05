@@ -2850,6 +2850,11 @@ function printQrCodes() {
   // 別ウィンドウでのスクリプト実行エラーを防ぐため、親ウィンドウで画像データ(Base64)化する
   toast('QRコードを生成中...', 'info');
 
+  // qrcode-generatorで日本語(UTF-8)を正しく処理するための設定
+  if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+  }
+
   for (let data of qrDataList) {
     try {
       // qrcode-generator ライブラリ使用（typeNumber=0で自動バージョン選択、最大2953バイト対応）
@@ -2945,8 +2950,10 @@ function printQrCodes() {
 
   printArea.innerHTML = html;
 
-  // 印刷ダイアログの呼び出し（同期コンテキスト内）
-  window.print();
+  // 画像のDOM反映を待ってから印刷ダイアログを呼び出す（真っ白になるのを防ぐ）
+  setTimeout(() => {
+    window.print();
+  }, 500);
 }
 
 // ========================================
