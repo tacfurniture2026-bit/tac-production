@@ -2849,7 +2849,9 @@ async function printQrCodes() {
 
   // 別ウィンドウでのスクリプト実行エラーを防ぐため、親ウィンドウで画像データ(Base64)化する
   const tempDiv = document.createElement('div');
-  tempDiv.style.display = 'none';
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.style.visibility = 'hidden';
   document.body.appendChild(tempDiv);
 
   toast('QRコードを生成中...', 'info');
