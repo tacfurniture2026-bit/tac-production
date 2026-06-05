@@ -2826,14 +2826,10 @@ function printQrCodes() {
     if (order.items) {
       order.items.forEach(item => {
         // 工程ごとはやめて部材ごとに1つにする
-        // QRコード生成エラー（データ長オーバーフロー）を防ぐため、長い文字列は先頭30文字に切り詰める
-        // ※スキャナー側はincludes(部分一致)で検索するため、30文字で完全に一致特定可能です。
-        const limitStr = (str, len) => str && str.length > len ? str.substring(0, len) : str;
-
         const qrText = JSON.stringify({
-          project: limitStr(order.projectName, 30),
-          product: limitStr(order.productName, 30),
-          bom: limitStr(item.bomName, 30)
+          project: order.projectName,
+          product: order.productName,
+          bom: item.bomName
         });
         qrDataList.push({
           orderNo: order.orderNo || '',
@@ -2852,46 +2848,22 @@ function printQrCodes() {
   }
 
   // 別ウィンドウでのスクリプト実行エラーを防ぐため、親ウィンドウで画像データ(Base64)化する
-  const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px';
-  tempDiv.style.visibility = 'hidden';
-  document.body.appendChild(tempDiv);
-
   toast('QRコードを生成中...', 'info');
 
   for (let data of qrDataList) {
     try {
-      tempDiv.innerHTML = '';
-      
-      // qrcode.jsがマルチバイト文字（日本語）の文字長計算でエラーを起こすのを防ぐためのエンコード処理
-      const safeText = unescape(encodeURIComponent(data.text));
-
-      new QRCode(tempDiv, {
-        text: safeText,
-        width: 256,
-        height: 256,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.L
-      });
-      
-      // 非同期での待機を排除（同期処理としてCanvasから画像化する）
-      const canvas = tempDiv.querySelector('canvas');
-      const img = tempDiv.querySelector('img');
-      if (canvas && canvas.toDataURL) {
-        data.dataUrl = canvas.toDataURL('image/png');
-      } else if (img && img.src && img.src.startsWith('data:')) {
-        data.dataUrl = img.src;
-      }
+      // qrcode-generator ライブラリ使用（typeNumber=0で自動バージョン選択、最大2953バイト対応）
+      const qr = qrcode(0, 'L');
+      qr.addData(data.text);
+      qr.make();
+      data.dataUrl = qr.createDataURL(4, 0);
     } catch (e) {
       console.error('QR生成エラー:', e, 'Data:', data.text);
-      toast(`QRコードの生成に失敗しました: ${e.message}`, 'danger');
+      toast(`QRコードの生成に失敗しました: ${e.message || e}`, 'danger');
       return;
     }
   }
 
-  document.body.removeChild(tempDiv);
 
   let printArea = document.getElementById('print-area');
   if (!printArea) {
