@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Test QR 4</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div id="print-area"></div>
+  <script>
+    function run() {
+      try {
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.visibility = 'hidden';
+        document.body.appendChild(tempDiv);
+        
+        let data = { text: "SYNC TEST" };
+        
+        new QRCode(tempDiv, {
+          text: data.text,
+          width: 128, height: 128,
+          correctLevel : QRCode.CorrectLevel.M
+        });
+        
+        // NO setTimeout!
+        const canvas = tempDiv.querySelector('canvas');
+        if (canvas && canvas.toDataURL) {
+          data.dataUrl = canvas.toDataURL('image/png');
+        }
+        
+        document.body.removeChild(tempDiv);
+        
+        let printArea = document.getElementById('print-area');
+        printArea.innerHTML = `<img src="${data.dataUrl}">`;
+        console.log("Success! DataURL length:", data.dataUrl.length);
+      } catch (e) {
+        console.error("Error:", e);
+      }
+    }
+    window.onload = run;
+  </script>
+</body>
+</html>

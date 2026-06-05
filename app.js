@@ -2811,7 +2811,7 @@ function submitNewOrder() {
 // QR出力
 // ========================================
 
-async function printQrCodes() {
+function printQrCodes() {
   const checkboxes = document.querySelectorAll('.order-checkbox:checked');
   if (checkboxes.length === 0) {
     toast('QRコードを出力する指示書を選択してください', 'warning');
@@ -2857,25 +2857,29 @@ async function printQrCodes() {
   toast('QRコードを生成中...', 'info');
 
   for (let data of qrDataList) {
-    tempDiv.innerHTML = '';
-    new QRCode(tempDiv, {
-      text: data.text,
-      width: 128,
-      height: 128,
-      colorDark : "#000000",
-      colorLight : "#ffffff",
-      correctLevel : QRCode.CorrectLevel.M
-    });
-    
-    // 生成完了を少し待つ (マシンスペック等に配慮して長めに)
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    const canvas = tempDiv.querySelector('canvas');
-    const img = tempDiv.querySelector('img');
-    if (canvas && canvas.toDataURL) {
-      data.dataUrl = canvas.toDataURL('image/png');
-    } else if (img && img.src && img.src.startsWith('data:')) {
-      data.dataUrl = img.src;
+    try {
+      tempDiv.innerHTML = '';
+      new QRCode(tempDiv, {
+        text: data.text,
+        width: 128,
+        height: 128,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
+      
+      // 非同期での待機を排除（同期処理としてCanvasから画像化する）
+      const canvas = tempDiv.querySelector('canvas');
+      const img = tempDiv.querySelector('img');
+      if (canvas && canvas.toDataURL) {
+        data.dataUrl = canvas.toDataURL('image/png');
+      } else if (img && img.src && img.src.startsWith('data:')) {
+        data.dataUrl = img.src;
+      }
+    } catch (e) {
+      console.error('QR生成エラー:', e);
+      toast('QRコードの生成に失敗しました', 'danger');
+      return;
     }
   }
 
@@ -2957,12 +2961,12 @@ async function printQrCodes() {
 
   html += `
       </div>
-    </body>
-    </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+  printArea.innerHTML = html;
+
+  // 印刷ダイアログの呼び出し（同期コンテキスト内）
+  window.print();
 }
 
 // ========================================
