@@ -2048,10 +2048,11 @@ function renderOrders() {
 // 配布状態の切り替え
 function toggleOrderDistributed(id, isDistributed) {
   const orders = DB.get(DB.KEYS.ORDERS) || [];
-  const index = orders.findIndex(o => o.id === id);
-  if (index !== -1) {
-    orders[index].isDistributed = isDistributed;
-    DB.set(DB.KEYS.ORDERS, orders);
+  const targetOrder = orders.find(o => o.id === id);
+  if (targetOrder) {
+    targetOrder.isDistributed = isDistributed;
+    // Firebase同期対応のため、DB.updateまたはDB.saveを使用する
+    DB.update(DB.KEYS.ORDERS, id, targetOrder);
     toast(isDistributed ? '配布済みにしました' : '未配布に戻しました', 'success');
   }
 }
