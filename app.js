@@ -2826,10 +2826,14 @@ function printQrCodes() {
     if (order.items) {
       order.items.forEach(item => {
         // 工程ごとはやめて部材ごとに1つにする
+        // QRコード生成エラー（データ長オーバーフロー）を防ぐため、長い文字列は先頭30文字に切り詰める
+        // ※スキャナー側はincludes(部分一致)で検索するため、30文字で完全に一致特定可能です。
+        const limitStr = (str, len) => str && str.length > len ? str.substring(0, len) : str;
+
         const qrText = JSON.stringify({
-          project: order.projectName,
-          product: order.productName,
-          bom: item.bomName
+          project: limitStr(order.projectName, 30),
+          product: limitStr(order.productName, 30),
+          bom: limitStr(item.bomName, 30)
         });
         qrDataList.push({
           orderNo: order.orderNo || '',

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Test qrious</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body>
+  <script>
+    try {
+      let longStr = "A".repeat(1600); // 1600 bytes
+      var qr = new QRious({
+        value: longStr,
+        level: 'L',
+        size: 256
+      });
+      document.body.innerHTML = `<img src="${qr.toDataURL()}">`;
+      console.log("Success! DataURL length:", qr.toDataURL().length);
+    } catch(e) {
+      console.error(e.message);
+    }
+  </script>
+</body>
+</html>
