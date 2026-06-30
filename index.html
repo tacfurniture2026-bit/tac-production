@@ -15,14 +15,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.75">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.76">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v5.75">
+    <link rel="stylesheet" href="styles.css?v=v5.76">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -116,8 +116,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v5.75"></script>
-    <script src="app.js?v=v5.75"></script>
+    <script src="data.js?v=v5.76"></script>
+    <script src="app.js?v=v5.76"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -184,7 +184,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.75</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.76</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -296,12 +296,25 @@
                             <span class="material-icons" style="color: var(--color-primary); font-size: 1.2rem;">campaign</span>
                             連絡事項
                         </h3>
-                        <button id="btn-edit-notice" class="btn btn-sm btn-outline admin-only" onclick="openNoticeModal()" style="display: none; padding: 0.2rem 0.5rem;">
-                            <span class="material-icons" style="font-size: 1rem;">edit</span> 編集
-                        </button>
+                        <div id="notice-actions" class="admin-only" style="display: none;">
+                            <button id="btn-edit-notice" class="btn btn-sm btn-outline" onclick="toggleNoticeEdit(true)" style="padding: 0.2rem 0.5rem;">
+                                <span class="material-icons" style="font-size: 1rem;">edit</span> 編集
+                            </button>
+                            <div id="notice-edit-actions" style="display: none; gap: 0.5rem;">
+                                <button class="btn btn-sm btn-secondary" onclick="toggleNoticeEdit(false)" style="padding: 0.2rem 0.5rem;">キャンセル</button>
+                                <button class="btn btn-sm btn-primary" onclick="saveNoticeInline()" style="padding: 0.2rem 0.5rem;">
+                                    <span class="material-icons" style="font-size: 1rem;">save</span> 保存
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body" style="padding-top: 0.5rem;">
-                        <p id="dashboard-notice-text" style="white-space: pre-wrap; margin: 0; color: var(--color-text); line-height: 1.6;">読み込み中...</p>
+                        <div id="notice-display-area">
+                            <p id="dashboard-notice-text" style="white-space: pre-wrap; margin: 0; color: var(--color-text); line-height: 1.6;">読み込み中...</p>
+                        </div>
+                        <div id="notice-edit-area" style="display: none;">
+                            <textarea id="inline-notice-input" class="form-input" rows="4" style="width: 100%;" placeholder="連絡事項を入力してください"></textarea>
+                        </div>
                         <div style="text-align: right; margin-top: 0.5rem;">
                             <small id="dashboard-notice-date" class="text-muted" style="font-size: 0.75rem;"></small>
                         </div>
@@ -1272,26 +1285,6 @@
             </div>
             <div class="modal-body" id="modal-body"></div>
             <div class="modal-footer" id="modal-footer"></div>
-        </div>
-    </div>
-
-    <!-- 連絡事項編集モーダル -->
-    <div id="notice-modal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>連絡事項の編集</h2>
-                <span class="close" onclick="closeModal('notice-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>連絡事項</label>
-                    <textarea id="notice-input-text" class="form-input" rows="6" placeholder="作業員に伝える連絡事項を入力してください"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('notice-modal')">キャンセル</button>
-                <button class="btn btn-primary" onclick="saveNotice()">保存</button>
-            </div>
         </div>
     </div>
 

@@ -582,6 +582,93 @@ function renderDashboard() {
   $('#urgent-orders-pao').innerHTML = generateUrgentHtml(paoOrders);
   $('#urgent-orders-grid').innerHTML = generateUrgentHtml(gridOrders);
   $('#urgent-orders-other').innerHTML = generateUrgentHtml(otherOrders);
+
+  // 連絡事項の描画
+  renderNotice();
+}
+
+// ========================================
+// 掲示板（連絡事項）関連
+// ========================================
+
+function renderNotice() {
+  const notices = DB.get(DB.KEYS.NOTICE) || [];
+  const noticeTextEl = $('#dashboard-notice-text');
+  const noticeDateEl = $('#dashboard-notice-date');
+  const noticeActionsEl = $('#notice-actions');
+
+  if (noticeTextEl && notices.length > 0) {
+    const notice = notices[0];
+    noticeTextEl.textContent = notice.text || '連絡事項はありません';
+    
+    if (notice.updatedAt) {
+      const dateObj = new Date(notice.updatedAt);
+      if (!isNaN(dateObj.getTime())) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const h = String(dateObj.getHours()).padStart(2, '0');
+        const min = String(dateObj.getMinutes()).padStart(2, '0');
+        noticeDateEl.textContent = `最終更新: ${y}/${m}/${d} ${h}:${min}`;
+      }
+    } else {
+      noticeDateEl.textContent = '';
+    }
+  }
+
+  if (noticeActionsEl) {
+    noticeActionsEl.style.display = (currentUser && currentUser.role === 'admin') ? 'flex' : 'none';
+  }
+}
+
+function toggleNoticeEdit(isEditing) {
+  const displayArea = $('#notice-display-area');
+  const editArea = $('#notice-edit-area');
+  const btnEdit = $('#btn-edit-notice');
+  const editActions = $('#notice-edit-actions');
+  const inputEl = $('#inline-notice-input');
+
+  if (isEditing) {
+    // 編集モードへ
+    const notices = DB.get(DB.KEYS.NOTICE) || [];
+    if (inputEl) inputEl.value = notices.length > 0 ? notices[0].text : '';
+    
+    if (displayArea) displayArea.style.display = 'none';
+    if (editArea) editArea.style.display = 'block';
+    if (btnEdit) btnEdit.style.display = 'none';
+    if (editActions) editActions.style.display = 'flex';
+  } else {
+    // 表示モードへ戻る
+    if (displayArea) displayArea.style.display = 'block';
+    if (editArea) editArea.style.display = 'none';
+    if (btnEdit) btnEdit.style.display = 'inline-flex';
+    if (editActions) editActions.style.display = 'none';
+  }
+}
+
+function saveNoticeInline() {
+  const inputEl = $('#inline-notice-input');
+  if (!inputEl) return;
+  const newText = inputEl.value.trim();
+
+  const noticeData = {
+    id: 1,
+    text: newText,
+    updatedAt: new Date().toISOString()
+  };
+
+  // DB.updateでFirebaseとローカルの両方に保存（上書き）
+  const notices = DB.get(DB.KEYS.NOTICE) || [];
+  if (notices.length === 0) {
+      notices.push(noticeData);
+      DB.save(DB.KEYS.NOTICE, notices);
+  } else {
+      DB.update(DB.KEYS.NOTICE, 1, noticeData);
+  }
+
+  toggleNoticeEdit(false);
+  toast('連絡事項を更新しました', 'success');
+  renderNotice();
 }
 
 
