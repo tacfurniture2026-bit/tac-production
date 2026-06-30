@@ -17,6 +17,8 @@ const DB = {
         INV_LOGS: 'pms_inv_logs',              // 棚卸ログ
         INV_MONTHLY: 'pms_inv_monthly',        // 月次在庫データ
         INV_SCAN_TEMP: 'pms_inv_scan_temp',    // 棚卸仮スキャンデータ
+        // 掲示板
+        NOTICE: 'pms_notice',                  // 連絡事項
         // バックアップ
         BACKUPS: 'pms_backups'                 // バックアップ履歴
     },
@@ -179,6 +181,11 @@ const DB = {
         if (!localStorage.getItem(this.KEYS.INV_SCAN_TEMP)) {
             this.save(this.KEYS.INV_SCAN_TEMP, []);
         }
+
+        // 掲示板（連絡事項）
+        if (!localStorage.getItem(this.KEYS.NOTICE)) {
+            this.save(this.KEYS.NOTICE, [{ id: 1, text: "本日の連絡事項はありません", updatedAt: new Date().toISOString() }]);
+        }
     },
 
     // Firebase初期化
@@ -202,7 +209,7 @@ const DB = {
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
             this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
-            this.KEYS.BACKUPS, this.KEYS.INV_SCAN_TEMP
+            this.KEYS.BACKUPS, this.KEYS.INV_SCAN_TEMP, this.KEYS.NOTICE
         ];
 
         dataKeys.forEach(key => {
@@ -681,7 +688,8 @@ const DB = {
         return [
             this.KEYS.USERS, this.KEYS.BOM, this.KEYS.ORDERS,
             this.KEYS.RATES, this.KEYS.DEFECTS, this.KEYS.PROGRESS_HISTORY,
-            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY
+            this.KEYS.INV_PRODUCTS, this.KEYS.INV_LOGS, this.KEYS.INV_MONTHLY,
+            this.KEYS.NOTICE
         ];
     },
 
