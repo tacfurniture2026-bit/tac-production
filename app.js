@@ -597,27 +597,35 @@ function renderNotice() {
   const noticeDateEl = $('#dashboard-notice-date');
   const noticeActionsEl = $('#notice-actions');
 
-  if (noticeTextEl && notices.length > 0) {
-    const notice = notices[0];
-    noticeTextEl.textContent = notice.text || '連絡事項はありません';
-    
-    if (notice.updatedAt) {
-      const dateObj = new Date(notice.updatedAt);
-      if (!isNaN(dateObj.getTime())) {
-        const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const d = String(dateObj.getDate()).padStart(2, '0');
-        const h = String(dateObj.getHours()).padStart(2, '0');
-        const min = String(dateObj.getMinutes()).padStart(2, '0');
-        noticeDateEl.textContent = `最終更新: ${y}/${m}/${d} ${h}:${min}`;
+  if (noticeTextEl) {
+    if (notices.length > 0) {
+      const notice = notices[0];
+      noticeTextEl.textContent = notice.text || '連絡事項はありません';
+      
+      if (notice.updatedAt) {
+        const dateObj = new Date(notice.updatedAt);
+        if (!isNaN(dateObj.getTime())) {
+          const y = dateObj.getFullYear();
+          const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const d = String(dateObj.getDate()).padStart(2, '0');
+          const h = String(dateObj.getHours()).padStart(2, '0');
+          const min = String(dateObj.getMinutes()).padStart(2, '0');
+          noticeDateEl.textContent = `最終更新: ${y}/${m}/${d} ${h}:${min}`;
+        } else {
+          if (noticeDateEl) noticeDateEl.textContent = '';
+        }
+      } else {
+        if (noticeDateEl) noticeDateEl.textContent = '';
       }
     } else {
-      noticeDateEl.textContent = '';
+      noticeTextEl.textContent = '連絡事項はありません';
+      if (noticeDateEl) noticeDateEl.textContent = '';
     }
   }
 
   if (noticeActionsEl) {
-    noticeActionsEl.style.display = (currentUser && currentUser.role === 'admin') ? 'flex' : 'none';
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    noticeActionsEl.style.display = isAdmin ? 'flex' : 'none';
   }
 }
 
@@ -657,14 +665,8 @@ function saveNoticeInline() {
     updatedAt: new Date().toISOString()
   };
 
-  // DB.updateでFirebaseとローカルの両方に保存（上書き）
-  const notices = DB.get(DB.KEYS.NOTICE) || [];
-  if (notices.length === 0) {
-      notices.push(noticeData);
-      DB.save(DB.KEYS.NOTICE, notices);
-  } else {
-      DB.update(DB.KEYS.NOTICE, 1, noticeData);
-  }
+  // 連絡事項は常に最新1件のみを保持する設計のため、既存データに関わらず配列ごと上書き保存する
+  DB.save(DB.KEYS.NOTICE, [noticeData]);
 
   toggleNoticeEdit(false);
   toast('連絡事項を更新しました', 'success');
