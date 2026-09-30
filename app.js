@@ -6669,28 +6669,45 @@ function setupInitialDataImport() {
           let monthlyItems = [];
           let totalQty = 0;
           let totalAmount = 0;
-          let summary = {
-            '01': { qty: 0, amount: 0 },
-            '02': { qty: 0, amount: 0 },
-            '03': { qty: 0, amount: 0 },
-            '04': { qty: 0, amount: 0 },
-            '05': { qty: 0, amount: 0 },
-            'fixed': { qty: 0, amount: 0 }
-          };
+          let summary = {};
 
           const [y, m] = targetMonth.split('-');
           const lastDay = new Date(y, m, 0, 23, 59, 59).toISOString();
+          
+          let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+          tempScans = tempScans.filter(s => s.month !== targetMonth); // 当月の仮登録をクリアして作り直す
 
           // 商品マスタの在庫を一括更新
           products.forEach(p => {
             const qtyData = qtyMap[p.id];
-            const qty = qtyData ? qtyData.quantity : 0;
+            
+            // エクセルに載っていない商品については、在庫0に上書きせず元の在庫を維持する
+            const qty = qtyData ? qtyData.quantity : (p.stock || 0);
+            
             p.stock = qty;
             p.lastStock = qty; // 初月なので前月在庫も同じにする（差分ゼロ扱い）
             if (qty > 0) p.inventoryDate = lastDay;
             
-            // 一時データクリア
-            delete p.tempQty; delete p.tempWorker; delete p.tempWorkerName; delete p.tempTimestamp; delete p.tempMonth; delete p.tempId;
+            // 棚卸確認画面で「実棚数量」として確認できるように、仮登録データもセットする
+            p.tempQty = qty;
+            const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+            p.tempWorker = currentUser?.username || 'admin';
+            p.tempWorkerName = currentUser?.displayName || '初期データ登録';
+            p.tempTimestamp = lastDay;
+            p.tempMonth = targetMonth;
+            
+            const scanId = Date.now() + "_" + Math.random().toString(36).substr(2, 9) + "_" + p.id;
+            p.tempId = scanId;
+            tempScans.push({
+                id: scanId,
+                productId: p.id,
+                quantity: qty,
+                worker: p.tempWorker,
+                workerName: p.tempWorkerName,
+                timestamp: lastDay,
+                month: targetMonth,
+                type: 'count_temp'
+            });
             
             const price = parseFloat(p.price) || 0;
             const amount = qty * price;
@@ -6712,25 +6729,28 @@ function setupInitialDataImport() {
             totalAmount += amount;
 
             if (p.isFixed) {
-              summary['fixed'].qty += qty;
-              summary['fixed'].amount += amount;
+              const catKey = 'fixed';
+              if (!summary[catKey]) summary[catKey] = { name: '不動品', amount: 0, diff: 0, prevAmount: 0 };
+              summary[catKey].amount += amount;
+              summary[catKey].diff += amount;
             } else {
-              const cat = p.category || '99';
-              if (!summary[cat]) summary[cat] = { qty: 0, amount: 0 };
-              summary[cat].qty += qty;
-              summary[cat].amount += amount;
+              const catKey = p.category || '99';
+              if (!summary[catKey]) summary[catKey] = { name: (INV_CATEGORIES[catKey] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
+              summary[catKey].amount += amount;
+              summary[catKey].diff += amount;
             }
           });
 
           // (INV_PRODUCTS の保存は後でまとめて行う)
+          DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
 
           // INV_MONTHLY レコードの生成
           const monthlyData = {
             month: targetMonth,
             items: monthlyItems,
             summary: summary,
-            total: { qty: totalQty, amount: totalAmount },
-            fixedTotal: summary['fixed'].amount || 0,
+            total: totalAmount,
+            prevTotal: 0,
             closedAt: new Date().toISOString()
           };
 
