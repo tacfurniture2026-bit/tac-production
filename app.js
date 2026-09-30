@@ -6749,9 +6749,23 @@ function setupInitialDataImport() {
           Promise.all([
             DB.save(DB.KEYS.INV_PRODUCTS, cleanProducts),
             DB.save(DB.KEYS.INV_MONTHLY, cleanAllMonthly)
-          ]).then(() => {
+          ]).then((results) => {
+            if (results.includes(false)) {
+              toast('データの読み込みが完了していないため保存できませんでした。数秒待ってから再度お試しください。', 'error', 5000);
+              importBtn.disabled = false;
+              importBtn.textContent = '🚀 初期データとして確定登録する';
+              return;
+            }
+            
             alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
-            location.reload();
+            
+            // リロードによるログイン画面への遷移を防ぐため、UIを再描画する
+            closeModal('initial-data-modal');
+            if (typeof renderInvCheckPage === 'function') {
+              renderInvCheckPage();
+            } else if (typeof refreshCurrentPage === 'function') {
+              refreshCurrentPage();
+            }
           }).catch(err => {
             console.error(err);
             toast('データの保存中にエラーが発生しました: ' + (err.message || ''), 'error');
