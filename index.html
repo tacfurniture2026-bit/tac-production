@@ -15,14 +15,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.78">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.79">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v5.78">
+    <link rel="stylesheet" href="styles.css?v=v5.79">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -116,8 +116,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v5.78"></script>
-    <script src="app.js?v=v5.78"></script>
+    <script src="data.js?v=v5.79"></script>
+    <script src="app.js?v=v5.79"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -184,7 +184,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.78</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.79</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -952,21 +952,7 @@
                             <input type="file" id="inv-excel-upload" accept=".xlsx, .xlsm, .xls, .csv" class="form-input" style="margin-bottom: 8px;">
                             <label style="display:block; margin-bottom: 4px; font-weight: bold; font-size: 0.9rem;">対象月 (指定すると過去の同月データは上書きされます)</label>
                             <input type="month" id="inv-excel-month" class="form-input" style="margin-bottom: 12px;">
-                            <button type="button" class="btn btn-secondary btn-full" id="inv-excel-import-btn">取込プレビューを表示</button>
-                            <div id="inv-excel-preview" style="margin-top: 16px; display: none;">
-                                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
-                                    <table class="table" style="font-size: 0.8rem;">
-                                        <thead><tr><th>品名</th><th>数量</th><th>金額(税込)</th><th>状態</th></tr></thead>
-                                        <tbody id="inv-excel-preview-body"></tbody>
-                                    </table>
-                                </div>
-                                <div class="form-group" style="margin-top: 16px;">
-                                    <label>取込対象月 (過去データ登録用)</label>
-                                    <input type="month" id="inv-excel-month" class="form-input" placeholder="指定しない場合は本日">
-                                    <p class="text-muted" style="font-size: 0.75rem;">※指定した場合、取込後に自動でその月の締め処理を実行します</p>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-full" id="inv-excel-confirm-btn">確定して登録</button>
-                            </div>
+                            <button type="button" class="btn btn-primary btn-full" id="inv-excel-import-btn" style="font-size: 16px; padding: 12px;">📥 取り込み実行</button>
                         </div>
                     </div>
                     <!-- 本日の棚卸履歴 -->

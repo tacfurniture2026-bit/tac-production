@@ -6290,14 +6290,9 @@ function renderInvScanPage() {
 function setupInvExcelImport() {
   const fileInput = $('#inv-excel-upload');
   const importBtn = $('#inv-excel-import-btn');
-  const confirmBtn = $('#inv-excel-confirm-btn');
-  const previewDiv = $('#inv-excel-preview');
-  const tbody = $('#inv-excel-preview-body');
   const monthInput = $('#inv-excel-month');
 
   if (!fileInput || !importBtn) return;
-
-  let parsedItems = [];
 
   importBtn.onclick = () => {
     const file = fileInput.files[0];
@@ -6311,240 +6306,175 @@ function setupInvExcelImport() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        
-        // ファイル拡張子が .csv の場合は Shift-JIS としてテキストデコードしてからパース
-        let workbook;
-        if (file.name.toLowerCase().endsWith('.csv')) {
-          const text = new TextDecoder('shift-jis').decode(data);
-          workbook = XLSX.read(text, { type: 'string' });
-        } else {
-          workbook = XLSX.read(data, { type: 'array' });
-        }
-        
-        // 「提出書類」シートを探す、見つからなければ最初のシート
-        const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        
-        // ヘッダーなしの2次元配列としてパース
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        // F1セルの合計金額を取得（参考表示用）
-        let f1Total = 0;
-        if (rows.length > 0 && rows[0][5]) {
-          const f1Str = String(rows[0][5]).replace(/[¥\\,\s]/g, '');
-          f1Total = parseFloat(f1Str) || 0;
-        }
-        
-        const products = DB.get(DB.KEYS.INV_PRODUCTS);
-        parsedItems = [];
+    // 取込開始ポップアップ
+    toast('Excelの読み込みと解析を開始します...', 'info');
+    
+    // UIをブロック
+    importBtn.disabled = true;
+    importBtn.textContent = '取り込み中...';
+    fileInput.disabled = true;
+    if (monthInput) monthInput.disabled = true;
 
-        // CSV列マッピング:
-        // E列(idx 4) = 資材コード, G列(idx 6) = 品名, N列(idx 13) = 単価
-        // S列(idx 18) = 数量, T列(idx 19) = 合計金額, U列(idx 20) = 合計金額(1%増し)
-        rows.forEach((row, rowIndex) => {
-          if (rowIndex < 2) return; // ヘッダー行スキップ（0:サマリ, 1:列名）
+    // UI更新を反映させるために少し遅延させてから処理開始
+    setTimeout(() => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
           
-          // S列（数量）を取得
-          const sColValue = row[18];
-          if (sColValue === undefined || sColValue === null || sColValue === '') return;
-          
-          const quantity = parseInt(sColValue, 10);
-          if (isNaN(quantity)) return; // 数字でない場合はスキップ
-
-          // 各列の値を取得
-          const productCode = row[4] ? String(row[4]).trim() : '';  // E列: 資材コード
-          const productName = row[6] ? String(row[6]).trim() : '';  // G列: 品名
-          const category = row[1] ? String(row[1]).trim() : '99';   // B列: 識別コード分類
-          const unitPriceRaw = row[13];                              // N列: 単価
-          const amountRaw = row[19];                                 // T列: 合計金額
-          const amountWithTaxRaw = row[20];                          // U列: 合計金額(1%増し)
-          
-          const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
-          const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
-          const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,]/g, '')) || 0;
-
-          if (!productCode && !productName) return; // コードも品名もない行はスキップ
-
-          // マスタから検索
-          let matchedProduct = products.find(p => p.id === productCode);
-          
-          // マスタにない場合は仮情報として保持
-          const productInfo = matchedProduct || {
-            id: productCode || `TEMP_${rowIndex}`,
-            name: productName || `不明品(行${rowIndex + 1})`,
-            category: category,
-            price: unitPrice,
-            isFixed: false
-          };
-
-          parsedItems.push({
-            product: productInfo,
-            quantity: quantity,
-            unitPrice: unitPrice,
-            amount: amount,
-            amountWithTax: amountWithTax,
-            isMatched: !!matchedProduct
-          });
-        });
-
-        if (parsedItems.length === 0) {
-          toast('取り込み対象のデータが見つかりませんでした', 'warning');
-          return;
-        }
-
-        // 集計
-        const totalAmount = parsedItems.reduce((s, i) => s + i.amountWithTax, 0);
-        const matchedCount = parsedItems.filter(i => i.isMatched).length;
-
-        // プレビュー表示
-        tbody.innerHTML = parsedItems.slice(0, 50).map(item => `
-          <tr>
-            <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.product.name}">
-              ${item.product.name}
-            </td>
-            <td style="text-align:center;">${item.quantity}</td>
-            <td style="text-align:right;">¥${item.amountWithTax.toLocaleString()}</td>
-            <td style="color:${item.isMatched ? 'var(--color-success)' : '#f59e0b'};">${item.isMatched ? 'マスタ一致' : 'CSV直接'}</td>
-          </tr>
-        `).join('') + (parsedItems.length > 50 ? `<tr><td colspan="4" style="text-align:center; color:#666;">…他${parsedItems.length - 50}件</td></tr>` : '');
-
-        previewDiv.style.display = 'block';
-        toast(`${parsedItems.length}件読込 (合計: ¥${totalAmount.toLocaleString()}, CSV合計: ¥${f1Total.toLocaleString()})`, 'success');
-
-      } catch (err) {
-        console.error(err);
-        toast('Excelの解析に失敗しました: ' + err.message, 'error');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  if (confirmBtn) {
-    confirmBtn.onclick = () => {
-      if (parsedItems.length === 0) {
-        toast('取り込みデータがありません', 'warning');
-        return;
-      }
-
-      const targetMonth = monthInput ? monthInput.value : '';
-      // targetMonth がある場合はその月末日時をタイムスタンプにする、ない場合は現在日時
-      let timestamp = new Date().toISOString();
-      if (targetMonth) {
-        // 対象月の末日を作成 (例: "2026-04" -> 2026-04-30 23:59:59)
-        const [y, m] = targetMonth.split('-');
-        const lastDay = new Date(y, m, 0, 23, 59, 59);
-        timestamp = lastDay.toISOString();
-      }
-
-      const currentUser = DB.get(DB.KEYS.CURRENT_USER);
-      const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
-      const itemCount = parsedItems.length; // 件数を先に保存
-
-      const newLogs = parsedItems.map(item => ({
-        productId: item.product.id,
-        productName: item.product.name || '',
-        type: 'count', // 棚卸
-        quantity: item.quantity,
-        unitPrice: item.unitPrice || 0,
-        amount: item.amount || 0,
-        amountWithTax: item.amountWithTax || 0,
-        note: targetMonth ? `Excel一括取込(${targetMonth}分)` : 'Excel一括取込',
-        user: userName,
-        timestamp: timestamp
-      }));
-
-      console.log('🔄 Excel取込: 登録開始', newLogs.length, '件');
-      console.log('🔄 サンプルデータ:', JSON.stringify(newLogs[0]));
-      console.log('🔄 合計金額:', newLogs.reduce((s,l) => s + (l.amountWithTax || 0), 0).toLocaleString());
-
-      // ボタン無効化（二重クリック防止）
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = '登録中...';
-
-      // 【重要】取り込んだ資材を商品マスタへ反映（新規追加・単価更新）
-      const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-      let masterUpdateCount = 0;
-      let masterAddCount = 0;
-
-      parsedItems.forEach(item => {
-        const pData = item.product;
-        const existingIdx = products.findIndex(p => p.id === pData.id || (pData.name && p.name === pData.name));
-        
-        if (existingIdx >= 0) {
-          products[existingIdx].price = item.unitPrice;
-          masterUpdateCount++;
-        } else {
-          products.push({
-            id: pData.id,
-            name: pData.name,
-            category: pData.category || '99',
-            price: item.unitPrice,
-            isFixed: false
-          });
-          masterAddCount++;
-        }
-      });
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
-      console.log(`✅ 商品マスタ同期完了: 新規${masterAddCount}件、更新${masterUpdateCount}件`);
-
-      // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
-      const currentMonth = targetMonth || new Date().toISOString().substring(0, 7);
-
-      // 対象月指定がある場合、同月（currentMonth）の仮スキャンデータをクリアして上書きする
-      if (targetMonth) {
-        // 1. INV_PRODUCTS に残っている同月の仮データをクリア
-        products.forEach(p => {
-          if (p.tempMonth === currentMonth) {
-            delete p.tempQty;
-            delete p.tempWorker;
-            delete p.tempWorkerName;
-            delete p.tempTimestamp;
-            delete p.tempMonth;
-            delete p.tempId;
+          let workbook;
+          if (file.name.toLowerCase().endsWith('.csv')) {
+            const text = new TextDecoder('shift-jis').decode(data);
+            workbook = XLSX.read(text, { type: 'string' });
+          } else {
+            workbook = XLSX.read(data, { type: 'array' });
           }
-        });
+          
+          const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          
+          const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+          let parsedItems = [];
 
-        // 2. INV_SCAN_TEMP にある同月の仮データをクリア
-        let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-        const initialTempScansLength = tempScans.length;
-        tempScans = tempScans.filter(s => s.month !== currentMonth);
-        if (tempScans.length !== initialTempScansLength) {
-          DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
+          rows.forEach((row, rowIndex) => {
+            if (rowIndex < 2) return; 
+            
+            const sColValue = row[18];
+            if (sColValue === undefined || sColValue === null || sColValue === '') return;
+            
+            const quantity = parseInt(sColValue, 10);
+            if (isNaN(quantity)) return;
+
+            const productCode = row[4] ? String(row[4]).trim() : '';
+            const productName = row[6] ? String(row[6]).trim() : '';
+            const category = row[1] ? String(row[1]).trim() : '99';
+            const unitPriceRaw = row[13];
+            const amountRaw = row[19];
+            const amountWithTaxRaw = row[20];
+            
+            const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
+            const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
+            const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,]/g, '')) || 0;
+
+            if (!productCode && !productName) return;
+
+            let matchedProduct = products.find(p => p.id === productCode);
+            
+            const productInfo = matchedProduct || {
+              id: productCode || `TEMP_${rowIndex}`,
+              name: productName || `不明品(行${rowIndex + 1})`,
+              category: category,
+              price: unitPrice,
+              isFixed: false
+            };
+
+            parsedItems.push({
+              product: productInfo,
+              quantity: quantity,
+              unitPrice: unitPrice,
+              amount: amount,
+              amountWithTax: amountWithTax,
+              isMatched: !!matchedProduct
+            });
+          });
+
+          if (parsedItems.length === 0) {
+            toast('取り込み対象のデータが見つかりませんでした', 'warning');
+            return;
+          }
+
+          // === 登録処理 ===
+          const targetMonth = monthInput ? monthInput.value : '';
+          let timestamp = new Date().toISOString();
+          if (targetMonth) {
+            const [y, m] = targetMonth.split('-');
+            const lastDay = new Date(y, m, 0, 23, 59, 59);
+            timestamp = lastDay.toISOString();
+          }
+
+          const currentUser = DB.get(DB.KEYS.CURRENT_USER);
+          const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
+          const itemCount = parsedItems.length;
+
+          let masterUpdateCount = 0;
+          let masterAddCount = 0;
+
+          parsedItems.forEach(item => {
+            const pData = item.product;
+            const existingIdx = products.findIndex(p => p.id === pData.id || (pData.name && p.name === pData.name));
+            
+            if (existingIdx >= 0) {
+              products[existingIdx].price = item.unitPrice;
+              masterUpdateCount++;
+            } else {
+              products.push({
+                id: pData.id,
+                name: pData.name,
+                category: pData.category || '99',
+                price: item.unitPrice,
+                isFixed: false
+              });
+              masterAddCount++;
+            }
+          });
+          DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+          const currentMonth = targetMonth || new Date().toISOString().substring(0, 7);
+
+          if (targetMonth) {
+            products.forEach(p => {
+              if (p.tempMonth === currentMonth) {
+                delete p.tempQty;
+                delete p.tempWorker;
+                delete p.tempWorkerName;
+                delete p.tempTimestamp;
+                delete p.tempMonth;
+                delete p.tempId;
+              }
+            });
+
+            let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+            const initialTempScansLength = tempScans.length;
+            tempScans = tempScans.filter(s => s.month !== currentMonth);
+            if (tempScans.length !== initialTempScansLength) {
+              DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
+            }
+          }
+
+          parsedItems.forEach(item => {
+            const prod = products.find(p => p.id === item.product.id);
+            if (prod) {
+              prod.tempQty = item.quantity;
+              prod.tempWorker = currentUser.username;
+              prod.tempWorkerName = currentUser.displayName;
+              prod.tempTimestamp = timestamp;
+              prod.tempMonth = currentMonth;
+              prod.tempId = Date.now() + "_" + item.product.id;
+            }
+          });
+          DB.save(DB.KEYS.INV_PRODUCTS, products);
+          
+          toast(`✅ ${itemCount}件のデータを仮登録しました(新規:${masterAddCount}, 更新:${masterUpdateCount})。「棚卸スキャン確認」画面から確定処理を行ってください`, 'success');
+
+          // 初期化
+          if (fileInput) fileInput.value = '';
+          if (monthInput) monthInput.value = '';
+          renderTodayInvLogs();
+          
+        } catch (err) {
+          console.error(err);
+          toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
+        } finally {
+          importBtn.disabled = false;
+          importBtn.textContent = '📥 取り込み実行';
+          fileInput.disabled = false;
+          if (monthInput) monthInput.disabled = false;
         }
-        console.log(`🧹 対象月(${currentMonth})の既存仮データをクリアしました`);
-      }
-
-      parsedItems.forEach(item => {
-        const prod = products.find(p => p.id === item.product.id);
-        if (prod) {
-          prod.tempQty = item.quantity;
-          prod.tempWorker = currentUser.username;
-          prod.tempWorkerName = currentUser.displayName;
-          prod.tempTimestamp = timestamp;
-          prod.tempMonth = currentMonth;
-          prod.tempId = Date.now() + "_" + item.product.id;
-        }
-      });
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
-      console.log('✅ Excel仮取込: 完了');
-      
-      toast(`${itemCount}件の棚卸データを仮登録しました。「棚卸スキャン確認」画面にて確認・確定処理を行ってください（マスタ新規:${masterAddCount}, 更新:${masterUpdateCount}）`, 'success');
-
-      // 初期化
-      parsedItems = [];
-      previewDiv.style.display = 'none';
-      if (fileInput) fileInput.value = '';
-      if (monthInput) monthInput.value = '';
-      
-      renderTodayInvLogs();
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '確定して登録';
-    };
-  }
+      };
+      reader.readAsArrayBuffer(file);
+    }, 100); // UIスレッドの更新を待つ
+  };
 }
 
 window.forceReloadMaster = function() {
