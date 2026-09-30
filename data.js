@@ -794,10 +794,10 @@ const DB = {
             this.save(this.KEYS.BACKUPS, backups);
         }
     },
-    // BOM強制アップデート (v5.03)
+    // BOM強制アップデート (v6.00)
     applyLatestBom() {
         if (localStorage.getItem('pms_bom_v503_applied') !== 'true') {
-            console.log('🔄 v5.03の最新BOMデータを強制適用します...');
+            console.log('🔄 v6.00の最新BOMデータを強制適用します...');
             this.save(this.KEYS.BOM, NEW_BOM_DATA);
             localStorage.setItem('pms_bom_v503_applied', 'true');
         }
@@ -830,7 +830,7 @@ function refreshCurrentPage() {
 }
 
 
-// 最新のBOMデータ (v5.02)
+// 最新のBOMデータ (v6.00)
 const NEW_BOM_DATA = [
     {
         "id": 1,

@@ -6415,7 +6415,11 @@ function setupInvExcelImport() {
             const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
             const amountRaw = row[colIndex.amountWithTax];
             const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
-            const unitPrice = quantity > 0 ? (amount / quantity) : 0;
+            const unitPriceRaw = row[colIndex.unitPrice];
+            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            if (unitPrice === 0 && quantity > 0) {
+              unitPrice = (amount / quantity);
+            }
 
             let matchedProduct = products.find(p => p.id === productCode);
             
@@ -6653,7 +6657,11 @@ function setupInitialDataImport() {
             const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
             const amountRaw = row[colIndex.amount];
             const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
-            const unitPrice = quantity > 0 ? (amount / quantity) : 0;
+            const unitPriceRaw = row[colIndex.unitPrice];
+            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            if (unitPrice === 0 && quantity > 0) {
+              unitPrice = (amount / quantity);
+            }
 
             qtyMap[productCode] = { quantity, name: productName, category, unitPrice, amount };
           });
@@ -10021,3 +10029,125 @@ function printInvCheckQrs() {
   sessionStorage.setItem('print_qr_ids', JSON.stringify(ids));
   window.open('print_qrs.html', '_blank');
 }
+
+// ==========================================
+// AIマスターチェック機能
+// ==========================================
+
+function openAiSettingsModal() {
+  const currentKey = localStorage.getItem('AI_API_KEY') || '';
+  const body = `
+    <div class="form-group">
+      <label>Google Gemini API キー</label>
+      <input type="password" id="ai-api-key-input" class="form-input" value="${currentKey}" placeholder="AIzaSy...">
+      <p style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">APIキーはご自身のブラウザ（ローカル）にのみ保存され、外部サーバーには送信されません。</p>
+    </div>
+  `;
+  const footer = `
+    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+    <button class="btn btn-primary" onclick="saveAiApiKey()">保存</button>
+  `;
+  showModal('⚙️ AI設定', body, footer);
+}
+
+function saveAiApiKey() {
+  const key = $('#ai-api-key-input').value.trim();
+  localStorage.setItem('AI_API_KEY', key);
+  closeModal();
+  toast('AI設定を保存しました', 'success');
+}
+
+async function runAiMasterCheck() {
+  const apiKey = localStorage.getItem('AI_API_KEY');
+  if (!apiKey) {
+    toast('先に「AI設定」からAPIキーを登録してください', 'warning');
+    return;
+  }
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  if (products.length === 0) {
+    toast('商品マスタが登録されていません', 'warning');
+    return;
+  }
+
+  // AIに送信するデータを生成（名前、単価、分類などの簡易リスト）
+  const payloadData = products.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    price: p.price,
+    isFixed: p.isFixed
+  }));
+
+  const prompt = `
+# 命令書
+あなたはプロのデータアナリストであり、生産管理システムのマスターデータ管理者です。
+以下の「商品マスターデータ」をチェックし、問題点や不整合を抽出してレポートを作成してください。
+
+# チェック項目
+1. 単価が0円のままになっている商品（※不動品や仕掛品を除く）
+2. 分類が不明または未設定（"99"など）になっている商品
+3. 商品名と分類が明らかに矛盾しているもの
+4. その他、データとしての異常値
+
+# 条件
+- 簡潔で分かりやすい箇条書きで出力してください。
+- 異常がない場合は「異常なし」と出力してください。
+- 出力フォーマットはHTMLとして画面表示しやすい形式（タグを使用して装飾）としてください。
+
+# 商品マスターデータ
+${JSON.stringify(payloadData)}
+  `;
+
+  // モーダルで「チェック中」表示
+  showModal('🤖 AIマスターチェック', '<div style="text-align: center; padding: 2rem;">🔄 AIにデータを送信しチェックしています...<br>しばらくお待ちください。</div>', '');
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'APIリクエストに失敗しました');
+    }
+
+    const data = await response.json();
+    let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || '結果を取得できませんでした。';
+
+    // MarkdownからHTMLへの簡易変換
+    aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
+
+    const body = `
+      <div style="background: var(--color-bg-secondary); padding: 16px; border-radius: 8px; max-height: 60vh; overflow-y: auto;">
+        ${aiResult}
+      </div>
+    `;
+    const footer = `
+      <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
+    `;
+    showModal('🤖 AIマスターチェック結果', body, footer);
+
+  } catch (error) {
+    console.error('AI Check Error:', error);
+    showModal('エラー', `<p style="color: red;">AIチェック中にエラーが発生しました。</p><p>${error.message}</p>`, '<button class="btn btn-secondary" onclick="closeModal()">閉じる</button>');
+  }
+}
+
+// ボタンへのイベント追加
+document.addEventListener('DOMContentLoaded', () => {
+  const aiCheckBtn = $('#ai-master-check-btn');
+  if (aiCheckBtn) aiCheckBtn.addEventListener('click', runAiMasterCheck);
+
+  const aiSettingsBtn = $('#ai-api-settings-btn');
+  if (aiSettingsBtn) aiSettingsBtn.addEventListener('click', openAiSettingsModal);
+});
