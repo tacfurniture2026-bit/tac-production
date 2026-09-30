@@ -6446,8 +6446,8 @@ function setupInvExcelImport() {
             const prod = products.find(p => p.id === item.product.id);
             if (prod) {
               prod.tempQty = item.quantity;
-              prod.tempWorker = currentUser.username;
-              prod.tempWorkerName = currentUser.displayName;
+              prod.tempWorker = (currentUser && currentUser.username) ? currentUser.username : 'unknown';
+              prod.tempWorkerName = (currentUser && currentUser.displayName) ? currentUser.displayName : '未設定';
               prod.tempTimestamp = timestamp;
               prod.tempMonth = currentMonth;
               prod.tempId = Date.now() + "_" + item.product.id;
