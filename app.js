@@ -895,7 +895,7 @@ function jumpToOrder(orderId) {
   
   // 該当オーダーを強調表示するための処理
   setTimeout(() => {
-    const row = document.querySelector(`.order-row[data-order-id="${orderId}"]`);
+    const row = document.getElementById(`order-row-${orderId}`);
     if (row) {
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
       row.style.transition = 'background-color 0.5s';
@@ -6493,6 +6493,30 @@ function setupInvExcelImport() {
 
       // 棚卸仮データに追加 (INV_PRODUCTS 内への埋め込み UPSERT)
       const currentMonth = targetMonth || new Date().toISOString().substring(0, 7);
+
+      // 対象月指定がある場合、同月（currentMonth）の仮スキャンデータをクリアして上書きする
+      if (targetMonth) {
+        // 1. INV_PRODUCTS に残っている同月の仮データをクリア
+        products.forEach(p => {
+          if (p.tempMonth === currentMonth) {
+            delete p.tempQty;
+            delete p.tempWorker;
+            delete p.tempWorkerName;
+            delete p.tempTimestamp;
+            delete p.tempMonth;
+            delete p.tempId;
+          }
+        });
+
+        // 2. INV_SCAN_TEMP にある同月の仮データをクリア
+        let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+        const initialTempScansLength = tempScans.length;
+        tempScans = tempScans.filter(s => s.month !== currentMonth);
+        if (tempScans.length !== initialTempScansLength) {
+          DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
+        }
+        console.log(`🧹 対象月(${currentMonth})の既存仮データをクリアしました`);
+      }
 
       parsedItems.forEach(item => {
         const prod = products.find(p => p.id === item.product.id);
