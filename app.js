@@ -6756,13 +6756,13 @@ function setupInitialDataImport() {
             if (p.isFixed) {
               const catKey = 'fixed';
               if (!summary[catKey]) summary[catKey] = { name: '不動品', amount: 0, diff: 0, prevAmount: 0 };
-              summary[catKey].amount += amount;
-              summary[catKey].diff += amount;
+              summary[catKey].amount += itemAmount;
+              summary[catKey].diff += itemAmount;
             } else {
               const catKey = p.category || '99';
               if (!summary[catKey]) summary[catKey] = { name: (INV_CATEGORIES[catKey] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
-              summary[catKey].amount += amount;
-              summary[catKey].diff += amount;
+              summary[catKey].amount += itemAmount;
+              summary[catKey].diff += itemAmount;
             }
           });
 
