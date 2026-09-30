@@ -8523,10 +8523,11 @@ window.clearAllInventoryData = function() {
   if (!confirm('【危険】本当に1月からのすべての棚卸データ（在庫履歴・仮スキャンデータ）を削除しますか？\n※商品マスタは削除されません。\n※この操作は元に戻せません。')) return;
 
   // 在庫履歴と仮スキャンデータを空にする
-  DB.save(DB.KEYS.INV_STOCK, []);
+  DB.save(DB.KEYS.INV_MONTHLY, []);
+  DB.save(DB.KEYS.INV_LOGS, []);
   DB.save(DB.KEYS.INV_SCAN_TEMP, []);
   
-  // 商品マスタ内の棚卸関連の一時フィールドもクリアする
+  // 商品マスタ内の棚卸関連の一時フィールドおよび在庫数をクリアする
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   products.forEach(p => {
     delete p.tempQty;
@@ -8535,6 +8536,11 @@ window.clearAllInventoryData = function() {
     delete p.tempTimestamp;
     delete p.tempMonth;
     delete p.tempId;
+    
+    // 現在庫・前月在庫・最終棚卸日のリセット
+    p.stock = 0;
+    p.lastStock = 0;
+    delete p.inventoryDate;
   });
   DB.save(DB.KEYS.INV_PRODUCTS, products);
 
