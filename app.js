@@ -6699,10 +6699,13 @@ function setupInitialDataImport() {
               productId: p.id,
               name: p.name,
               category: p.category,
-              quantity: qty,
               price: price,
+              isFixed: !!p.isFixed,
+              prevQty: 0,
+              currQty: qty,
+              diff: qty,
               amount: amount,
-              isFixed: !!p.isFixed
+              tacFee: amount * 0.01
             });
 
             totalQty += qty;
@@ -6728,8 +6731,7 @@ function setupInitialDataImport() {
             summary: summary,
             total: { qty: totalQty, amount: totalAmount },
             fixedTotal: summary['fixed'].amount || 0,
-            activeTotal: totalAmount - (summary['fixed'].amount || 0),
-            timestamp: new Date().toISOString()
+            closedAt: new Date().toISOString()
           };
 
           const allMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
@@ -6740,10 +6742,13 @@ function setupInitialDataImport() {
             allMonthly.push(monthlyData);
             allMonthly.sort((a, b) => a.month.localeCompare(b.month));
           }
+          // Firebaseのエラー(undefined混入)を防ぐためクリーンアップ
+          const cleanProducts = JSON.parse(JSON.stringify(products));
+          const cleanAllMonthly = JSON.parse(JSON.stringify(allMonthly));
           
           Promise.all([
-            DB.save(DB.KEYS.INV_PRODUCTS, products),
-            DB.save(DB.KEYS.INV_MONTHLY, allMonthly)
+            DB.save(DB.KEYS.INV_PRODUCTS, cleanProducts),
+            DB.save(DB.KEYS.INV_MONTHLY, cleanAllMonthly)
           ]).then(() => {
             alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
             location.reload();
