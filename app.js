@@ -6647,7 +6647,7 @@ function setupInitialDataImport() {
               const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
               const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
               const unitPriceRaw = row[colIndex.unitPrice];
-              const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
+              const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
 
               qtyMap[productCode] = { quantity, name: productName, category, unitPrice };
             }
@@ -6692,8 +6692,8 @@ function setupInitialDataImport() {
             p.lastStock = qty; // 初月なので前月在庫も同じにする（差分ゼロ扱い）
             if (qty > 0) p.inventoryDate = lastDay;
             
-            // エクセルから読み取った単価があれば、システムの単価を上書きする
-            if (qtyData && qtyData.unitPrice > 0) {
+            // エクセルに記載がある商品については、単価が0円でも強制的にシステムの単価を上書きする
+            if (qtyData) {
               p.price = qtyData.unitPrice;
             }
             
