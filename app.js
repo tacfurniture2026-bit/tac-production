@@ -6336,22 +6336,67 @@ function setupInvExcelImport() {
           
           const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
           let parsedItems = [];
+          
+          // ヘッダー行の特定
+          let headerRow = rows[0] || [];
+          if (headerRow.length < 5 && rows.length > 1) {
+            headerRow = rows[1];
+          }
+
+          let colIndex = {
+            id: 4,        // E列
+            name: 6,      // G列
+            category: 1,  // B列
+            unitPrice: 13,// N列
+            quantity: 18, // S列
+            amount: 19,   // T列
+            amountWithTax: 20 // U列
+          };
+
+          const findCol = (keywords) => {
+            const idx = headerRow.findIndex(h => {
+              if (h === undefined || h === null) return false;
+              const text = String(h).replace(/\s+/g, '');
+              return keywords.some(k => text.includes(k));
+            });
+            return idx;
+          };
+
+          const idxId = findCol(['ID', 'ＩＤ', 'コード', '資材']);
+          if (idxId >= 0) colIndex.id = idxId;
+          const idxName = findCol(['品名', '商品名']);
+          if (idxName >= 0) colIndex.name = idxName;
+          const idxCategory = findCol(['分類', 'カテゴリ']);
+          if (idxCategory >= 0) colIndex.category = idxCategory;
+          const idxPrice = findCol(['単価']);
+          if (idxPrice >= 0) colIndex.unitPrice = idxPrice;
+          const idxQty = findCol(['実棚', '数量', '数']);
+          if (idxQty >= 0) colIndex.quantity = idxQty;
+          
+          let skippedZeroPriceCount = 0;
+          let skippedNoQtyCount = 0;
 
           rows.forEach((row, rowIndex) => {
             if (rowIndex < 2) return; 
             
-            const sColValue = row[18];
-            if (sColValue === undefined || sColValue === null || sColValue === '') return;
+            const sColValue = row[colIndex.quantity];
+            if (sColValue === undefined || sColValue === null || sColValue === '') {
+              skippedNoQtyCount++;
+              return;
+            }
             
             const quantity = parseInt(sColValue, 10);
-            if (isNaN(quantity)) return;
+            if (isNaN(quantity)) {
+              skippedNoQtyCount++;
+              return;
+            }
 
-            const productCode = row[4] ? String(row[4]).trim() : '';
-            const productName = row[6] ? String(row[6]).trim() : '';
-            const category = row[1] ? String(row[1]).trim() : '99';
-            const unitPriceRaw = row[13];
-            const amountRaw = row[19];
-            const amountWithTaxRaw = row[20];
+            const productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+            const unitPriceRaw = row[colIndex.unitPrice];
+            const amountRaw = row[colIndex.amount];
+            const amountWithTaxRaw = row[colIndex.amountWithTax];
             
             const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
             const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
@@ -6365,6 +6410,7 @@ function setupInvExcelImport() {
             const isAllowedZero = /(仕掛品|不動|死蔵)/.test(catName) || /(仕掛品|不動|死蔵)/.test(productName) || isFixedProd;
 
             if (unitPrice <= 0 && !isAllowedZero) {
+              skippedZeroPriceCount++;
               return;
             }
             
@@ -6403,6 +6449,18 @@ function setupInvExcelImport() {
           const currentUser = DB.get(DB.KEYS.CURRENT_USER);
           const userName = (currentUser && currentUser.displayName) ? currentUser.displayName : (currentUser && currentUser.username) ? currentUser.username : '未設定';
           const itemCount = parsedItems.length;
+          
+          let alertMsg = `✅ ${itemCount}件のデータを仮登録しました。`;
+          if (skippedZeroPriceCount > 0) {
+            alertMsg += `\n⚠️ 単価0円のため ${skippedZeroPriceCount}件 スキップしました。`;
+          }
+          if (skippedNoQtyCount > 0) {
+            // alertMsg += `\n⚠️ 数量が空欄のため ${skippedNoQtyCount}件 スキップしました。`;
+          }
+          
+          setTimeout(() => {
+            alert(alertMsg);
+          }, 500);
 
           let masterUpdateCount = 0;
           let masterAddCount = 0;
