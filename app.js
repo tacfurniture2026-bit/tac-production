@@ -6759,8 +6759,8 @@ function setupInitialDataImport() {
             
             alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
             
-            // リロードによるログイン画面への遷移を防ぐため、UIを再描画する
-            closeModal('initial-data-modal');
+            // 入力フォームをクリアしてUIを再描画する
+            if (fileInput) fileInput.value = '';
             if (typeof renderInvCheckPage === 'function') {
               renderInvCheckPage();
             } else if (typeof refreshCurrentPage === 'function') {
