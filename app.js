@@ -6719,7 +6719,7 @@ function setupInitialDataImport() {
             }
           });
 
-          DB.save(DB.KEYS.INV_PRODUCTS, products);
+          // (INV_PRODUCTS の保存は後でまとめて行う)
 
           // INV_MONTHLY レコードの生成
           const monthlyData = {
@@ -6740,10 +6740,19 @@ function setupInitialDataImport() {
             allMonthly.push(monthlyData);
             allMonthly.sort((a, b) => a.month.localeCompare(b.month));
           }
-          DB.save(DB.KEYS.INV_MONTHLY, allMonthly);
-
-          alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
-          location.reload();
+          
+          Promise.all([
+            DB.save(DB.KEYS.INV_PRODUCTS, products),
+            DB.save(DB.KEYS.INV_MONTHLY, allMonthly)
+          ]).then(() => {
+            alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
+            location.reload();
+          }).catch(err => {
+            console.error(err);
+            toast('データの保存中にエラーが発生しました: ' + (err.message || ''), 'error');
+            importBtn.disabled = false;
+            importBtn.textContent = '🚀 初期データとして確定登録する';
+          });
           
             } catch (err) {
               console.error(err);

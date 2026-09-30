@@ -367,20 +367,27 @@ const DB = {
         // Firebase同期前の空データ上書きを防止
         if (typeof useFirebase !== 'undefined' && useFirebase && !this._loaded[key]) {
             console.warn(`⚠️ ${key} の保存をスキップ: Firebaseからの初回読み込みが未完了です`);
-            return;
+            return Promise.resolve(false);
         }
 
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
-            firebaseDB.ref(fbKey).set(data)
-                .then(() => console.log(`💾 ${fbKey} 保存完了`))
-                .catch(err => console.error(`❌ ${fbKey} 保存エラー:`, err));
             this._cache[key] = data;
             // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
             localStorage.setItem(key, JSON.stringify(data));
+            return firebaseDB.ref(fbKey).set(data)
+                .then(() => {
+                    console.log(`💾 ${fbKey} 保存完了`);
+                    return true;
+                })
+                .catch(err => {
+                    console.error(`❌ ${fbKey} 保存エラー:`, err);
+                    throw err;
+                });
         } else {
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+            return Promise.resolve(true);
         }
     },
 
