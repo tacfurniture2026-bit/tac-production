@@ -6330,21 +6330,49 @@ function setupInvExcelImport() {
             workbook = XLSX.read(data, { type: 'array' });
           }
           
-          const sheetName = workbook.SheetNames.find(n => n.includes('提出書類')) || workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
+          // 全シートを走査して、最も「ヘッダー行」らしい行を持つシートと行インデックスを特定する
+          let bestSheetName = workbook.SheetNames[0];
+          let bestHeaderRowIndex = 0;
+          let bestHeaderRow = [];
+          let maxHeaderScore = -1;
+
+          workbook.SheetNames.forEach(sName => {
+            const tempSheet = workbook.Sheets[sName];
+            const tempRows = XLSX.utils.sheet_to_json(tempSheet, { header: 1 });
+            for (let i = 0; i < Math.min(tempRows.length, 20); i++) {
+              const row = tempRows[i];
+              if (!row || row.length === 0) continue;
+              
+              let score = 0;
+              const rowText = String(row.join(' ')).replace(/\s+/g, '');
+              if (rowText.includes('コード') || rowText.includes('資材') || rowText.includes('ID')) score++;
+              if (rowText.includes('品名') || rowText.includes('商品名')) score++;
+              if (rowText.includes('分類') || rowText.includes('カテゴリ')) score++;
+              if (rowText.includes('単価')) score++;
+              if (rowText.includes('実棚') || rowText.includes('数量') || rowText.includes('数')) score++;
+              if (rowText.includes('金額')) score++;
+              
+              if (score > maxHeaderScore) {
+                maxHeaderScore = score;
+                bestHeaderRowIndex = i;
+                bestHeaderRow = row;
+                bestSheetName = sName;
+              }
+            }
+          });
+
+          // 最適なシートと行で確定
+          const sheet = workbook.Sheets[bestSheetName];
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          
+          let headerRow = bestHeaderRow;
+
+          console.log(`Excel解析: シート[${bestSheetName}], ヘッダー行[${bestHeaderRowIndex}], スコア[${maxHeaderScore}]`);
+
           const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
           let parsedItems = [];
-          
-          // ヘッダー行の特定
-          let headerRow = rows[0] || [];
-          if (headerRow.length < 5 && rows.length > 1) {
-            headerRow = rows[1];
-          }
 
           let colIndex = {
-            id: 4,        // E列
+            id: 4,        // デフォルト: E列
             name: 6,      // G列
             category: 1,  // B列
             unitPrice: 13,// N列
@@ -6377,9 +6405,11 @@ function setupInvExcelImport() {
           let skippedNoQtyCount = 0;
 
           rows.forEach((row, rowIndex) => {
-            if (rowIndex < 2) return; 
+            // ヘッダー行以前の行はスキップ
+            if (rowIndex <= bestHeaderRowIndex) return; 
             
             const sColValue = row[colIndex.quantity];
+            // 数量が未記入、もしくは数値として解釈できない行はスキップ
             if (sColValue === undefined || sColValue === null || sColValue === '') {
               skippedNoQtyCount++;
               return;
@@ -8365,24 +8395,37 @@ window.submitCategoryEdit = function(productId) {
 
 // 単価未登録商品の価格設定モーダル
 function showPriceRegisterModal(unpricedItems, onSaveCallback) {
-  const rowsHtml = unpricedItems.map(item => `
+  const categoriesHtml = typeof INV_CATEGORIES !== 'undefined' ? 
+    Object.entries(INV_CATEGORIES).map(([k, v]) => ({code: k, name: v})) : [];
+    
+  const rowsHtml = unpricedItems.map(item => {
+    const selectOptions = categoriesHtml.map(cat => 
+      `<option value="${cat.code}" ${cat.code === item.category ? 'selected' : ''}>${cat.name}</option>`
+    ).join('');
+    
+    return `
     <tr>
       <td><strong>${item.productId}</strong></td>
-      <td><span style="font-size: 0.85rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${item.categoryName || ''}</span></td>
+      <td>
+        <select class="form-input quick-category-select" data-product-id="${item.productId}" style="width: 130px; font-size: 0.85rem; padding: 4px;">
+          ${selectOptions}
+        </select>
+      </td>
       <td>${item.name}</td>
       <td>
         <input type="number" class="form-input quick-price-input" 
-               data-product-id="${item.productId}" value="0" min="1" 
+               data-product-id="${item.productId}" value="0" min="0" 
                style="width:120px; font-weight:bold; font-size:1.1rem; text-align:right;"> 円
       </td>
     </tr>
-  `).join('');
+    `;
+  }).join('');
 
   const body = `
     <div style="padding: 1rem; max-height: 400px; overflow-y: auto;">
       <p style="margin-bottom: 1rem; color: #b91c1c; font-weight: 600; font-size: 0.95rem; line-height: 1.5;">
         ⚠️ 以下の商品の単価が未登録です。価格未登録のまま締め処理を実行することはできません。<br>
-        すべての商品の単価を入力してください（1円以上）。
+        すべての商品の単価（1円以上）または分類（仕掛品・不動・死蔵など）を入力・選択してください。
       </p>
       <table class="table" style="width: 100%;">
         <thead>
@@ -8411,20 +8454,37 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
   if (submitBtn) {
     submitBtn.onclick = function() {
       const inputs = document.querySelectorAll('.quick-price-input');
+      const categorySelects = document.querySelectorAll('.quick-category-select');
       const priceUpdates = {};
+      const categoryUpdates = {};
       let allValid = true;
 
       inputs.forEach(input => {
         const pid = input.dataset.productId;
         const price = parseInt(input.value) || 0;
-        if (price <= 0) {
+        priceUpdates[pid] = price;
+      });
+      
+      categorySelects.forEach(select => {
+        const pid = select.dataset.productId;
+        const cat = select.value;
+        categoryUpdates[pid] = cat;
+      });
+
+      // バリデーション：0円以下でも、分類が仕掛品・不動・死蔵ならOKとする
+      Object.keys(priceUpdates).forEach(pid => {
+        const price = priceUpdates[pid];
+        const cat = categoryUpdates[pid] || '';
+        const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[cat] || cat) : cat;
+        const isAllowedZero = /(仕掛品|不動|死蔵)/.test(catName);
+        
+        if (price <= 0 && !isAllowedZero) {
           allValid = false;
         }
-        priceUpdates[pid] = price;
       });
 
       if (!allValid) {
-        alert('すべての商品に1円以上の単価を入力してください。');
+        alert('単価が0円の商品は登録できません。（※分類を「仕掛品」「死蔵」「不動品」に変更した場合は0円でも登録可能です）');
         return;
       }
 
@@ -8433,6 +8493,7 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
       products.forEach(p => {
         if (priceUpdates[p.id] !== undefined) {
           p.price = priceUpdates[p.id];
+          p.category = categoryUpdates[p.id] || p.category;
         }
       });
       DB.save(DB.KEYS.INV_PRODUCTS, products);
@@ -8586,6 +8647,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false) {
       productId: pid,
       name: prod.name,
       price: prod.price || 0,
+      category: prod.category || '99',
       categoryName: catName,
       isFixed: !!prod.isFixed
     };
