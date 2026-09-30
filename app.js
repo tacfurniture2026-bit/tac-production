@@ -6597,7 +6597,7 @@ function setupInitialDataImport() {
       return;
     }
 
-    toast('初期データとして登録中...', 'info');
+    toast('ファイル読み込み中...', 'info');
     importBtn.disabled = true;
     importBtn.textContent = '処理中...';
 
@@ -6605,28 +6605,31 @@ function setupInitialDataImport() {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const data = new Uint8Array(e.target.result);
-          let workbook;
-          if (file.name.toLowerCase().endsWith('.csv')) {
-            const text = new TextDecoder('shift-jis').decode(data);
-            workbook = XLSX.read(text, { type: 'string' });
-          } else {
-            workbook = XLSX.read(data, { type: 'array' });
-          }
-          
-          let targetSheetName = workbook.SheetNames.find(name => name.includes('提出書類')) || workbook.SheetNames[0];
-          const sheet = workbook.Sheets[targetSheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          toast('データ解析中...', 'info');
+          setTimeout(() => {
+            try {
+              const data = new Uint8Array(e.target.result);
+              let workbook;
+              if (file.name.toLowerCase().endsWith('.csv')) {
+                const text = new TextDecoder('shift-jis').decode(data);
+                workbook = XLSX.read(text, { type: 'string' });
+              } else {
+                workbook = XLSX.read(data, { type: 'array' });
+              }
+              
+              let targetSheetName = workbook.SheetNames.find(name => name.includes('提出書類')) || workbook.SheetNames[0];
+              const sheet = workbook.Sheets[targetSheetName];
+              const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-          const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-          
-          let colIndex = {
-            id: 4,        // E列
-            category: 1,  // B列
-            name: 6,      // G列
-            unitPrice: 13,// N列
-            quantity: 18  // S列
-          };
+              const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+              
+              let colIndex = {
+                id: 4,        // E列
+                category: 1,  // B列
+                name: 6,      // G列
+                unitPrice: 13,// N列
+                quantity: 18  // S列
+              };
           
           let qtyMap = {}; // productId -> { quantity, name, category, unitPrice }
 
@@ -6742,10 +6745,17 @@ function setupInitialDataImport() {
           alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
           location.reload();
           
+            } catch (err) {
+              console.error(err);
+              toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
+            } finally {
+              importBtn.disabled = false;
+              importBtn.textContent = '🚀 初期データとして確定登録する';
+            }
+          }, 100);
         } catch (err) {
           console.error(err);
-          toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
-        } finally {
+          toast('ファイル読み込みエラー: ' + err.message, 'error');
           importBtn.disabled = false;
           importBtn.textContent = '🚀 初期データとして確定登録する';
         }
@@ -8248,6 +8258,10 @@ function renderInvCheckPage() {
   if (monthInput && !monthInput.value) {
     monthInput.value = new Date().toISOString().substring(0, 7);
   }
+
+  // Excel一括取込や初期データ登録ボタンの初期化
+  setupInvExcelImport();
+  setupInitialDataImport();
 
   // Bind buttons & selectors
   const statusFilter = $('#inv-check-filter-status');
