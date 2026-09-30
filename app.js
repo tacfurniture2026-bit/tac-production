@@ -6360,6 +6360,13 @@ function setupInvExcelImport() {
             if (!productCode && !productName) return;
 
             let matchedProduct = products.find(p => p.id === productCode);
+            const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[category] || category) : category;
+            const isFixedProd = matchedProduct ? !!matchedProduct.isFixed : false;
+            const isAllowedZero = /(仕掛品|不動|死蔵)/.test(catName) || /(仕掛品|不動|死蔵)/.test(productName) || isFixedProd;
+
+            if (unitPrice <= 0 && !isAllowedZero) {
+              return;
+            }
             
             const productInfo = matchedProduct || {
               id: productCode || `TEMP_${rowIndex}`,
@@ -8295,6 +8302,7 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
   const rowsHtml = unpricedItems.map(item => `
     <tr>
       <td><strong>${item.productId}</strong></td>
+      <td><span style="font-size: 0.85rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${item.categoryName || ''}</span></td>
       <td>${item.name}</td>
       <td>
         <input type="number" class="form-input quick-price-input" 
@@ -8314,6 +8322,7 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
         <thead>
           <tr>
             <th>資材ID</th>
+            <th>分類</th>
             <th>品名</th>
             <th style="width: 150px;">単価</th>
           </tr>
@@ -8505,13 +8514,20 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false) {
 
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const unpricedItems = Array.from(checkProductIds).map(pid => {
-    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0, isFixed: false };
+    const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[prod.category] || prod.category) : prod.category;
     return {
       productId: pid,
       name: prod.name,
-      price: prod.price || 0
+      price: prod.price || 0,
+      categoryName: catName,
+      isFixed: !!prod.isFixed
     };
-  }).filter(item => item.price <= 0);
+  }).filter(item => {
+    if (item.price > 0) return false;
+    const isAllowedZero = /(仕掛品|不動|死蔵)/.test(item.categoryName) || /(仕掛品|不動|死蔵)/.test(item.name) || item.isFixed;
+    return !isAllowedZero;
+  });
 
   if (unpricedItems.length > 0) {
     showPriceRegisterModal(unpricedItems, () => {
