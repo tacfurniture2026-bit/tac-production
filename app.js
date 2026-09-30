@@ -7656,8 +7656,11 @@ function exportInvMonthlyExcel() {
     ];
     let summaryTotal = 0, summaryDiff = 0;
     
-    // カテゴリ順
-    Object.keys(INV_CATEGORIES).forEach(code => {
+    // カテゴリ順 (INV_CATEGORIESにないものも含める)
+    const allSummaryKeys = Object.keys(currentMonthlyResult.summary);
+    const sortedCodes = allSummaryKeys.filter(k => k !== 'fixed').sort((a, b) => a.localeCompare(b));
+    
+    sortedCodes.forEach(code => {
       if (currentMonthlyResult.summary[code]) {
         const s = currentMonthlyResult.summary[code];
         summaryData.push([code, s.name, s.amount, s.diff]);
@@ -7673,8 +7676,11 @@ function exportInvMonthlyExcel() {
       summaryDiff += s.diff;
     }
     
-    summaryData.push(['', '合計', summaryTotal, summaryDiff]);
-    summaryData.push(['', '1.01（TAC口銭1%）', Math.round(summaryTotal * 1.01), '']);
+    const displayTotal = Math.round(currentMonthlyResult.total);
+    const totalDiff = Math.round(currentMonthlyResult.total - currentMonthlyResult.prevTotal);
+    
+    summaryData.push(['', '合計', displayTotal, totalDiff]);
+    summaryData.push(['', '1.01（TAC口銭1%）', Math.round(displayTotal * 1.01), '']);
     
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, '月次集計');
@@ -7972,8 +7978,9 @@ function displayInvMonthlyResult(result) {
   // カテゴリデータを収集
   const categoryData = [];
 
-  // カテゴリ順にソートしてループ
-  const sortedCodes = Object.keys(INV_CATEGORIES).sort((a, b) => a.localeCompare(b));
+  // カテゴリ順にソートしてループ（INV_CATEGORIESにないものも含める）
+  const allSummaryKeys = Object.keys(result.summary);
+  const sortedCodes = allSummaryKeys.filter(k => k !== 'fixed').sort((a, b) => a.localeCompare(b));
   
   sortedCodes.forEach(code => {
     if (result.summary[code]) {
@@ -8000,7 +8007,9 @@ function displayInvMonthlyResult(result) {
     categoryData.push({ name: '不動品', amount: roundedAmount, isFixed: true });
   }
 
-  const tacTotal = Math.round(summaryTotal * 1.01);
+  // 画面上部の大きな金額には、全明細の正確な合計額を使用する
+  const displayTotal = Math.round(result.total);
+  const tacTotal = Math.round(displayTotal * 1.01);
 
   // 分類別グラフバー生成
   const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
@@ -8021,8 +8030,8 @@ function displayInvMonthlyResult(result) {
   }).join('');
 
   // ドーナツ風サマリー
-  const normalPercent = summaryTotal > 0 ? Math.round((normalTotal / summaryTotal) * 100) : 0;
-  const fixedPercent = summaryTotal > 0 ? Math.round((fixedTotal / summaryTotal) * 100) : 0;
+  const normalPercent = displayTotal > 0 ? Math.round((normalTotal / displayTotal) * 100) : 0;
+  const fixedPercent = displayTotal > 0 ? Math.round((fixedTotal / displayTotal) * 100) : 0;
   const totalDiff = Math.round(result.total - result.prevTotal);
 
   container.innerHTML = `
@@ -8030,7 +8039,7 @@ function displayInvMonthlyResult(result) {
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
       <div class="card" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
-        <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${displayTotal.toLocaleString()}</div>
         <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">
             前月比: <span style="font-weight: bold;">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</span>
         </div>
@@ -8082,8 +8091,8 @@ function displayInvMonthlyResult(result) {
               ${summaryRows}
               <tr style="font-weight: bold; background: var(--color-bg-secondary);">
                 <td>合計</td>
-                <td style="text-align: right;">¥${summaryTotal.toLocaleString()}</td>
-                <td style="text-align: right; color: ${summaryDiff >= 0 ? 'green' : 'red'};">${summaryDiff >= 0 ? '+' : ''}¥${summaryDiff.toLocaleString()}</td>
+                <td style="text-align: right;">¥${displayTotal.toLocaleString()}</td>
+                <td style="text-align: right; color: ${totalDiff >= 0 ? 'green' : 'red'};">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</td>
               </tr>
               <tr class="row-tac-fee">
                 <td>1.01（TAC口銭1%）</td>
