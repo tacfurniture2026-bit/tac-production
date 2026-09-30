@@ -6405,14 +6405,7 @@ function setupInvExcelImport() {
             if (!productCode && !productName) return;
 
             let matchedProduct = products.find(p => p.id === productCode);
-            const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[category] || category) : category;
-            const isFixedProd = matchedProduct ? !!matchedProduct.isFixed : false;
-            const isAllowedZero = /(仕掛品|不動|死蔵)/.test(catName) || /(仕掛品|不動|死蔵)/.test(productName) || isFixedProd;
-
-            if (unitPrice <= 0 && !isAllowedZero) {
-              skippedZeroPriceCount++;
-              return;
-            }
+            // 単価0円でのスキップ条件を廃止。0円でも取り込み、後の締め処理でエラー判定させる。
             
             const productInfo = matchedProduct || {
               id: productCode || `TEMP_${rowIndex}`,
@@ -6451,9 +6444,10 @@ function setupInvExcelImport() {
           const itemCount = parsedItems.length;
           
           let alertMsg = `✅ ${itemCount}件のデータを仮登録しました。`;
-          if (skippedZeroPriceCount > 0) {
-            alertMsg += `\n⚠️ 単価0円のため ${skippedZeroPriceCount}件 スキップしました。`;
-          }
+          // 単価0円でのスキップを廃止したため、ここはコメントアウト
+          // if (skippedZeroPriceCount > 0) {
+          //   alertMsg += `\n⚠️ 単価0円のため ${skippedZeroPriceCount}件 スキップしました。`;
+          // }
           if (skippedNoQtyCount > 0) {
             // alertMsg += `\n⚠️ 数量が空欄のため ${skippedNoQtyCount}件 スキップしました。`;
           }
@@ -6498,16 +6492,28 @@ function setupInvExcelImport() {
                 delete p.tempId;
               }
             });
+          }
 
-            let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-            const initialTempScansLength = tempScans.length;
+          let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+          if (targetMonth) {
             tempScans = tempScans.filter(s => s.month !== currentMonth);
-            if (tempScans.length !== initialTempScansLength) {
-              DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
-            }
           }
 
           parsedItems.forEach(item => {
+            // INV_SCAN_TEMP に直接追加する
+            const scanId = Date.now() + "_" + Math.random().toString(36).substr(2, 9) + "_" + item.product.id;
+            tempScans.push({
+                id: scanId,
+                productId: item.product.id,
+                quantity: item.quantity,
+                worker: (currentUser && currentUser.username) ? currentUser.username : 'unknown',
+                workerName: (currentUser && currentUser.displayName) ? currentUser.displayName : '未設定',
+                timestamp: timestamp,
+                month: currentMonth,
+                type: 'count_temp'
+            });
+            
+            // 下位互換性のためproductsにもセットしておく
             const prod = products.find(p => p.id === item.product.id);
             if (prod) {
               prod.tempQty = item.quantity;
@@ -6515,9 +6521,11 @@ function setupInvExcelImport() {
               prod.tempWorkerName = (currentUser && currentUser.displayName) ? currentUser.displayName : '未設定';
               prod.tempTimestamp = timestamp;
               prod.tempMonth = currentMonth;
-              prod.tempId = Date.now() + "_" + item.product.id;
+              prod.tempId = scanId;
             }
           });
+          
+          DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
           DB.save(DB.KEYS.INV_PRODUCTS, products);
           
           // 初期化

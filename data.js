@@ -403,6 +403,8 @@ const DB = {
                 type: 'count_temp'
             }));
 
+        const dedicatedTempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+
         // マージ（同じproductIdがある場合は新しいnewScansを優先）
         const mergedMap = {};
         legacyScans.forEach(scan => {
@@ -413,6 +415,11 @@ const DB = {
         newScans.forEach(scan => {
             if (scan && scan.productId) {
                 mergedMap[scan.productId] = scan; // 上書き
+            }
+        });
+        dedicatedTempScans.forEach(scan => {
+            if (scan && scan.productId) {
+                mergedMap[scan.productId] = scan; // 上書き（これが最新かつ正）
             }
         });
         
