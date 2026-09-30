@@ -6455,12 +6455,20 @@ function setupInvExcelImport() {
           });
           DB.save(DB.KEYS.INV_PRODUCTS, products);
           
-          toast(`✅ ${itemCount}件のデータを仮登録しました(新規:${masterAddCount}, 更新:${masterUpdateCount})。「棚卸スキャン確認」画面から確定処理を行ってください`, 'success');
-
           // 初期化
           if (fileInput) fileInput.value = '';
           if (monthInput) monthInput.value = '';
           renderTodayInvLogs();
+          
+          if (confirm(`${currentMonth} の棚卸データをこのまま確定（締め処理）しますか？\nOKを押すと、現在のデータで直接締め処理を実行します。`)) {
+            setTimeout(() => {
+              if (typeof confirmInvTempData === 'function') {
+                confirmInvTempData(currentMonth, true);
+              }
+            }, 100);
+          } else {
+            toast('後ほど「棚卸スキャン確認」画面から確定処理を行ってください', 'info');
+          }
           
         } catch (err) {
           console.error(err);
@@ -8458,8 +8466,9 @@ function undoConfirmInvTempData() {
 }
 
 // Confirm temp data and close month
-function confirmInvTempData() {
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
+function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false) {
+  const monthInput = $('#inv-check-month');
+  const selectedMonth = overrideMonth || (monthInput ? monthInput.value : null) || new Date().toISOString().substring(0, 7);
   
   // Calculate missing scans to prompt user
   const tempScans = DB.getTempScans() || [];
@@ -8506,7 +8515,7 @@ function confirmInvTempData() {
 
   if (unpricedItems.length > 0) {
     showPriceRegisterModal(unpricedItems, () => {
-      confirmInvTempData();
+      confirmInvTempData(overrideMonth, skipNormalConfirm);
     });
     return;
   }
@@ -8524,7 +8533,9 @@ function confirmInvTempData() {
     confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
   }
 
-  if (!confirm(confirmMsg)) return;
+  if (!skipNormalConfirm || missingCount > 0) {
+    if (!confirm(confirmMsg)) return;
+  }
 
   // Let's perform final closing:
   // 1. Clean existing type count logs AND count_temp logs for this month from INV_LOGS
