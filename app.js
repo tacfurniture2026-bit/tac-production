@@ -6677,8 +6677,12 @@ function setupInitialDataImport() {
           let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
           tempScans = tempScans.filter(s => s.month !== targetMonth); // 当月の仮登録をクリアして作り直す
 
+          let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+          // 対象月の count ログを掃除する（何度もやり直した場合の重複を防ぐ）
+          logs = logs.filter(l => !(l.timestamp && l.timestamp.startsWith(targetMonth) && l.type === 'count'));
+
           // 商品マスタの在庫を一括更新
-          products.forEach(p => {
+          products.forEach((p, index) => {
             const qtyData = qtyMap[p.id];
             
             // エクセルに載っていない商品については、在庫0に上書きせず元の在庫を維持する
@@ -6687,6 +6691,11 @@ function setupInitialDataImport() {
             p.stock = qty;
             p.lastStock = qty; // 初月なので前月在庫も同じにする（差分ゼロ扱い）
             if (qty > 0) p.inventoryDate = lastDay;
+            
+            // エクセルから読み取った単価があれば、システムの単価を上書きする
+            if (qtyData && qtyData.unitPrice > 0) {
+              p.price = qtyData.unitPrice;
+            }
             
             // 棚卸確認画面で「実棚数量」として確認できるように、仮登録データもセットする
             p.tempQty = qty;
@@ -6707,6 +6716,17 @@ function setupInitialDataImport() {
                 timestamp: lastDay,
                 month: targetMonth,
                 type: 'count_temp'
+            });
+
+            // 在庫検索画面でも在庫数として反映されるよう、システム履歴（INV_LOGS）に確定記録を残す
+            logs.push({
+              id: Date.now() + index,
+              productId: p.id,
+              quantity: qty,
+              type: 'count',
+              worker: p.tempWorkerName,
+              note: `初期データ一括登録(${targetMonth})`,
+              timestamp: lastDay
             });
             
             const price = parseFloat(p.price) || 0;
@@ -6743,6 +6763,7 @@ function setupInitialDataImport() {
 
           // (INV_PRODUCTS の保存は後でまとめて行う)
           DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
+          DB.save(DB.KEYS.INV_LOGS, logs);
 
           // INV_MONTHLY レコードの生成
           const monthlyData = {
