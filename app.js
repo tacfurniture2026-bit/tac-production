@@ -6280,6 +6280,7 @@ function renderInvScanPage() {
 
   // ExcelインポートUIの初期化
   setupInvExcelImport();
+  setupInitialDataImport();
 
   // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
   /*
@@ -6567,6 +6568,190 @@ function setupInvExcelImport() {
       };
       reader.readAsArrayBuffer(file);
     }, 100); // UIスレッドの更新を待つ
+  };
+}
+
+function setupInitialDataImport() {
+  const fileInput = $('#inv-initial-upload');
+  const importBtn = $('#inv-initial-import-btn');
+  const monthInput = $('#inv-initial-month');
+
+  if (!fileInput || !importBtn) return;
+
+  importBtn.onclick = () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      toast('Excelファイルを選択してください', 'error');
+      return;
+    }
+    const targetMonth = monthInput ? monthInput.value : '';
+    if (!targetMonth) {
+      toast('対象月を選択してください', 'error');
+      return;
+    }
+
+    if (!confirm(`【重要】${targetMonth} のデータを初期在庫(システム開始データ)として確定登録します。\n通常の確認フローをスキップして直接システムに反映されますがよろしいですか？`)) return;
+
+    if (typeof XLSX === 'undefined') {
+      toast('Excel解析ライブラリが読み込まれていません', 'error');
+      return;
+    }
+
+    toast('初期データとして登録中...', 'info');
+    importBtn.disabled = true;
+    importBtn.textContent = '処理中...';
+
+    setTimeout(() => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          let workbook;
+          if (file.name.toLowerCase().endsWith('.csv')) {
+            const text = new TextDecoder('shift-jis').decode(data);
+            workbook = XLSX.read(text, { type: 'string' });
+          } else {
+            workbook = XLSX.read(data, { type: 'array' });
+          }
+          
+          let targetSheetName = workbook.SheetNames.find(name => name.includes('提出書類')) || workbook.SheetNames[0];
+          const sheet = workbook.Sheets[targetSheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+          
+          let colIndex = {
+            id: 4,        // E列
+            category: 1,  // B列
+            name: 6,      // G列
+            unitPrice: 13,// N列
+            quantity: 18  // S列
+          };
+          
+          let qtyMap = {}; // productId -> { quantity, name, category, unitPrice }
+
+          rows.forEach((row, rowIndex) => {
+            if (rowIndex < 2) return; 
+            
+            const sColValue = row[colIndex.quantity];
+            if (sColValue === undefined || sColValue === null || sColValue === '') return;
+            
+            const quantity = parseInt(sColValue, 10);
+            if (isNaN(quantity)) return;
+
+            const productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            if (productCode) {
+              const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
+              const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+              const unitPriceRaw = row[colIndex.unitPrice];
+              const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
+
+              qtyMap[productCode] = { quantity, name: productName, category, unitPrice };
+            }
+          });
+
+          // 商品マスタに存在しない商品があれば追加しておく
+          Object.keys(qtyMap).forEach(productId => {
+            if (!products.some(p => p.id === productId)) {
+               products.push({
+                 id: productId,
+                 name: qtyMap[productId].name || '不明品',
+                 category: qtyMap[productId].category,
+                 price: qtyMap[productId].unitPrice,
+                 isFixed: false
+               });
+            }
+          });
+
+          let monthlyItems = [];
+          let totalQty = 0;
+          let totalAmount = 0;
+          let summary = {
+            '01': { qty: 0, amount: 0 },
+            '02': { qty: 0, amount: 0 },
+            '03': { qty: 0, amount: 0 },
+            '04': { qty: 0, amount: 0 },
+            '05': { qty: 0, amount: 0 },
+            'fixed': { qty: 0, amount: 0 }
+          };
+
+          const [y, m] = targetMonth.split('-');
+          const lastDay = new Date(y, m, 0, 23, 59, 59).toISOString();
+
+          // 商品マスタの在庫を一括更新
+          products.forEach(p => {
+            const qtyData = qtyMap[p.id];
+            const qty = qtyData ? qtyData.quantity : 0;
+            p.stock = qty;
+            p.lastStock = qty; // 初月なので前月在庫も同じにする（差分ゼロ扱い）
+            if (qty > 0) p.inventoryDate = lastDay;
+            
+            // 一時データクリア
+            delete p.tempQty; delete p.tempWorker; delete p.tempWorkerName; delete p.tempTimestamp; delete p.tempMonth; delete p.tempId;
+            
+            const price = parseFloat(p.price) || 0;
+            const amount = qty * price;
+            
+            monthlyItems.push({
+              productId: p.id,
+              name: p.name,
+              category: p.category,
+              quantity: qty,
+              price: price,
+              amount: amount,
+              isFixed: !!p.isFixed
+            });
+
+            totalQty += qty;
+            totalAmount += amount;
+
+            if (p.isFixed) {
+              summary['fixed'].qty += qty;
+              summary['fixed'].amount += amount;
+            } else {
+              const cat = p.category || '99';
+              if (!summary[cat]) summary[cat] = { qty: 0, amount: 0 };
+              summary[cat].qty += qty;
+              summary[cat].amount += amount;
+            }
+          });
+
+          DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+          // INV_MONTHLY レコードの生成
+          const monthlyData = {
+            month: targetMonth,
+            items: monthlyItems,
+            summary: summary,
+            total: { qty: totalQty, amount: totalAmount },
+            fixedTotal: summary['fixed'].amount || 0,
+            activeTotal: totalAmount - (summary['fixed'].amount || 0),
+            timestamp: new Date().toISOString()
+          };
+
+          const allMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+          const mIdx = allMonthly.findIndex(m => m.month === targetMonth);
+          if (mIdx >= 0) {
+            allMonthly[mIdx] = monthlyData;
+          } else {
+            allMonthly.push(monthlyData);
+            allMonthly.sort((a, b) => a.month.localeCompare(b.month));
+          }
+          DB.save(DB.KEYS.INV_MONTHLY, allMonthly);
+
+          alert(`✅ ${targetMonth} の初期在庫データとしてシステムに確定登録しました。\n（S列で数量を読み取った件数: ${Object.keys(qtyMap).length}件）`);
+          location.reload();
+          
+        } catch (err) {
+          console.error(err);
+          toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
+        } finally {
+          importBtn.disabled = false;
+          importBtn.textContent = '🚀 初期データとして確定登録する';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }, 100);
   };
 }
 
