@@ -2636,6 +2636,8 @@ function showModal(title, bodyHtml, footerHtml) {
 
 function hideModal() {
   $('#modal-overlay').classList.add('hidden');
+  const modalEl = $('#modal');
+  if (modalEl) modalEl.style.maxWidth = '';
 }
 
 // ========================================
@@ -6287,6 +6289,37 @@ function renderInvScanPage() {
   */
 }
 
+// 誤作動で登録されたゴミデータ（TEMP_xxx）をクリーンアップする自動修復機能
+window.cleanupInvalidTempProducts = function() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  
+  let deletedProducts = 0;
+  let deletedScans = 0;
+
+  const validProducts = products.filter(p => {
+    if (p.id && String(p.id).startsWith('TEMP_')) {
+      deletedProducts++;
+      return false;
+    }
+    return true;
+  });
+
+  const validScans = tempScans.filter(s => {
+    if (s.productId && String(s.productId).startsWith('TEMP_')) {
+      deletedScans++;
+      return false;
+    }
+    return true;
+  });
+
+  if (deletedProducts > 0 || deletedScans > 0) {
+    DB.save(DB.KEYS.INV_PRODUCTS, validProducts);
+    DB.save(DB.KEYS.INV_SCAN_TEMP, validScans);
+    console.log(`自動修復: TEMP_ ゴミデータを削除しました（マスタ: ${deletedProducts}件, スキャン: ${deletedScans}件）`);
+  }
+};
+
 function setupInvExcelImport() {
   const fileInput = $('#inv-excel-upload');
   const importBtn = $('#inv-excel-import-btn');
@@ -6330,49 +6363,18 @@ function setupInvExcelImport() {
             workbook = XLSX.read(data, { type: 'array' });
           }
           
-          // 全シートを走査して、最も「ヘッダー行」らしい行を持つシートと行インデックスを特定する
-          let bestSheetName = workbook.SheetNames[0];
-          let bestHeaderRowIndex = 0;
-          let bestHeaderRow = [];
-          let maxHeaderScore = -1;
-
-          workbook.SheetNames.forEach(sName => {
-            const tempSheet = workbook.Sheets[sName];
-            const tempRows = XLSX.utils.sheet_to_json(tempSheet, { header: 1 });
-            for (let i = 0; i < Math.min(tempRows.length, 20); i++) {
-              const row = tempRows[i];
-              if (!row || row.length === 0) continue;
-              
-              let score = 0;
-              const rowText = String(row.join(' ')).replace(/\s+/g, '');
-              if (rowText.includes('コード') || rowText.includes('資材') || rowText.includes('ID')) score++;
-              if (rowText.includes('品名') || rowText.includes('商品名')) score++;
-              if (rowText.includes('分類') || rowText.includes('カテゴリ')) score++;
-              if (rowText.includes('単価')) score++;
-              if (rowText.includes('実棚') || rowText.includes('数量') || rowText.includes('数')) score++;
-              if (rowText.includes('金額')) score++;
-              
-              if (score > maxHeaderScore) {
-                maxHeaderScore = score;
-                bestHeaderRowIndex = i;
-                bestHeaderRow = row;
-                bestSheetName = sName;
-              }
-            }
-          });
-
-          // 最適なシートと行で確定
-          const sheet = workbook.Sheets[bestSheetName];
+          // 安定版のロジック: 「提出書類」シートを最優先
+          let targetSheetName = workbook.SheetNames.find(name => name.includes('提出書類')) || workbook.SheetNames[0];
+          const sheet = workbook.Sheets[targetSheetName];
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          let headerRow = bestHeaderRow;
 
-          console.log(`Excel解析: シート[${bestSheetName}], ヘッダー行[${bestHeaderRowIndex}], スコア[${maxHeaderScore}]`);
+          console.log(`Excel解析: シート[${targetSheetName}] 固定列モード(S列)`);
 
           const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
           let parsedItems = [];
 
           let colIndex = {
-            id: 4,        // デフォルト: E列
+            id: 4,        // E列
             name: 6,      // G列
             category: 1,  // B列
             unitPrice: 13,// N列
@@ -6380,33 +6382,13 @@ function setupInvExcelImport() {
             amount: 19,   // T列
             amountWithTax: 20 // U列
           };
-
-          const findCol = (keywords) => {
-            const idx = headerRow.findIndex(h => {
-              if (h === undefined || h === null) return false;
-              const text = String(h).replace(/\s+/g, '');
-              return keywords.some(k => text.includes(k));
-            });
-            return idx;
-          };
-
-          const idxId = findCol(['ID', 'ＩＤ', 'コード', '資材']);
-          if (idxId >= 0) colIndex.id = idxId;
-          const idxName = findCol(['品名', '商品名']);
-          if (idxName >= 0) colIndex.name = idxName;
-          const idxCategory = findCol(['分類', 'カテゴリ']);
-          if (idxCategory >= 0) colIndex.category = idxCategory;
-          const idxPrice = findCol(['単価']);
-          if (idxPrice >= 0) colIndex.unitPrice = idxPrice;
-          const idxQty = findCol(['実棚', '数量', '数']);
-          if (idxQty >= 0) colIndex.quantity = idxQty;
           
           let skippedZeroPriceCount = 0;
           let skippedNoQtyCount = 0;
 
           rows.forEach((row, rowIndex) => {
-            // ヘッダー行以前の行はスキップ
-            if (rowIndex <= bestHeaderRowIndex) return; 
+            // ヘッダー行(1〜2行目)はスキップ
+            if (rowIndex < 2) return; 
             
             const sColValue = row[colIndex.quantity];
             // 数量が未記入、もしくは数値として解釈できない行はスキップ
@@ -8074,6 +8056,9 @@ function runInvMonthlyClosing() {
 // ========================================
 
 function renderInvCheckPage() {
+  if (typeof cleanupInvalidTempProducts === 'function') {
+    cleanupInvalidTempProducts();
+  }
   const monthInput = $('#inv-check-month');
   if (monthInput && !monthInput.value) {
     monthInput.value = new Date().toISOString().substring(0, 7);
@@ -8449,6 +8434,13 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
   `;
 
   showModal('⚠️ 単価未登録商品の価格設定', body, footer);
+  
+  // モーダルの幅を広げる
+  const modalEl = $('#modal');
+  if (modalEl) {
+    modalEl.style.maxWidth = '900px';
+    modalEl.style.width = '95%';
+  }
 
   const submitBtn = document.getElementById('quick-price-submit-btn');
   if (submitBtn) {
