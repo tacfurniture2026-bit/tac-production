@@ -6404,24 +6404,23 @@ function setupInvExcelImport() {
               return;
             }
 
-            const productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
             const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
-            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
-            const unitPriceRaw = row[colIndex.unitPrice];
-            const amountRaw = row[colIndex.amount];
-            const amountWithTaxRaw = row[colIndex.amountWithTax];
             
-            const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,]/g, '')) || 0;
-            const amount = parseFloat(String(amountRaw || '0').replace(/[,]/g, '')) || 0;
-            const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,]/g, '')) || 0;
-
             if (!productCode && !productName) return;
+            if (!productCode) {
+              productCode = `TEMP_${rowIndex}`;
+            }
+
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+            const amountRaw = row[colIndex.amountWithTax];
+            const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            const unitPrice = quantity > 0 ? (amount / quantity) : 0;
 
             let matchedProduct = products.find(p => p.id === productCode);
-            // 単価0円でのスキップ条件を廃止。0円でも取り込み、後の締め処理でエラー判定させる。
             
             const productInfo = matchedProduct || {
-              id: productCode || `TEMP_${rowIndex}`,
+              id: productCode,
               name: productName || `不明品(行${rowIndex + 1})`,
               category: category,
               price: unitPrice,
@@ -6433,7 +6432,7 @@ function setupInvExcelImport() {
               quantity: quantity,
               unitPrice: unitPrice,
               amount: amount,
-              amountWithTax: amountWithTax,
+              amountWithTax: amount,
               isMatched: !!matchedProduct
             });
           });
@@ -6628,7 +6627,8 @@ function setupInitialDataImport() {
                 category: 1,  // B列
                 name: 6,      // G列
                 unitPrice: 13,// N列
-                quantity: 18  // S列
+                quantity: 18, // S列
+                amount: 20    // U列
               };
           
           let qtyMap = {}; // productId -> { quantity, name, category, unitPrice }
@@ -6642,15 +6642,20 @@ function setupInitialDataImport() {
             const quantity = parseInt(sColValue, 10);
             if (isNaN(quantity)) return;
 
-            const productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
-            if (productCode) {
-              const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
-              const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
-              const unitPriceRaw = row[colIndex.unitPrice];
-              const unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
-
-              qtyMap[productCode] = { quantity, name: productName, category, unitPrice };
+            let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
+            
+            if (!productCode && !productName) return;
+            if (!productCode) {
+              productCode = `TEMP_${rowIndex}`;
             }
+
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+            const amountRaw = row[colIndex.amount];
+            const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            const unitPrice = quantity > 0 ? (amount / quantity) : 0;
+
+            qtyMap[productCode] = { quantity, name: productName, category, unitPrice, amount };
           });
 
           // 商品マスタに存在しない商品があれば追加しておく
@@ -6730,7 +6735,7 @@ function setupInitialDataImport() {
             });
             
             const price = parseFloat(p.price) || 0;
-            const amount = qty * price;
+            const itemAmount = qtyData ? qtyData.amount : (qty * price);
             
             monthlyItems.push({
               productId: p.id,
@@ -6741,12 +6746,12 @@ function setupInitialDataImport() {
               prevQty: 0,
               currQty: qty,
               diff: qty,
-              amount: amount,
-              tacFee: amount * 0.01
+              amount: itemAmount,
+              tacFee: itemAmount * 0.01
             });
 
             totalQty += qty;
-            totalAmount += amount;
+            totalAmount += itemAmount;
 
             if (p.isFixed) {
               const catKey = 'fixed';
@@ -6938,9 +6943,15 @@ function displayProductInfo(productId) {
     $('#inv-product-name').textContent = product.name;
     $('#inv-current-stock').textContent = stock;
     $('#inv-product-price').textContent = product.price.toLocaleString();
+    if ($('#inv-scan-unit-price')) {
+      $('#inv-scan-unit-price').value = product.price;
+    }
     infoDiv.style.display = 'block';
   } else {
     infoDiv.style.display = 'none';
+    if ($('#inv-scan-unit-price')) {
+      $('#inv-scan-unit-price').value = '';
+    }
   }
 }
 
@@ -7047,6 +7058,17 @@ function submitInventoryCount() {
     return;
   }
 
+  // スキャン画面からのマスタ単価更新（金額差異チェック）
+  const newPriceInput = $('#inv-scan-unit-price');
+  if (newPriceInput && newPriceInput.value !== '') {
+    const newPrice = parseFloat(newPriceInput.value);
+    if (!isNaN(newPrice) && product.price !== newPrice) {
+      product.price = newPrice;
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      toast(`マスタの単価を ¥${newPrice} に上書き更新しました`, 'success');
+    }
+  }
+
   // 対象月の指定があれば、その月の末日をタイムスタンプとする
   let targetTimestamp = new Date().toISOString();
   let targetMonth = '';
@@ -7066,6 +7088,7 @@ function submitInventoryCount() {
   // フォームリセット
   $('#inv-scan-product-id').value = '';
   $('#inv-scan-quantity').value = '';
+  if ($('#inv-scan-unit-price')) $('#inv-scan-unit-price').value = '';
   $('#inv-product-info').style.display = 'none';
   $('#inv-scan-result').style.display = 'none';
 

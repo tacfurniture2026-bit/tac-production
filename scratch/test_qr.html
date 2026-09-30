@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+  <div id="out"></div>
+  <script>
+    try {
+      const qr = qrcode(0, 'L');
+      qr.addData('あいうえお');
+      qr.make();
+      document.getElementById('out').innerHTML = '<img src="' + qr.createDataURL(4, 0) + '">';
+      console.log("Success");
+    } catch(e) {
+      document.getElementById('out').innerHTML = '<span style="color:red;">Error: ' + e.message + '</span>';
+      console.log("Error:", e.message);
+    }
+  </script>
+</body>
+</html>
