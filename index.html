@@ -15,14 +15,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v5.79.6">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v5.8.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v5.79.6">
+    <link rel="stylesheet" href="styles.css?v=v5.8.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -116,8 +116,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v5.79.6"></script>
-    <script src="app.js?v=v5.79.6"></script>
+    <script src="data.js?v=v5.8.0"></script>
+    <script src="app.js?v=v5.8.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -184,7 +184,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.79.6</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v5.8.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -1202,6 +1202,17 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                <div class="card" style="margin-top: 2rem; border-color: #ef4444;">
+                    <div class="card-header" style="background-color: #fef2f2; border-bottom: 1px solid #fee2e2;">
+                        <h3 style="color: #b91c1c;">🚨 危険操作: 棚卸データの初期化</h3>
+                    </div>
+                    <div class="card-body">
+                        <p style="color: #b91c1c; margin-bottom: 12px;">※ この操作を行うと、1月〜現在のすべての棚卸履歴および在庫データが完全に削除されます。<br>商品マスタは削除されません。</p>
+                        <button type="button" class="btn btn-danger btn-full" onclick="clearAllInventoryData()" style="padding: 12px; font-size: 16px;">
+                            🗑 すべての棚卸データを削除する
+                        </button>
                     </div>
                 </div>
             </div>

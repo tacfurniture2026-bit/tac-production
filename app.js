@@ -8519,6 +8519,28 @@ function toggleFixedStatus(productId, isFixed) {
   }
 }
 
+window.clearAllInventoryData = function() {
+  if (!confirm('【危険】本当に1月からのすべての棚卸データ（在庫履歴・仮スキャンデータ）を削除しますか？\n※商品マスタは削除されません。\n※この操作は元に戻せません。')) return;
+
+  // 在庫履歴と仮スキャンデータを空にする
+  DB.save(DB.KEYS.INV_STOCK, []);
+  DB.save(DB.KEYS.INV_SCAN_TEMP, []);
+  
+  // 商品マスタ内の棚卸関連の一時フィールドもクリアする
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  products.forEach(p => {
+    delete p.tempQty;
+    delete p.tempWorker;
+    delete p.tempWorkerName;
+    delete p.tempTimestamp;
+    delete p.tempMonth;
+    delete p.tempId;
+  });
+  DB.save(DB.KEYS.INV_PRODUCTS, products);
+
+  alert('すべての棚卸データを完全に削除しました。');
+  location.reload();
+};
 window.bulkDeleteInvTempScans = function() {
   if (!confirm('本当にすべての仮スキャンデータを一括削除しますか？\\n（この操作は元に戻せません）')) return;
 
