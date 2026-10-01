@@ -6765,7 +6765,8 @@ function setupInitialDataImport() {
             });
             
             const price = parseFloat(p.price) || 0;
-            const itemAmount = qtyData ? qtyData.amount : (qty * price);
+            // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
+            const itemAmount = Math.round(qty * price * 1.01);
             
             monthlyItems.push({
               productId: p.id,
@@ -6776,8 +6777,7 @@ function setupInitialDataImport() {
               prevQty: 0,
               currQty: qty,
               diff: qty,
-              amount: itemAmount,
-              tacFee: itemAmount * 0.01
+              amount: itemAmount
             });
 
             totalQty += qty;
@@ -7711,7 +7711,6 @@ function exportInvMonthlyExcel() {
     const totalDiff = Math.round(currentMonthlyResult.total - currentMonthlyResult.prevTotal);
     
     summaryData.push(['', '合計', displayTotal, totalDiff]);
-    summaryData.push(['', '1.01（TAC口銭1%）', Math.round(displayTotal * 1.01), '']);
     
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, '月次集計');
@@ -7758,8 +7757,17 @@ function calculateInvMonthly(month) {
   const prevDate = new Date(month + '-01');
   prevDate.setMonth(prevDate.getMonth() - 1);
   const prevMonth = prevDate.toISOString().substring(0, 7);
-  const prevData = monthly.find(m => m.month === prevMonth);
+  let prevData = monthly.find(m => m.month === prevMonth);
   
+  // 前月データの破損チェックと自己修復
+  if (prevData && prevData.items) {
+    const isPrevCorrupted = isNaN(Number(prevData.total)) || prevData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
+    if (isPrevCorrupted) {
+      console.warn(`Corrupted previous monthly data (${prevMonth}) detected. Recalculating...`);
+      prevData = calculateInvMonthly(prevMonth);
+    }
+  }
+
   // 当月がすでに締め済みか確認
   const isClosed = monthly.some(m => m.month === month);
   if (isClosed) {
@@ -7770,7 +7778,7 @@ function calculateInvMonthly(month) {
       if (!isCorrupted) {
         return savedData;
       }
-      console.warn("Corrupted monthly data detected. Recalculating...");
+      console.warn(`Corrupted monthly data (${month}) detected. Recalculating...`);
       // 破損している場合は isClosed 扱いを維持しつつ、今回は再計算を走らせる
     }
   }
@@ -7803,7 +7811,7 @@ function calculateInvMonthly(month) {
           prevQty: 0,
           currQty: safeNum(log.quantity),
           diff: safeNum(log.quantity),
-          amount: Math.round(safeNum(log.amountWithTax)),
+          amount: 0, // あとで再計算
           isFixed: false,
           prevAmount: 0
         });
@@ -7811,7 +7819,6 @@ function calculateInvMonthly(month) {
         const existing = productMap.get(pid);
         existing.currQty += safeNum(log.quantity);
         existing.diff += safeNum(log.quantity);
-        existing.amount += Math.round(safeNum(log.amountWithTax));
       }
     });
 
@@ -7852,6 +7859,9 @@ function calculateInvMonthly(month) {
         }
       }
       
+      // 在庫金額 = 数量 × 単価 × 1.01
+      item.amount = Math.round(item.currQty * item.price * 1.01);
+
       items.push(item);
       
       const catKey = item.isFixed ? 'fixed' : item.category;
@@ -7921,7 +7931,8 @@ function calculateInvMonthly(month) {
 
       const diff = currQty - prevQty;
       const safePrice = safeNum(p.price);
-      const amount = Math.round(currQty * safePrice);
+      // 在庫金額 = 数量 × 単価 × 1.01
+      const amount = Math.round(currQty * safePrice * 1.01);
 
       items.push({
         productId: pid,
@@ -8063,7 +8074,6 @@ function displayInvMonthlyResult(result) {
 
   // 画面上部の大きな金額には、全明細の正確な合計額を使用する
   const displayTotal = Math.round(safeNum(result.total));
-  const tacTotal = Math.round(displayTotal * 1.01);
 
   // 分類別グラフバー生成
   const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
@@ -8090,7 +8100,7 @@ function displayInvMonthlyResult(result) {
 
   container.innerHTML = `
     <!-- サマリーカード -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
       <div class="card" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 1.25rem; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${displayTotal.toLocaleString()}</div>
@@ -8107,11 +8117,6 @@ function displayInvMonthlyResult(result) {
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">⚠ 不動品在庫</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${fixedTotal.toLocaleString()}</div>
         <div style="font-size: 0.75rem; opacity: 0.8;">${fixedPercent}%</div>
-      </div>
-      <div class="card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; padding: 1.25rem;">
-        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">💰 TAC口銭込</div>
-        <div style="font-size: 1.5rem; font-weight: bold;">¥${tacTotal.toLocaleString()}</div>
-        <div style="font-size: 0.75rem; opacity: 0.8;">×1.01</div>
       </div>
     </div>
 
@@ -8147,11 +8152,6 @@ function displayInvMonthlyResult(result) {
                 <td>合計</td>
                 <td style="text-align: right;">¥${displayTotal.toLocaleString()}</td>
                 <td style="text-align: right; color: ${totalDiff >= 0 ? 'green' : 'red'};">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</td>
-              </tr>
-              <tr class="row-tac-fee">
-                <td>1.01（TAC口銭1%）</td>
-                <td style="text-align: right;">¥${tacTotal.toLocaleString()}</td>
-                <td style="text-align: right;">-</td>
               </tr>
             </tbody>
           </table>
@@ -8386,6 +8386,7 @@ function runInvMonthlyClosing() {
     items: result.items,
     summary: result.summary,
     total: result.total,
+    prevTotal: result.prevTotal,
     fixedTotal: result.summary['fixed']?.amount || 0,
     closedAt: new Date().toISOString()
   };

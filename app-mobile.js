@@ -6499,12 +6499,18 @@ function calculateInvMonthly(month) {
   const items = [];
   const summary = {};
 
+  const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
+
   products.forEach(p => {
     // 前月在庫
     let prevQty = 0;
-    if (prevData) {
+    let prevAmount = 0;
+    if (prevData && prevData.items) {
       const prevItem = prevData.items.find(i => i.productId === p.id);
-      if (prevItem) prevQty = prevItem.currQty;
+      if (prevItem) {
+        prevQty = safeNum(prevItem.currQty);
+        prevAmount = Math.round(safeNum(prevItem.amount));
+      }
     }
 
     // 当月在庫（ログから計算）
@@ -6512,11 +6518,11 @@ function calculateInvMonthly(month) {
     const productLogs = monthLogs.filter(l => l.productId === p.id);
     productLogs.forEach(log => {
       if (log.type === 'count') {
-        currQty = log.quantity;
+        currQty = safeNum(log.quantity);
       } else if (log.type === 'in') {
-        currQty += log.quantity;
+        currQty += safeNum(log.quantity);
       } else if (log.type === 'out') {
-        currQty -= log.quantity;
+        currQty -= safeNum(log.quantity);
       }
     });
 
@@ -6526,7 +6532,8 @@ function calculateInvMonthly(month) {
     }
 
     const diff = currQty - prevQty;
-    const amount = currQty * p.price;
+    // 在庫金額 = 数量 × 単価 × 1.01
+    const amount = Math.round(currQty * safeNum(p.price) * 1.01);
 
     items.push({
       productId: p.id,
@@ -6537,21 +6544,32 @@ function calculateInvMonthly(month) {
       currQty: currQty,
       diff: diff,
       amount: amount,
-      isFixed: p.isFixed
+      isFixed: p.isFixed,
+      prevAmount: prevAmount
     });
 
     // 分類別集計
     const catKey = p.isFixed ? 'fixed' : p.category;
     if (!summary[catKey]) {
-      summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0 };
+      summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
     }
     summary[catKey].amount += amount;
-    summary[catKey].diff += diff * p.price;
+    summary[catKey].prevAmount += prevAmount;
   });
 
-  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  // 分類別前月比の計算
+  Object.keys(summary).forEach(k => {
+    const amt = Number(summary[k].amount) || 0;
+    const prevAmt = Number(summary[k].prevAmount) || 0;
+    summary[k].diff = amt - prevAmt;
+    summary[k].amount = amt;
+    summary[k].prevAmount = prevAmt;
+  });
 
-  return { month, items, summary, total };
+  const total = items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const prevTotal = items.reduce((sum, i) => sum + (Number(i.prevAmount) || 0), 0);
+
+  return { month, items, summary, total, prevTotal };
 }
 
 function displayInvMonthlyResult(result) {
@@ -6565,29 +6583,40 @@ function displayInvMonthlyResult(result) {
   // カテゴリデータを収集
   const categoryData = [];
 
+  const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
+
   // カテゴリ順に表示
-  Object.keys(INV_CATEGORIES).forEach(code => {
+  const allSummaryKeys = Object.keys(result.summary);
+  const sortedCodes = allSummaryKeys.filter(k => k !== 'fixed').sort((a, b) => a.localeCompare(b));
+
+  sortedCodes.forEach(code => {
     if (result.summary[code]) {
       const s = result.summary[code];
-      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
-      summaryTotal += s.amount;
-      summaryDiff += s.diff;
-      normalTotal += s.amount;
-      categoryData.push({ name: s.name, amount: s.amount, isFixed: false });
+      const roundedAmount = Math.round(safeNum(s.amount));
+      const roundedDiff = Math.round(safeNum(s.diff));
+      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+      summaryTotal += roundedAmount;
+      summaryDiff += roundedDiff;
+      normalTotal += roundedAmount;
+      categoryData.push({ name: s.name, amount: roundedAmount, isFixed: false });
     }
   });
 
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${s.amount.toLocaleString()}</td><td style="text-align: right; color: ${s.diff >= 0 ? 'green' : 'red'};">${s.diff >= 0 ? '+' : ''}¥${s.diff.toLocaleString()}</td></tr>`;
-    summaryTotal += s.amount;
-    summaryDiff += s.diff;
-    fixedTotal = s.amount;
-    categoryData.push({ name: '不動品', amount: s.amount, isFixed: true });
+    const roundedAmount = Math.round(safeNum(s.amount));
+    const roundedDiff = Math.round(safeNum(s.diff));
+    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+    summaryTotal += roundedAmount;
+    summaryDiff += roundedDiff;
+    fixedTotal = roundedAmount;
+    categoryData.push({ name: '不動品', amount: roundedAmount, isFixed: true });
   }
 
-  const tacTotal = Math.round(summaryTotal * 1.01);
+  // 画面上部の大きな金額には、全明細の正確な合計額を使用する
+  const displayTotal = Math.round(safeNum(result.total));
+  const totalDiff = Math.round(safeNum(result.total) - safeNum(result.prevTotal));
 
   // 分類別グラフバー生成
   const sortedCategories = categoryData.sort((a, b) => b.amount - a.amount);
@@ -6608,15 +6637,18 @@ function displayInvMonthlyResult(result) {
   }).join('');
 
   // ドーナツ風サマリー
-  const normalPercent = summaryTotal > 0 ? Math.round((normalTotal / summaryTotal) * 100) : 0;
-  const fixedPercent = summaryTotal > 0 ? Math.round((fixedTotal / summaryTotal) * 100) : 0;
+  const normalPercent = displayTotal > 0 ? Math.round((normalTotal / displayTotal) * 100) : 0;
+  const fixedPercent = displayTotal > 0 ? Math.round((fixedTotal / displayTotal) * 100) : 0;
 
   container.innerHTML = `
     <!-- サマリーカード -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
       <div class="card" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); color: white; padding: 1.25rem;">
-        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫金額合計</div>
-        <div style="font-size: 1.5rem; font-weight: bold;">¥${summaryTotal.toLocaleString()}</div>
+        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">📦 在庫合計金額</div>
+        <div style="font-size: 1.5rem; font-weight: bold;">¥${displayTotal.toLocaleString()}</div>
+        <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">
+            前月比: <span style="font-weight: bold;">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</span>
+        </div>
       </div>
       <div class="card" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 1.25rem;">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">✓ 通常在庫</div>
@@ -6627,11 +6659,6 @@ function displayInvMonthlyResult(result) {
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">⚠ 不動品在庫</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${fixedTotal.toLocaleString()}</div>
         <div style="font-size: 0.75rem; opacity: 0.8;">${fixedPercent}%</div>
-      </div>
-      <div class="card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; padding: 1.25rem;">
-        <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">💰 TAC口銭込</div>
-        <div style="font-size: 1.5rem; font-weight: bold;">¥${tacTotal.toLocaleString()}</div>
-        <div style="font-size: 0.75rem; opacity: 0.8;">×1.01</div>
       </div>
     </div>
 
@@ -6665,13 +6692,8 @@ function displayInvMonthlyResult(result) {
               ${summaryRows}
               <tr style="font-weight: bold; background: var(--color-bg-secondary);">
                 <td>合計</td>
-                <td style="text-align: right;">¥${summaryTotal.toLocaleString()}</td>
-                <td style="text-align: right; color: ${summaryDiff >= 0 ? 'green' : 'red'};">${summaryDiff >= 0 ? '+' : ''}¥${summaryDiff.toLocaleString()}</td>
-              </tr>
-              <tr class="row-tac-fee">
-                <td>1.01（TAC口銭1%）</td>
-                <td style="text-align: right;">¥${tacTotal.toLocaleString()}</td>
-                <td style="text-align: right;">-</td>
+                <td style="text-align: right;">¥${displayTotal.toLocaleString()}</td>
+                <td style="text-align: right; color: ${totalDiff >= 0 ? 'green' : 'red'};">${totalDiff >= 0 ? '+' : ''}¥${totalDiff.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -6703,11 +6725,11 @@ function displayInvMonthlyResult(result) {
                 <tr class="${i.isFixed ? 'row-fixed-product' : ''}">
                   <td>${i.productId}</td>
                   <td>${i.name}</td>
-                  <td>¥${i.price.toLocaleString()}</td>
-                  <td>${i.prevQty}</td>
-                  <td>${i.currQty}</td>
-                  <td style="color: ${i.diff >= 0 ? 'green' : 'red'};">${i.diff >= 0 ? '+' : ''}${i.diff}</td>
-                  <td>¥${i.amount.toLocaleString()}</td>
+                  <td>¥${safeNum(i.price).toLocaleString()}</td>
+                  <td>${safeNum(i.prevQty)}</td>
+                  <td>${safeNum(i.currQty)}</td>
+                  <td style="color: ${safeNum(i.diff) >= 0 ? 'green' : 'red'};">${safeNum(i.diff) >= 0 ? '+' : ''}${safeNum(i.diff)}</td>
+                  <td>¥${safeNum(i.amount).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -6761,6 +6783,7 @@ function runInvMonthlyClosing() {
     items: result.items,
     summary: result.summary,
     total: result.total,
+    prevTotal: result.prevTotal,
     fixedTotal: result.summary['fixed']?.amount || 0,
     closedAt: new Date().toISOString()
   };
