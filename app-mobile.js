@@ -5097,7 +5097,7 @@ function renderReport() {
 
   invProducts.forEach(product => {
     const stock = getCurrentStock(product.id, invLogs);
-    const amount = Math.round(stock * product.price);
+    const amount = Math.round(stock * product.price * 1.01);
 
     // カテゴリ別集計
     const catName = INV_CATEGORIES[product.category] || product.category;
@@ -6532,7 +6532,7 @@ function calculateInvMonthly(month) {
     }
 
     const diff = currQty - prevQty;
-    // 在庫金額 = 数量 × 単価 × 1.01
+    // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
     const amount = Math.round(currQty * safeNum(p.price) * 1.01);
 
     items.push({

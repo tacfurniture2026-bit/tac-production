@@ -5641,7 +5641,7 @@ function renderReport(argStart, argEnd) {
     invProducts.forEach(product => {
       const stock = getCurrentStock(product.id, invLogs);
       const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-      const amount = Math.round(stock * safePrice);
+      const amount = Math.round(stock * safePrice * 1.01);
       const catName = INV_CATEGORIES[product.category] || product.category;
       if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
       
@@ -7776,6 +7776,56 @@ function calculateInvMonthly(month) {
       // 破損チェック（NaNが含まれているか）
       const isCorrupted = isNaN(Number(savedData.total)) || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
       if (!isCorrupted) {
+        // 前月データから prevTotal / prevAmount を常に再計算する
+        // （過去に prevTotal:0 や ×1.01込みで保存されたデータを修正するため）
+        let calcPrevTotal = 0;
+        if (prevData && prevData.items) {
+          calcPrevTotal = prevData.items.reduce((sum, pi) => sum + (Number(pi.amount) || 0), 0);
+        }
+        savedData.prevTotal = calcPrevTotal;
+
+        // 各itemの amount を currQty × price × 1.01（TAC口銭込）で再計算し、prevAmount を前月データから取得
+        if (savedData.items) {
+          savedData.items.forEach(item => {
+            // amount を再計算（TAC口銭込 ×1.01）
+            const itemPrice = Number(item.price) || 0;
+            const itemQty = Number(item.currQty) || 0;
+            item.amount = Math.round(itemQty * itemPrice * 1.01);
+
+            // prevAmount は前月データから取得（前月のamountもTAC口銭込で再計算）
+            let pa = 0;
+            if (prevData && prevData.items) {
+              const pi = prevData.items.find(p => p.productId === item.productId);
+              if (pi) pa = Math.round((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
+            }
+            item.prevAmount = pa;
+          });
+        }
+
+        // total も再計算
+        savedData.total = savedData.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+
+        // summary の diff / prevAmount も再計算
+        if (savedData.summary) {
+          // まず summary をリセット
+          Object.keys(savedData.summary).forEach(k => {
+            savedData.summary[k].amount = 0;
+            savedData.summary[k].prevAmount = 0;
+          });
+          // items から再集計
+          savedData.items.forEach(item => {
+            const catKey = item.isFixed ? 'fixed' : item.category;
+            if (!savedData.summary[catKey]) {
+              savedData.summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
+            }
+            savedData.summary[catKey].amount += (Number(item.amount) || 0);
+            savedData.summary[catKey].prevAmount += (Number(item.prevAmount) || 0);
+          });
+          Object.keys(savedData.summary).forEach(k => {
+            const s = savedData.summary[k];
+            s.diff = (Number(s.amount) || 0) - (Number(s.prevAmount) || 0);
+          });
+        }
         return savedData;
       }
       console.warn(`Corrupted monthly data (${month}) detected. Recalculating...`);
@@ -7859,7 +7909,7 @@ function calculateInvMonthly(month) {
         }
       }
       
-      // 在庫金額 = 数量 × 単価 × 1.01
+      // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
       item.amount = Math.round(item.currQty * item.price * 1.01);
 
       items.push(item);
@@ -7931,7 +7981,7 @@ function calculateInvMonthly(month) {
 
       const diff = currQty - prevQty;
       const safePrice = safeNum(p.price);
-      // 在庫金額 = 数量 × 単価 × 1.01
+      // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
       const amount = Math.round(currQty * safePrice * 1.01);
 
       items.push({
