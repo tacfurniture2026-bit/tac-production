@@ -5564,14 +5564,16 @@ let invQrScanner = null;
 function getCurrentStock(productId) {
   const logs = DB.get(DB.KEYS.INV_LOGS);
   let stock = 0;
+  const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
   logs.forEach(log => {
     if (log.productId === productId) {
+      const q = safeNum(log.quantity);
       if (log.type === 'count') {
-        stock = log.quantity; // 棚卸の場合は上書き
+        stock = q; // 棚卸の場合は上書き
       } else if (log.type === 'in') {
-        stock += log.quantity;
+        stock += q;
       } else if (log.type === 'out') {
-        stock -= log.quantity;
+        stock -= q;
       }
     }
   });

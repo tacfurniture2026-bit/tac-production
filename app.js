@@ -5601,31 +5601,47 @@ function renderReport(argStart, argEnd) {
   const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
 
   // 最新の月次締めデータを取得
-  const latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
+  let latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
+
+  // もし取得した締めデータがNaN等で破損している場合は再計算し、自己修復する
+  if (latestMonthly) {
+    const isCorrupted = isNaN(Number(latestMonthly.total)) || (latestMonthly.items && latestMonthly.items.some(i => isNaN(Number(i.amount))));
+    if (isCorrupted) {
+       console.warn("Corrupted latest monthly data detected in dashboard. Recalculating and healing...");
+       latestMonthly = calculateInvMonthly(latestMonthly.month);
+       const mIndex = invMonthly.findIndex(m => m.month === latestMonthly.month);
+       if (mIndex !== -1) {
+         invMonthly[mIndex] = latestMonthly;
+         DB.save(DB.KEYS.INV_MONTHLY, invMonthly);
+       }
+    }
+  }
 
   // 在庫計算（月次締めデータから直接取得し、完全一致させる）
   const categoryStocks = {};
-  let totalInvAmount = latestMonthly ? latestMonthly.total : 0;
+  let totalInvAmount = latestMonthly ? (Number(latestMonthly.total) || 0) : 0;
   let totalFixedAmount = 0;
   let totalNormalAmount = 0;
 
   if (latestMonthly && latestMonthly.summary) {
     Object.entries(latestMonthly.summary).forEach(([code, s]) => {
       const catName = s.name;
-      categoryStocks[catName] = { total: s.amount, normal: 0, fixed: 0 };
+      const sAmt = Number(s.amount) || 0;
+      categoryStocks[catName] = { total: sAmt, normal: 0, fixed: 0 };
       if (code === 'fixed') {
-         categoryStocks[catName].fixed = s.amount;
-         totalFixedAmount += s.amount;
+         categoryStocks[catName].fixed = sAmt;
+         totalFixedAmount += sAmt;
       } else {
-         categoryStocks[catName].normal = s.amount;
-         totalNormalAmount += s.amount;
+         categoryStocks[catName].normal = sAmt;
+         totalNormalAmount += sAmt;
       }
     });
   } else {
     // 月次締めがない場合のフォールバック（リアルタイム）
     invProducts.forEach(product => {
       const stock = getCurrentStock(product.id, invLogs);
-      const amount = Math.round(stock * product.price);
+      const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
+      const amount = Math.round(stock * safePrice);
       const catName = INV_CATEGORIES[product.category] || product.category;
       if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
       
@@ -6204,14 +6220,16 @@ let invQrScanner = null;
 function getCurrentStock(productId) {
   const logs = DB.get(DB.KEYS.INV_LOGS);
   let stock = 0;
+  const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
   logs.forEach(log => {
     if (log.productId === productId) {
+      const q = safeNum(log.quantity);
       if (log.type === 'count') {
-        stock = log.quantity; // 棚卸の場合は上書き
+        stock = q; // 棚卸の場合は上書き
       } else if (log.type === 'in') {
-        stock += log.quantity;
+        stock += q;
       } else if (log.type === 'out') {
-        stock -= log.quantity;
+        stock -= q;
       }
     }
   });
@@ -7747,7 +7765,13 @@ function calculateInvMonthly(month) {
   if (isClosed) {
     const savedData = monthly.find(m => m.month === month);
     if (savedData && savedData.items) {
-      return savedData;
+      // 破損チェック（NaNが含まれているか）
+      const isCorrupted = isNaN(Number(savedData.total)) || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
+      if (!isCorrupted) {
+        return savedData;
+      }
+      console.warn("Corrupted monthly data detected. Recalculating...");
+      // 破損している場合は isClosed 扱いを維持しつつ、今回は再計算を走らせる
     }
   }
 
@@ -7801,10 +7825,10 @@ function calculateInvMonthly(month) {
             price: prevItem.price,
             prevQty: prevItem.currQty,
             currQty: 0,
-            diff: -prevItem.currQty,
+            diff: -safeNum(prevItem.currQty),
             amount: 0,
             isFixed: prevItem.isFixed,
-            prevAmount: Math.round(prevItem.amount || 0)
+            prevAmount: Math.round(safeNum(prevItem.amount))
           });
         }
       });
@@ -7822,8 +7846,8 @@ function calculateInvMonthly(month) {
       if (prevData && prevData.items) {
         const prevItem = prevData.items.find(i => i.productId === pid);
         if (prevItem) {
-          item.prevQty = prevItem.currQty;
-          item.prevAmount = Math.round(prevItem.amount || 0);
+          item.prevQty = safeNum(prevItem.currQty);
+          item.prevAmount = Math.round(safeNum(prevItem.amount));
           item.diff = item.currQty - item.prevQty;
         }
       }
@@ -8006,6 +8030,8 @@ function displayInvMonthlyResult(result) {
   // カテゴリデータを収集
   const categoryData = [];
 
+  const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
+
   // カテゴリ順にソートしてループ（INV_CATEGORIESにないものも含める）
   const allSummaryKeys = Object.keys(result.summary);
   const sortedCodes = allSummaryKeys.filter(k => k !== 'fixed').sort((a, b) => a.localeCompare(b));
@@ -8013,8 +8039,8 @@ function displayInvMonthlyResult(result) {
   sortedCodes.forEach(code => {
     if (result.summary[code]) {
       const s = result.summary[code];
-      const roundedAmount = Math.round(s.amount);
-      const roundedDiff = Math.round(s.diff);
+      const roundedAmount = Math.round(safeNum(s.amount));
+      const roundedDiff = Math.round(safeNum(s.diff));
       summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
       summaryTotal += roundedAmount;
       summaryDiff += roundedDiff;
@@ -8026,8 +8052,8 @@ function displayInvMonthlyResult(result) {
   // 不動品
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
-    const roundedAmount = Math.round(s.amount);
-    const roundedDiff = Math.round(s.diff);
+    const roundedAmount = Math.round(safeNum(s.amount));
+    const roundedDiff = Math.round(safeNum(s.diff));
     summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
     summaryTotal += roundedAmount;
     summaryDiff += roundedDiff;
@@ -8036,7 +8062,7 @@ function displayInvMonthlyResult(result) {
   }
 
   // 画面上部の大きな金額には、全明細の正確な合計額を使用する
-  const displayTotal = Math.round(result.total);
+  const displayTotal = Math.round(safeNum(result.total));
   const tacTotal = Math.round(displayTotal * 1.01);
 
   // 分類別グラフバー生成
@@ -8060,7 +8086,7 @@ function displayInvMonthlyResult(result) {
   // ドーナツ風サマリー
   const normalPercent = displayTotal > 0 ? Math.round((normalTotal / displayTotal) * 100) : 0;
   const fixedPercent = displayTotal > 0 ? Math.round((fixedTotal / displayTotal) * 100) : 0;
-  const totalDiff = Math.round(result.total - result.prevTotal);
+  const totalDiff = Math.round(safeNum(result.total) - safeNum(result.prevTotal));
 
   container.innerHTML = `
     <!-- サマリーカード -->
@@ -8157,11 +8183,11 @@ function displayInvMonthlyResult(result) {
                 <tr class="${i.isFixed ? 'row-fixed-product' : ''}">
                   <td>${i.productId}</td>
                   <td>${i.name}</td>
-                  <td>¥${i.price.toLocaleString()}</td>
-                  <td>${i.prevQty}</td>
-                  <td>${i.currQty}</td>
-                  <td style="color: ${i.diff >= 0 ? 'green' : 'red'};">${i.diff >= 0 ? '+' : ''}${i.diff}</td>
-                  <td>¥${i.amount.toLocaleString()}</td>
+                  <td>¥${safeNum(i.price).toLocaleString()}</td>
+                  <td>${safeNum(i.prevQty)}</td>
+                  <td>${safeNum(i.currQty)}</td>
+                  <td style="color: ${safeNum(i.diff) >= 0 ? 'green' : 'red'};">${safeNum(i.diff) >= 0 ? '+' : ''}${safeNum(i.diff)}</td>
+                  <td>¥${safeNum(i.amount).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
