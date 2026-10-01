@@ -8931,7 +8931,7 @@ function undoConfirmInvTempData() {
 }
 
 // Confirm temp data and close month
-function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false) {
+function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, skipPriceCheck = false) {
   const monthInput = $('#inv-check-month');
   const selectedMonth = overrideMonth || (monthInput ? monthInput.value : null) || new Date().toISOString().substring(0, 7);
   
@@ -8986,9 +8986,9 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false) {
     return !isAllowedZero;
   });
 
-  if (unpricedItems.length > 0) {
+  if (!skipPriceCheck && unpricedItems.length > 0) {
     showPriceRegisterModal(unpricedItems, () => {
-      confirmInvTempData(overrideMonth, skipNormalConfirm);
+      confirmInvTempData(overrideMonth, skipNormalConfirm, true);
     });
     return;
   }
