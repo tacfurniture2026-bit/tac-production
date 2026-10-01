@@ -7784,19 +7784,31 @@ function calculateInvMonthly(month) {
         }
         savedData.prevTotal = calcPrevTotal;
 
-        // 各itemの amount を currQty × price × 1.01（TAC口銭込）で再計算し、prevAmount を前月データから取得
+        // 各itemの amount を再計算し、prevAmount を前月データから取得
         if (savedData.items) {
           savedData.items.forEach(item => {
-            // amount を再計算（TAC口銭込 ×1.01）
-            const itemPrice = Number(item.price) || 0;
-            const itemQty = Number(item.currQty) || 0;
-            item.amount = Math.round(itemQty * itemPrice * 1.01);
+            // CSVインポートで保存されたamountWithTax（ExcelのU列）があればそれを優先
+            if (item.csvAmountWithTax > 0) {
+              item.amount = Math.round(Number(item.csvAmountWithTax));
+            } else {
+              // フォールバック: 数量 × 単価 × 1.01（TAC口銭込）
+              const itemPrice = Number(item.price) || 0;
+              const itemQty = Number(item.currQty) || 0;
+              item.amount = Math.round(itemQty * itemPrice * 1.01);
+            }
 
-            // prevAmount は前月データから取得（前月のamountもTAC口銭込で再計算）
+            // prevAmount は前月データから取得
             let pa = 0;
             if (prevData && prevData.items) {
               const pi = prevData.items.find(p => p.productId === item.productId);
-              if (pi) pa = Math.round((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
+              if (pi) {
+                // 前月もCSVインポートのamountがあればそれを使用
+                if (pi.csvAmountWithTax > 0) {
+                  pa = Math.round(Number(pi.csvAmountWithTax));
+                } else {
+                  pa = Math.round((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
+                }
+              }
             }
             item.prevAmount = pa;
           });
@@ -7861,7 +7873,8 @@ function calculateInvMonthly(month) {
           prevQty: 0,
           currQty: safeNum(log.quantity),
           diff: safeNum(log.quantity),
-          amount: 0, // あとで再計算
+          amount: 0,
+          csvAmountWithTax: safeNum(log.amountWithTax), // ExcelのU列（TAC口銭込金額）を保持
           isFixed: false,
           prevAmount: 0
         });
@@ -7869,6 +7882,7 @@ function calculateInvMonthly(month) {
         const existing = productMap.get(pid);
         existing.currQty += safeNum(log.quantity);
         existing.diff += safeNum(log.quantity);
+        existing.csvAmountWithTax += safeNum(log.amountWithTax); // 同一商品の重複ログを加算
       }
     });
 
@@ -7909,8 +7923,14 @@ function calculateInvMonthly(month) {
         }
       }
       
-      // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
-      item.amount = Math.round(item.currQty * item.price * 1.01);
+      // CSVインポートの場合、ExcelのU列（amountWithTax）を優先使用する
+      // これによりExcelとの金額差異を排除
+      if (item.csvAmountWithTax > 0) {
+        item.amount = Math.round(item.csvAmountWithTax);
+      } else {
+        // フォールバック: 数量 × 単価 × 1.01（TAC口銭込）
+        item.amount = Math.round(item.currQty * item.price * 1.01);
+      }
 
       items.push(item);
       
@@ -9156,10 +9176,13 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
       worker = '自動(不動品)';
     }
     
+    // unitPriceをマスタから取得してログに保存（後続の計算で参照できるようにする）
+    const logUnitPrice = prod ? (prod.price || 0) : 0;
     const logData = {
       id: Date.now() + index,
       productId: pid,
       quantity: qty,
+      unitPrice: logUnitPrice,
       type: 'count',
       worker: worker,
       note: `棚卸確定締め(${selectedMonth})`,
