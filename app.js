@@ -7181,14 +7181,15 @@ function executeInvSearch() {
 
   tbody.innerHTML = filtered.map(p => {
     const stock = getCurrentStock(p.id);
-    const amount = stock * p.price;
+    const safePrice = isNaN(Number(p.price)) ? 0 : Number(p.price);
+    const amount = stock * safePrice;
     return `
       <tr>
         <td>${p.id}</td>
         <td>${INV_CATEGORIES[p.category] || p.category}</td>
         <td>${p.name}</td>
         <td>${stock}</td>
-        <td>¥${p.price.toLocaleString()}</td>
+        <td>¥${safePrice.toLocaleString()}</td>
         <td>¥${amount.toLocaleString()}</td>
       </tr>
     `;
@@ -7761,6 +7762,11 @@ function calculateInvMonthly(month) {
   const summary = {};
   
   if (isCsvImport) {
+    const safeNum = (val) => {
+      const n = Number(val);
+      return isNaN(n) ? 0 : n;
+    };
+
     const productMap = new Map();
     csvLogs.forEach(log => {
       const pid = log.productId;
@@ -7769,19 +7775,19 @@ function calculateInvMonthly(month) {
           productId: pid,
           name: log.productName || pid,
           category: pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99'),
-          price: log.unitPrice || 0,
+          price: safeNum(log.unitPrice),
           prevQty: 0,
-          currQty: log.quantity || 0,
-          diff: log.quantity || 0,
-          amount: Math.round(log.amountWithTax || 0),
+          currQty: safeNum(log.quantity),
+          diff: safeNum(log.quantity),
+          amount: Math.round(safeNum(log.amountWithTax)),
           isFixed: false,
           prevAmount: 0
         });
       } else {
         const existing = productMap.get(pid);
-        existing.currQty += log.quantity || 0;
-        existing.diff += log.quantity || 0;
-        existing.amount += Math.round(log.amountWithTax || 0);
+        existing.currQty += safeNum(log.quantity);
+        existing.diff += safeNum(log.quantity);
+        existing.amount += Math.round(safeNum(log.amountWithTax));
       }
     });
 
@@ -7839,6 +7845,11 @@ function calculateInvMonthly(month) {
       prevData.items.forEach(i => productIds.add(i.productId));
     }
 
+    const safeNum = (val) => {
+      const n = Number(val);
+      return isNaN(n) ? 0 : n;
+    };
+
     productIds.forEach(pid => {
       const p = products.find(x => x.id === pid) || {
         id: pid,
@@ -7853,12 +7864,12 @@ function calculateInvMonthly(month) {
       if (prevData && prevData.items) {
         const prevItem = prevData.items.find(i => i.productId === pid);
         if (prevItem) {
-          prevQty = prevItem.currQty;
-          prevAmount = Math.round(prevItem.amount || 0);
+          prevQty = safeNum(prevItem.currQty);
+          prevAmount = Math.round(safeNum(prevItem.amount));
           if (!products.find(x => x.id === pid)) {
             p.name = prevItem.name;
             p.category = prevItem.category;
-            p.price = prevItem.price;
+            p.price = safeNum(prevItem.price);
             p.isFixed = prevItem.isFixed;
           }
         }
@@ -7872,11 +7883,11 @@ function calculateInvMonthly(month) {
       } else {
           productLogs.forEach(log => {
             if (log.type === 'count') {
-              currQty = log.quantity;
+              currQty = safeNum(log.quantity);
             } else if (log.type === 'in') {
-              currQty += log.quantity;
+              currQty += safeNum(log.quantity);
             } else if (log.type === 'out') {
-              currQty -= log.quantity;
+              currQty -= safeNum(log.quantity);
             }
           });
           if (p.isFixed && productLogs.length === 0) {
@@ -7885,7 +7896,7 @@ function calculateInvMonthly(month) {
       }
 
       const diff = currQty - prevQty;
-      const safePrice = parseFloat(p.price) || 0;
+      const safePrice = safeNum(p.price);
       const amount = Math.round(currQty * safePrice);
 
       items.push({
