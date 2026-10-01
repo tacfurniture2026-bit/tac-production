@@ -6413,8 +6413,10 @@ function setupInvExcelImport() {
             }
 
             const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
-            const amountRaw = row[colIndex.amountWithTax];
+            const amountRaw = row[colIndex.amount];
+            const amountWithTaxRaw = row[colIndex.amountWithTax];
             const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
             let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
             if (unitPrice === 0 && quantity > 0) {
@@ -7881,7 +7883,8 @@ function calculateInvMonthly(month) {
       }
 
       const diff = currQty - prevQty;
-      const amount = Math.round(currQty * p.price);
+      const safePrice = parseFloat(p.price) || 0;
+      const amount = Math.round(currQty * safePrice);
 
       items.push({
         productId: pid,
@@ -7907,11 +7910,15 @@ function calculateInvMonthly(month) {
 
   // 分類別前月比の計算
   Object.keys(summary).forEach(k => {
-    summary[k].diff = summary[k].amount - summary[k].prevAmount;
+    const amt = Number(summary[k].amount) || 0;
+    const prevAmt = Number(summary[k].prevAmount) || 0;
+    summary[k].diff = amt - prevAmt;
+    summary[k].amount = amt;
+    summary[k].prevAmount = prevAmt;
   });
 
-  const total = items.reduce((sum, i) => sum + i.amount, 0);
-  const prevTotal = items.reduce((sum, i) => sum + (i.prevAmount || 0), 0);
+  const total = items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const prevTotal = items.reduce((sum, i) => sum + (Number(i.prevAmount) || 0), 0);
 
   return { month, items, summary, total, prevTotal };
 }
