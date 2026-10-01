@@ -6438,7 +6438,7 @@ function setupInvExcelImport() {
               quantity: quantity,
               unitPrice: unitPrice,
               amount: amount,
-              amountWithTax: amount,
+              amountWithTax: amountWithTax,
               isMatched: !!matchedProduct
             });
           });
@@ -6524,6 +6524,7 @@ function setupInvExcelImport() {
                 id: scanId,
                 productId: item.product.id,
                 quantity: item.quantity,
+                amountWithTax: item.amountWithTax,
                 worker: (currentUser && currentUser.username) ? currentUser.username : 'unknown',
                 workerName: (currentUser && currentUser.displayName) ? currentUser.displayName : '未設定',
                 timestamp: timestamp,
@@ -6535,6 +6536,7 @@ function setupInvExcelImport() {
             const prod = products.find(p => p.id === item.product.id);
             if (prod) {
               prod.tempQty = item.quantity;
+              prod.tempAmountWithTax = item.amountWithTax;
               prod.tempWorker = (currentUser && currentUser.username) ? currentUser.username : 'unknown';
               prod.tempWorkerName = (currentUser && currentUser.displayName) ? currentUser.displayName : '未設定';
               prod.tempTimestamp = timestamp;
@@ -9055,16 +9057,18 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
     
     let qty = 0;
     let worker = 'システム自動';
+    let amountWithTax = 0;
     
     if (tempScan) {
       qty = tempScan.quantity;
       worker = tempScan.workerName || tempScan.worker;
+      if (tempScan.amountWithTax !== undefined) amountWithTax = tempScan.amountWithTax;
     } else if (isFixed) {
       qty = prevQty;
       worker = '自動(不動品)';
     }
     
-    logs.push({
+    const logData = {
       id: Date.now() + index,
       productId: pid,
       quantity: qty,
@@ -9072,7 +9076,9 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
       worker: worker,
       note: `棚卸確定締め(${selectedMonth})`,
       timestamp: timestamp
-    });
+    };
+    if (amountWithTax > 0) logData.amountWithTax = amountWithTax;
+    logs.push(logData);
   });
 
   // Save official logs
