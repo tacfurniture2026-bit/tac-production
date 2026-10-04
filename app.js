@@ -5641,7 +5641,7 @@ function renderReport(argStart, argEnd) {
     invProducts.forEach(product => {
       const stock = getCurrentStock(product.id, invLogs);
       const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-      const amount = Math.round(stock * safePrice * 1.01);
+      const amount = Math.round(stock * safePrice);
       const catName = INV_CATEGORIES[product.category] || product.category;
       if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
       
@@ -6765,8 +6765,8 @@ function setupInitialDataImport() {
             });
             
             const price = parseFloat(p.price) || 0;
-            // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
-            const itemAmount = Math.round(qty * price * 1.01);
+            // 在庫金額 = 数量 × 単価
+            const itemAmount = Math.round(qty * price);
             
             monthlyItems.push({
               productId: p.id,
@@ -7749,9 +7749,9 @@ function exportInvMonthlyExcel() {
 }
 
 function calculateInvMonthly(month) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
 
   // 前月データを取得
   const prevDate = new Date(month + '-01');
@@ -7776,72 +7776,60 @@ function calculateInvMonthly(month) {
       // 破損チェック（NaNが含まれているか）
       const isCorrupted = isNaN(Number(savedData.total)) || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
       if (!isCorrupted) {
-        // 前月データから prevTotal / prevAmount を常に再計算する
-        // （過去に prevTotal:0 や ×1.01込みで保存されたデータを修正するため）
+        // 前月合計金額を取得
         let calcPrevTotal = 0;
         if (prevData && prevData.items) {
           calcPrevTotal = prevData.items.reduce((sum, pi) => sum + (Number(pi.amount) || 0), 0);
         }
         savedData.prevTotal = calcPrevTotal;
 
-        // 各itemの amount を再計算し、prevAmount を前月データから取得
-        if (savedData.items) {
-          savedData.items.forEach(item => {
-            // CSVインポートで保存されたamountWithTax（ExcelのU列）があればそれを優先
+        // 保存済みアイテムの金額(amount)はそのまま尊重し、前月金額(prevAmount)と差分(diff)のみ前月データから更新
+        savedData.items.forEach(item => {
+          // 保存済み金額が万が一欠損している場合のみ計算
+          if (item.amount === undefined || item.amount === null || isNaN(Number(item.amount))) {
             if (item.csvAmountWithTax > 0) {
               item.amount = Math.round(Number(item.csvAmountWithTax));
             } else {
-              // フォールバック: 数量 × 単価 × 1.01（TAC口銭込）
-              const itemPrice = Number(item.price) || 0;
-              const itemQty = Number(item.currQty) || 0;
-              item.amount = Math.round(itemQty * itemPrice * 1.01);
+              item.amount = Math.round((Number(item.currQty) || 0) * (Number(item.price) || 0));
             }
+          } else {
+            item.amount = Math.round(Number(item.amount));
+          }
 
-            // prevAmount は前月データから取得
-            let pa = 0;
-            if (prevData && prevData.items) {
-              const pi = prevData.items.find(p => p.productId === item.productId);
-              if (pi) {
-                // 前月もCSVインポートのamountがあればそれを使用
-                if (pi.csvAmountWithTax > 0) {
-                  pa = Math.round(Number(pi.csvAmountWithTax));
-                } else {
-                  pa = Math.round((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
-                }
-              }
+          // prevAmount は前月締めデータから取得（存在すれば前月の確定金額）
+          let pa = 0;
+          if (prevData && prevData.items) {
+            const pi = prevData.items.find(p => p.productId === item.productId);
+            if (pi) {
+              pa = Math.round(Number(pi.amount) || 0);
             }
-            item.prevAmount = pa;
-          });
-        }
+          }
+          item.prevAmount = pa;
+          item.diff = (Number(item.currQty) || 0) - (Number(item.prevQty) || 0);
+        });
 
-        // total も再計算
+        // total も保存済みアイテムの和として正確に算出
         savedData.total = savedData.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
-        // summary の diff / prevAmount も再計算
-        if (savedData.summary) {
-          // まず summary をリセット
-          Object.keys(savedData.summary).forEach(k => {
-            savedData.summary[k].amount = 0;
-            savedData.summary[k].prevAmount = 0;
-          });
-          // items から再集計
-          savedData.items.forEach(item => {
-            const catKey = item.isFixed ? 'fixed' : item.category;
-            if (!savedData.summary[catKey]) {
-              savedData.summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
-            }
-            savedData.summary[catKey].amount += (Number(item.amount) || 0);
-            savedData.summary[catKey].prevAmount += (Number(item.prevAmount) || 0);
-          });
-          Object.keys(savedData.summary).forEach(k => {
-            const s = savedData.summary[k];
-            s.diff = (Number(s.amount) || 0) - (Number(s.prevAmount) || 0);
-          });
-        }
+        // summary の再構築
+        savedData.summary = {};
+        savedData.items.forEach(item => {
+          const catKey = item.isFixed ? 'fixed' : item.category;
+          if (!savedData.summary[catKey]) {
+            const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[item.category] || `分類${item.category}`) : `分類${item.category}`;
+            savedData.summary[catKey] = { name: item.isFixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
+          }
+          savedData.summary[catKey].amount += (Number(item.amount) || 0);
+          savedData.summary[catKey].prevAmount += (Number(item.prevAmount) || 0);
+        });
+        Object.keys(savedData.summary).forEach(k => {
+          const s = savedData.summary[k];
+          s.diff = (Number(s.amount) || 0) - (Number(s.prevAmount) || 0);
+        });
+
         return savedData;
       }
       console.warn(`Corrupted monthly data (${month}) detected. Recalculating...`);
-      // 破損している場合は isClosed 扱いを維持しつつ、今回は再計算を走らせる
     }
   }
 
@@ -7850,181 +7838,109 @@ function calculateInvMonthly(month) {
   
   // CSV取込ログかどうか判定
   const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
-  const isCsvImport = csvLogs.length > 0;
   
   const items = [];
   const summary = {};
   
-  if (isCsvImport) {
-    const safeNum = (val) => {
-      const n = Number(val);
-      return isNaN(n) ? 0 : n;
-    };
+  const safeNum = (val) => {
+    const n = Number(val);
+    return isNaN(n) ? 0 : n;
+  };
 
-    const productMap = new Map();
-    csvLogs.forEach(log => {
-      const pid = log.productId;
-      if (!productMap.has(pid)) {
-        productMap.set(pid, {
-          productId: pid,
-          name: log.productName || pid,
-          category: pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99'),
-          price: safeNum(log.unitPrice),
-          prevQty: 0,
-          currQty: safeNum(log.quantity),
-          diff: safeNum(log.quantity),
-          amount: 0,
-          csvAmountWithTax: safeNum(log.amountWithTax), // ExcelのU列（TAC口銭込金額）を保持
-          isFixed: false,
-          prevAmount: 0
-        });
-      } else {
-        const existing = productMap.get(pid);
-        existing.currQty += safeNum(log.quantity);
-        existing.diff += safeNum(log.quantity);
-        existing.csvAmountWithTax += safeNum(log.amountWithTax); // 同一商品の重複ログを加算
-      }
-    });
-
-    if (prevData && prevData.items) {
-      prevData.items.forEach(prevItem => {
-        if (!productMap.has(prevItem.productId)) {
-          productMap.set(prevItem.productId, {
-            productId: prevItem.productId,
-            name: prevItem.name,
-            category: prevItem.category,
-            price: prevItem.price,
-            prevQty: prevItem.currQty,
-            currQty: 0,
-            diff: -safeNum(prevItem.currQty),
-            amount: 0,
-            isFixed: prevItem.isFixed,
-            prevAmount: Math.round(safeNum(prevItem.amount))
-          });
-        }
-      });
-    }
-    
-    productMap.forEach((item, pid) => {
-      const masterProduct = products.find(p => p.id === pid);
-      if (masterProduct) {
-        item.name = item.name === pid ? masterProduct.name : item.name;
-        item.category = masterProduct.category;
-        item.price = item.price === 0 ? masterProduct.price : item.price;
-        item.isFixed = !!masterProduct.isFixed;
-      }
-      
-      if (prevData && prevData.items) {
-        const prevItem = prevData.items.find(i => i.productId === pid);
-        if (prevItem) {
-          item.prevQty = safeNum(prevItem.currQty);
-          item.prevAmount = Math.round(safeNum(prevItem.amount));
-          item.diff = item.currQty - item.prevQty;
-        }
-      }
-      
-      // CSVインポートの場合、ExcelのU列（amountWithTax）を優先使用する
-      // これによりExcelとの金額差異を排除
-      if (item.csvAmountWithTax > 0) {
-        item.amount = Math.round(item.csvAmountWithTax);
-      } else {
-        // フォールバック: 数量 × 単価 × 1.01（TAC口銭込）
-        item.amount = Math.round(item.currQty * item.price * 1.01);
-      }
-
-      items.push(item);
-      
-      const catKey = item.isFixed ? 'fixed' : item.category;
-      if (!summary[catKey]) {
-        summary[catKey] = { name: item.isFixed ? '不動品' : (INV_CATEGORIES[item.category] || `分類${item.category}`), amount: 0, diff: 0, prevAmount: 0 };
-      }
-      summary[catKey].amount += item.amount;
-      summary[catKey].prevAmount += (item.prevAmount || 0);
-    });
-    
-  } else {
-    // 手動入力/スキャンモード
-    const productIds = new Set(products.map(p => p.id));
-    if (prevData && prevData.items) {
-      prevData.items.forEach(i => productIds.add(i.productId));
-    }
-
-    const safeNum = (val) => {
-      const n = Number(val);
-      return isNaN(n) ? 0 : n;
-    };
-
-    productIds.forEach(pid => {
-      const p = products.find(x => x.id === pid) || {
-        id: pid,
-        name: pid,
-        category: pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99'),
-        price: 0,
-        isFixed: false
-      };
-
-      let prevQty = 0;
-      let prevAmount = 0;
-      if (prevData && prevData.items) {
-        const prevItem = prevData.items.find(i => i.productId === pid);
-        if (prevItem) {
-          prevQty = safeNum(prevItem.currQty);
-          prevAmount = Math.round(safeNum(prevItem.amount));
-          if (!products.find(x => x.id === pid)) {
-            p.name = prevItem.name;
-            p.category = prevItem.category;
-            p.price = safeNum(prevItem.price);
-            p.isFixed = prevItem.isFixed;
-          }
-        }
-      }
-
-      // 未締めかつログなしの場合は0にする（ユーザー要望）
-      let currQty = prevQty;
-      const productLogs = monthLogs.filter(l => l.productId === pid);
-      if (!isClosed && monthLogs.length === 0) {
-          currQty = 0;
-      } else {
-          productLogs.forEach(log => {
-            if (log.type === 'count') {
-              currQty = safeNum(log.quantity);
-            } else if (log.type === 'in') {
-              currQty += safeNum(log.quantity);
-            } else if (log.type === 'out') {
-              currQty -= safeNum(log.quantity);
-            }
-          });
-          if (p.isFixed && productLogs.length === 0) {
-            currQty = prevQty;
-          }
-      }
-
-      const diff = currQty - prevQty;
-      const safePrice = safeNum(p.price);
-      // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
-      const amount = Math.round(currQty * safePrice * 1.01);
-
-      items.push({
-        productId: pid,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        prevQty: prevQty,
-        currQty: currQty,
-        diff: diff,
-        amount: amount,
-        isFixed: p.isFixed,
-        prevAmount: prevAmount
-      });
-
-      const catKey = p.isFixed ? 'fixed' : p.category;
-      if (!summary[catKey]) {
-        summary[catKey] = { name: p.isFixed ? '不動品' : (INV_CATEGORIES[p.category] || 'その他'), amount: 0, diff: 0, prevAmount: 0 };
-      }
-      summary[catKey].amount += amount;
-      summary[catKey].prevAmount += prevAmount;
-    });
+  // 全集計対象商品IDの特定（マスタ・当月ログ・前月締めデータ）
+  const allProductIds = new Set(products.map(p => p.id));
+  monthLogs.forEach(l => { if (l.productId) allProductIds.add(l.productId); });
+  if (prevData && prevData.items) {
+    prevData.items.forEach(i => allProductIds.add(i.productId));
   }
+
+  // 商品ID順でソート
+  const sortedProductIds = Array.from(allProductIds).sort((a, b) => a.localeCompare(b));
+
+  sortedProductIds.forEach(pid => {
+    if (pid.startsWith('TEMP_')) return;
+
+    const masterProduct = products.find(x => x.id === pid);
+    const prevItem = prevData && prevData.items ? prevData.items.find(i => i.productId === pid) : null;
+
+    const name = masterProduct ? masterProduct.name : (prevItem ? prevItem.name : pid);
+    const category = masterProduct ? masterProduct.category : (prevItem ? prevItem.category : (pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99')));
+    const price = masterProduct ? safeNum(masterProduct.price) : (prevItem ? safeNum(prevItem.price) : 0);
+    const isFixed = masterProduct ? !!masterProduct.isFixed : (prevItem ? !!prevItem.isFixed : false);
+
+    // 前月数量・金額の取得
+    const prevQty = prevItem ? safeNum(prevItem.currQty) : 0;
+    let prevAmount = 0;
+    if (prevItem) {
+      if (prevItem.amount !== undefined && prevItem.amount !== null && !isNaN(Number(prevItem.amount))) {
+        prevAmount = Math.round(Number(prevItem.amount));
+      } else if (prevItem.csvAmountWithTax > 0) {
+        prevAmount = Math.round(Number(prevItem.csvAmountWithTax));
+      } else {
+        prevAmount = Math.round(prevQty * price);
+      }
+    }
+
+    // 当月数量およびCSV U列金額の算出
+    let currQty = prevQty;
+    let csvAmountWithTax = 0;
+    const productLogs = monthLogs.filter(l => l.productId === pid);
+
+    if (!isClosed && monthLogs.length === 0) {
+      currQty = isFixed ? prevQty : 0;
+    } else {
+      productLogs.forEach(log => {
+        if (log.type === 'count') {
+          currQty = safeNum(log.quantity);
+          if (log.amountWithTax > 0) {
+            csvAmountWithTax += safeNum(log.amountWithTax);
+          }
+        } else if (log.type === 'in') {
+          currQty += safeNum(log.quantity);
+        } else if (log.type === 'out') {
+          currQty -= safeNum(log.quantity);
+        }
+      });
+      if (isFixed && productLogs.length === 0) {
+        currQty = prevQty;
+      }
+    }
+
+    const diff = currQty - prevQty;
+
+    // 当月金額 (amount) の算出
+    // Excel U列金額を最優先。不動品で数量不変かつCSV締め月は前月確定金額を維持。無ければ 数量 × 単価
+    let amount = 0;
+    if (csvAmountWithTax > 0) {
+      amount = Math.round(csvAmountWithTax);
+    } else if (isFixed && currQty === prevQty && prevAmount > 0 && csvLogs.length > 0) {
+      amount = prevAmount;
+    } else {
+      amount = Math.round(currQty * price);
+    }
+
+    items.push({
+      productId: pid,
+      name: name,
+      category: category,
+      price: price,
+      prevQty: prevQty,
+      currQty: currQty,
+      diff: diff,
+      amount: amount,
+      isFixed: isFixed,
+      prevAmount: prevAmount,
+      csvAmountWithTax: csvAmountWithTax > 0 ? csvAmountWithTax : undefined
+    });
+
+    const catKey = isFixed ? 'fixed' : category;
+    if (!summary[catKey]) {
+      const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[category] || `分類${category}`) : `分類${category}`;
+      summary[catKey] = { name: isFixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
+    }
+    summary[catKey].amount += amount;
+    summary[catKey].prevAmount += prevAmount;
+  });
 
   // 分類別前月比の計算
   Object.keys(summary).forEach(k => {
