@@ -7790,7 +7790,7 @@ function calculateInvMonthly(month) {
             if (item.csvAmountWithTax > 0) {
               item.amount = Math.round(Number(item.csvAmountWithTax));
             } else {
-              item.amount = Math.round((Number(item.currQty) || 0) * (Number(item.price) || 0));
+              item.amount = Math.round((Number(item.currQty) || 0) * (Number(item.price) || 0) * 1.01);
             }
           } else {
             item.amount = Math.round(Number(item.amount));
@@ -7838,6 +7838,7 @@ function calculateInvMonthly(month) {
   
   // CSV取込ログかどうか判定
   const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
+  const hasCsvImport = csvLogs.length > 0;
   
   const items = [];
   const summary = {};
@@ -7847,8 +7848,10 @@ function calculateInvMonthly(month) {
     return isNaN(n) ? 0 : n;
   };
 
-  // 全集計対象商品IDの特定（マスタ・当月ログ・前月締めデータ）
-  const allProductIds = new Set(products.map(p => p.id));
+  // 全集計対象商品IDの特定
+  // マスタ商品、当月ログ、前月データを統合して漏れなく集計対象とする
+  const allProductIds = new Set();
+  products.forEach(p => allProductIds.add(p.id));
   monthLogs.forEach(l => { if (l.productId) allProductIds.add(l.productId); });
   if (prevData && prevData.items) {
     prevData.items.forEach(i => allProductIds.add(i.productId));
@@ -7868,7 +7871,7 @@ function calculateInvMonthly(month) {
     const price = masterProduct ? safeNum(masterProduct.price) : (prevItem ? safeNum(prevItem.price) : 0);
     const isFixed = masterProduct ? !!masterProduct.isFixed : (prevItem ? !!prevItem.isFixed : false);
 
-    // 前月数量・金額の取得
+    // 前月数量・金額の取得（四捨五入して整数化）
     const prevQty = prevItem ? safeNum(prevItem.currQty) : 0;
     let prevAmount = 0;
     if (prevItem) {
@@ -7877,46 +7880,64 @@ function calculateInvMonthly(month) {
       } else if (prevItem.csvAmountWithTax > 0) {
         prevAmount = Math.round(Number(prevItem.csvAmountWithTax));
       } else {
-        prevAmount = Math.round(prevQty * price);
+        prevAmount = Math.round(prevQty * price * 1.01);
       }
     }
 
     // 当月数量およびCSV U列金額の算出
-    let currQty = prevQty;
+    let currQty = 0;
     let csvAmountWithTax = 0;
+    let hasCountLog = false;
     const productLogs = monthLogs.filter(l => l.productId === pid);
 
-    if (!isClosed && monthLogs.length === 0) {
+    if (!isClosed && monthLogs.length === 0 && !hasCsvImport) {
       currQty = isFixed ? prevQty : 0;
     } else {
-      productLogs.forEach(log => {
-        if (log.type === 'count') {
-          currQty = safeNum(log.quantity);
-          if (log.amountWithTax > 0) {
-            csvAmountWithTax += safeNum(log.amountWithTax);
+      const countLogs = productLogs.filter(l => l.type === 'count');
+      const inOutLogs = productLogs.filter(l => l.type === 'in' || l.type === 'out');
+
+      if (countLogs.length > 0) {
+        hasCountLog = true;
+        if (hasCsvImport) {
+          // CSVインポート時は全CSV行の数量・U列金額を合算
+          countLogs.forEach(log => {
+            currQty += safeNum(log.quantity);
+            if (log.amountWithTax > 0) {
+              csvAmountWithTax += safeNum(log.amountWithTax);
+            }
+          });
+        } else {
+          // 手動棚卸スキャン等の場合は最新のcountログの数量を採用（重複加算防止）
+          const latestCountLog = countLogs[countLogs.length - 1];
+          currQty = safeNum(latestCountLog.quantity);
+          if (latestCountLog.amountWithTax > 0) {
+            csvAmountWithTax = safeNum(latestCountLog.amountWithTax);
           }
-        } else if (log.type === 'in') {
-          currQty += safeNum(log.quantity);
-        } else if (log.type === 'out') {
-          currQty -= safeNum(log.quantity);
         }
-      });
-      if (isFixed && productLogs.length === 0) {
+      } else if (isFixed) {
+        // 棚卸カウントログがない不動品は前月数量を自動引き継ぎ
         currQty = prevQty;
+      } else {
+        currQty = 0;
       }
+
+      // 入出庫ログ（in/out）を反映
+      inOutLogs.forEach(log => {
+        if (log.type === 'in') currQty += safeNum(log.quantity);
+        else if (log.type === 'out') currQty -= safeNum(log.quantity);
+      });
     }
 
     const diff = currQty - prevQty;
 
-    // 当月金額 (amount) の算出
-    // Excel U列金額を最優先。不動品で数量不変かつCSV締め月は前月確定金額を維持。無ければ 数量 × 単価
+    // 当月金額 (amount) の算出（四捨五入して整数化）
     let amount = 0;
     if (csvAmountWithTax > 0) {
       amount = Math.round(csvAmountWithTax);
-    } else if (isFixed && currQty === prevQty && prevAmount > 0 && csvLogs.length > 0) {
+    } else if (isFixed && currQty === prevQty && prevAmount > 0 && !hasCsvImport) {
       amount = prevAmount;
     } else {
-      amount = Math.round(currQty * price);
+      amount = Math.round(currQty * price * 1.01);
     }
 
     items.push({
