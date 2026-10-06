@@ -7944,18 +7944,21 @@ function calculateInvMonthly(month) {
     const price = masterProduct ? safeNum(masterProduct.price) : (prevItem ? safeNum(prevItem.price) : 0);
     const isFixed = masterProduct ? !!masterProduct.isFixed : (prevItem ? !!prevItem.isFixed : false);
 
-    // 前月数量・金額の取得（四捨五入して整数化）
+    // 前月数量・金額の取得（生精度小数の保持）
     const prevQty = prevItem ? safeNum(prevItem.currQty) : 0;
-    let prevAmount = 0;
+    let prevAmountRaw = 0;
     if (prevItem) {
-      if (prevItem.amount !== undefined && prevItem.amount !== null && !isNaN(Number(prevItem.amount))) {
-        prevAmount = Math.round(Number(prevItem.amount));
-      } else if (prevItem.csvAmountWithTax > 0) {
-        prevAmount = Math.round(Number(prevItem.csvAmountWithTax));
+      if (prevItem.csvAmountWithTax !== undefined && prevItem.csvAmountWithTax !== null) {
+        prevAmountRaw = safeNum(prevItem.csvAmountWithTax);
+      } else if (prevItem.rawAmount !== undefined && prevItem.rawAmount !== null) {
+        prevAmountRaw = safeNum(prevItem.rawAmount);
+      } else if (prevItem.amount !== undefined && prevItem.amount !== null && !isNaN(Number(prevItem.amount))) {
+        prevAmountRaw = safeNum(prevItem.amount);
       } else {
-        prevAmount = Math.round(prevQty * price * 1.01);
+        prevAmountRaw = prevQty * price * 1.01;
       }
     }
+    const prevAmount = Math.round(prevAmountRaw);
 
     // 当月数量およびCSV U列金額の算出
     let currQty = 0;
@@ -7972,12 +7975,10 @@ function calculateInvMonthly(month) {
       if (countLogs.length > 0) {
         hasCountLog = true;
         if (hasCsvImport) {
-          // CSVインポート時は全CSV行の数量・U列金額を合算
+          // CSVインポート時は全CSV行の数量・U列金額を合算（0円も含め集計）
           countLogs.forEach(log => {
             currQty += safeNum(log.quantity);
-            if (log.amountWithTax > 0) {
-              csvAmountWithTax += safeNum(log.amountWithTax);
-            }
+            csvAmountWithTax += safeNum(log.amountWithTax);
           });
         } else {
           // 手動棚卸スキャン等の場合は最新のcountログの数量を採用（重複加算防止）
@@ -8003,15 +8004,18 @@ function calculateInvMonthly(month) {
 
     const diff = currQty - prevQty;
 
-    // 当月金額 (amount) の算出（四捨五入して整数化）
-    let amount = 0;
-    if (csvAmountWithTax > 0) {
-      amount = Math.round(csvAmountWithTax);
-    } else if (isFixed && currQty === prevQty && prevAmount > 0 && !hasCsvImport) {
-      amount = prevAmount;
+    // 当月金額 (amount) の算出
+    let amountRaw = 0;
+    if (hasCsvImport && hasCountLog) {
+      amountRaw = csvAmountWithTax;
+    } else if (csvAmountWithTax > 0) {
+      amountRaw = csvAmountWithTax;
+    } else if (isFixed && currQty === prevQty && prevAmountRaw > 0 && !hasCsvImport) {
+      amountRaw = prevAmountRaw;
     } else {
-      amount = Math.round(currQty * price * 1.01);
+      amountRaw = currQty * price * 1.01;
     }
+    const amount = Math.round(amountRaw);
 
     items.push({
       productId: pid,
@@ -8024,31 +8028,55 @@ function calculateInvMonthly(month) {
       amount: amount,
       isFixed: isFixed,
       prevAmount: prevAmount,
-      csvAmountWithTax: csvAmountWithTax > 0 ? csvAmountWithTax : undefined
+      rawAmount: amountRaw,
+      rawPrevAmount: prevAmountRaw,
+      csvAmountWithTax: (hasCountLog && hasCsvImport) ? csvAmountWithTax : (csvAmountWithTax > 0 ? csvAmountWithTax : undefined)
     });
 
     const catKey = isFixed ? 'fixed' : category;
     if (!summary[catKey]) {
       const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[category] || `分類${category}`) : `分類${category}`;
-      summary[catKey] = { name: isFixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
+      summary[catKey] = { name: isFixed ? '不動品' : catName, rawAmount: 0, rawPrevAmount: 0, amount: 0, diff: 0, prevAmount: 0 };
     }
-    summary[catKey].amount += amount;
-    summary[catKey].prevAmount += prevAmount;
+    summary[catKey].rawAmount = (summary[catKey].rawAmount || 0) + amountRaw;
+    summary[catKey].rawPrevAmount = (summary[catKey].rawPrevAmount || 0) + prevAmountRaw;
   });
 
-  // 分類別前月比の計算
+  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
+  const rawTotal = items.reduce((sum, i) => sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount), 0);
+  const total = Math.round(rawTotal);
+  const rawPrevTotal = items.reduce((sum, i) => sum + (i.rawPrevAmount !== undefined ? i.rawPrevAmount : i.prevAmount), 0);
+  const prevTotal = Math.round(rawPrevTotal);
+
+  let largestCatKey = null;
+  let maxCatRawAmt = -1;
+
   Object.keys(summary).forEach(k => {
-    const amt = Number(summary[k].amount) || 0;
-    const prevAmt = Number(summary[k].prevAmount) || 0;
+    const amt = Math.round(summary[k].rawAmount || 0);
+    const prevAmt = Math.round(summary[k].rawPrevAmount || 0);
     summary[k].diff = amt - prevAmt;
     summary[k].amount = amt;
     summary[k].prevAmount = prevAmt;
+    if ((summary[k].rawAmount || 0) > maxCatRawAmt) {
+      maxCatRawAmt = summary[k].rawAmount || 0;
+      largestCatKey = k;
+    }
   });
 
-  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全致させるためfloat総和を四捨五入
-  const rawTotal = items.reduce((sum, i) => sum + (Number(i.csvAmountWithTax !== undefined ? i.csvAmountWithTax : i.amount) || 0), 0);
-  const total = Math.round(rawTotal);
-  const prevTotal = items.reduce((sum, i) => sum + (Number(i.prevAmount) || 0), 0);
+  // 分類別合計の四捨五入端数を最大カテゴリで補正し、全体合計(total/prevTotal)と完全一致させる
+  const catSum = Object.values(summary).reduce((s, c) => s + c.amount, 0);
+  const catDiff = total - catSum;
+  if (catDiff !== 0 && largestCatKey && summary[largestCatKey]) {
+    summary[largestCatKey].amount += catDiff;
+    summary[largestCatKey].diff = summary[largestCatKey].amount - summary[largestCatKey].prevAmount;
+  }
+
+  const prevCatSum = Object.values(summary).reduce((s, c) => s + c.prevAmount, 0);
+  const prevCatDiff = prevTotal - prevCatSum;
+  if (prevCatDiff !== 0 && largestCatKey && summary[largestCatKey]) {
+    summary[largestCatKey].prevAmount += prevCatDiff;
+    summary[largestCatKey].diff = summary[largestCatKey].amount - summary[largestCatKey].prevAmount;
+  }
 
   return { month, items, summary, total, prevTotal };
 }
