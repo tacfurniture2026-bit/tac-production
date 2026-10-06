@@ -7002,6 +7002,7 @@ function saveInvMonthlyClosing(month, result) {
     items: result.items,
     summary: result.summary,
     total: result.total,
+    f1Total: result.f1Total,
     fixedTotal: (result.summary['fixed'] ? result.summary['fixed'].amount : 0) || 0,
     closedAt: new Date().toISOString()
   };
@@ -7854,10 +7855,17 @@ function exportInvMonthlyExcel() {
   }
 }
 
-function calculateInvMonthly(month, f1Total = null) {
+function calculateInvMonthly(month, f1TotalOverride = null) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  let f1Total = f1TotalOverride;
+  if (f1Total === null) {
+    const existing = monthly.find(m => m.month === month);
+    if (existing && existing.f1Total !== undefined) {
+      f1Total = existing.f1Total;
+    }
+  }
 
   // 前月データを取得
   const [yearStr, monthStr] = month.split('-');
@@ -8379,9 +8387,15 @@ function viewInvAnnualSummary() {
       const productsMap = new Map();
       
       // 1〜12月のデータを計算
+      const allSavedMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
       for (let m = 1; m <= 12; m++) {
         const monthStr = `${year}-${String(m).padStart(2, '0')}`;
         const result = calculateInvMonthly(monthStr);
+        // DBに確定済みの月次データがあれば、その数値を優先する（F1補正などを反映するため）
+        const savedData = allSavedMonthly.find(x => x.month === monthStr);
+        if (savedData && savedData.total !== undefined) {
+          result.total = savedData.total;
+        }
         monthlyData.push(result);
         
         result.items.forEach(item => {
@@ -10375,3 +10389,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const aiSettingsBtn = $('#ai-api-settings-btn');
   if (aiSettingsBtn) aiSettingsBtn.addEventListener('click', openAiSettingsModal);
 });
+
+// --- Auto Healer for Duplicate Logs ---
+(function healDuplicateLogs() {
+  try {
+    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+    let initialCount = logs.length;
+    let keepLogs = [];
+    let seen = new Set();
+    
+    // We want to keep the LATEST log for each (productId, month) if it's a 'count' log from '棚卸確定'
+    // To do this easily, we process backwards
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const l = logs[i];
+      if (l.type === 'count' && l.note && l.note.includes('棚卸確定') && l.timestamp) {
+        const month = l.timestamp.substring(0, 7);
+        const key = l.productId + '_' + month;
+        if (seen.has(key)) {
+          continue; // duplicate, skip it
+        }
+        seen.add(key);
+      }
+      keepLogs.unshift(l);
+    }
+    
+    if (keepLogs.length < initialCount) {
+      console.log('Healed duplicate logs:', initialCount - keepLogs.length);
+      DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(keepLogs)));
+    }
+  } catch (e) {
+    console.error('Healer error:', e);
+  }
+})();

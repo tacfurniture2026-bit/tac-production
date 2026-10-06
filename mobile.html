@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.21.0】 -->
+    <!-- 【強制キャッシュバスティング v6.22.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.21.0';
+            var currentVersion = 'v6.22.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.21.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.22.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -40298,10 +40298,17 @@ function viewInvMonthlySummary() {
   displayInvMonthlyResult(result);
 }
 
-function calculateInvMonthly(month, f1Total = null) {
+function calculateInvMonthly(month, f1TotalOverride = null) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  let f1Total = f1TotalOverride;
+  if (f1Total === null) {
+    const existing = monthly.find(m => m.month === month);
+    if (existing && existing.f1Total !== undefined) {
+      f1Total = existing.f1Total;
+    }
+  }
 
   // 前月データを取得
   const [yearStr, monthStr] = month.split('-');
@@ -41997,6 +42004,7 @@ function saveInvMonthlyClosing(month, result) {
     items: result.items,
     summary: result.summary,
     total: result.total,
+    f1Total: result.f1Total,
     fixedTotal: (result.summary['fixed'] ? result.summary['fixed'].amount : 0) || 0,
     closedAt: new Date().toISOString()
   };
@@ -42251,6 +42259,38 @@ window.forceReloadMaster = function() {
     });
 };
 
+// --- Auto Healer for Duplicate Logs ---
+(function healDuplicateLogs() {
+  try {
+    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+    let initialCount = logs.length;
+    let keepLogs = [];
+    let seen = new Set();
+    
+    // We want to keep the LATEST log for each (productId, month) if it's a 'count' log from '棚卸確定'
+    // To do this easily, we process backwards
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const l = logs[i];
+      if (l.type === 'count' && l.note && l.note.includes('棚卸確定') && l.timestamp) {
+        const month = l.timestamp.substring(0, 7);
+        const key = l.productId + '_' + month;
+        if (seen.has(key)) {
+          continue; // duplicate, skip it
+        }
+        seen.add(key);
+      }
+      keepLogs.unshift(l);
+    }
+    
+    if (keepLogs.length < initialCount) {
+      console.log('Healed duplicate logs:', initialCount - keepLogs.length);
+      DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(keepLogs)));
+    }
+  } catch (e) {
+    console.error('Healer error:', e);
+  }
+})();
+
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -42308,7 +42348,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.21.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.22.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42335,7 +42375,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.21.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.22.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42418,7 +42458,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.21.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.22.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
