@@ -6465,6 +6465,16 @@ function setupInvExcelImport() {
             }
           }
 
+          
+          let f1AmountRaw = null;
+          if (rows[0] && rows[0].length >= 6) {
+             const val = String(rows[0][5] || '').replace(/[,¥\s\\]/g, '');
+             const num = parseFloat(val);
+             if (!isNaN(num)) {
+               f1AmountRaw = num;
+             }
+          }
+          
           let skippedSummaryCount = 0;
           let skippedNoQtyCount = 0;
 
@@ -6635,6 +6645,21 @@ function setupInvExcelImport() {
               prod.tempId = scanId;
             }
           });
+          
+          
+          if (f1AmountRaw !== null) {
+            tempScans.push({
+                id: 'META_F1_TOTAL',
+                productId: 'META_F1_TOTAL',
+                quantity: 1,
+                amountWithTax: f1AmountRaw,
+                worker: 'system',
+                workerName: 'system',
+                timestamp: timestamp,
+                month: currentMonth,
+                type: 'meta_f1'
+            });
+          }
           
           DB.save(DB.KEYS.INV_SCAN_TEMP, tempScans);
           DB.save(DB.KEYS.INV_PRODUCTS, products);
@@ -7821,7 +7846,7 @@ function exportInvMonthlyExcel() {
   }
 }
 
-function calculateInvMonthly(month) {
+function calculateInvMonthly(month, f1Total = null) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
@@ -8043,9 +8068,25 @@ function calculateInvMonthly(month) {
   });
 
   // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
+  
+  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
   const rawTotal = items.reduce((sum, i) => sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount), 0);
-  const total = Math.round(rawTotal);
+  let total = Math.round(rawTotal);
+  
+  if (f1Total !== null && !isNaN(f1Total)) {
+    const diff = f1Total - total;
+    if (diff !== 0) {
+      if (!summary['adjustment']) {
+        summary['adjustment'] = { name: 'エクセル補正(F1)', rawAmount: 0, rawPrevAmount: 0, amount: 0, diff: 0, prevAmount: 0 };
+      }
+      summary['adjustment'].rawAmount = diff;
+      summary['adjustment'].amount = diff;
+      total = f1Total;
+    }
+  }
+
   const rawPrevTotal = items.reduce((sum, i) => sum + (i.rawPrevAmount !== undefined ? i.rawPrevAmount : i.prevAmount), 0);
+
   const prevTotal = Math.round(rawPrevTotal);
 
   let largestCatKey = null;
@@ -8569,7 +8610,12 @@ function renderInvCheckPage() {
   }
 
   // Scanned items for this month
+  
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
+  
+  const f1Meta = currentTempScans.find(s => s.productId === 'META_F1_TOTAL');
+  const f1Total = f1Meta ? f1Meta.amountWithTax : null;
+
   const tempScanMap = {};
   currentTempScans.forEach(s => {
     tempScanMap[s.productId] = s;
@@ -9250,7 +9296,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
 
   // 4. Compute and save monthly closing
   try {
-    const monthlyResult = calculateInvMonthly(selectedMonth);
+    const monthlyResult = calculateInvMonthly(selectedMonth, f1Total);
     saveInvMonthlyClosing(selectedMonth, monthlyResult);
     toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
   } catch (err) {
