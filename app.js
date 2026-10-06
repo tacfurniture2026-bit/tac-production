@@ -5641,7 +5641,7 @@ function renderReport(argStart, argEnd) {
     invProducts.forEach(product => {
       const stock = getCurrentStock(product.id, invLogs);
       const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-      const amount = Math.round(stock * safePrice);
+      const amount = Math.round(stock * safePrice * 1.01);
       const catName = INV_CATEGORIES[product.category] || product.category;
       if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
       
@@ -6385,13 +6385,15 @@ function setupInvExcelImport() {
           // 安定版のロジック: 「提出書類」シートを最優先
           let targetSheetName = workbook.SheetNames.find(name => name.includes('提出書類')) || workbook.SheetNames[0];
           const sheet = workbook.Sheets[targetSheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          // defval: '' を指定して空セルによる列インデックスのズレ（シフト）を防止
+          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
 
-          console.log(`Excel解析: シート[${targetSheetName}] 固定列モード(S列)`);
+          console.log(`Excel解析: シート[${targetSheetName}] (全${rows.length}行)`);
 
           const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
           let parsedItems = [];
 
+          // デフォルト列インデックス（E:4, G:6, B:1, N:13, S:18, T:19, U:20）
           let colIndex = {
             id: 4,        // E列
             name: 6,      // G列
@@ -6401,48 +6403,76 @@ function setupInvExcelImport() {
             amount: 19,   // T列
             amountWithTax: 20 // U列
           };
-          
-          let skippedZeroPriceCount = 0;
+
+          // ヘッダー行を探索して列インデックスを動的検出（より柔軟かつ堅牢に）
+          for (let r = 0; r < Math.min(10, rows.length); r++) {
+            const rowStr = rows[r].map(c => String(c || '').trim()).join('|');
+            if (rowStr.includes('数量') || rowStr.includes('棚卸') || rowStr.includes('金額') || rowStr.includes('単価')) {
+              rows[r].forEach((cellVal, cIdx) => {
+                const val = String(cellVal || '').trim();
+                if (/^(資材ID|品番|識別コード|商品コード|コード)$/i.test(val)) colIndex.id = cIdx;
+                else if (/^(品名|資材名|商品名)$/i.test(val)) colIndex.name = cIdx;
+                else if (/^(資材分類|分類|カテゴリ)$/i.test(val)) colIndex.category = cIdx;
+                else if (/^(単価|購入単価)$/i.test(val)) colIndex.unitPrice = cIdx;
+                else if (/^(棚卸数量|実棚数量|実存数|数量)$/i.test(val)) colIndex.quantity = cIdx;
+                else if (/^(金額|在庫金額|金額\(税抜\))$/i.test(val)) colIndex.amount = cIdx;
+                else if (/^(金額\(税込\)|税込金額|合計金額)$/i.test(val)) colIndex.amountWithTax = cIdx;
+              });
+              break;
+            }
+          }
+
+          let skippedSummaryCount = 0;
           let skippedNoQtyCount = 0;
 
+          // 集計行・小計行を除外するキーワードパターン
+          const summaryPattern = /(小計|合計|総計|資材計|資材分類計|分類合計|総合計|SUBTOTAL|TOTAL|【.*】)/i;
+
           rows.forEach((row, rowIndex) => {
-            // ヘッダー行(1〜2行目)はスキップ
-            if (rowIndex < 2) return; 
-            
+            if (rowIndex < 1) return; // ヘッダー最上部スキップ
+
+            let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+
+            // 品名やコードが集計行（「小計」「合計」「【分類別】」等）の場合は厳密に排除
+            if (summaryPattern.test(productName) || summaryPattern.test(productCode) || summaryPattern.test(category)) {
+              skippedSummaryCount++;
+              return;
+            }
+
+            if (!productCode && !productName) return;
+
             const sColValue = row[colIndex.quantity];
-            // 数量が未記入、もしくは数値として解釈できない行はスキップ
-            if (sColValue === undefined || sColValue === null || sColValue === '') {
+            if (sColValue === undefined || sColValue === null || String(sColValue).trim() === '') {
               skippedNoQtyCount++;
               return;
             }
-            
-            const quantity = parseInt(sColValue, 10);
+
+            const quantity = parseInt(String(sColValue).replace(/[,¥\s\\]/g, ''), 10);
             if (isNaN(quantity)) {
               skippedNoQtyCount++;
               return;
             }
 
-            let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
-            const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
-            
-            if (!productCode && !productName) return;
             if (!productCode) {
+              // コードがない場合は品名から集計チェック
+              if (summaryPattern.test(productName)) return;
               productCode = `TEMP_${rowIndex}`;
             }
 
-            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
             const amountRaw = row[colIndex.amount];
             const amountWithTaxRaw = row[colIndex.amountWithTax];
             const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
             const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
             let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
-            if (unitPrice === 0 && quantity > 0) {
+            if (unitPrice === 0 && quantity > 0 && amount > 0) {
               unitPrice = (amount / quantity);
             }
 
             let matchedProduct = products.find(p => p.id === productCode);
-            
+
             const productInfo = matchedProduct || {
               id: productCode,
               name: productName || `不明品(行${rowIndex + 1})`,
@@ -6765,8 +6795,8 @@ function setupInitialDataImport() {
             });
             
             const price = parseFloat(p.price) || 0;
-            // 在庫金額 = 数量 × 単価
-            const itemAmount = Math.round(qty * price);
+            // 在庫金額 = 数量 × 単価 × 1.01（TAC口銭込）
+            const itemAmount = Math.round(qty * price * 1.01);
             
             monthlyItems.push({
               productId: p.id,
