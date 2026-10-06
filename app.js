@@ -6339,6 +6339,46 @@ window.cleanupInvalidTempProducts = function() {
   }
 };
 
+function decodeCsvBuffer(uint8Array) {
+  if (!uint8Array || uint8Array.length === 0) return '';
+  if (uint8Array.length >= 3 && uint8Array[0] === 0xEF && uint8Array[1] === 0xBB && uint8Array[2] === 0xBF) {
+    return new TextDecoder('utf-8').decode(uint8Array.subarray(3));
+  }
+  let isUtf8 = true;
+  let hasMultibyte = false;
+  let i = 0;
+  while (i < uint8Array.length) {
+    const byte = uint8Array[i];
+    if (byte <= 0x7F) {
+      i++;
+    } else if ((byte >= 0xC2 && byte <= 0xDF) && i + 1 < uint8Array.length && (uint8Array[i+1] >= 0x80 && uint8Array[i+1] <= 0xBF)) {
+      hasMultibyte = true;
+      i += 2;
+    } else if ((byte >= 0xE0 && byte <= 0xEF) && i + 2 < uint8Array.length && (uint8Array[i+1] >= 0x80 && uint8Array[i+1] <= 0xBF) && (uint8Array[i+2] >= 0x80 && uint8Array[i+2] <= 0xBF)) {
+      hasMultibyte = true;
+      i += 3;
+    } else if ((byte >= 0xF0 && byte <= 0xF4) && i + 3 < uint8Array.length && (uint8Array[i+1] >= 0x80 && uint8Array[i+1] <= 0xBF) && (uint8Array[i+2] >= 0x80 && uint8Array[i+2] <= 0xBF) && (uint8Array[i+3] >= 0x80 && uint8Array[i+3] <= 0xBF)) {
+      hasMultibyte = true;
+      i += 4;
+    } else {
+      isUtf8 = false;
+      break;
+    }
+  }
+  if (isUtf8 && hasMultibyte) {
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(uint8Array);
+    } catch(e) {
+      isUtf8 = false;
+    }
+  }
+  try {
+    return new TextDecoder('shift-jis').decode(uint8Array);
+  } catch(e) {
+    return new TextDecoder('utf-8').decode(uint8Array);
+  }
+}
+
 function setupInvExcelImport() {
   const fileInput = $('#inv-excel-upload');
   const importBtn = $('#inv-excel-import-btn');
@@ -6376,7 +6416,7 @@ function setupInvExcelImport() {
           
           let workbook;
           if (file.name.toLowerCase().endsWith('.csv')) {
-            const text = new TextDecoder('shift-jis').decode(data);
+            const text = decodeCsvBuffer(data);
             workbook = XLSX.read(text, { type: 'string' });
           } else {
             workbook = XLSX.read(data, { type: 'array' });
@@ -6666,7 +6706,7 @@ function setupInitialDataImport() {
               const data = new Uint8Array(e.target.result);
               let workbook;
               if (file.name.toLowerCase().endsWith('.csv')) {
-                const text = new TextDecoder('shift-jis').decode(data);
+                const text = decodeCsvBuffer(data);
                 workbook = XLSX.read(text, { type: 'string' });
               } else {
                 workbook = XLSX.read(data, { type: 'array' });
@@ -9309,7 +9349,8 @@ function previewCsvFile(e) {
 
   const reader = new FileReader();
   reader.onload = (evt) => {
-    const text = evt.target.result;
+    const data = new Uint8Array(evt.target.result);
+    const text = decodeCsvBuffer(data);
     const rows = parseCsv(text);
 
     if (rows.length < 2) {
@@ -9336,7 +9377,7 @@ function previewCsvFile(e) {
       </table>
     `;
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsArrayBuffer(file);
 }
 
 // CSV解析
@@ -9458,7 +9499,8 @@ function executeInvCsvImport() {
 
   const reader = new FileReader();
   reader.onload = (evt) => {
-    const text = evt.target.result;
+    const data = new Uint8Array(evt.target.result);
+    const text = decodeCsvBuffer(data);
     const rows = parseCsv(text);
 
     if (rows.length < 2) {
@@ -9529,7 +9571,7 @@ function executeInvCsvImport() {
     hideCsvImportArea();
     renderInvProductsTable();
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsArrayBuffer(file);
 }
 
 // CSVエクスポート
