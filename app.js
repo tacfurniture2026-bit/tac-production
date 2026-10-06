@@ -5601,7 +5601,7 @@ function renderReport(argStart, argEnd) {
   // ========================================
   const invProducts = DB.get(DB.KEYS.INV_PRODUCTS);
   const invLogs = DB.get(DB.KEYS.INV_LOGS);
-  const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const invMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
 
   // 最新の月次締めデータを取得
   let latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
@@ -6994,7 +6994,7 @@ window.forceReloadMaster = function() {
 
 // 締め処理保存用のヘルパー関数（既存ロジック分離）
 function saveInvMonthlyClosing(month, result) {
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
   const existingIndex = monthly.findIndex(m => m.month === month);
 
   const closingData = {
@@ -7002,7 +7002,7 @@ function saveInvMonthlyClosing(month, result) {
     items: result.items,
     summary: result.summary,
     total: result.total,
-    fixedTotal: result.summary['fixed']?.amount || 0,
+    fixedTotal: (result.summary['fixed'] ? result.summary['fixed'].amount : 0) || 0,
     closedAt: new Date().toISOString()
   };
 
@@ -7858,9 +7858,9 @@ function calculateInvMonthly(month, f1Total = null) {
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
 
   // 前月データを取得
-  const prevDate = new Date(month + '-01');
-  prevDate.setMonth(prevDate.getMonth() - 1);
-  const prevMonth = prevDate.toISOString().substring(0, 7);
+  const [yearStr, monthStr] = month.split('-');
+  const prevDateLocal = new Date(parseInt(yearStr), parseInt(monthStr) - 2, 1);
+  const prevMonth = `${prevDateLocal.getFullYear()}-${String(prevDateLocal.getMonth() + 1).padStart(2, '0')}`;
   let prevData = monthly.find(m => m.month === prevMonth);
   
   // 前月データの破損チェックと自己修復
@@ -8535,7 +8535,7 @@ function runInvMonthlyClosing() {
   const result = calculateInvMonthly(month);
 
   // 月次データを保存
-  const monthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
   const existingIdx = monthly.findIndex(m => m.month === month);
 
   const monthlyData = {
@@ -8544,7 +8544,7 @@ function runInvMonthlyClosing() {
     summary: result.summary,
     total: result.total,
     prevTotal: result.prevTotal,
-    fixedTotal: result.summary['fixed']?.amount || 0,
+    fixedTotal: (result.summary['fixed'] ? result.summary['fixed'].amount : 0) || 0,
     closedAt: new Date().toISOString()
   };
 
