@@ -67,7 +67,7 @@ function migrateCorruptedData() {
     }
   });
   if (fixedCount > 0) {
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
     console.log(`✅ 製品名修正: N05000000000184 -> +ﾄﾗｽ小ﾈｼﾞ　ﾕﾆｸﾛ 4X30 (${fixedCount}件)`);
   }
 }
@@ -258,7 +258,7 @@ function showMainScreen() {
       }
     });
     if (fixedCount > 0) {
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
       console.log(`✅ 製品名修正完了: N05000000000184 (${fixedCount}件)`);
     }
   }, 5000);
@@ -6022,7 +6022,7 @@ function sendBatchScans() {
 
   if (updatedCount > 0) {
     try {
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
       toast(`送信完了: ${updatedCount}件のデータをサーバーへ送信しました`, 'success');
       setTimeout(() => {
         if (confirm('送信完了しました。端末からバッチデータを削除しますか？\n(削除しない場合、重複送信の可能性があります)')) {
@@ -6261,7 +6261,7 @@ function saveNewInvProduct() {
     thickness: thickness,
     unit: unit
   });
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
   toast(`${name}を登録しました（${newId}）`, 'success');
   hideModal();
@@ -6350,7 +6350,7 @@ function updateInvProduct(id) {
   products[idx].thickness = $('#inv-prod-thickness').value.trim();
   products[idx].unit = $('#inv-prod-unit').value.trim();
 
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   toast('更新しました', 'success');
   hideModal();
   renderInvProductsTable();
@@ -6411,7 +6411,7 @@ function syncInventoryToMaster(month) {
       });
     }
   });
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 }
 
 window.syncInventoryToMaster = syncInventoryToMaster;
@@ -6438,7 +6438,7 @@ function submitInvAdjust() {
     note: note,
     timestamp: new Date().toISOString()
   });
-  DB.save(DB.KEYS.INV_LOGS, logs);
+  DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(logs)));
 
   const typeLabel = type === 'in' ? '入庫' : '出庫';
   toast(`${typeLabel}を登録しました`, 'success');
@@ -6717,7 +6717,7 @@ function calculateInvMonthly(month, f1Total = null) {
       prevAmount: prevAmount,
       rawAmount: amountRaw,
       rawPrevAmount: prevAmountRaw,
-      csvAmountWithTax: (hasCountLog && hasCsvImport) ? csvAmountWithTax : (csvAmountWithTax > 0 ? csvAmountWithTax : undefined)
+      csvAmountWithTax: (hasCountLog && hasCsvImport) ? csvAmountWithTax : (csvAmountWithTax > 0 ? csvAmountWithTax : null)
     });
 
     const catKey = isFixed ? 'fixed' : category;
@@ -7193,7 +7193,7 @@ window.saveSingleTempScan = function(productId) {
     products[prodIndex].tempMonth = selectedMonth;
     delete products[prodIndex].tempId;
     
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
     toast('仮登録数量を保存しました', 'success');
   } else {
     toast('対象の資材が見つかりません', 'error');
@@ -7215,7 +7215,7 @@ window.deleteSingleTempScan = function(productId) {
     delete products[prodIndex].tempTimestamp;
     delete products[prodIndex].tempMonth;
     delete products[prodIndex].tempId;
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   }
   
   toast('仮スキャンデータから削除しました', 'success');
@@ -7345,7 +7345,7 @@ function executeInvCsvImport() {
       }
     });
 
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
     toast(`取り込み完了: 新規${addCount}件、更新${updateCount}件`, 'success');
     hideCsvImportArea();
     renderInvProductsTable();
@@ -7841,7 +7841,7 @@ window.toggleFixedStatus = function(productId, isFixed) {
   }
   
   products[prodIndex].isFixed = isFixed;
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   toast(`資材 ${productId} を不動品に${isFixed ? '設定' : '解除'}しました`, 'success');
   renderInvCheckPage();
 };
@@ -7859,7 +7859,7 @@ window.updateMasterFromInvCheck = function(productId, field, value) {
     products[prodIndex].category = value;
   }
   
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   toast('商品マスタを更新しました', 'success');
   renderInvCheckPage();
 };
@@ -7967,7 +7967,7 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
           p.price = priceUpdates[p.id];
         }
       });
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
+      DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
       toast('単価をマスタに登録しました', 'success');
       hideModal();
@@ -7992,7 +7992,7 @@ function toggleFixedStatus(productId, isFixed) {
       delete p.tempTimestamp;
       delete p.tempId;
     }
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
     toast(`商品「${p.name || productId}」の不動品設定を${isFixed ? '有効' : '無効'}にしました`, 'success');
     renderInvCheckPage();
   }
@@ -8038,7 +8038,7 @@ function undoConfirmInvTempData() {
   }
 
   DB.save(DB.KEYS.INV_LOGS, newLogs);
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   DB.save(DB.KEYS.INV_MONTHLY, monthly);
 
   toast(`${selectedMonth} の棚卸確定を取り消し、仮状態に復元しました`, 'success');
@@ -8168,7 +8168,7 @@ function confirmInvTempData() {
   });
 
   // Save official logs
-  DB.save(DB.KEYS.INV_LOGS, logs);
+  DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(logs)));
 
   // 3. Clear temporary scans for this month
   products.forEach(p => {
@@ -8181,7 +8181,7 @@ function confirmInvTempData() {
       delete p.tempId;
     }
   });
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
   // 4. Compute and save monthly closing
   try {
@@ -8211,10 +8211,12 @@ function saveInvMonthlyClosing(month, result) {
     closedAt: new Date().toISOString()
   };
 
+  const cleanClosingData = JSON.parse(JSON.stringify(closingData));
+
   if (existingIndex >= 0) {
-    monthly[existingIndex] = closingData;
+    monthly[existingIndex] = cleanClosingData;
   } else {
-    monthly.push(closingData);
+    monthly.push(cleanClosingData);
   }
   
   DB.save(DB.KEYS.INV_MONTHLY, monthly);
@@ -8392,7 +8394,7 @@ window.submitQuickProductRegister = function(productId, isMobile) {
   };
 
   products.push(newProduct);
-  DB.save(DB.KEYS.INV_PRODUCTS, products);
+  DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
   // 2. Perform inventory scan submission
   const targetTimestamp = new Date().toISOString();
