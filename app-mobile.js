@@ -5085,36 +5085,55 @@ function renderReport() {
   // ========================================
   // 在庫データの取得と計算
   // ========================================
-  const invProducts = DB.get(DB.KEYS.INV_PRODUCTS);
-  const invLogs = DB.get(DB.KEYS.INV_LOGS);
-  const invMonthly = DB.get(DB.KEYS.INV_MONTHLY);
+  const invProducts = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const invLogs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const invMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
 
-  // 在庫計算（カテゴリ別）
+  // 最新の月次締めデータを取得
+  let latestMonthly = invMonthly.length > 0 ? [...invMonthly].sort((a, b) => b.month.localeCompare(a.month))[0] : null;
+
+  // 在庫計算（月次締めデータから直接取得し、完全一致させる）
   const categoryStocks = {};
-  let totalInvAmount = 0;
+  let totalInvAmount = latestMonthly ? (Number(latestMonthly.total) || 0) : 0;
   let totalFixedAmount = 0;
   let totalNormalAmount = 0;
 
-  invProducts.forEach(product => {
-    const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
-    const amount = Math.round(stock * safePrice * 1.01);
+  if (latestMonthly && latestMonthly.summary) {
+    Object.entries(latestMonthly.summary).forEach(([code, s]) => {
+      const catName = s.name;
+      const sAmt = Number(s.amount) || 0;
+      categoryStocks[catName] = { total: sAmt, normal: 0, fixed: 0 };
+      if (code === 'fixed') {
+         categoryStocks[catName].fixed = sAmt;
+         totalFixedAmount += sAmt;
+      } else {
+         categoryStocks[catName].normal = sAmt;
+         totalNormalAmount += sAmt;
+      }
+    });
+  } else {
+    invProducts.forEach(product => {
+      const stock = typeof getCurrentStock === 'function' ? getCurrentStock(product.id, invLogs) : (product.stock || 0);
+      const safePrice = isNaN(Number(product.price)) ? 0 : Number(product.price);
+      const amount = Math.round(stock * safePrice * 1.01);
 
-    // カテゴリ別集計
-    const catName = INV_CATEGORIES[product.category] || product.category;
-    if (!categoryStocks[catName]) {
-      categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
-    }
+      // カテゴリ別集計
+      const catName = INV_CATEGORIES[product.category] || product.category;
+      if (!categoryStocks[catName]) {
+        categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
+      }
 
-    if (product.isFixed) {
-      categoryStocks[catName].fixed += amount;
-      totalFixedAmount += amount;
-    } else {
-      categoryStocks[catName].normal += amount;
-      totalNormalAmount += amount;
-    }
-    categoryStocks[catName].total += amount;
-    totalInvAmount += amount;
-  });
+      if (product.isFixed) {
+        categoryStocks[catName].fixed += amount;
+        totalFixedAmount += amount;
+      } else {
+        categoryStocks[catName].normal += amount;
+        totalNormalAmount += amount;
+      }
+      categoryStocks[catName].total += amount;
+      totalInvAmount += amount;
+    });
+  }
 
   // 月別在庫推移データ（過去6ヶ月）
   const monthlyTrend = [];
