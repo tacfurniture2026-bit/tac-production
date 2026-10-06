@@ -6466,14 +6466,16 @@ function setupInvExcelImport() {
           }
 
           
+          
           let f1AmountRaw = null;
-          if (rows[0] && rows[0].length >= 6) {
-             const val = String(rows[0][5] || '').replace(/[,¥\s\\]/g, '');
-             const num = parseFloat(val);
-             if (!isNaN(num)) {
-               f1AmountRaw = num;
-             }
+          if (sheet['F1']) {
+            const val = String(sheet['F1'].w || sheet['F1'].v || '').replace(/[,¥\s\\]/g, '');
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+              f1AmountRaw = num;
+            }
           }
+
           
           let skippedSummaryCount = 0;
           let skippedNoQtyCount = 0;
