@@ -7757,7 +7757,11 @@ function viewInvMonthlySummary() {
     return;
   }
 
-  const result = calculateInvMonthly(month);
+  const tempScans = DB.getTempScans() || [];
+  const currentTempScans = tempScans.filter(s => s.month === month);
+  const f1Meta = currentTempScans.find(s => s.productId === 'META_F1_TOTAL');
+  const f1Total = f1Meta ? f1Meta.amountWithTax : null;
+  const result = calculateInvMonthly(month, f1Total);
   currentMonthlyResult = result;
   displayInvMonthlyResult(result);
   
