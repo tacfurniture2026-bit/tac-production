@@ -6469,7 +6469,7 @@ function setupInvExcelImport() {
           
           let f1AmountRaw = null;
           if (sheet['F1']) {
-            const val = String(sheet['F1'].w || sheet['F1'].v || '').replace(/[,¥\s\\]/g, '');
+            const val = String(sheet['F1'].w || sheet['F1'].v || '').replace(/[^0-9.-]/g, '');
             const num = parseFloat(val);
             if (!isNaN(num)) {
               f1AmountRaw = num;
@@ -6504,7 +6504,7 @@ function setupInvExcelImport() {
               return;
             }
 
-            const quantity = parseInt(String(sColValue).replace(/[,¥\s\\]/g, ''), 10);
+            const quantity = parseInt(String(sColValue).replace(/[^0-9.-]/g, ''), 10);
             if (isNaN(quantity)) {
               skippedNoQtyCount++;
               return;
@@ -6518,10 +6518,10 @@ function setupInvExcelImport() {
 
             const amountRaw = row[colIndex.amount];
             const amountWithTaxRaw = row[colIndex.amountWithTax];
-            const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
-            const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            const amount = parseFloat(String(amountRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
+            const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
-            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             if (unitPrice === 0 && quantity > 0 && amount > 0) {
               unitPrice = (amount / quantity);
             }
@@ -6778,9 +6778,9 @@ function setupInitialDataImport() {
 
             const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
             const amountRaw = row[colIndex.amount];
-            const amount = parseFloat(String(amountRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            const amount = parseFloat(String(amountRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
-            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[,¥\s\\]/g, '')) || 0;
+            let unitPrice = parseFloat(String(unitPriceRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             if (unitPrice === 0 && quantity > 0) {
               unitPrice = (amount / quantity);
             }
