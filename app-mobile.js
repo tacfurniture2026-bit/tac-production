@@ -3868,10 +3868,11 @@ function importBomsFromCsv(input) {
   const reader = new FileReader();
 
   reader.onload = function (e) {
-    const text = e.target.result;
+    const data = new Uint8Array(e.target.result);
+    const text = decodeCsvBuffer(data);
     processBomCsv(text);
   };
-  reader.readAsText(file, 'Shift_JIS'); // Excel CSV default
+  reader.readAsArrayBuffer(file);
   input.value = ''; // Reset
 }
 
@@ -4350,9 +4351,11 @@ function importRatesFromCsv(input) {
   const reader = new FileReader();
 
   reader.onload = function (e) {
-    processRateCsv(e.target.result);
+    const data = new Uint8Array(e.target.result);
+    const text = decodeCsvBuffer(data);
+    processRateCsv(text);
   };
-  reader.readAsText(file, 'Shift_JIS');
+  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 

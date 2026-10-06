@@ -4257,10 +4257,11 @@ function importBomsFromCsv(input) {
   const reader = new FileReader();
 
   reader.onload = function (e) {
-    const text = e.target.result;
+    const data = new Uint8Array(e.target.result);
+    const text = decodeCsvBuffer(data);
     processBomCsv(text);
   };
-  reader.readAsText(file, 'Shift_JIS'); // Excel CSV default
+  reader.readAsArrayBuffer(file);
   input.value = ''; // Reset
 }
 
@@ -4781,9 +4782,11 @@ function importRatesFromCsv(input) {
   const reader = new FileReader();
 
   reader.onload = function (e) {
-    processRateCsv(e.target.result);
+    const data = new Uint8Array(e.target.result);
+    const text = decodeCsvBuffer(data);
+    processRateCsv(text);
   };
-  reader.readAsText(file, 'Shift_JIS');
+  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 
@@ -6454,9 +6457,9 @@ function setupInvExcelImport() {
                 else if (/^(品名|資材名|商品名)$/i.test(val)) colIndex.name = cIdx;
                 else if (/^(資材分類|分類|カテゴリ)$/i.test(val)) colIndex.category = cIdx;
                 else if (/^(単価|購入単価)$/i.test(val)) colIndex.unitPrice = cIdx;
-                else if (/^(棚卸数量|実棚数量|実存数|数量)$/i.test(val)) colIndex.quantity = cIdx;
-                else if (val === '金額' || val === '在庫金額' || val === '金額(税抜)' || val === '金額（税抜）') colIndex.amount = cIdx;
-                else if (val === '金額(税込)' || val === '金額（税込）' || val === '税込金額') colIndex.amountWithTax = cIdx;
+                else if (/^(棚卸数量|実棚数量|実存数|数量|数量合計の合計|数量合計)$/i.test(val)) colIndex.quantity = cIdx;
+                else if (/^(金額|在庫金額|金額\(税抜\)|金額（税抜）|合計金額の合計|合計金額)$/i.test(val)) colIndex.amount = cIdx;
+                else if (/^(金額\(税込\)|金額（税込）|税込金額|合計金額\(1%増し\)|合計金額（1%増し）)$/i.test(val)) colIndex.amountWithTax = cIdx;
               });
               break;
             }
