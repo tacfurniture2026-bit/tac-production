@@ -40438,8 +40438,8 @@ function calculateInvMonthly(month) {
             csvAmountWithTax = safeNum(latestCountLog.amountWithTax);
           }
         }
-      } else if (isFixed) {
-        // 棚卸カウントログがない不動品は前月数量を自動引き継ぎ
+      } else if (isFixed && !hasCsvImport) {
+        // CSV取込が行われていない月のみ、棚卸カウントログがない不動品は前月数量を自動引き継ぎ
         currQty = prevQty;
       } else {
         currQty = 0;
@@ -40496,7 +40496,9 @@ function calculateInvMonthly(month) {
     summary[k].prevAmount = prevAmt;
   });
 
-  const total = items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全致させるためfloat総和を四捨五入
+  const rawTotal = items.reduce((sum, i) => sum + (Number(i.csvAmountWithTax !== undefined ? i.csvAmountWithTax : i.amount) || 0), 0);
+  const total = Math.round(rawTotal);
   const prevTotal = items.reduce((sum, i) => sum + (Number(i.prevAmount) || 0), 0);
 
   return { month, items, summary, total, prevTotal };

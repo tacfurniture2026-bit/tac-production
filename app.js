@@ -6404,19 +6404,19 @@ function setupInvExcelImport() {
             amountWithTax: 20 // U列
           };
 
-          // ヘッダー行を探索して列インデックスを動的検出（より柔軟かつ堅牢に）
+          // ヘッダー行を探索して列インデックスを動的検出（サマリー行Row 0「合計金額」との誤マッチ防止）
           for (let r = 0; r < Math.min(10, rows.length); r++) {
             const rowStr = rows[r].map(c => String(c || '').trim()).join('|');
-            if (rowStr.includes('数量') || rowStr.includes('棚卸') || rowStr.includes('金額') || rowStr.includes('単価')) {
+            if ((rowStr.includes('数量') || rowStr.includes('実棚')) && (rowStr.includes('識別コード') || rowStr.includes('資材コード') || rowStr.includes('単価') || rowStr.includes('品名'))) {
               rows[r].forEach((cellVal, cIdx) => {
                 const val = String(cellVal || '').trim();
-                if (/^(資材ID|品番|識別コード|商品コード|コード)$/i.test(val)) colIndex.id = cIdx;
+                if (/^(資材ID|品番|識別コード|商品コード|コード|資材コード)$/i.test(val)) colIndex.id = cIdx;
                 else if (/^(品名|資材名|商品名)$/i.test(val)) colIndex.name = cIdx;
                 else if (/^(資材分類|分類|カテゴリ)$/i.test(val)) colIndex.category = cIdx;
                 else if (/^(単価|購入単価)$/i.test(val)) colIndex.unitPrice = cIdx;
                 else if (/^(棚卸数量|実棚数量|実存数|数量)$/i.test(val)) colIndex.quantity = cIdx;
-                else if (/^(金額|在庫金額|金額\(税抜\))$/i.test(val)) colIndex.amount = cIdx;
-                else if (/^(金額\(税込\)|税込金額|合計金額)$/i.test(val)) colIndex.amountWithTax = cIdx;
+                else if (val === '金額' || val === '在庫金額' || val === '金額(税抜)' || val === '金額（税抜）') colIndex.amount = cIdx;
+                else if (val === '金額(税込)' || val === '金額（税込）' || val === '税込金額') colIndex.amountWithTax = cIdx;
               });
               break;
             }
@@ -7944,8 +7944,8 @@ function calculateInvMonthly(month) {
             csvAmountWithTax = safeNum(latestCountLog.amountWithTax);
           }
         }
-      } else if (isFixed) {
-        // 棚卸カウントログがない不動品は前月数量を自動引き継ぎ
+      } else if (isFixed && !hasCsvImport) {
+        // CSV取込が行われていない月のみ、棚卸カウントログがない不動品は前月数量を自動引き継ぎ
         currQty = prevQty;
       } else {
         currQty = 0;
@@ -8002,7 +8002,9 @@ function calculateInvMonthly(month) {
     summary[k].prevAmount = prevAmt;
   });
 
-  const total = items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全致させるためfloat総和を四捨五入
+  const rawTotal = items.reduce((sum, i) => sum + (Number(i.csvAmountWithTax !== undefined ? i.csvAmountWithTax : i.amount) || 0), 0);
+  const total = Math.round(rawTotal);
   const prevTotal = items.reduce((sum, i) => sum + (Number(i.prevAmount) || 0), 0);
 
   return { month, items, summary, total, prevTotal };
