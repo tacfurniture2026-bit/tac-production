@@ -251,11 +251,11 @@ function showMainScreen() {
  * 在庫ログから商品マスタを緊急復元する（データ消失対策）
  */
 function emergencyRestoreProductsFromLogs() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   if (products.length > 0) return; // すでにデータがある場合は何もしない
 
   console.log('🚨 商品マスタが空のため、在庫ログから復元を試みます...');
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   if (logs.length === 0) {
     console.warn('⚠️ 復元対象の在庫ログも見つかりません');
     return;
@@ -6221,7 +6221,7 @@ let invQrScanner = null;
 
 // 現在庫数を取得（ログから集計）
 function getCurrentStock(productId) {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   let stock = 0;
   const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
   logs.forEach(log => {
@@ -6683,7 +6683,7 @@ function setupInvExcelImport() {
           
         } catch (err) {
           console.error(err);
-          toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
+          toast('取り込み中にエラーが発生しました: ' + err.message, 'error'); alert('詳細エラー: ' + (err.stack || err));
         } finally {
           importBtn.disabled = false;
           importBtn.textContent = '📥 取り込み実行';
@@ -6951,7 +6951,7 @@ function setupInitialDataImport() {
           
             } catch (err) {
               console.error(err);
-              toast('取り込み中にエラーが発生しました: ' + err.message, 'error');
+              toast('取り込み中にエラーが発生しました: ' + err.message, 'error'); alert('詳細エラー: ' + (err.stack || err));
             } finally {
               importBtn.disabled = false;
               importBtn.textContent = '🚀 初期データとして確定登録する';
@@ -7019,8 +7019,8 @@ function saveInvMonthlyClosing(month, result) {
  * 在庫ログから商品マスタへの同期（ユーザー要望: 4月機データ取込用）
  */
 function syncInventoryToMaster(month) {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   
   // 指定された月のログ（Excel取込分）を抽出
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
@@ -7064,7 +7064,7 @@ function syncInventoryToMaster(month) {
 window.syncInventoryToMaster = syncInventoryToMaster;
 
 function displayProductInfo(productId) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === productId);
   const infoDiv = $('#inv-product-info');
 
@@ -7180,7 +7180,7 @@ function submitInventoryCount() {
     return;
   }
 
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === productId);
 
   if (!product) {
@@ -7285,7 +7285,7 @@ function renderInvSearchPage() {
 
 function executeInvSearch() {
   const keyword = ($('#inv-search-keyword')?.value || '').toLowerCase().trim();
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const tbody = $('#inv-search-results');
 
   let filtered = products;
@@ -7345,7 +7345,7 @@ function renderInvProductsPage() {
 }
 
 function renderInvProductsTable() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const categoryFilter = $('#inv-products-category-filter').value;
   const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
   const fixedOnly = $('#inv-products-fixed-only').checked;
@@ -7531,7 +7531,7 @@ function saveNewInvProduct() {
 }
 
 function editInvProduct(id) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === id);
   if (!product) return;
 
@@ -7599,7 +7599,7 @@ function editInvProduct(id) {
 }
 
 function updateInvProduct(id) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return;
 
@@ -7626,7 +7626,7 @@ function updateInvProduct(id) {
 function deleteInvProduct(id) {
   if (!confirm('この商品を削除しますか？')) return;
 
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const filtered = products.filter(p => p.id !== id);
   DB.save(DB.KEYS.INV_PRODUCTS, filtered);
   toast('削除しました', 'success');
@@ -7638,7 +7638,7 @@ function deleteInvProduct(id) {
 // ========================================
 
 function renderInvAdjustPage() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const productSelect = $('#inv-adjust-product');
 
   productSelect.innerHTML = '<option value="">選択してください</option>' +
@@ -7666,7 +7666,7 @@ function submitInvAdjust() {
     return;
   }
 
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   logs.push({
     id: Date.now(),
     productId: productId,
@@ -7690,7 +7690,7 @@ function submitInvAdjust() {
 
 function renderInvAdjustLogs() {
   const logs = DB.get(DB.KEYS.INV_LOGS).filter(l => l.type !== 'count').reverse().slice(0, 20);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const container = $('#inv-adjust-logs');
 
   if (logs.length === 0) {
@@ -9307,7 +9307,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
     toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
   } catch (err) {
     console.error('月次締め処理エラー:', err);
-    toast('月次締め処理の計算でエラーが発生しました', 'error');
+    toast('月次締め処理の計算でエラーが発生しました', 'error'); alert('詳細エラー: ' + (err.stack || err));
   }
 
   // Reload the check page
@@ -9591,7 +9591,7 @@ function executeInvCsvImport() {
       return;
     }
 
-    const products = DB.get(DB.KEYS.INV_PRODUCTS);
+    const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
     const dataRows = rows.slice(1).filter(row => row[2]); // ID(C列)があるもの
 
     let addCount = 0, updateCount = 0;
@@ -9659,7 +9659,7 @@ function executeInvCsvImport() {
 
 // CSVエクスポート
 function exportInvProductsCsv() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
 
   // ヘッダー（スプレッドシートと同じ形式）
   const header = ['印刷', '不動', 'ID', '資材分類', '品名', '色/他', '構成', '巾', '長さ', 'メーカー', '仕入先', '単価'];

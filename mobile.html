@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.17.0】 -->
+    <!-- 【強制キャッシュバスティング v6.18.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.17.0';
+            var currentVersion = 'v6.18.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.17.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.18.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -34058,11 +34058,11 @@ function showMainScreen() {
  * 在庫ログから商品マスタを緊急復元する（データ消失対策）
  */
 function emergencyRestoreProductsFromLogs() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   if (products.length > 0) return; // すでにデータがある場合は何もしない
 
   console.log('🚨 商品マスタが空のため、在庫ログから復元を試みます...');
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   if (logs.length === 0) {
     console.warn('⚠️ 復元対象の在庫ログも見つかりません');
     return;
@@ -39374,7 +39374,7 @@ let invQrScanner = null;
 
 // 現在庫数を取得（ログから集計）
 function getCurrentStock(productId) {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   let stock = 0;
   const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
   logs.forEach(log => {
@@ -39466,7 +39466,7 @@ function renderInvScanPage() {
 }
 
 function displayProductInfo(productId) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === productId);
   const infoDiv = $('#inv-product-info');
 
@@ -39586,7 +39586,7 @@ function submitInventoryCount() {
     return;
   }
 
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === productId);
 
   if (!product) {
@@ -39865,7 +39865,7 @@ function renderInvSearchPage() {
 
 function executeInvSearch() {
   const keyword = ($('#inv-search-keyword')?.value || '').toLowerCase().trim();
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const tbody = $('#inv-search-results');
 
   let filtered = products;
@@ -39924,7 +39924,7 @@ function renderInvProductsPage() {
 }
 
 function renderInvProductsTable() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const categoryFilter = $('#inv-products-category-filter').value;
   const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
   const fixedOnly = $('#inv-products-fixed-only').checked;
@@ -40059,7 +40059,7 @@ function saveNewInvProduct() {
 }
 
 function editInvProduct(id) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const product = products.find(p => p.id === id);
   if (!product) return;
 
@@ -40123,7 +40123,7 @@ function editInvProduct(id) {
 }
 
 function updateInvProduct(id) {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const idx = products.findIndex(p => p.id === id);
   if (idx === -1) return;
 
@@ -40149,7 +40149,7 @@ function updateInvProduct(id) {
 function deleteInvProduct(id) {
   if (!confirm('この商品を削除しますか？')) return;
 
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const filtered = products.filter(p => p.id !== id);
   DB.save(DB.KEYS.INV_PRODUCTS, filtered);
   toast('削除しました', 'success');
@@ -40161,7 +40161,7 @@ function deleteInvProduct(id) {
 // ========================================
 
 function renderInvAdjustPage() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const productSelect = $('#inv-adjust-product');
 
   productSelect.innerHTML = '<option value="">選択してください</option>' +
@@ -40182,8 +40182,8 @@ function renderInvAdjustPage() {
  * 在庫ログから商品マスタへの同期
  */
 function syncInventoryToMaster(month) {
-  const logs = DB.get(DB.KEYS.INV_LOGS);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
   if (monthLogs.length === 0) return;
   
@@ -40218,7 +40218,7 @@ function submitInvAdjust() {
     return;
   }
 
-  const logs = DB.get(DB.KEYS.INV_LOGS);
+  const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   logs.push({
     id: Date.now(),
     productId: productId,
@@ -40242,7 +40242,7 @@ function submitInvAdjust() {
 
 function renderInvAdjustLogs() {
   const logs = DB.get(DB.KEYS.INV_LOGS).filter(l => l.type !== 'count').reverse().slice(0, 20);
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const container = $('#inv-adjust-logs');
 
   if (logs.length === 0) {
@@ -41077,7 +41077,7 @@ function executeInvCsvImport() {
       return;
     }
 
-    const products = DB.get(DB.KEYS.INV_PRODUCTS);
+    const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
     const dataRows = rows.slice(1).filter(row => row[2]); // ID(C列)があるもの
 
     let addCount = 0, updateCount = 0;
@@ -41145,7 +41145,7 @@ function executeInvCsvImport() {
 
 // CSVエクスポート
 function exportInvProductsCsv() {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS);
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
 
   // ヘッダー（スプレッドシートと同じ形式）
   const header = ['印刷', '不動', 'ID', '資材分類', '品名', '色/他', '構成', '巾', '長さ', 'メーカー', '仕入先', '単価'];
@@ -41980,7 +41980,7 @@ function confirmInvTempData() {
     toast(`${selectedMonth} の棚卸確定および月次締め処理を完了しました！`, 'success');
   } catch (err) {
     console.error('月次締め処理エラー:', err);
-    toast('月次締め処理の計算でエラーが発生しました', 'error');
+    toast('月次締め処理の計算でエラーが発生しました', 'error'); alert('詳細エラー: ' + (err.stack || err));
   }
 
   // Reload the check page
@@ -42306,7 +42306,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.17.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.18.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42333,7 +42333,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.17.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.18.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42416,7 +42416,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.17.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.18.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
