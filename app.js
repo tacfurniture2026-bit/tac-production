@@ -9301,6 +9301,9 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
   DB.save(DB.KEYS.INV_PRODUCTS, products);
 
   // 4. Compute and save monthly closing
+  
+  const f1MetaConfirm = currentTempScans.find(s => s.productId === 'META_F1_TOTAL');
+  const f1Total = f1MetaConfirm ? f1MetaConfirm.amountWithTax : null;
   try {
     const monthlyResult = calculateInvMonthly(selectedMonth, f1Total);
     saveInvMonthlyClosing(selectedMonth, monthlyResult);
