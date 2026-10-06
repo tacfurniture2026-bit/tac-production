@@ -2026,7 +2026,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 71589,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 71588.8
       },
@@ -2039,7 +2039,7 @@
         "currQty": 94,
         "diff": 94,
         "amount": 1030099,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1030099.0
       },
@@ -2052,7 +2052,7 @@
         "currQty": 3,
         "diff": 3,
         "amount": 26846,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 26845.8
       },
@@ -2065,7 +2065,7 @@
         "currQty": 48,
         "diff": 48,
         "amount": 429533,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 429532.8
       },
@@ -2078,7 +2078,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -2091,7 +2091,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 88355,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 88354.8
       },
@@ -2104,7 +2104,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -2117,7 +2117,7 @@
         "currQty": 247,
         "diff": 247,
         "amount": 2210304,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2210304.2
       },
@@ -2130,7 +2130,7 @@
         "currQty": 35,
         "diff": 35,
         "amount": 307545,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 307545.0
       },
@@ -2143,7 +2143,7 @@
         "currQty": 5,
         "diff": 5,
         "amount": 44743,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 44743.0
       },
@@ -2156,7 +2156,7 @@
         "currQty": 52,
         "diff": 52,
         "amount": 433290,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 433290.0
       },
@@ -2169,7 +2169,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 252046,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 252045.5
       },
@@ -2182,7 +2182,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -4834,7 +4834,7 @@
         "currQty": 2000,
         "diff": 2000,
         "amount": 50500,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 50500.0
       },
@@ -4847,7 +4847,7 @@
         "currQty": 3008,
         "diff": 3008,
         "amount": 75952,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 75952.0
       },
@@ -4860,7 +4860,7 @@
         "currQty": 439,
         "diff": 439,
         "amount": 55424,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 55423.75
       },
@@ -4964,7 +4964,7 @@
         "currQty": 14,
         "diff": 14,
         "amount": 3252,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3252.2
       },
@@ -5471,7 +5471,7 @@
         "currQty": 1000,
         "diff": 1000,
         "amount": 9090,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9090.0
       },
@@ -5523,7 +5523,7 @@
         "currQty": 198,
         "diff": 198,
         "amount": 39796,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 39796.02
       },
@@ -5575,7 +5575,7 @@
         "currQty": 4,
         "diff": 4,
         "amount": 1782,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1781.64
       },
@@ -5744,7 +5744,7 @@
         "currQty": 643,
         "diff": 643,
         "amount": 162358,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 162357.5
       },
@@ -6121,7 +6121,7 @@
         "currQty": 2186,
         "diff": 2186,
         "amount": 52989,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52988.64
       },
@@ -6199,7 +6199,7 @@
         "currQty": 114,
         "diff": 114,
         "amount": 115,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 115.14
       },
@@ -6394,7 +6394,7 @@
         "currQty": 159,
         "diff": 159,
         "amount": 12044,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 12044.25
       },
@@ -6407,7 +6407,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 380,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 379.76
       },
@@ -6446,7 +6446,7 @@
         "currQty": 608,
         "diff": 608,
         "amount": 6755,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 6754.88
       },
@@ -6472,7 +6472,7 @@
         "currQty": 473,
         "diff": 473,
         "amount": 5255,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5255.03
       },
@@ -6524,7 +6524,7 @@
         "currQty": 110,
         "diff": 110,
         "amount": 7777,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7777.0
       },
@@ -7798,7 +7798,7 @@
         "currQty": 90,
         "diff": 90,
         "amount": 5727,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5726.7
       },
@@ -7811,7 +7811,7 @@
         "currQty": 40,
         "diff": 40,
         "amount": 2707,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2706.8
       },
@@ -7824,7 +7824,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 844,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 844.36
       },
@@ -7850,7 +7850,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 9342,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9342.5
       },
@@ -7863,7 +7863,7 @@
         "currQty": 113,
         "diff": 113,
         "amount": 5821,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5820.63
       },
@@ -7876,7 +7876,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 2121,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2121.0
       },
@@ -7889,7 +7889,7 @@
         "currQty": 69,
         "diff": 69,
         "amount": 3694,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3693.57
       },
@@ -7902,7 +7902,7 @@
         "currQty": 53,
         "diff": 53,
         "amount": 2248,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2248.26
       },
@@ -7915,7 +7915,7 @@
         "currQty": 21,
         "diff": 21,
         "amount": 1124,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1124.13
       },
@@ -7928,7 +7928,7 @@
         "currQty": 438,
         "diff": 438,
         "amount": 52201,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52200.84
       },
@@ -7941,7 +7941,7 @@
         "currQty": 1170,
         "diff": 1170,
         "amount": 155984,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 155984.4
       },
@@ -7954,7 +7954,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 3554,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3554.19
       },
@@ -7967,7 +7967,7 @@
         "currQty": 6,
         "diff": 6,
         "amount": 842,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 842.34
       },
@@ -7980,7 +7980,7 @@
         "currQty": 20,
         "diff": 20,
         "amount": 1151,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1151.4
       },
@@ -7993,7 +7993,7 @@
         "currQty": 46,
         "diff": 46,
         "amount": 2834,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2834.06
       },
@@ -8006,7 +8006,7 @@
         "currQty": 10,
         "diff": 10,
         "amount": 858,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 858.5
       },
@@ -8019,7 +8019,7 @@
         "currQty": 18,
         "diff": 18,
         "amount": 2454,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2454.3
       },
@@ -8032,7 +8032,7 @@
         "currQty": 89,
         "diff": 89,
         "amount": 15731,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 15730.75
       },
@@ -8201,7 +8201,7 @@
         "currQty": 82,
         "diff": 82,
         "amount": 13086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 13085.56
       },
@@ -8214,7 +8214,7 @@
         "currQty": 12,
         "diff": 12,
         "amount": 1818,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1818.0
       },
@@ -8227,7 +8227,7 @@
         "currQty": 62,
         "diff": 62,
         "amount": 9957,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9956.58
       },
@@ -8240,7 +8240,7 @@
         "currQty": 101,
         "diff": 101,
         "amount": 16628,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 16627.63
       },
@@ -8253,7 +8253,7 @@
         "currQty": 86,
         "diff": 86,
         "amount": 17980,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17980.02
       },
@@ -8266,7 +8266,7 @@
         "currQty": 97,
         "diff": 97,
         "amount": 10483,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 10482.79
       },
@@ -8279,7 +8279,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 889,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 888.8
       },
@@ -8292,7 +8292,7 @@
         "currQty": 37,
         "diff": 37,
         "amount": 7549,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7548.74
       },
@@ -8305,7 +8305,7 @@
         "currQty": 141,
         "diff": 141,
         "amount": 17516,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17516.43
       },
@@ -8318,7 +8318,7 @@
         "currQty": 136,
         "diff": 136,
         "amount": 18544,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 18543.6
       },
@@ -8331,7 +8331,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 1900,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1899.81
       },
@@ -8539,7 +8539,7 @@
         "currQty": 49,
         "diff": 49,
         "amount": 7077,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7077.07
       },
@@ -8552,7 +8552,7 @@
         "currQty": 67,
         "diff": 67,
         "amount": 11301,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11300.89
       },
@@ -8734,7 +8734,7 @@
         "currQty": 192,
         "diff": 192,
         "amount": 9696,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9696.0
       },
@@ -8747,7 +8747,7 @@
         "currQty": 44,
         "diff": 44,
         "amount": 2222,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2222.0
       },
@@ -9943,7 +9943,7 @@
         "currQty": 180,
         "diff": 180,
         "amount": 49086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 49086.0
       },
@@ -10359,7 +10359,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -12596,13 +12596,19 @@
       },
       "面材": {
         "name": "分類面材",
-        "amount": 18484088,
+        "amount": 13589738,
+        "diff": 0,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5842788,
         "diff": 0,
         "prevAmount": 0
       },
       "ﾀﾞﾝﾎﾞｰﾙ": {
         "name": "分類ﾀﾞﾝﾎﾞｰﾙ",
-        "amount": 1085156,
+        "amount": 669273,
         "diff": 0,
         "prevAmount": 0
       },
@@ -12620,7 +12626,7 @@
       },
       "金具": {
         "name": "分類金具",
-        "amount": 5888415,
+        "amount": 5404946,
         "diff": 0,
         "prevAmount": 0
       },
@@ -12638,7 +12644,7 @@
       },
       "PAO資材": {
         "name": "分類PAO資材",
-        "amount": 5215310,
+        "amount": 5166224,
         "diff": 0,
         "prevAmount": 0
       },
@@ -12681,7 +12687,7 @@
     },
     "total": 54215119,
     "prevTotal": 0,
-    "fixedTotal": 0,
+    "fixedTotal": 5842788,
     "closedAt": "2026-05-27T17:27:00.000Z"
   },
   {
@@ -14711,7 +14717,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 71589,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 71588.8
       },
@@ -14724,7 +14730,7 @@
         "currQty": 92,
         "diff": 92,
         "amount": 1008182,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1008182.0
       },
@@ -14737,7 +14743,7 @@
         "currQty": 3,
         "diff": 3,
         "amount": 26846,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 26845.8
       },
@@ -14750,7 +14756,7 @@
         "currQty": 48,
         "diff": 48,
         "amount": 429533,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 429532.8
       },
@@ -14763,7 +14769,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -14776,7 +14782,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 88355,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 88354.8
       },
@@ -14789,7 +14795,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -14802,7 +14808,7 @@
         "currQty": 247,
         "diff": 247,
         "amount": 2210304,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2210304.2
       },
@@ -14815,7 +14821,7 @@
         "currQty": 35,
         "diff": 35,
         "amount": 307545,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 307545.0
       },
@@ -14828,7 +14834,7 @@
         "currQty": 5,
         "diff": 5,
         "amount": 44743,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 44743.0
       },
@@ -14841,7 +14847,7 @@
         "currQty": 52,
         "diff": 52,
         "amount": 433290,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 433290.0
       },
@@ -14854,7 +14860,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 252046,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 252045.5
       },
@@ -14867,7 +14873,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -17558,7 +17564,7 @@
         "currQty": 2000,
         "diff": 2000,
         "amount": 50500,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 50500.0
       },
@@ -17571,7 +17577,7 @@
         "currQty": 3008,
         "diff": 3008,
         "amount": 75952,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 75952.0
       },
@@ -17584,7 +17590,7 @@
         "currQty": 439,
         "diff": 439,
         "amount": 55424,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 55423.75
       },
@@ -17688,7 +17694,7 @@
         "currQty": 14,
         "diff": 14,
         "amount": 3252,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3252.2
       },
@@ -18195,7 +18201,7 @@
         "currQty": 1000,
         "diff": 1000,
         "amount": 9090,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9090.0
       },
@@ -18247,7 +18253,7 @@
         "currQty": 198,
         "diff": 198,
         "amount": 39796,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 39796.02
       },
@@ -18299,7 +18305,7 @@
         "currQty": 4,
         "diff": 4,
         "amount": 1782,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1781.64
       },
@@ -18468,7 +18474,7 @@
         "currQty": 643,
         "diff": 643,
         "amount": 162358,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 162357.5
       },
@@ -18845,7 +18851,7 @@
         "currQty": 2186,
         "diff": 2186,
         "amount": 52989,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52988.64
       },
@@ -18923,7 +18929,7 @@
         "currQty": 114,
         "diff": 114,
         "amount": 115,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 115.14
       },
@@ -19118,7 +19124,7 @@
         "currQty": 159,
         "diff": 159,
         "amount": 12044,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 12044.25
       },
@@ -19131,7 +19137,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 380,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 379.76
       },
@@ -19170,7 +19176,7 @@
         "currQty": 608,
         "diff": 608,
         "amount": 6755,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 6754.88
       },
@@ -19196,7 +19202,7 @@
         "currQty": 473,
         "diff": 473,
         "amount": 5255,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5255.03
       },
@@ -19248,7 +19254,7 @@
         "currQty": 110,
         "diff": 110,
         "amount": 7777,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7777.0
       },
@@ -20535,7 +20541,7 @@
         "currQty": 90,
         "diff": 90,
         "amount": 5727,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5726.7
       },
@@ -20548,7 +20554,7 @@
         "currQty": 40,
         "diff": 40,
         "amount": 2707,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2706.8
       },
@@ -20561,7 +20567,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 844,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 844.36
       },
@@ -20587,7 +20593,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 9342,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9342.5
       },
@@ -20600,7 +20606,7 @@
         "currQty": 113,
         "diff": 113,
         "amount": 5821,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5820.63
       },
@@ -20613,7 +20619,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 2121,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2121.0
       },
@@ -20626,7 +20632,7 @@
         "currQty": 69,
         "diff": 69,
         "amount": 3694,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3693.57
       },
@@ -20639,7 +20645,7 @@
         "currQty": 53,
         "diff": 53,
         "amount": 2248,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2248.26
       },
@@ -20652,7 +20658,7 @@
         "currQty": 21,
         "diff": 21,
         "amount": 1124,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1124.13
       },
@@ -20665,7 +20671,7 @@
         "currQty": 438,
         "diff": 438,
         "amount": 52201,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52200.84
       },
@@ -20678,7 +20684,7 @@
         "currQty": 1170,
         "diff": 1170,
         "amount": 155984,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 155984.4
       },
@@ -20691,7 +20697,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 3554,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3554.19
       },
@@ -20704,7 +20710,7 @@
         "currQty": 6,
         "diff": 6,
         "amount": 842,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 842.34
       },
@@ -20717,7 +20723,7 @@
         "currQty": 20,
         "diff": 20,
         "amount": 1151,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1151.4
       },
@@ -20730,7 +20736,7 @@
         "currQty": 46,
         "diff": 46,
         "amount": 2834,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2834.06
       },
@@ -20743,7 +20749,7 @@
         "currQty": 10,
         "diff": 10,
         "amount": 858,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 858.5
       },
@@ -20756,7 +20762,7 @@
         "currQty": 18,
         "diff": 18,
         "amount": 2454,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2454.3
       },
@@ -20769,7 +20775,7 @@
         "currQty": 89,
         "diff": 89,
         "amount": 15731,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 15730.75
       },
@@ -20938,7 +20944,7 @@
         "currQty": 82,
         "diff": 82,
         "amount": 13086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 13085.56
       },
@@ -20951,7 +20957,7 @@
         "currQty": 12,
         "diff": 12,
         "amount": 1818,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1818.0
       },
@@ -20964,7 +20970,7 @@
         "currQty": 62,
         "diff": 62,
         "amount": 9957,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9956.58
       },
@@ -20977,7 +20983,7 @@
         "currQty": 101,
         "diff": 101,
         "amount": 16628,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 16627.63
       },
@@ -20990,7 +20996,7 @@
         "currQty": 86,
         "diff": 86,
         "amount": 17980,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17980.02
       },
@@ -21003,7 +21009,7 @@
         "currQty": 97,
         "diff": 97,
         "amount": 10483,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 10482.79
       },
@@ -21016,7 +21022,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 889,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 888.8
       },
@@ -21029,7 +21035,7 @@
         "currQty": 37,
         "diff": 37,
         "amount": 7549,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7548.74
       },
@@ -21042,7 +21048,7 @@
         "currQty": 141,
         "diff": 141,
         "amount": 17516,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17516.43
       },
@@ -21055,7 +21061,7 @@
         "currQty": 136,
         "diff": 136,
         "amount": 18544,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 18543.6
       },
@@ -21068,7 +21074,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 1900,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1899.81
       },
@@ -21276,7 +21282,7 @@
         "currQty": 49,
         "diff": 49,
         "amount": 7077,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7077.07
       },
@@ -21289,7 +21295,7 @@
         "currQty": 67,
         "diff": 67,
         "amount": 11301,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11300.89
       },
@@ -21471,7 +21477,7 @@
         "currQty": 192,
         "diff": 192,
         "amount": 9696,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9696.0
       },
@@ -21484,7 +21490,7 @@
         "currQty": 44,
         "diff": 44,
         "amount": 2222,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2222.0
       },
@@ -22693,7 +22699,7 @@
         "currQty": 180,
         "diff": 180,
         "amount": 49086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 49086.0
       },
@@ -23109,7 +23115,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -25411,13 +25417,19 @@
       },
       "面材": {
         "name": "分類面材",
-        "amount": 20046531,
+        "amount": 15174098,
+        "diff": 0,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5820871,
         "diff": 0,
         "prevAmount": 0
       },
       "ﾀﾞﾝﾎﾞｰﾙ": {
         "name": "分類ﾀﾞﾝﾎﾞｰﾙ",
-        "amount": 1263189,
+        "amount": 847306,
         "diff": 0,
         "prevAmount": 0
       },
@@ -25435,7 +25447,7 @@
       },
       "金具": {
         "name": "分類金具",
-        "amount": 7180012,
+        "amount": 6696543,
         "diff": 0,
         "prevAmount": 0
       },
@@ -25453,7 +25465,7 @@
       },
       "PAO資材": {
         "name": "分類PAO資材",
-        "amount": 7557901,
+        "amount": 7508815,
         "diff": 0,
         "prevAmount": 0
       },
@@ -25484,7 +25496,7 @@
     },
     "total": 55907112,
     "prevTotal": 0,
-    "fixedTotal": 0,
+    "fixedTotal": 5820871,
     "closedAt": "2026-05-27T17:27:00.000Z"
   },
   {
@@ -27514,7 +27526,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 71589,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 71588.8
       },
@@ -27527,7 +27539,7 @@
         "currQty": 92,
         "diff": 92,
         "amount": 1008182,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1008182.0
       },
@@ -27540,7 +27552,7 @@
         "currQty": 3,
         "diff": 3,
         "amount": 26846,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 26845.8
       },
@@ -27553,7 +27565,7 @@
         "currQty": 48,
         "diff": 48,
         "amount": 429533,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 429532.8
       },
@@ -27566,7 +27578,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -27579,7 +27591,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 88355,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 88354.8
       },
@@ -27592,7 +27604,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -27605,7 +27617,7 @@
         "currQty": 247,
         "diff": 247,
         "amount": 2210304,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2210304.2
       },
@@ -27618,7 +27630,7 @@
         "currQty": 35,
         "diff": 35,
         "amount": 307545,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 307545.0
       },
@@ -27631,7 +27643,7 @@
         "currQty": 5,
         "diff": 5,
         "amount": 44743,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 44743.0
       },
@@ -27644,7 +27656,7 @@
         "currQty": 52,
         "diff": 52,
         "amount": 433290,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 433290.0
       },
@@ -27657,7 +27669,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 252046,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 252045.5
       },
@@ -27670,7 +27682,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -30530,7 +30542,7 @@
         "currQty": 2000,
         "diff": 2000,
         "amount": 50500,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 50500.0
       },
@@ -30543,7 +30555,7 @@
         "currQty": 3008,
         "diff": 3008,
         "amount": 75952,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 75952.0
       },
@@ -30556,7 +30568,7 @@
         "currQty": 439,
         "diff": 439,
         "amount": 55424,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 55423.75
       },
@@ -30660,7 +30672,7 @@
         "currQty": 14,
         "diff": 14,
         "amount": 3252,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3252.2
       },
@@ -31167,7 +31179,7 @@
         "currQty": 1000,
         "diff": 1000,
         "amount": 9090,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9090.0
       },
@@ -31219,7 +31231,7 @@
         "currQty": 198,
         "diff": 198,
         "amount": 39796,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 39796.02
       },
@@ -31271,7 +31283,7 @@
         "currQty": 4,
         "diff": 4,
         "amount": 1782,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1781.64
       },
@@ -31440,7 +31452,7 @@
         "currQty": 643,
         "diff": 643,
         "amount": 162358,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 162357.5
       },
@@ -31817,7 +31829,7 @@
         "currQty": 2186,
         "diff": 2186,
         "amount": 52989,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52988.64
       },
@@ -31895,7 +31907,7 @@
         "currQty": 114,
         "diff": 114,
         "amount": 115,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 115.14
       },
@@ -32090,7 +32102,7 @@
         "currQty": 159,
         "diff": 159,
         "amount": 12044,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 12044.25
       },
@@ -32103,7 +32115,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 380,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 379.76
       },
@@ -32142,7 +32154,7 @@
         "currQty": 608,
         "diff": 608,
         "amount": 6755,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 6754.88
       },
@@ -32168,7 +32180,7 @@
         "currQty": 473,
         "diff": 473,
         "amount": 5255,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5255.03
       },
@@ -32220,7 +32232,7 @@
         "currQty": 110,
         "diff": 110,
         "amount": 7777,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7777.0
       },
@@ -33533,7 +33545,7 @@
         "currQty": 90,
         "diff": 90,
         "amount": 5727,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5726.7
       },
@@ -33546,7 +33558,7 @@
         "currQty": 40,
         "diff": 40,
         "amount": 2707,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2706.8
       },
@@ -33559,7 +33571,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 844,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 844.36
       },
@@ -33585,7 +33597,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 9342,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9342.5
       },
@@ -33598,7 +33610,7 @@
         "currQty": 113,
         "diff": 113,
         "amount": 5821,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5820.63
       },
@@ -33611,7 +33623,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 2121,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2121.0
       },
@@ -33624,7 +33636,7 @@
         "currQty": 69,
         "diff": 69,
         "amount": 3694,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3693.57
       },
@@ -33637,7 +33649,7 @@
         "currQty": 53,
         "diff": 53,
         "amount": 2248,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2248.26
       },
@@ -33650,7 +33662,7 @@
         "currQty": 21,
         "diff": 21,
         "amount": 1124,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1124.13
       },
@@ -33663,7 +33675,7 @@
         "currQty": 438,
         "diff": 438,
         "amount": 52201,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52200.84
       },
@@ -33676,7 +33688,7 @@
         "currQty": 1170,
         "diff": 1170,
         "amount": 155984,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 155984.4
       },
@@ -33689,7 +33701,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 3554,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3554.19
       },
@@ -33702,7 +33714,7 @@
         "currQty": 84,
         "diff": 84,
         "amount": 11793,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11792.76
       },
@@ -33715,7 +33727,7 @@
         "currQty": 20,
         "diff": 20,
         "amount": 1151,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1151.4
       },
@@ -33728,7 +33740,7 @@
         "currQty": 46,
         "diff": 46,
         "amount": 2834,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2834.06
       },
@@ -33741,7 +33753,7 @@
         "currQty": 10,
         "diff": 10,
         "amount": 858,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 858.5
       },
@@ -33754,7 +33766,7 @@
         "currQty": 18,
         "diff": 18,
         "amount": 2454,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2454.3
       },
@@ -33767,7 +33779,7 @@
         "currQty": 89,
         "diff": 89,
         "amount": 15731,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 15730.75
       },
@@ -33936,7 +33948,7 @@
         "currQty": 82,
         "diff": 82,
         "amount": 13086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 13085.56
       },
@@ -33949,7 +33961,7 @@
         "currQty": 12,
         "diff": 12,
         "amount": 1818,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1818.0
       },
@@ -33962,7 +33974,7 @@
         "currQty": 62,
         "diff": 62,
         "amount": 9957,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9956.58
       },
@@ -33975,7 +33987,7 @@
         "currQty": 101,
         "diff": 101,
         "amount": 16628,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 16627.63
       },
@@ -33988,7 +34000,7 @@
         "currQty": 86,
         "diff": 86,
         "amount": 17980,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17980.02
       },
@@ -34001,7 +34013,7 @@
         "currQty": 97,
         "diff": 97,
         "amount": 10483,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 10482.79
       },
@@ -34014,7 +34026,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 889,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 888.8
       },
@@ -34027,7 +34039,7 @@
         "currQty": 37,
         "diff": 37,
         "amount": 7549,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7548.74
       },
@@ -34040,7 +34052,7 @@
         "currQty": 141,
         "diff": 141,
         "amount": 17516,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17516.43
       },
@@ -34053,7 +34065,7 @@
         "currQty": 136,
         "diff": 136,
         "amount": 18544,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 18543.6
       },
@@ -34066,7 +34078,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 1900,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1899.81
       },
@@ -34274,7 +34286,7 @@
         "currQty": 49,
         "diff": 49,
         "amount": 7077,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7077.07
       },
@@ -34287,7 +34299,7 @@
         "currQty": 67,
         "diff": 67,
         "amount": 11301,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11300.89
       },
@@ -34469,7 +34481,7 @@
         "currQty": 192,
         "diff": 192,
         "amount": 9696,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9696.0
       },
@@ -34482,7 +34494,7 @@
         "currQty": 44,
         "diff": 44,
         "amount": 2222,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2222.0
       },
@@ -35704,7 +35716,7 @@
         "currQty": 180,
         "diff": 180,
         "amount": 49086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 49086.0
       },
@@ -36120,7 +36132,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -40138,13 +40150,19 @@
       },
       "面材": {
         "name": "分類面材",
-        "amount": 17115254,
+        "amount": 12242821,
+        "diff": 0,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5831822,
         "diff": 0,
         "prevAmount": 0
       },
       "ﾀﾞﾝﾎﾞｰﾙ": {
         "name": "分類ﾀﾞﾝﾎﾞｰﾙ",
-        "amount": 1202124,
+        "amount": 775290,
         "diff": 0,
         "prevAmount": 0
       },
@@ -40162,7 +40180,7 @@
       },
       "金具": {
         "name": "分類金具",
-        "amount": 6938224,
+        "amount": 6454755,
         "diff": 0,
         "prevAmount": 0
       },
@@ -40180,7 +40198,7 @@
       },
       "PAO資材": {
         "name": "分類PAO資材",
-        "amount": 5231935,
+        "amount": 5182849,
         "diff": 0,
         "prevAmount": 0
       },
@@ -40235,7 +40253,7 @@
     },
     "total": 50276659,
     "prevTotal": 0,
-    "fixedTotal": 0,
+    "fixedTotal": 5831822,
     "closedAt": "2026-05-27T17:27:00.000Z"
   },
   {
@@ -42278,7 +42296,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 71589,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 71588.8
       },
@@ -42291,7 +42309,7 @@
         "currQty": 92,
         "diff": 92,
         "amount": 1008182,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1008182.0
       },
@@ -42304,7 +42322,7 @@
         "currQty": 3,
         "diff": 3,
         "amount": 26846,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 26845.8
       },
@@ -42317,7 +42335,7 @@
         "currQty": 48,
         "diff": 48,
         "amount": 429533,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 429532.8
       },
@@ -42330,7 +42348,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -42343,7 +42361,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 88355,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 88354.8
       },
@@ -42356,7 +42374,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -42369,7 +42387,7 @@
         "currQty": 247,
         "diff": 247,
         "amount": 2210304,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2210304.2
       },
@@ -42382,7 +42400,7 @@
         "currQty": 35,
         "diff": 35,
         "amount": 307545,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 307545.0
       },
@@ -42395,7 +42413,7 @@
         "currQty": 5,
         "diff": 5,
         "amount": 44743,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 44743.0
       },
@@ -42408,7 +42426,7 @@
         "currQty": 102,
         "diff": 102,
         "amount": 849915,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 849915.0
       },
@@ -42421,7 +42439,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 252046,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 252045.5
       },
@@ -42434,7 +42452,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -45125,7 +45143,7 @@
         "currQty": 2000,
         "diff": 2000,
         "amount": 50500,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 50500.0
       },
@@ -45138,7 +45156,7 @@
         "currQty": 3008,
         "diff": 3008,
         "amount": 75952,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 75952.0
       },
@@ -45151,7 +45169,7 @@
         "currQty": 439,
         "diff": 439,
         "amount": 55424,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 55423.75
       },
@@ -45255,7 +45273,7 @@
         "currQty": 14,
         "diff": 14,
         "amount": 3252,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3252.2
       },
@@ -45762,7 +45780,7 @@
         "currQty": 1000,
         "diff": 1000,
         "amount": 9090,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9090.0
       },
@@ -45814,7 +45832,7 @@
         "currQty": 198,
         "diff": 198,
         "amount": 39796,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 39796.02
       },
@@ -45866,7 +45884,7 @@
         "currQty": 4,
         "diff": 4,
         "amount": 1782,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1781.64
       },
@@ -46035,7 +46053,7 @@
         "currQty": 643,
         "diff": 643,
         "amount": 162358,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 162357.5
       },
@@ -46412,7 +46430,7 @@
         "currQty": 2186,
         "diff": 2186,
         "amount": 52989,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52988.64
       },
@@ -46490,7 +46508,7 @@
         "currQty": 114,
         "diff": 114,
         "amount": 115,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 115.14
       },
@@ -46685,7 +46703,7 @@
         "currQty": 159,
         "diff": 159,
         "amount": 12044,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 12044.25
       },
@@ -46698,7 +46716,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 380,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 379.76
       },
@@ -46737,7 +46755,7 @@
         "currQty": 608,
         "diff": 608,
         "amount": 6755,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 6754.88
       },
@@ -46763,7 +46781,7 @@
         "currQty": 473,
         "diff": 473,
         "amount": 5255,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5255.03
       },
@@ -46815,7 +46833,7 @@
         "currQty": 110,
         "diff": 110,
         "amount": 7777,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7777.0
       },
@@ -48128,7 +48146,7 @@
         "currQty": 90,
         "diff": 90,
         "amount": 5727,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5726.7
       },
@@ -48141,7 +48159,7 @@
         "currQty": 40,
         "diff": 40,
         "amount": 2707,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2706.8
       },
@@ -48154,7 +48172,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 844,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 844.36
       },
@@ -48180,7 +48198,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 9342,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9342.5
       },
@@ -48193,7 +48211,7 @@
         "currQty": 113,
         "diff": 113,
         "amount": 5821,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5820.63
       },
@@ -48206,7 +48224,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 2121,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2121.0
       },
@@ -48219,7 +48237,7 @@
         "currQty": 69,
         "diff": 69,
         "amount": 3694,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3693.57
       },
@@ -48232,7 +48250,7 @@
         "currQty": 53,
         "diff": 53,
         "amount": 2248,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2248.26
       },
@@ -48245,7 +48263,7 @@
         "currQty": 21,
         "diff": 21,
         "amount": 1124,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1124.13
       },
@@ -48258,7 +48276,7 @@
         "currQty": 438,
         "diff": 438,
         "amount": 52201,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52200.84
       },
@@ -48271,7 +48289,7 @@
         "currQty": 1170,
         "diff": 1170,
         "amount": 155984,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 155984.4
       },
@@ -48284,7 +48302,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 3554,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3554.19
       },
@@ -48297,7 +48315,7 @@
         "currQty": 84,
         "diff": 84,
         "amount": 11793,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11792.76
       },
@@ -48310,7 +48328,7 @@
         "currQty": 20,
         "diff": 20,
         "amount": 1151,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1151.4
       },
@@ -48323,7 +48341,7 @@
         "currQty": 46,
         "diff": 46,
         "amount": 2834,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2834.06
       },
@@ -48336,7 +48354,7 @@
         "currQty": 10,
         "diff": 10,
         "amount": 858,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 858.5
       },
@@ -48349,7 +48367,7 @@
         "currQty": 18,
         "diff": 18,
         "amount": 2454,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2454.3
       },
@@ -48362,7 +48380,7 @@
         "currQty": 89,
         "diff": 89,
         "amount": 15731,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 15730.75
       },
@@ -48531,7 +48549,7 @@
         "currQty": 82,
         "diff": 82,
         "amount": 13086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 13085.56
       },
@@ -48544,7 +48562,7 @@
         "currQty": 12,
         "diff": 12,
         "amount": 1818,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1818.0
       },
@@ -48557,7 +48575,7 @@
         "currQty": 62,
         "diff": 62,
         "amount": 9957,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9956.58
       },
@@ -48570,7 +48588,7 @@
         "currQty": 101,
         "diff": 101,
         "amount": 16628,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 16627.63
       },
@@ -48583,7 +48601,7 @@
         "currQty": 86,
         "diff": 86,
         "amount": 17980,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17980.02
       },
@@ -48596,7 +48614,7 @@
         "currQty": 97,
         "diff": 97,
         "amount": 10483,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 10482.79
       },
@@ -48609,7 +48627,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 889,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 888.8
       },
@@ -48622,7 +48640,7 @@
         "currQty": 37,
         "diff": 37,
         "amount": 7549,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7548.74
       },
@@ -48635,7 +48653,7 @@
         "currQty": 141,
         "diff": 141,
         "amount": 17516,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17516.43
       },
@@ -48648,7 +48666,7 @@
         "currQty": 136,
         "diff": 136,
         "amount": 18544,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 18543.6
       },
@@ -48661,7 +48679,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 1900,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1899.81
       },
@@ -48869,7 +48887,7 @@
         "currQty": 49,
         "diff": 49,
         "amount": 7077,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7077.07
       },
@@ -48882,7 +48900,7 @@
         "currQty": 67,
         "diff": 67,
         "amount": 11301,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11300.89
       },
@@ -49064,7 +49082,7 @@
         "currQty": 192,
         "diff": 192,
         "amount": 9696,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9696.0
       },
@@ -49077,7 +49095,7 @@
         "currQty": 44,
         "diff": 44,
         "amount": 2222,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2222.0
       },
@@ -50299,7 +50317,7 @@
         "currQty": 180,
         "diff": 180,
         "amount": 49086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 49086.0
       },
@@ -50715,7 +50733,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -52952,13 +52970,19 @@
       },
       "面材": {
         "name": "分類面材",
-        "amount": 17310696,
+        "amount": 12021638,
+        "diff": 0,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 6248447,
         "diff": 0,
         "prevAmount": 0
       },
       "ﾀﾞﾝﾎﾞｰﾙ": {
         "name": "分類ﾀﾞﾝﾎﾞｰﾙ",
-        "amount": 1242888,
+        "amount": 816054,
         "diff": 0,
         "prevAmount": 0
       },
@@ -52976,7 +53000,7 @@
       },
       "金具": {
         "name": "分類金具",
-        "amount": 7250122,
+        "amount": 6766653,
         "diff": 0,
         "prevAmount": 0
       },
@@ -52994,7 +53018,7 @@
       },
       "PAO資材": {
         "name": "分類PAO資材",
-        "amount": 5193700,
+        "amount": 5144614,
         "diff": 0,
         "prevAmount": 0
       },
@@ -53031,7 +53055,7 @@
     },
     "total": 52471358,
     "prevTotal": 0,
-    "fixedTotal": 0,
+    "fixedTotal": 6248447,
     "closedAt": "2026-05-27T17:27:00.000Z"
   },
   {
@@ -55191,7 +55215,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 71589,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 71588.8
       },
@@ -55204,7 +55228,7 @@
         "currQty": 92,
         "diff": 92,
         "amount": 1008182,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1008182.0
       },
@@ -55217,7 +55241,7 @@
         "currQty": 3,
         "diff": 3,
         "amount": 26846,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 26845.8
       },
@@ -55230,7 +55254,7 @@
         "currQty": 48,
         "diff": 48,
         "amount": 429533,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 429532.8
       },
@@ -55243,7 +55267,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -55256,7 +55280,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 88355,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 88354.8
       },
@@ -55269,7 +55293,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -55282,7 +55306,7 @@
         "currQty": 247,
         "diff": 247,
         "amount": 2210304,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2210304.2
       },
@@ -55295,7 +55319,7 @@
         "currQty": 35,
         "diff": 35,
         "amount": 307545,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 307545.0
       },
@@ -55308,7 +55332,7 @@
         "currQty": 5,
         "diff": 5,
         "amount": 44743,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 44743.0
       },
@@ -55321,7 +55345,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 91658,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 91657.5
       },
@@ -55334,7 +55358,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 252046,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 252045.5
       },
@@ -55347,7 +55371,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -57895,7 +57919,7 @@
         "currQty": 2000,
         "diff": 2000,
         "amount": 50500,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 50500.0
       },
@@ -57908,7 +57932,7 @@
         "currQty": 3008,
         "diff": 3008,
         "amount": 75952,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 75952.0
       },
@@ -57921,7 +57945,7 @@
         "currQty": 439,
         "diff": 439,
         "amount": 55424,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 55423.75
       },
@@ -58025,7 +58049,7 @@
         "currQty": 14,
         "diff": 14,
         "amount": 3252,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3252.2
       },
@@ -58467,7 +58491,7 @@
         "currQty": 1000,
         "diff": 1000,
         "amount": 9090,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9090.0
       },
@@ -58519,7 +58543,7 @@
         "currQty": 198,
         "diff": 198,
         "amount": 39796,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 39796.02
       },
@@ -58571,7 +58595,7 @@
         "currQty": 4,
         "diff": 4,
         "amount": 1782,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1781.64
       },
@@ -58727,7 +58751,7 @@
         "currQty": 643,
         "diff": 643,
         "amount": 162358,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 162357.5
       },
@@ -59065,7 +59089,7 @@
         "currQty": 2186,
         "diff": 2186,
         "amount": 52989,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52988.64
       },
@@ -59169,7 +59193,7 @@
         "currQty": 114,
         "diff": 114,
         "amount": 115,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 115.14
       },
@@ -59351,7 +59375,7 @@
         "currQty": 159,
         "diff": 159,
         "amount": 12044,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 12044.25
       },
@@ -59364,7 +59388,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 380,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 379.76
       },
@@ -59403,7 +59427,7 @@
         "currQty": 608,
         "diff": 608,
         "amount": 6755,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 6754.88
       },
@@ -59429,7 +59453,7 @@
         "currQty": 473,
         "diff": 473,
         "amount": 5255,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5255.03
       },
@@ -59481,7 +59505,7 @@
         "currQty": 110,
         "diff": 110,
         "amount": 7777,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7777.0
       },
@@ -60716,7 +60740,7 @@
         "currQty": 90,
         "diff": 90,
         "amount": 5727,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5726.7
       },
@@ -60729,7 +60753,7 @@
         "currQty": 40,
         "diff": 40,
         "amount": 2707,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2706.8
       },
@@ -60742,7 +60766,7 @@
         "currQty": 11,
         "diff": 11,
         "amount": 844,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 844.36
       },
@@ -60768,7 +60792,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 9342,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9342.5
       },
@@ -60781,7 +60805,7 @@
         "currQty": 113,
         "diff": 113,
         "amount": 5821,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 5820.63
       },
@@ -60794,7 +60818,7 @@
         "currQty": 50,
         "diff": 50,
         "amount": 2121,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2121.0
       },
@@ -60807,7 +60831,7 @@
         "currQty": 69,
         "diff": 69,
         "amount": 3694,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3693.57
       },
@@ -60820,7 +60844,7 @@
         "currQty": 53,
         "diff": 53,
         "amount": 2248,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2248.26
       },
@@ -60833,7 +60857,7 @@
         "currQty": 21,
         "diff": 21,
         "amount": 1124,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1124.13
       },
@@ -60846,7 +60870,7 @@
         "currQty": 438,
         "diff": 438,
         "amount": 52201,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 52200.84
       },
@@ -60859,7 +60883,7 @@
         "currQty": 1170,
         "diff": 1170,
         "amount": 155984,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 155984.4
       },
@@ -60872,7 +60896,7 @@
         "currQty": 23,
         "diff": 23,
         "amount": 3554,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 3554.19
       },
@@ -60885,7 +60909,7 @@
         "currQty": 84,
         "diff": 84,
         "amount": 11793,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11792.76
       },
@@ -60898,7 +60922,7 @@
         "currQty": 20,
         "diff": 20,
         "amount": 1151,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1151.4
       },
@@ -60911,7 +60935,7 @@
         "currQty": 46,
         "diff": 46,
         "amount": 2834,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2834.06
       },
@@ -60924,7 +60948,7 @@
         "currQty": 10,
         "diff": 10,
         "amount": 858,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 858.5
       },
@@ -60937,7 +60961,7 @@
         "currQty": 18,
         "diff": 18,
         "amount": 2454,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2454.3
       },
@@ -60950,7 +60974,7 @@
         "currQty": 89,
         "diff": 89,
         "amount": 15731,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 15730.75
       },
@@ -61119,7 +61143,7 @@
         "currQty": 82,
         "diff": 82,
         "amount": 13086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 13085.56
       },
@@ -61132,7 +61156,7 @@
         "currQty": 12,
         "diff": 12,
         "amount": 1818,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1818.0
       },
@@ -61145,7 +61169,7 @@
         "currQty": 62,
         "diff": 62,
         "amount": 9957,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9956.58
       },
@@ -61158,7 +61182,7 @@
         "currQty": 101,
         "diff": 101,
         "amount": 16628,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 16627.63
       },
@@ -61171,7 +61195,7 @@
         "currQty": 86,
         "diff": 86,
         "amount": 17980,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17980.02
       },
@@ -61184,7 +61208,7 @@
         "currQty": 97,
         "diff": 97,
         "amount": 10483,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 10482.79
       },
@@ -61197,7 +61221,7 @@
         "currQty": 8,
         "diff": 8,
         "amount": 889,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 888.8
       },
@@ -61210,7 +61234,7 @@
         "currQty": 37,
         "diff": 37,
         "amount": 7549,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7548.74
       },
@@ -61223,7 +61247,7 @@
         "currQty": 141,
         "diff": 141,
         "amount": 17516,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 17516.43
       },
@@ -61236,7 +61260,7 @@
         "currQty": 136,
         "diff": 136,
         "amount": 18544,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 18543.6
       },
@@ -61249,7 +61273,7 @@
         "currQty": 9,
         "diff": 9,
         "amount": 1900,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 1899.81
       },
@@ -61457,7 +61481,7 @@
         "currQty": 49,
         "diff": 49,
         "amount": 7077,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 7077.07
       },
@@ -61470,7 +61494,7 @@
         "currQty": 67,
         "diff": 67,
         "amount": 11301,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 11300.89
       },
@@ -61652,7 +61676,7 @@
         "currQty": 192,
         "diff": 192,
         "amount": 9696,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 9696.0
       },
@@ -61665,7 +61689,7 @@
         "currQty": 44,
         "diff": 44,
         "amount": 2222,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 2222.0
       },
@@ -63134,7 +63158,7 @@
         "currQty": 180,
         "diff": 180,
         "amount": 49086,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 49086.0
       },
@@ -63550,7 +63574,7 @@
         "currQty": 0,
         "diff": 0,
         "amount": 0,
-        "isFixed": false,
+        "isFixed": true,
         "prevAmount": 0,
         "csvAmountWithTax": 0.0
       },
@@ -67275,7 +67299,13 @@
       },
       "髱｢譚": {
         "name": "分類髱｢譚",
-        "amount": 18838151,
+        "amount": 14307350,
+        "diff": 0,
+        "prevAmount": 0
+      },
+      "fixed": {
+        "name": "不動品",
+        "amount": 5490190,
         "diff": 0,
         "prevAmount": 0
       },
@@ -67293,13 +67323,13 @@
       },
       "驥大ｷ": {
         "name": "分類驥大ｷ",
-        "amount": 7302676,
+        "amount": 6819207,
         "diff": 0,
         "prevAmount": 0
       },
       "ｾｾ橸ｾ晢ｾ趣ｾ橸ｽｰｾ": {
         "name": "分類ｾｾ橸ｾ晢ｾ趣ｾ橸ｽｰｾ",
-        "amount": 1239601,
+        "amount": 812767,
         "diff": 0,
         "prevAmount": 0
       },
@@ -67317,7 +67347,7 @@
       },
       "PAO雉譚": {
         "name": "分類PAO雉譚",
-        "amount": 9084365,
+        "amount": 9035279,
         "diff": 0,
         "prevAmount": 0
       },
@@ -67366,7 +67396,7 @@
     },
     "total": 56570109,
     "prevTotal": 0,
-    "fixedTotal": 0,
+    "fixedTotal": 5490190,
     "closedAt": "2026-05-27T17:27:00.000Z"
   }
 ]
