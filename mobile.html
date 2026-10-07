@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.25.0】 -->
+    <!-- 【強制キャッシュバスティング v6.26.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.25.0';
+            var currentVersion = 'v6.26.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.25.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.26.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -42365,6 +42365,42 @@ window.forceReloadMaster = function() {
   }
 })();
 
+
+// 【究極の自動修復機能・第2弾】保存済みの月次データがバグで1億円になっている場合、起動時に自動で再計算して修正する
+(function healMonthlyData() {
+  try {
+    let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+    let healed = false;
+    monthly.forEach(m => {
+      // もし合計金額が100223895や9000万を超えている異常値の場合、かつ3月などの場合
+      if (m.total === 100223895 || m.total > 90000000) {
+        console.log(`Healing corrupted monthly data for ${m.month}: ${m.total}`);
+        // 過去のF1を引っ張り出す
+        let f1 = m.f1Total;
+        if (!f1 || f1 === 100223895) {
+           const tScans = DB.getTempScans() || [];
+           const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
+           if (meta) f1 = meta.amountWithTax;
+        }
+        // 完全再計算
+        const result = calculateInvMonthly(m.month, f1);
+        m.items = result.items;
+        m.summary = result.summary;
+        m.total = result.total;
+        m.f1Total = result.f1Total;
+        m.prevTotal = result.prevTotal;
+        healed = true;
+      }
+    });
+    if (healed) {
+      console.log('Saved healed monthly data.');
+      DB.save(DB.KEYS.INV_MONTHLY, monthly);
+    }
+  } catch(e) {
+    console.error('Heal monthly failed', e);
+  }
+})();
+
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -42422,7 +42458,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.25.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.26.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42449,7 +42485,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.25.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.26.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42532,7 +42568,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.25.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.26.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
