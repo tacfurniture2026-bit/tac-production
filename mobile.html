@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.27.0】 -->
+    <!-- 【強制キャッシュバスティング v6.28.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.27.0';
+            var currentVersion = 'v6.28.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.27.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.28.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -42419,6 +42419,58 @@ window.forceReloadMaster = function() {
   }
 })();
 
+
+window.manualHealMonthlyData = function() {
+  try {
+    let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+    let healed = false;
+    let msgs = [];
+    
+    // まずTEMP_商品を消す
+    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    const beforeCount = products.length;
+    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
+    
+    // 重複も排除
+    const uniqueById = new Map();
+    products.forEach(p => uniqueById.set(p.id, p));
+    products = Array.from(uniqueById.values());
+    
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    msgs.push("商品マスタ整理: " + beforeCount + " -> " + products.length);
+
+    monthly.forEach(m => {
+      if (m.month === '2026-03' || m.total > 90000000 || m.total === 100223895) {
+        msgs.push("対象発見: " + m.month + " (現在値: " + m.total + ")");
+        let f1 = m.f1Total;
+        if (!f1 || f1 === 100223895) {
+           const tScans = DB.getTempScans() || [];
+           const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
+           if (meta) f1 = meta.amountWithTax;
+        }
+        const result = calculateInvMonthly(m.month, f1);
+        m.items = result.items;
+        m.summary = result.summary;
+        m.total = result.total;
+        m.f1Total = result.f1Total;
+        m.prevTotal = result.prevTotal;
+        healed = true;
+        msgs.push("修正後: " + m.total);
+      }
+    });
+    
+    if (healed) {
+      DB.save(DB.KEYS.INV_MONTHLY, monthly);
+      alert("【修正成功】\n" + msgs.join("\n") + "\n\n画面を再読み込みします。");
+      location.reload();
+    } else {
+      alert("修正対象のデータが見つかりませんでした。\n既に修正されているか、対象月がありません。\n" + msgs.join("\n"));
+    }
+  } catch(e) {
+    alert("エラーが発生しました: " + e.message);
+  }
+};
+  
 </script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
@@ -42476,7 +42528,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.27.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.28.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42503,7 +42555,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.27.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.28.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42586,10 +42638,16 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.27.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.28.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
-                <div class="stats-grid">
+                
+  <div style="margin: 20px 0; padding: 15px; background: #fee2e2; border: 2px solid red; border-radius: 8px; text-align: center;">
+    <h3 style="color: red; margin-bottom: 10px;">【重要】3月の異常数値(1億円)の修正はこちら</h3>
+    <button onclick="manualHealMonthlyData()" style="background: red; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; font-weight: bold;">異常数値を強制修正する</button>
+  </div>
+  
+<div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon stat-total">☰</div>
                         <div class="stat-content">
