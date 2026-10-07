@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.39.0】 -->
+    <!-- 【強制キャッシュバスティング v6.40.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.39.0';
+            var currentVersion = 'v6.40.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.39.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.40.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -42024,6 +42024,11 @@ function confirmInvTempData() {
   });
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
+  // Actually clear tempScans from DB to prevent QuotaExceededError
+  const __currentTempScans = DB.getTempScans() || [];
+  const __filteredTempScans = __currentTempScans.filter(s => s.month !== selectedMonth);
+  DB.save(DB.KEYS.INV_SCAN_TEMP, __filteredTempScans);
+
   // 4. Compute and save monthly closing
   try {
     const monthlyResult = calculateInvMonthly(selectedMonth);
@@ -42590,7 +42595,7 @@ window.manualHealMonthlyData = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.39.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.40.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42617,7 +42622,7 @@ window.manualHealMonthlyData = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.39.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.40.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42700,7 +42705,7 @@ window.manualHealMonthlyData = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.39.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.40.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 

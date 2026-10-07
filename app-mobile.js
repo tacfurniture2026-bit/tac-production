@@ -8234,6 +8234,11 @@ function confirmInvTempData() {
   });
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
+  // Actually clear tempScans from DB to prevent QuotaExceededError
+  const __currentTempScans = DB.getTempScans() || [];
+  const __filteredTempScans = __currentTempScans.filter(s => s.month !== selectedMonth);
+  DB.save(DB.KEYS.INV_SCAN_TEMP, __filteredTempScans);
+
   // 4. Compute and save monthly closing
   try {
     const monthlyResult = calculateInvMonthly(selectedMonth);

@@ -4,11 +4,17 @@ function patchFile(filename) {
   if (!fs.existsSync(filename)) return;
   let code = fs.readFileSync(filename, 'utf8');
   
+  if (code.includes('4. 清掃作業')) {
+    console.log(filename + ' already has IIFE quota fix');
+    return;
+  }
+  
   const oldIIFE = `
-    if (healed) {
-      console.log('Saved fully healed monthly data.');
-      DB.save(DB.KEYS.INV_MONTHLY, monthly);
-    }
+            tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+            tempMonthly.push(m);
+            DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
+        }
+    });
   } catch(e) {
     console.error('Heal monthly failed', e);
   }
@@ -16,10 +22,11 @@ function patchFile(filename) {
   `;
   
   const newIIFE = `
-    if (healed) {
-      console.log('Saved fully healed monthly data.');
-      DB.save(DB.KEYS.INV_MONTHLY, monthly);
-    }
+            tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+            tempMonthly.push(m);
+            DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
+        }
+    });
 
     // 4. 清掃作業：すでに確定済みの月の tempScans を削除して容量オーバー(QuotaExceededError)を防ぐ
     const tempScans = DB.getTempScans() || [];

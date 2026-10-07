@@ -6640,9 +6640,7 @@ function setupInvExcelImport() {
           }
 
           let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
-          if (targetMonth) {
-            tempScans = tempScans.filter(s => s.month !== currentMonth);
-          }
+          tempScans = tempScans.filter(s => s.month !== currentMonth);
 
           parsedItems.forEach(item => {
             // INV_SCAN_TEMP に直接追加する
@@ -9383,6 +9381,11 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
     }
   });
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+
+  // Actually clear tempScans from DB to prevent QuotaExceededError
+  const __currentTempScans = DB.getTempScans() || [];
+  const __filteredTempScans = __currentTempScans.filter(s => s.month !== selectedMonth);
+  DB.save(DB.KEYS.INV_SCAN_TEMP, __filteredTempScans);
 
   // 4. Compute and save monthly closing
   
