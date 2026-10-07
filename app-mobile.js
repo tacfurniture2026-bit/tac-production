@@ -6513,12 +6513,30 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
   let f1Total = f1TotalOverride;
-  if (f1Total === null) {
+  if (f1Total === null || isNaN(f1Total)) {
     const existing = monthly.find(m => m.month === month);
-    if (existing && existing.f1Total !== undefined) {
+    if (existing && existing.f1Total !== undefined && existing.f1Total !== null && !isNaN(existing.f1Total)) {
       f1Total = existing.f1Total;
     }
   }
+  // 究極のフォールバック：tempScansからも探す
+  if (f1Total === null || isNaN(f1Total)) {
+    const tScans = DB.getTempScans() || [];
+    const f1Meta = tScans.find(s => s.month === month && s.productId === 'META_F1_TOTAL');
+    if (f1Meta && f1Meta.amountWithTax !== undefined) {
+      f1Total = f1Meta.amountWithTax;
+    }
+  }
+  
+  // さらなる究極のフォールバック：直近のCSVのF1を探す (月が合わなくても最新のインポートのF1を使う)
+  if (f1Total === null || isNaN(f1Total)) {
+     const tScans = DB.getTempScans() || [];
+     const f1MetaAny = tScans.find(s => s.productId === 'META_F1_TOTAL');
+     if (f1MetaAny && f1MetaAny.amountWithTax !== undefined) {
+       f1Total = f1MetaAny.amountWithTax;
+     }
+  }
+  
 
   // 前月データを取得
   const [yearStr, monthStr] = month.split('-');
@@ -6668,19 +6686,14 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
 
       if (countLogs.length > 0) {
         hasCountLog = true;
-        if (hasCsvImport) {
-          // CSVインポート時は全CSV行の数量・U列金額を合算（0円も含め集計）
-          countLogs.forEach(log => {
-            currQty += safeNum(log.quantity);
-            csvAmountWithTax += safeNum(log.amountWithTax);
-          });
-        } else {
-          // 手動棚卸スキャン等の場合は最新のcountログの数量を採用（重複加算防止）
-          const latestCountLog = countLogs[countLogs.length - 1];
-          currQty = safeNum(latestCountLog.quantity);
-          if (latestCountLog.amountWithTax > 0) {
-            csvAmountWithTax = safeNum(latestCountLog.amountWithTax);
-          }
+        // 常に最新のログ1件を採用する（重複加算バグ防止）
+        const latestCountLog = countLogs[countLogs.length - 1];
+        currQty = safeNum(latestCountLog.quantity);
+        if (latestCountLog.amountWithTax !== undefined && latestCountLog.amountWithTax !== null && latestCountLog.amountWithTax > 0) {
+          csvAmountWithTax = safeNum(latestCountLog.amountWithTax);
+        } else if (hasCsvImport) {
+          // CSVインポートだが単価0で金額が0の場合も0円として処理
+          csvAmountWithTax = 0;
         }
       } else if (isFixed && !hasCsvImport) {
         // CSV取込が行われていない月のみ、棚卸カウントログがない不動品は前月数量を自動引き継ぎ
@@ -8477,11 +8490,11 @@ window.forceReloadMaster = function() {
     let keepLogs = [];
     let seen = new Set();
     
-    // We want to keep the LATEST log for each (productId, month) if it's a 'count' log from '棚卸確定'
-    // To do this easily, we process backwards
+    // We want to keep the LATEST 'count' log for each (productId, month)
+    // regardless of whether it's from '初期在庫データ取込' or '棚卸確定'
     for (let i = logs.length - 1; i >= 0; i--) {
       const l = logs[i];
-      if (l.type === 'count' && l.note && l.note.includes('棚卸確定') && l.timestamp) {
+      if (l.type === 'count' && l.timestamp) {
         const month = l.timestamp.substring(0, 7);
         const key = l.productId + '_' + month;
         if (seen.has(key)) {
@@ -8493,7 +8506,7 @@ window.forceReloadMaster = function() {
     }
     
     if (keepLogs.length < initialCount) {
-      console.log('Healed duplicate logs:', initialCount - keepLogs.length);
+      console.log('Healed strict duplicate logs:', initialCount - keepLogs.length);
       DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(keepLogs)));
     }
   } catch (e) {
