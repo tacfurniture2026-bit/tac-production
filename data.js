@@ -1,3 +1,5 @@
+var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
+
 // ========================================
 // データストレージ（LocalStorage + Firebase対応）
 // ========================================
@@ -221,7 +223,7 @@ const DB = {
                 let parsedData = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
                 this._cache[key] = parsedData.filter(item => item !== null);
                 this._loaded[key] = true; // 同期完了フラグをセット
-                localStorage.setItem(key, JSON.stringify(this._cache[key])); // 常にローカルにバックアップ
+                localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(this._cache[key])) : JSON.stringify(this._cache[key])); // 常にローカルにバックアップ
                 console.log(`🔄 ${fbKey} 更新:`, this._cache[key].length, '件');
 
                 // UI更新（定義されている場合）
@@ -374,7 +376,7 @@ const DB = {
             const fbKey = this.toFirebaseKey(key);
             this._cache[key] = data;
             // 常にLocalStorageにもキャッシュを保存（オフライン・権限エラー対策の強力なフォールバック）
-            localStorage.setItem(key, JSON.stringify(data));
+            localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(data)) : JSON.stringify(data));
             return firebaseDB.ref(fbKey).set(data)
                 .then(() => {
                     console.log(`💾 ${fbKey} 保存完了`);
@@ -385,7 +387,7 @@ const DB = {
                     throw err;
                 });
         } else {
-            localStorage.setItem(key, JSON.stringify(data));
+            localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(data)) : JSON.stringify(data));
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
             return Promise.resolve(true);
         }
@@ -524,7 +526,7 @@ const DB = {
         if (newItem.id && !localData.some(d => d.id === newItem.id)) {
             localData.push(newItem);
             this._cache[key] = localData;
-            localStorage.setItem(key, JSON.stringify(localData));
+            localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(localData)) : JSON.stringify(localData));
         }
 
         // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
@@ -544,7 +546,7 @@ const DB = {
             }
         });
         this._cache[key] = localData;
-        localStorage.setItem(key, JSON.stringify(localData));
+        localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(localData)) : JSON.stringify(localData));
 
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
@@ -615,7 +617,7 @@ const DB = {
         if (typeof useFirebase !== 'undefined' && useFirebase && firebaseDB && key !== this.KEYS.CURRENT_USER) {
             const fbKey = this.toFirebaseKey(key);
             this._cache[key] = merged;
-            localStorage.setItem(key, JSON.stringify(merged));
+            localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(merged)) : JSON.stringify(merged));
             return firebaseDB.ref(fbKey).set(merged)
                 .then(() => {
                     console.log(`✅ addBulk Firebase保存完了: ${itemsToAdd.length}件追加`);
@@ -628,7 +630,7 @@ const DB = {
         } else {
             // ローカルストレージ
             try {
-                localStorage.setItem(key, JSON.stringify(merged));
+                localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(merged)) : JSON.stringify(merged));
                 console.log(`✅ addBulk ローカル保存完了: ${itemsToAdd.length}件追加`);
                 return Promise.resolve(true);
             } catch (err) {
@@ -647,7 +649,7 @@ const DB = {
         if (index !== -1) {
             localData[index] = updatedItem;
             this._cache[key] = localData;
-            localStorage.setItem(key, JSON.stringify(localData));
+            localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(localData)) : JSON.stringify(localData));
         }
 
         // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
@@ -661,7 +663,7 @@ const DB = {
         if (!Array.isArray(localData)) localData = Object.values(localData).filter(item => item !== null);
         const filteredLocal = localData.filter(item => item && item.id !== id);
         this._cache[key] = filteredLocal;
-        localStorage.setItem(key, JSON.stringify(filteredLocal));
+        localStorage.setItem(key, typeof LZString !== 'undefined' ? LZString.compressToUTF16(JSON.stringify(filteredLocal)) : JSON.stringify(filteredLocal));
 
         // Firebaseの配列処理インデックスずれを防ぐため、全体を保存
         this.save(key, filteredLocal);
@@ -676,7 +678,17 @@ const DB = {
             }
         }
         // 未ロード、オフライン時、またはローカル専用時はローカルストレージから取得
-        const data = localStorage.getItem(key);
+        let data = localStorage.getItem(key);
+        if (data && !data.startsWith('[') && !data.startsWith('{')) {
+            try {
+                if (typeof LZString !== 'undefined') {
+                    const decompressed = LZString.decompressFromUTF16(data);
+                    if (decompressed) data = decompressed;
+                }
+            } catch(e) {
+                console.warn('LZString decompress failed for', key);
+            }
+        }
         try {
             const parsed = data ? JSON.parse(data) : [];
             const parsedArray = Array.isArray(parsed) ? parsed : [];
@@ -31482,3 +31494,28 @@ const NEW_BOM_DATA = [
         }
     }
 ];
+
+// 自動圧縮ツール（初回読み込み時に全データをLZString圧縮に変換）
+(function autoCompressDB() {
+    if (typeof localStorage === 'undefined' || typeof LZString === 'undefined') return;
+    try {
+        let compressedCount = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('pms_') && !key.includes('local_batch') && !key.includes('current_user') && !key.includes('last_backup')) {
+                const raw = localStorage.getItem(key);
+                if (raw && (raw.startsWith('[') || raw.startsWith('{'))) {
+                    // 非圧縮データを発見。圧縮して保存し直す
+                    const compressed = LZString.compressToUTF16(raw);
+                    localStorage.setItem(key, compressed);
+                    compressedCount++;
+                }
+            }
+        }
+        if (compressedCount > 0) {
+            console.log('✅ ' + compressedCount + '件のデータベースキーを圧縮形式に変換しました。');
+        }
+    } catch(e) {
+        console.error('自動圧縮中にエラー:', e);
+    }
+})();
