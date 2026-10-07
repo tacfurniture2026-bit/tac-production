@@ -10624,7 +10624,7 @@ window.manualHealMonthlyData = function() {
       banner.style.overflow = 'auto';
       document.body.appendChild(banner);
     }
-    banner.innerHTML = "<h3>【開発者用データダンプ】この画面全体をスクリーンショットしてください！</h3><pre style='background:#eee;padding:10px;font-size:12px;white-space:pre-wrap;'>" + dumpStr + "</pre><button onclick='document.getElementById("debug-banner-dump").style.display="none"' style='padding:10px;margin-top:10px;background:red;color:white;'>閉じる</button>";
+    banner.innerHTML = "<h3>【開発者用データダンプ】この画面全体をスクリーンショットしてください！</h3><pre style='background:#eee;padding:10px;font-size:12px;white-space:pre-wrap;'>" + dumpStr + "</pre><button onclick='document.getElementById(\"debug-banner-dump\").style.display=\"none\"' style='padding:10px;margin-top:10px;background:red;color:white;'>閉じる</button>";
 
   } catch(e) {
     alert("エラーが発生しました: " + e.message);
