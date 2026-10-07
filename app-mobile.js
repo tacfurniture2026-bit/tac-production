@@ -8630,54 +8630,63 @@ window.forceReloadMaster = function() {
 })();
 
 
+
 window.manualHealMonthlyData = function() {
   try {
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-    let healed = false;
     let msgs = [];
     
-    // まずTEMP_商品を消す
-    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    const beforeCount = products.length;
-    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
+    // First, let's just calculate it RAW without any F1 fallback
+    const resultRaw = calculateInvMonthly('2026-03', null);
     
-    // 重複も排除
-    const uniqueById = new Map();
-    products.forEach(p => uniqueById.set(p.id, p));
-    products = Array.from(uniqueById.values());
+    // Let's also see what's in INV_LOGS
+    const logs = DB.get(DB.KEYS.INV_LOGS) || [];
+    const marchLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith('2026-03') && l.type === 'count');
+    const hasCsvImport = marchLogs.length > 0;
+    const marchLogSum = marchLogs.reduce((sum, l) => sum + (Number(l.amountWithTax) || 0), 0);
+    const marchLogQty = marchLogs.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
     
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
-    msgs.push("商品マスタ整理: " + beforeCount + " -> " + products.length);
-
-    monthly.forEach(m => {
-      if (m.month === '2026-03' || m.total > 90000000 || m.total === 100223895) {
-        msgs.push("対象発見: " + m.month + " (現在値: " + m.total + ")");
-        let f1 = m.f1Total;
-        if (!f1 || f1 === 100223895) {
-           const tScans = DB.getTempScans() || [];
-           const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
-           if (meta) f1 = meta.amountWithTax;
-        }
-        const result = calculateInvMonthly(m.month, f1);
-        m.items = result.items;
-        m.summary = result.summary;
-        m.total = result.total;
-        m.f1Total = result.f1Total;
-        m.prevTotal = result.prevTotal;
-        healed = true;
-        msgs.push("修正後: " + m.total);
-      }
+    const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    
+    // Calculate how many items are missing
+    let missingCount = 0;
+    products.forEach(p => {
+       const hasLog = marchLogs.some(l => l.productId === p.id);
+       if (!hasLog) missingCount++;
     });
+
+    const m = monthly.find(x => x.month === '2026-03');
     
-    if (healed) {
-      DB.save(DB.KEYS.INV_MONTHLY, monthly);
-      alert("【修正成功】\n" + msgs.join("\n") + "\n\n画面を再読み込みします。");
-      location.reload();
-    } else {
-      alert("修正対象のデータが見つかりませんでした。\n既に修正されているか、対象月がありません。\n" + msgs.join("\n"));
+    msgs.push("--- 診断レポート ---");
+    msgs.push("現在のDB保存値: " + (m ? m.total : 'なし'));
+    msgs.push("現在のDB F1値: " + (m ? m.f1Total : 'なし'));
+    msgs.push("F1無視の再計算値(rawTotal): " + resultRaw.total);
+    msgs.push("3月ログ数: " + marchLogs.length);
+    msgs.push("3月ログAmountSum: " + marchLogSum);
+    msgs.push("商品マスタ総数: " + products.length);
+    msgs.push("ログに存在しない商品数: " + missingCount);
+    
+    // Force fix
+    if (m) {
+        // Find REAL F1 if possible
+        const tScans = DB.getTempScans() || [];
+        const meta = tScans.find(s => s.month === '2026-03' && s.productId === 'META_F1_TOTAL');
+        let realF1 = meta ? meta.amountWithTax : null;
+        
+        const finalResult = calculateInvMonthly('2026-03', realF1);
+        m.items = finalResult.items;
+        m.summary = finalResult.summary;
+        m.total = finalResult.total;
+        m.f1Total = finalResult.f1Total;
+        m.prevTotal = finalResult.prevTotal;
+        DB.save(DB.KEYS.INV_MONTHLY, monthly);
+        msgs.push("---");
+        msgs.push("強制適用後: " + finalResult.total);
     }
+
+    alert(msgs.join("\n"));
   } catch(e) {
-    alert("エラーが発生しました: " + e.message);
+    alert("エラー: " + e.message);
   }
 };
   
