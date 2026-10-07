@@ -10580,41 +10580,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
 window.manualHealMonthlyData = function() {
   try {
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-    let healed = false;
-    
-    // まずTEMP_商品を消す
+    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
     let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
-    const uniqueById = new Map();
-    products.forEach(p => uniqueById.set(p.id, p));
-    products = Array.from(uniqueById.values());
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
+    let tScans = DB.getTempScans() || [];
 
-    const m = monthly.find(x => x.month === '2026-03' || x.total > 90000000);
-    if (m) {
-        // Find REAL F1 if possible, but NEVER use the virus
-        const tScans = DB.getTempScans() || [];
-        const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
-        let realF1 = meta ? meta.amountWithTax : null;
-        if (realF1 === 100223895 || realF1 === 100223877) realF1 = null;
-        
-        // COMPLETELY recalculate without the virus
-        const finalResult = calculateInvMonthly(m.month, realF1);
-        m.items = finalResult.items;
-        m.summary = finalResult.summary;
-        m.total = finalResult.total;
-        m.f1Total = finalResult.f1Total;
-        m.prevTotal = finalResult.prevTotal;
-        DB.save(DB.KEYS.INV_MONTHLY, monthly);
-        
-        alert("【修正完了】\n異常値の呪縛を完全に破壊しました。\n新しい正しい合計は: " + finalResult.total + " です。\n画面を再読み込みします。");
-        location.reload();
-    } else {
-        alert("異常なデータは見つかりませんでした。（既に正常です）");
+    const m = monthly.find(x => x.month === '2026-03');
+    
+    // Calculate completely raw
+    const resultRaw = calculateInvMonthly('2026-03', null);
+    
+    const debugObj = {
+      rawTotal: resultRaw.total,
+      f1Total: resultRaw.f1Total,
+      hasCsvImport: logs.filter(l => l.timestamp && l.timestamp.startsWith('2026-03') && l.type === 'count').length > 0,
+      tScansF1: tScans.filter(s => s.productId === 'META_F1_TOTAL'),
+      itemsCount: resultRaw.items.length,
+      itemsSum: resultRaw.items.reduce((sum, i) => sum + i.amount, 0),
+      top5Items: resultRaw.items.sort((a,b) => b.amount - a.amount).slice(0, 5),
+      monthlyF1: m ? m.f1Total : 'm_is_null',
+      monthlyTotal: m ? m.total : 'm_is_null',
+    };
+    
+    const dumpStr = JSON.stringify(debugObj, null, 2);
+    
+    // Show in a textarea so they can screenshot or copy it
+    let banner = document.getElementById('debug-banner-dump');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'debug-banner-dump';
+      banner.style.position = 'fixed';
+      banner.style.top = '10%';
+      banner.style.left = '5%';
+      banner.style.width = '90%';
+      banner.style.height = '80%';
+      banner.style.backgroundColor = 'white';
+      banner.style.border = '5px solid red';
+      banner.style.zIndex = '9999999';
+      banner.style.padding = '20px';
+      banner.style.overflow = 'auto';
+      document.body.appendChild(banner);
     }
+    banner.innerHTML = "<h3>【開発者用データダンプ】この画面全体をスクリーンショットしてください！</h3><pre style='background:#eee;padding:10px;font-size:12px;white-space:pre-wrap;'>" + dumpStr + "</pre><button onclick='document.getElementById("debug-banner-dump").style.display="none"' style='padding:10px;margin-top:10px;background:red;color:white;'>閉じる</button>";
+
   } catch(e) {
     alert("エラーが発生しました: " + e.message);
   }
