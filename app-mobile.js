@@ -6527,7 +6527,9 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     const tScans = DB.getTempScans() || [];
     const f1Meta = tScans.find(s => s.month === month && s.productId === 'META_F1_TOTAL');
     if (f1Meta && f1Meta.amountWithTax !== undefined) {
-      f1Total = f1Meta.amountWithTax;
+      if (f1Meta.amountWithTax !== 100223895 && f1Meta.amountWithTax !== 100223877) {
+        f1Total = f1Meta.amountWithTax;
+      }
     }
   }
   
@@ -6536,7 +6538,9 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
      const tScans = DB.getTempScans() || [];
      const f1MetaAny = tScans.find(s => s.productId === 'META_F1_TOTAL');
      if (f1MetaAny && f1MetaAny.amountWithTax !== undefined) {
-       f1Total = f1MetaAny.amountWithTax;
+       if (f1MetaAny.amountWithTax !== 100223895 && f1MetaAny.amountWithTax !== 100223877) {
+         f1Total = f1MetaAny.amountWithTax;
+       }
      }
   }
   
@@ -8650,6 +8654,7 @@ window.forceReloadMaster = function() {
 
 
 
+
 window.manualHealMonthlyData = function() {
   try {
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
@@ -8662,38 +8667,50 @@ window.manualHealMonthlyData = function() {
     products = Array.from(uniqueById.values());
     DB.save(DB.KEYS.INV_PRODUCTS, products);
 
-    const m = monthly.find(x => x.month === '2026-03');
-    if (m) {
-        // Cache destroy!
+    // ALL broken months
+    const brokenMonths = monthly.filter(x => x.total > 90000000 || x.total === 100223895 || x.total === 100223877);
+    
+    if (brokenMonths.length > 0) {
+        // Cache completely destroy!
         let tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-        tempMonthly = tempMonthly.filter(x => x.month !== '2026-03');
+        brokenMonths.forEach(m => {
+            tempMonthly = tempMonthly.filter(x => x.month !== m.month);
+        });
         DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
 
-        const tScans = DB.getTempScans() || [];
-        const meta = tScans.find(s => s.month === '2026-03' && s.productId === 'META_F1_TOTAL');
-        let realF1 = meta ? meta.amountWithTax : null;
-        if (realF1 === 100223895 || realF1 === 100223877) realF1 = null;
+        let report = "【究極の修正完了】\n以下の月の異常キャッシュを破壊し、完全再計算しました。\n";
         
-        // NOW recalculate completely fresh without cache!
-        const finalResult = calculateInvMonthly('2026-03', realF1);
-        
-        // Save back
         let finalMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-        const existingIdx = finalMonthly.findIndex(x => x.month === '2026-03');
-        const newData = {
-          month: '2026-03',
-          items: finalResult.items,
-          summary: finalResult.summary,
-          total: finalResult.total,
-          f1Total: finalResult.f1Total,
-          prevTotal: finalResult.prevTotal,
-          lastUpdated: new Date().toISOString()
-        };
-        if (existingIdx >= 0) finalMonthly[existingIdx] = newData;
-        else finalMonthly.push(newData);
+
+        brokenMonths.forEach(m => {
+            const tScans = DB.getTempScans() || [];
+            const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
+            let realF1 = meta ? meta.amountWithTax : null;
+            if (realF1 === 100223895 || realF1 === 100223877) realF1 = null;
+            
+            // NOW recalculate completely fresh without cache!
+            const finalResult = calculateInvMonthly(m.month, realF1);
+            
+            // Add back
+            const newData = {
+              month: m.month,
+              items: finalResult.items,
+              summary: finalResult.summary,
+              total: finalResult.total,
+              f1Total: finalResult.f1Total,
+              prevTotal: finalResult.prevTotal,
+              lastUpdated: new Date().toISOString()
+            };
+            const existingIdx = finalMonthly.findIndex(x => x.month === m.month);
+            if (existingIdx >= 0) finalMonthly[existingIdx] = newData;
+            else finalMonthly.push(newData);
+            
+            report += m.month + " の新しい合計: " + finalResult.total + "\n";
+        });
+        
         DB.save(DB.KEYS.INV_MONTHLY, finalMonthly);
         
-        alert("【究極の修正完了】\nキャッシュの破壊に成功しました！\n新しい正しい合計金額は: " + finalResult.total + " です。\n画面を再読み込みします。");
+        alert(report + "\n画面を再読み込みします。");
         location.reload();
     } else {
         alert("異常なデータは見つかりませんでした。（既に正常です）");
