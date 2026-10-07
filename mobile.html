@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.23.0】 -->
+    <!-- 【強制キャッシュバスティング v6.24.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.23.0';
+            var currentVersion = 'v6.24.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.23.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.24.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -40412,7 +40412,8 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
   
   // CSV取込ログかどうか判定
-  const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
+  // 過去の破損データ（金額null）でも一括取込として認識させるため、単なるcountログの存在で判定
+  const csvLogs = monthLogs.filter(l => l.type === 'count');
   const hasCsvImport = csvLogs.length > 0;
   
   const items = [];
@@ -40542,7 +40543,10 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
   
   // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
-  const rawTotal = items.reduce((sum, i) => sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount), 0);
+  const rawTotal = items.reduce((sum, i) => {
+    if (i.productId === 'META_F1_TOTAL' || String(i.productId).startsWith('TEMP_')) return sum;
+    return sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount);
+  }, 0);
   let total = Math.round(rawTotal);
   
   if (f1Total !== null && !isNaN(f1Total)) {
@@ -40591,7 +40595,17 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     summary[largestCatKey].diff = summary[largestCatKey].amount - summary[largestCatKey].prevAmount;
   }
 
-  return { month, items, summary, total, prevTotal };
+  
+  if (total === 100223895 || rawTotal === 100223895) {
+    const debugInfo = "DEBUG: rawTotal=" + rawTotal + 
+      ", f1Total=" + f1Total + 
+      ", hasCsvImport=" + hasCsvImport + 
+      ", missingItemsQtySum=" + items.filter(i=>i.amount===0).length + 
+      ", F1MetaInProducts=" + items.some(i=>i.productId === 'META_F1_TOTAL');
+    console.error(debugInfo);
+    // setTimeout(() => alert(debugInfo), 500);
+  }
+  return { month, items, summary, total, f1Total, prevTotal };
 }
 
 function displayInvMonthlyResult(result) {
@@ -42284,13 +42298,21 @@ window.forceReloadMaster = function() {
     // regardless of whether it's from '初期在庫データ取込' or '棚卸確定'
     for (let i = logs.length - 1; i >= 0; i--) {
       const l = logs[i];
-      if (l.type === 'count' && l.timestamp) {
-        const month = l.timestamp.substring(0, 7);
-        const key = l.productId + '_' + month;
-        if (seen.has(key)) {
-          continue; // duplicate, skip it
+      if (l.type === 'count') {
+        let month = '';
+        if (l.timestamp) {
+          month = l.timestamp.substring(0, 7);
+        } else if (l.note) {
+          const match = l.note.match(/\((\d{4}-\d{2})\)/);
+          if (match) month = match[1];
         }
-        seen.add(key);
+        if (month) {
+          const key = l.productId + '_' + month;
+          if (seen.has(key)) {
+            continue; // duplicate, skip it
+          }
+          seen.add(key);
+        }
       }
       keepLogs.unshift(l);
     }
@@ -42361,7 +42383,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.23.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.24.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42388,7 +42410,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.23.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.24.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42471,7 +42493,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.23.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.24.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">

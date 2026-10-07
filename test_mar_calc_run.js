@@ -297,3 +297,4 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
 const res = calculateInvMonthly('2026-03', null);
 console.log('March calculated total WITHOUT F1:', res.total);
 const res2 = calculateInvMonthly('2026-03', null); // actually modify DB to empty logs first
+console.log('rawTotal of March items:', res.items.reduce((s,i) => s + i.amount, 0));

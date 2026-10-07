@@ -6622,7 +6622,8 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   const monthLogs = logs.filter(l => l.timestamp && l.timestamp.startsWith(month));
   
   // CSV取込ログかどうか判定
-  const csvLogs = monthLogs.filter(l => l.type === 'count' && l.amountWithTax > 0);
+  // 過去の破損データ（金額null）でも一括取込として認識させるため、単なるcountログの存在で判定
+  const csvLogs = monthLogs.filter(l => l.type === 'count');
   const hasCsvImport = csvLogs.length > 0;
   
   const items = [];
@@ -6752,7 +6753,10 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
   
   // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
-  const rawTotal = items.reduce((sum, i) => sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount), 0);
+  const rawTotal = items.reduce((sum, i) => {
+    if (i.productId === 'META_F1_TOTAL' || String(i.productId).startsWith('TEMP_')) return sum;
+    return sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount);
+  }, 0);
   let total = Math.round(rawTotal);
   
   if (f1Total !== null && !isNaN(f1Total)) {
@@ -6801,7 +6805,17 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     summary[largestCatKey].diff = summary[largestCatKey].amount - summary[largestCatKey].prevAmount;
   }
 
-  return { month, items, summary, total, prevTotal };
+  
+  if (total === 100223895 || rawTotal === 100223895) {
+    const debugInfo = "DEBUG: rawTotal=" + rawTotal + 
+      ", f1Total=" + f1Total + 
+      ", hasCsvImport=" + hasCsvImport + 
+      ", missingItemsQtySum=" + items.filter(i=>i.amount===0).length + 
+      ", F1MetaInProducts=" + items.some(i=>i.productId === 'META_F1_TOTAL');
+    console.error(debugInfo);
+    // setTimeout(() => alert(debugInfo), 500);
+  }
+  return { month, items, summary, total, f1Total, prevTotal };
 }
 
 function displayInvMonthlyResult(result) {
@@ -8494,13 +8508,21 @@ window.forceReloadMaster = function() {
     // regardless of whether it's from '初期在庫データ取込' or '棚卸確定'
     for (let i = logs.length - 1; i >= 0; i--) {
       const l = logs[i];
-      if (l.type === 'count' && l.timestamp) {
-        const month = l.timestamp.substring(0, 7);
-        const key = l.productId + '_' + month;
-        if (seen.has(key)) {
-          continue; // duplicate, skip it
+      if (l.type === 'count') {
+        let month = '';
+        if (l.timestamp) {
+          month = l.timestamp.substring(0, 7);
+        } else if (l.note) {
+          const match = l.note.match(/\((\d{4}-\d{2})\)/);
+          if (match) month = match[1];
         }
-        seen.add(key);
+        if (month) {
+          const key = l.productId + '_' + month;
+          if (seen.has(key)) {
+            continue; // duplicate, skip it
+          }
+          seen.add(key);
+        }
       }
       keepLogs.unshift(l);
     }
