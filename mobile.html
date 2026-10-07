@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.26.0】 -->
+    <!-- 【強制キャッシュバスティング v6.27.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.26.0';
+            var currentVersion = 'v6.27.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.26.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.27.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -40607,14 +40607,32 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   }
 
   if (total === 100223895 || rawTotal === 100223895 || total > 90000000) {
-    const debugMsg = "【システム診断情報】\n" + 
-      "表示合計(total): " + total + "\n" +
-      "自然計算(rawTotal): " + rawTotal + "\n" +
-      "F1補正値(f1Total): " + f1Total + "\n" +
-      "hasCsvImport: " + hasCsvImport + "\n" +
+    const debugMsg = "【システム診断情報】<br>" + 
+      "表示合計(total): " + total + "<br>" +
+      "自然計算(rawTotal): " + rawTotal + "<br>" +
+      "F1補正値(f1Total): " + f1Total + "<br>" +
+      "hasCsvImport: " + hasCsvImport + "<br>" +
       "F1強制検索結果: " + (tScans ? tScans.find(s=>s.productId==='META_F1_TOTAL')?.amountWithTax : 'なし');
-    console.error(debugMsg);
-    setTimeout(() => alert(debugMsg), 500);
+    
+    setTimeout(() => {
+      let banner = document.getElementById('debug-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'debug-banner';
+        banner.style.position = 'fixed';
+        banner.style.top = '0';
+        banner.style.left = '0';
+        banner.style.width = '100%';
+        banner.style.backgroundColor = 'red';
+        banner.style.color = 'white';
+        banner.style.padding = '20px';
+        banner.style.zIndex = '999999';
+        banner.style.fontSize = '18px';
+        banner.style.fontWeight = 'bold';
+        document.body.appendChild(banner);
+      }
+      banner.innerHTML = debugMsg + "<br><br>【この画面をスクリーンショットして開発者に送ってください】";
+    }, 100);
   }
   return { month, items, summary, total, f1Total, prevTotal };
 }
@@ -42458,7 +42476,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.26.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.27.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42485,7 +42503,7 @@ window.forceReloadMaster = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.26.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.27.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42568,7 +42586,7 @@ window.forceReloadMaster = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.26.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.27.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 <div class="stats-grid">
