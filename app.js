@@ -8186,6 +8186,17 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     console.error(debugInfo);
     // setTimeout(() => alert(debugInfo), 500);
   }
+
+  if (total === 100223895 || rawTotal === 100223895 || total > 90000000) {
+    const debugMsg = "【システム診断情報】\n" + 
+      "表示合計(total): " + total + "\n" +
+      "自然計算(rawTotal): " + rawTotal + "\n" +
+      "F1補正値(f1Total): " + f1Total + "\n" +
+      "hasCsvImport: " + hasCsvImport + "\n" +
+      "F1強制検索結果: " + (tScans ? tScans.find(s=>s.productId==='META_F1_TOTAL')?.amountWithTax : 'なし');
+    console.error(debugMsg);
+    setTimeout(() => alert(debugMsg), 500);
+  }
   return { month, items, summary, total, f1Total, prevTotal };
 }
 
@@ -10478,5 +10489,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) {
     console.error('Healer error:', e);
+  }
+})();
+
+
+// 【究極の自動修復機能】商品マスタの重複やゴミデータを起動時に完全クリーンアップ
+(function healMasterData() {
+  try {
+    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    let initialCount = products.length;
+    if (initialCount === 0) return;
+
+    // 1. TEMP_商品はすべて削除（エクセルでIDがなかったゴミデータ）
+    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
+
+    // 2. IDの完全重複を排除
+    const uniqueById = new Map();
+    products.forEach(p => {
+      // 同じIDなら、後勝ち（最新）を残す
+      uniqueById.set(p.id, p);
+    });
+    products = Array.from(uniqueById.values());
+
+    if (products.length !== initialCount) {
+      console.log(`Healed master data: removed ${initialCount - products.length} invalid/duplicate products.`);
+      DB.save(DB.KEYS.INV_PRODUCTS, products);
+    }
+  } catch(e) {
+    console.error('Heal master failed', e);
   }
 })();
