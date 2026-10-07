@@ -6562,7 +6562,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     const savedData = monthly.find(m => m.month === month);
     if (savedData && savedData.items) {
       // 破損チェック（NaNが含まれているか）
-      const isCorrupted = isNaN(Number(savedData.total)) || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
+      const isCorrupted = isNaN(Number(savedData.total)) || savedData.total === 100223895 || savedData.total === 100223877 || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
       if (!isCorrupted) {
         // 前月合計金額を取得
         let calcPrevTotal = 0;
@@ -8598,22 +8598,31 @@ window.forceReloadMaster = function() {
 
 
 // 【究極の自動修復機能・第2弾】保存済みの月次データがバグで1億円になっている場合、起動時に自動で再計算して修正する
+
+
 (function healMonthlyData() {
   try {
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
     let healed = false;
     monthly.forEach(m => {
-      // もし合計金額が100223895や9000万を超えている異常値の場合、かつ3月などの場合
-      if (m.total === 100223895 || m.total > 90000000) {
+      if (m.total === 100223895 || m.total > 90000000 || m.total === 100223877) {
         console.log(`Healing corrupted monthly data for ${m.month}: ${m.total}`);
-        // 過去のF1を引っ張り出す
+        
+        // DESTROY CACHE FOR THIS MONTH
+        let tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+        tempMonthly = tempMonthly.filter(x => x.month !== m.month);
+        DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
+
         let f1 = m.f1Total;
-        if (!f1 || f1 === 100223895) {
+        if (f1 === 100223895 || f1 === 100223877) f1 = null;
+        if (!f1) {
            const tScans = DB.getTempScans() || [];
            const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
            if (meta) f1 = meta.amountWithTax;
+           if (f1 === 100223895 || f1 === 100223877) f1 = null;
         }
-        // 完全再計算
+        
+        // NOW recalculate
         const result = calculateInvMonthly(m.month, f1);
         m.items = result.items;
         m.summary = result.summary;
@@ -8631,6 +8640,11 @@ window.forceReloadMaster = function() {
     console.error('Heal monthly failed', e);
   }
 })();
+  
+  
+
+
+
 
 
 
@@ -8639,50 +8653,52 @@ window.forceReloadMaster = function() {
 window.manualHealMonthlyData = function() {
   try {
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+    
+    // まずTEMP_商品を消す
     let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    let tScans = DB.getTempScans() || [];
+    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
+    const uniqueById = new Map();
+    products.forEach(p => uniqueById.set(p.id, p));
+    products = Array.from(uniqueById.values());
+    DB.save(DB.KEYS.INV_PRODUCTS, products);
 
     const m = monthly.find(x => x.month === '2026-03');
-    
-    // Calculate completely raw
-    const resultRaw = calculateInvMonthly('2026-03', null);
-    
-    const debugObj = {
-      rawTotal: resultRaw.total,
-      f1Total: resultRaw.f1Total,
-      hasCsvImport: logs.filter(l => l.timestamp && l.timestamp.startsWith('2026-03') && l.type === 'count').length > 0,
-      tScansF1: tScans.filter(s => s.productId === 'META_F1_TOTAL'),
-      itemsCount: resultRaw.items.length,
-      itemsSum: resultRaw.items.reduce((sum, i) => sum + i.amount, 0),
-      top5Items: resultRaw.items.sort((a,b) => b.amount - a.amount).slice(0, 5),
-      monthlyF1: m ? m.f1Total : 'm_is_null',
-      monthlyTotal: m ? m.total : 'm_is_null',
-    };
-    
-    const dumpStr = JSON.stringify(debugObj, null, 2);
-    
-    // Show in a textarea so they can screenshot or copy it
-    let banner = document.getElementById('debug-banner-dump');
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'debug-banner-dump';
-      banner.style.position = 'fixed';
-      banner.style.top = '10%';
-      banner.style.left = '5%';
-      banner.style.width = '90%';
-      banner.style.height = '80%';
-      banner.style.backgroundColor = 'white';
-      banner.style.border = '5px solid red';
-      banner.style.zIndex = '9999999';
-      banner.style.padding = '20px';
-      banner.style.overflow = 'auto';
-      document.body.appendChild(banner);
-    }
-    banner.innerHTML = "<h3>【開発者用データダンプ】この画面全体をスクリーンショットしてください！</h3><pre style='background:#eee;padding:10px;font-size:12px;white-space:pre-wrap;'>" + dumpStr + "</pre><button onclick='document.getElementById(\"debug-banner-dump\").style.display=\"none\"' style='padding:10px;margin-top:10px;background:red;color:white;'>閉じる</button>";
+    if (m) {
+        // Cache destroy!
+        let tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+        tempMonthly = tempMonthly.filter(x => x.month !== '2026-03');
+        DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
 
+        const tScans = DB.getTempScans() || [];
+        const meta = tScans.find(s => s.month === '2026-03' && s.productId === 'META_F1_TOTAL');
+        let realF1 = meta ? meta.amountWithTax : null;
+        if (realF1 === 100223895 || realF1 === 100223877) realF1 = null;
+        
+        // NOW recalculate completely fresh without cache!
+        const finalResult = calculateInvMonthly('2026-03', realF1);
+        
+        // Save back
+        let finalMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+        const existingIdx = finalMonthly.findIndex(x => x.month === '2026-03');
+        const newData = {
+          month: '2026-03',
+          items: finalResult.items,
+          summary: finalResult.summary,
+          total: finalResult.total,
+          f1Total: finalResult.f1Total,
+          prevTotal: finalResult.prevTotal,
+          lastUpdated: new Date().toISOString()
+        };
+        if (existingIdx >= 0) finalMonthly[existingIdx] = newData;
+        else finalMonthly.push(newData);
+        DB.save(DB.KEYS.INV_MONTHLY, finalMonthly);
+        
+        alert("【究極の修正完了】\nキャッシュの破壊に成功しました！\n新しい正しい合計金額は: " + finalResult.total + " です。\n画面を再読み込みします。");
+        location.reload();
+    } else {
+        alert("異常なデータは見つかりませんでした。（既に正常です）");
+    }
   } catch(e) {
     alert("エラーが発生しました: " + e.message);
   }
 };
-  
