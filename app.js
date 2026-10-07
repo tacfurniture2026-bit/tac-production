@@ -7884,11 +7884,11 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
   let f1Total = f1TotalOverride;
-  if (f1Total === 100223895 || f1Total === 100223877) f1Total = null; // ERADICATE VIRUS
+  
   if (f1Total === null || isNaN(f1Total)) {
     const existing = monthly.find(m => m.month === month);
     if (existing && existing.f1Total !== undefined && existing.f1Total !== null && !isNaN(existing.f1Total)) {
-      if (existing.f1Total !== 100223895 && existing.f1Total !== 100223877) {
+      if (true) {
         f1Total = existing.f1Total;
       }
     }
@@ -7897,22 +7897,14 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   if (f1Total === null || isNaN(f1Total)) {
     const tScans = DB.getTempScans() || [];
     const f1Meta = tScans.find(s => s.month === month && s.productId === 'META_F1_TOTAL');
-    if (f1Meta && f1Meta.amountWithTax !== undefined) {
-      if (f1Meta.amountWithTax !== 100223895 && f1Meta.amountWithTax !== 100223877) {
-        f1Total = f1Meta.amountWithTax;
-      }
-    }
+    if (f1Meta && f1Meta.amountWithTax !== undefined) { f1Total = f1Meta.amountWithTax; }
   }
   
   // さらなる究極のフォールバック：直近のCSVのF1を探す (月が合わなくても最新のインポートのF1を使う)
   if (f1Total === null || isNaN(f1Total)) {
      const tScans = DB.getTempScans() || [];
      const f1MetaAny = tScans.find(s => s.productId === 'META_F1_TOTAL');
-     if (f1MetaAny && f1MetaAny.amountWithTax !== undefined) {
-       if (f1MetaAny.amountWithTax !== 100223895 && f1MetaAny.amountWithTax !== 100223877) {
-         f1Total = f1MetaAny.amountWithTax;
-       }
-     }
+     if (f1MetaAny && f1MetaAny.amountWithTax !== undefined) { f1Total = f1MetaAny.amountWithTax; }
   }
   
 
@@ -7972,7 +7964,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
         });
 
         // total も保存済みアイテムの和として正確に算出
-        savedData.total = savedData.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        savedData.total = savedData.items.reduce((sum, i) => { if (i.productId === 'META_F1_TOTAL' || String(i.productId).startsWith('TEMP_')) return sum; return sum + (Number(i.amount) || 0); }, 0);
 
         // summary の再構築
         savedData.summary = {};
@@ -8016,7 +8008,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   // マスタ商品、当月ログ、前月データを統合して漏れなく集計対象とする
   const allProductIds = new Set();
   products.forEach(p => allProductIds.add(p.id));
-  monthLogs.forEach(l => { if (l.productId) allProductIds.add(l.productId); });
+  monthLogs.forEach(l => { if (l.productId && l.productId !== 'META_F1_TOTAL') allProductIds.add(l.productId); });
   if (prevData && prevData.items) {
     prevData.items.forEach(i => allProductIds.add(i.productId));
   }
@@ -8184,44 +8176,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   }
 
   
-  if (total === 100223895 || rawTotal === 100223895) {
-    const debugInfo = "DEBUG: rawTotal=" + rawTotal + 
-      ", f1Total=" + f1Total + 
-      ", hasCsvImport=" + hasCsvImport + 
-      ", missingItemsQtySum=" + items.filter(i=>i.amount===0).length + 
-      ", F1MetaInProducts=" + items.some(i=>i.productId === 'META_F1_TOTAL');
-    console.error(debugInfo);
-    // setTimeout(() => alert(debugInfo), 500);
-  }
 
-  if (total === 100223895 || rawTotal === 100223895 || total > 90000000) {
-    const debugMsg = "【システム診断情報】<br>" + 
-      "表示合計(total): " + total + "<br>" +
-      "自然計算(rawTotal): " + rawTotal + "<br>" +
-      "F1補正値(f1Total): " + f1Total + "<br>" +
-      "hasCsvImport: " + hasCsvImport + "<br>" +
-      "F1強制検索結果: " + (tScans ? tScans.find(s=>s.productId==='META_F1_TOTAL')?.amountWithTax : 'なし');
-    
-    setTimeout(() => {
-      let banner = document.getElementById('debug-banner');
-      if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'debug-banner';
-        banner.style.position = 'fixed';
-        banner.style.top = '0';
-        banner.style.left = '0';
-        banner.style.width = '100%';
-        banner.style.backgroundColor = 'red';
-        banner.style.color = 'white';
-        banner.style.padding = '20px';
-        banner.style.zIndex = '999999';
-        banner.style.fontSize = '18px';
-        banner.style.fontWeight = 'bold';
-        document.body.appendChild(banner);
-      }
-      banner.innerHTML = debugMsg + "<br><br>【この画面をスクリーンショットして開発者に送ってください】";
-    }, 100);
-  }
   return { month, items, summary, total, f1Total, prevTotal };
 }
 
@@ -8738,9 +8693,7 @@ function renderInvCheckPage() {
     }
   });
   currentTempScans.forEach(s => {
-    if (!s.productId.startsWith('TEMP_')) {
-      renderedProductIds.add(s.productId);
-    }
+    if (!s.productId.startsWith('TEMP_') && s.productId !== 'META_F1_TOTAL') { renderedProductIds.add(s.productId); }
   });
 
   const listItems = Array.from(renderedProductIds).map(pid => {
@@ -9335,9 +9288,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
   // (We'll generate counts for ALL items scanned, with previous stocks, or fixed products)
   const renderedProductIds = new Set();
   currentTempScans.forEach(s => {
-    if (!s.productId.startsWith('TEMP_')) {
-      renderedProductIds.add(s.productId);
-    }
+    if (!s.productId.startsWith('TEMP_') && s.productId !== 'META_F1_TOTAL') { renderedProductIds.add(s.productId); }
   });
   Object.keys(prevStockMap).forEach(id => {
     if (prevStockMap[id] > 0 && !id.startsWith('TEMP_')) {
@@ -9451,9 +9402,7 @@ function exportInvCheckToCsv() {
 
   const renderedProductIds = new Set();
   currentTempScans.forEach(s => {
-    if (!s.productId.startsWith('TEMP_')) {
-      renderedProductIds.add(s.productId);
-    }
+    if (!s.productId.startsWith('TEMP_') && s.productId !== 'META_F1_TOTAL') { renderedProductIds.add(s.productId); }
   });
   Object.keys(prevStockMap).forEach(id => {
     if (prevStockMap[id] > 0 && !id.startsWith('TEMP_')) {
@@ -10549,46 +10498,79 @@ document.addEventListener('DOMContentLoaded', () => {
 // 【究極の自動修復機能・第2弾】保存済みの月次データがバグで1億円になっている場合、起動時に自動で再計算して修正する
 
 
+
 (function healMonthlyData() {
   try {
+    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
     let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
     let healed = false;
-    monthly.forEach(m => {
-      if (m.total === 100223895 || m.total > 90000000 || m.total === 100223877) {
-        console.log(`Healing corrupted monthly data for ${m.month}: ${m.total}`);
-        
-        // DESTROY CACHE FOR THIS MONTH
-        let tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-        tempMonthly = tempMonthly.filter(x => x.month !== m.month);
-        DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
+    let dbUpdated = false;
 
-        let f1 = m.f1Total;
-        if (f1 === 100223895 || f1 === 100223877) f1 = null;
-        if (!f1) {
-           const tScans = DB.getTempScans() || [];
-           const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
-           if (meta) f1 = meta.amountWithTax;
-           if (f1 === 100223895 || f1 === 100223877) f1 = null;
-        }
-        
-        // NOW recalculate
-        const result = calculateInvMonthly(m.month, f1);
-        m.items = result.items;
-        m.summary = result.summary;
-        m.total = result.total;
-        m.f1Total = result.f1Total;
-        m.prevTotal = result.prevTotal;
-        healed = true;
+    // 1. 完全なる根絶: INV_LOGS に紛れ込んだ META_F1_TOTAL を完全削除
+    const initialLogsCount = logs.length;
+    logs = logs.filter(l => l.productId !== 'META_F1_TOTAL');
+    if (logs.length !== initialLogsCount) {
+        console.log(`Removed ${initialLogsCount - logs.length} infected META_F1_TOTAL logs.`);
+        DB.save(DB.KEYS.INV_LOGS, logs);
+        dbUpdated = true;
+    }
+
+    // 2. 完全なる根絶: INV_PRODUCTS に万が一紛れ込んでいたら削除
+    const initialProductsCount = products.length;
+    products = products.filter(p => p.id !== 'META_F1_TOTAL' && !String(p.id).startsWith('TEMP_'));
+    if (products.length !== initialProductsCount) {
+        console.log(`Removed ${initialProductsCount - products.length} infected META_F1_TOTAL products.`);
+        DB.save(DB.KEYS.INV_PRODUCTS, products);
+        dbUpdated = true;
+    }
+
+    // 3. 全ての月について、items 内の META_F1_TOTAL を削除し、合計金額を正しい計算で上書き
+    monthly.forEach(m => {
+      let monthModified = false;
+      
+      // items から META_F1_TOTAL を削除
+      if (m.items) {
+          const initialItemsCount = m.items.length;
+          m.items = m.items.filter(i => i.productId !== 'META_F1_TOTAL' && !String(i.productId).startsWith('TEMP_'));
+          if (m.items.length !== initialItemsCount) {
+              monthModified = true;
+          }
+      }
+
+      // META_F1_TOTAL を除外した正しい items で total を再計算 (isClosedロジックと同様だが安全)
+      if (m.items && m.total !== undefined) {
+          const correctTotal = m.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+          
+          // F1との差分があれば、total は F1 の値にする (エクセルとシステムは必ず整合性がとれることが大事)
+          let finalTotal = correctTotal;
+          if (m.f1Total !== undefined && m.f1Total !== null && !isNaN(m.f1Total)) {
+              if (true) {
+                  finalTotal = m.f1Total;
+              }
+          }
+
+          if (m.total !== finalTotal) {
+              console.log(`Fixed total for ${m.month}: ${m.total} -> ${finalTotal}`);
+              m.total = finalTotal;
+              monthModified = true;
+          }
+      }
+      
+      if (monthModified) {
+          healed = true;
       }
     });
+
     if (healed) {
-      console.log('Saved healed monthly data.');
+      console.log('Saved fully healed monthly data.');
       DB.save(DB.KEYS.INV_MONTHLY, monthly);
     }
   } catch(e) {
     console.error('Heal monthly failed', e);
   }
 })();
+  
   
   
 
