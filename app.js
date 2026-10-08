@@ -10696,6 +10696,6 @@ async function downloadQrZip() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('ZIPファイルのダウンロードが完了しました', 'success');
+    toast('✅ ダウンロード完了！\n※Excelに貼る時は、必ずZIPファイルを「すべて展開（解凍）」してからドラッグ＆ドロップしてください', 'success');
   });
 }
