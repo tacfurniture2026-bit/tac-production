@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>生産管理システム</title>
-    <!-- 【強制キャッシュバスティング v6.60.0】 -->
+    <!-- 【強制キャッシュバスティング v6.61.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.60.0';
+            var currentVersion = 'v6.61.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + currentVersion + window.location.hash;
@@ -26,14 +26,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.60.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.61.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v6.60.0">
+    <link rel="stylesheet" href="styles.css?v=v6.61.0">
     <style>
 html, body { 
     width: 100vw; 
@@ -140,8 +140,8 @@ html, body {
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.60.0"></script>
-    <script src="app.js?v=v6.60.0"></script>
+    <script src="data.js?v=v6.61.0"></script>
+    <script src="app.js?v=v6.61.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -209,7 +209,7 @@ html, body {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.60.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.61.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -1478,6 +1478,29 @@ html, body {
     </div>
 
     <!-- バージョン表示 -->
+
+    <!-- フローティングAIチャット (PC専用) -->
+    <div id="ai-floating-chat" style="position: fixed; bottom: 20px; right: 20px; width: 340px; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999; display: flex; flex-direction: column; overflow: hidden;">
+        <div onclick="toggleFloatingChat()" style="background: #8b5cf6; color: #fff; padding: 12px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+            <span>🤖 AIアシスタント</span>
+            <span id="floating-chat-toggle-icon">▲</span>
+        </div>
+        <div id="floating-chat-body" style="display: none; flex-direction: column; height: 380px;">
+            <div id="floating-chat-history" style="flex: 1; padding: 12px; overflow-y: auto; background: #f8fafc;"></div>
+            <div style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e2e8f0; background: #fff;">
+                <input type="text" id="floating-chat-input" class="form-input" placeholder="質問を入力..." style="flex: 1; font-size: 0.85rem; padding: 6px 10px;" onkeypress="if(event.key === 'Enter') sendFloatingChat()">
+                <button onclick="sendFloatingChat()" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem; background-color: #8b5cf6; border-color: #8b5cf6;">送信</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        /* モバイル画面ではフローティングチャットを非表示にする */
+        @media (max-width: 768px) {
+            #ai-floating-chat { display: none !important; }
+        }
+    </style>
+
 </body>
 
 </html>

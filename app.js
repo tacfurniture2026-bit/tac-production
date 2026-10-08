@@ -10541,10 +10541,29 @@ async function runAiMasterCheck() {
 # 入力（商品マスターデータ）:
 ${JSON.stringify(payloadData)}`;
 
-  showModal('🤖 AIマスターチェック', '<div style="text-align: center; padding: 2rem;">🔄 AIにデータを送信しチェックしています...<br>しばらくお待ちください。</div>', '');
+  
+  let aiCheckTimerInterval;
+  let elapsedSeconds = 0;
+  showModal('🤖 AIマスターチェック', `
+    <div style="text-align: center; padding: 2rem;">
+      🔄 AIにデータを送信し、マスターデータの整合性をチェックしています...<br>
+      <span style="font-size: 0.9em; color: #666;">（商品数によっては30秒〜1分ほどかかる場合があります）</span><br><br>
+      <div id="ai-check-timer" style="font-weight: bold; color: #2563eb; font-size: 1.2em;">経過時間: 0秒</div>
+    </div>`, '');
+  
+  aiCheckTimerInterval = setInterval(() => {
+    elapsedSeconds++;
+    const timerEl = document.getElementById('ai-check-timer');
+    if (timerEl) {
+      timerEl.textContent = `経過時間: ${elapsedSeconds}秒`;
+    } else {
+      clearInterval(aiCheckTimerInterval);
+    }
+  }, 1000);
+  
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     let response;
     let data;
@@ -10577,6 +10596,7 @@ ${JSON.stringify(payloadData)}`;
       }
     }
 
+    if (typeof aiCheckTimerInterval !== 'undefined') clearInterval(aiCheckTimerInterval);
     let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || '結果を取得できませんでした。';
     aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
 
@@ -10601,6 +10621,7 @@ ${JSON.stringify(payloadData)}`;
 
   } catch (error) {
     console.error('AI Check Error:', error);
+    if (typeof aiCheckTimerInterval !== 'undefined') clearInterval(aiCheckTimerInterval);
     showModal('エラー', `<p style="color: red;">AIチェック中にエラーが発生しました。</p><p>${error.message}</p>`, '<button class="btn btn-secondary" onclick="closeModal()">閉じる</button>');
   }
 }
@@ -10631,7 +10652,7 @@ window.sendAiChatMessage = async function() {
   
   try {
     const apiKey = localStorage.getItem('AI_API_KEY');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     let response;
     let data;
@@ -10772,3 +10793,105 @@ function showQrCopyPasteGallery() {
   
   document.body.appendChild(modal);
 }
+
+// ========================================
+// フローティングチャットボット (PC版のみ)
+// ========================================
+let floatingChatContext = [];
+
+window.toggleFloatingChat = function() {
+  const body = document.getElementById('floating-chat-body');
+  const toggleIcon = document.getElementById('floating-chat-toggle-icon');
+  if (body.style.display === 'none') {
+    body.style.display = 'flex';
+    toggleIcon.textContent = '▼';
+    // 初期メッセージがない場合は追加
+    if (floatingChatContext.length === 0) {
+        appendFloatingChat('model', 'こんにちは！TAC生産管理システムのAIアシスタントです。使い方や、データについて何でも質問してください。');
+    }
+  } else {
+    body.style.display = 'none';
+    toggleIcon.textContent = '▲';
+  }
+};
+
+window.appendFloatingChat = function(role, text) {
+  const historyEl = document.getElementById('floating-chat-history');
+  if (!historyEl) return;
+  
+  const div = document.createElement('div');
+  div.style.margin = '8px 0';
+  if (role === 'user') {
+    div.style.textAlign = 'right';
+    div.innerHTML = `<span style="background:#3b82f6; color:white; padding:8px 12px; border-radius:12px; display:inline-block; max-width:85%; text-align:left; font-size: 0.85rem;">${text}</span>`;
+  } else if (role === 'model') {
+    div.style.textAlign = 'left';
+    div.innerHTML = `<span style="background:#f1f5f9; color:#333; padding:8px 12px; border-radius:12px; display:inline-block; max-width:85%; text-align:left; font-size: 0.85rem; border: 1px solid #e2e8f0;">${text.replace(/\n/g, '<br>')}</span>`;
+  } else if (role === 'loading') {
+    div.id = 'floating-chat-loading';
+    div.style.textAlign = 'left';
+    div.innerHTML = `<span style="background:#e2e8f0; color:#666; padding:8px 12px; border-radius:12px; display:inline-block; font-size: 0.85rem;">AIが考え中...</span>`;
+  }
+  
+  historyEl.appendChild(div);
+  historyEl.scrollTop = historyEl.scrollHeight;
+};
+
+window.sendFloatingChat = async function() {
+  const inputEl = document.getElementById('floating-chat-input');
+  if (!inputEl) return;
+  const msg = inputEl.value.trim();
+  if(!msg) return;
+  
+  const apiKey = localStorage.getItem('AI_API_KEY');
+  if (!apiKey) {
+    toast('先にAI設定からAPIキーを登録してください', 'warning');
+    return;
+  }
+  
+  inputEl.value = '';
+  appendFloatingChat('user', msg);
+  appendFloatingChat('loading', '');
+
+  // プロンプトにシステムコンテキストを含める
+  if (floatingChatContext.length === 0) {
+    floatingChatContext.push({
+        role: 'user',
+        parts: [{ text: "あなたはTAC製造部の生産管理システムのAIアシスタントです。親切に答えてください。" }]
+    });
+    floatingChatContext.push({
+        role: 'model',
+        parts: [{ text: "はい、承知いたしました。TAC製造部の生産管理システムについて何でもお尋ねください。" }]
+    });
+  }
+  
+  floatingChatContext.push({ role: 'user', parts: [{ text: msg }] });
+  
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: floatingChatContext })
+    });
+    
+    const loadingEl = document.getElementById('floating-chat-loading');
+    if (loadingEl) loadingEl.remove();
+    
+    if (!response.ok) {
+        throw new Error('APIリクエストに失敗しました');
+    }
+    
+    const data = await response.json();
+    let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
+    aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
+    
+    floatingChatContext.push({ role: 'model', parts: [{ text: aiResult }] });
+    appendFloatingChat('model', aiResult);
+    
+  } catch(e) {
+    const loadingEl = document.getElementById('floating-chat-loading');
+    if (loadingEl) loadingEl.remove();
+    appendFloatingChat('model', 'エラーが発生しました: ' + e.message);
+  }
+};
