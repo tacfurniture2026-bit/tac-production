@@ -9004,15 +9004,11 @@ window.sendAiChatMessage = async function() {
 // QRコード ZIPダウンロード
 // ========================================
 
-async function downloadQrZip() {
-  if (typeof JSZip === 'undefined') {
-    toast('ZIPライブラリの読み込み中です。ページを更新してください。', 'warning');
-    return;
-  }
 
+function showQrCopyPasteGallery() {
   const checkboxes = document.querySelectorAll('.order-checkbox:checked');
   if (checkboxes.length === 0) {
-    toast('QRコードを出力する指示書を選択してください', 'warning');
+    toast('出力する指示書を選択してください', 'warning');
     return;
   }
 
@@ -9043,115 +9039,63 @@ async function downloadQrZip() {
     return;
   }
 
-  toast('ZIPファイルを生成中...', 'info');
-  
+  toast('ギャラリーを生成中...', 'info');
+
   if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
     qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
   }
 
-  const zip = new JSZip();
-  
-  const safeFilename2 = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
-  let folderName = "QR_Codes";
-  if (orders && orders.length > 0) {
-      let base = `${safeFilename2(orders[0].projectName)}_${safeFilename2(orders[0].productName)}`;
-      folderName = orders.length > 1 ? `${base}_他` : base;
-  }
-  const folder = zip.folder(folderName);
+  // Build HTML
+  let html = `
+  <div style="padding: 20px; text-align: center;">
+    <h2 style="margin-bottom: 10px;">📋 QRコード一覧 (Excelコピペ用)</h2>
+    <p style="color: #555; margin-bottom: 20px;">画像を右クリックして「画像をコピー」し、Excelに貼り付けてください。</p>
+    <button onclick="document.getElementById('qr-gallery-modal').remove()" style="margin-bottom: 30px; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #6b7280; color: white; border: none; border-radius: 4px;">閉じる</button>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+  `;
 
-  // Helper to convert GIF data URL to JPEG Blob
-  const dataUrlToPngBlob = (dataUrl) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        // Add some padding (quiet zone)
-        const padding = 20;
-        canvas.width = img.width + padding * 2;
-        canvas.height = img.height + padding * 2;
-        const ctx = canvas.getContext('2d');
-        
-        // Fill white background for JPEG
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw image in center
-        ctx.drawImage(img, padding, padding);
-        
-        canvas.toBlob((blob) => {
-          resolve(blob);
-        }, 'image/png');
-      };
-      img.src = dataUrl;
-    });
-  };
-
-  
-  let htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>QRコード一覧</title>
-<style>
-  body { font-family: sans-serif; padding: 20px; }
-  .qr-item { display: inline-block; margin: 15px; text-align: center; border: 1px solid #ccc; padding: 10px; background: #fff; }
-  .qr-item img { display: block; margin: 0 auto 10px auto; }
-  .qr-info { font-size: 12px; font-weight: bold; color: #333; }
-</style>
-</head>
-<body>
-  <h2>QRコード一覧 (Excelへ直接コピー＆ペーストできます)</h2>
-  <p>※画像を右クリックして「画像をコピー」し、Excelに貼り付けてください。</p>
-  <div style="display: flex; flex-wrap: wrap;">
-`;
   for (let data of qrDataList) {
     try {
       const qr = qrcode(0, 'L');
       qr.addData(data.text);
       qr.make();
-      // createDataURL returns GIF. Get it at module size 8 for high quality
-      const gifDataUrl = qr.createDataURL(8, 0);
+      // Use size 6 for good quality
+      const dataUrl = qr.createDataURL(6, 0);
       
-      const pngBlob = await dataUrlToPngBlob(gifDataUrl);
-      
-      // Filename: [部材名]_[品名]_[現場名].png
-      const safeFilename = (name) => name.replace(/[\\/:*?"<>|]/g, '-').trim();
-      let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.png`;
-      
-      folder.file(filename, pngBlob);
-      htmlContent += `
-    <div class="qr-item">
-      <img src="${filename}" alt="${data.bomName}">
-      <div class="qr-info">${data.projectName}<br>${data.productName}<br>${data.bomName}</div>
-    </div>`;
+      html += `
+      <div style="border: 1px solid #ccc; background: #fff; padding: 15px; width: 160px; text-align: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <img src="${dataUrl}" alt="QR" style="max-width: 100%; display: block; margin: 0 auto 10px auto;">
+        <div style="font-size: 11px; font-weight: bold; color: #333; line-height: 1.4;">
+          ${data.projectName}<br>
+          ${data.productName}<br>
+          <span style="color: #2563eb;">${data.bomName}</span>
+        </div>
+      </div>`;
     } catch (e) {
       console.error('QR生成エラー:', e);
     }
   }
 
-  
-  htmlContent += `
+  html += `
+    </div>
   </div>
-</body>
-</html>`;
-  folder.file("一覧(Excelコピペ用).html", htmlContent);
+  `;
+
+  // Create Modal
+  let modal = document.getElementById('qr-gallery-modal');
+  if (modal) modal.remove();
   
-  zip.generateAsync({ type: "blob" }).then((content) => {
-    const url = URL.createObjectURL(content);
-    const a = document.createElement("a");
-    a.href = url;
-    
-    const safeFilename = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
-    let zipFilename = "QR_Codes.zip";
-    if (orders && orders.length > 0) {
-        let base = `${safeFilename(orders[0].projectName)}_${safeFilename(orders[0].productName)}`;
-        zipFilename = orders.length > 1 ? `${base}_他.zip` : `${base}.zip`;
-    }
-    a.download = zipFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast('✅ ダウンロード完了！\n※Excelに貼る時は、必ずZIPファイルを「すべて展開（解凍）」してからドラッグ＆ドロップしてください', 'success');
-  });
+  modal = document.createElement('div');
+  modal.id = 'qr-gallery-modal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100vh';
+  modal.style.backgroundColor = '#f3f4f6';
+  modal.style.overflowY = 'auto';
+  modal.style.zIndex = '999999';
+  modal.innerHTML = html;
+  
+  document.body.appendChild(modal);
 }
