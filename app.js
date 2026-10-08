@@ -10563,7 +10563,7 @@ ${JSON.stringify(payloadData)}`;
   
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
     
     let response;
     let data;
@@ -10652,7 +10652,7 @@ window.sendAiChatMessage = async function() {
   
   try {
     const apiKey = localStorage.getItem('AI_API_KEY');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
     
     let response;
     let data;
@@ -10868,7 +10868,7 @@ window.sendFloatingChat = async function() {
   floatingChatContext.push({ role: 'user', parts: [{ text: msg }] });
   
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
