@@ -2634,6 +2634,7 @@ function showModal(title, bodyHtml, footerHtml) {
   $('#modal-overlay').classList.remove('hidden');
 }
 
+window.closeModal = hideModal;
 function hideModal() {
   $('#modal-overlay').classList.add('hidden');
   const modalEl = $('#modal');
@@ -10401,6 +10402,7 @@ async function runAiMasterCheck() {
 
 # 出力形式:
 - 簡潔で分かりやすい箇条書きで出力してください。
+- 人間が後から「何番を修正して」と指示しやすくするため、報告する異常や提案の一つ一つに必ず「【1】」「【2】」のような連番を振ってください。
 - 異常がない場合は「異常なし」と出力してください。
 - 出力フォーマットはHTMLとして画面表示しやすい形式（<ul>, <li>, <strong>タグなどを使用して装飾）にしてください。Markdownのコードブロック記法は不要です。
 
@@ -10444,6 +10446,7 @@ ${JSON.stringify(payloadData)}
     const footer = `
       <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
     `;
+    $('#modal').style.maxWidth = '800px';
     showModal('🤖 AIマスターチェック結果', body, footer);
 
   } catch (error) {

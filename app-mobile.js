@@ -2423,6 +2423,7 @@ function showModal(title, bodyHtml, footerHtml) {
   $('#modal-overlay').classList.remove('hidden');
 }
 
+window.closeModal = hideModal;
 function hideModal() {
   $('#modal-overlay').classList.add('hidden');
 }
