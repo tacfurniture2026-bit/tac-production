@@ -10624,10 +10624,17 @@ async function downloadQrZip() {
   }
 
   const zip = new JSZip();
-  const folder = zip.folder("QR_Codes");
+  
+  const safeFilename2 = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
+  let folderName = "QR_Codes";
+  if (orders && orders.length > 0) {
+      let base = `${safeFilename2(orders[0].projectName)}_${safeFilename2(orders[0].productName)}`;
+      folderName = orders.length > 1 ? `${base}_他` : base;
+  }
+  const folder = zip.folder(folderName);
 
   // Helper to convert GIF data URL to JPEG Blob
-  const dataUrlToJpegBlob = (dataUrl) => {
+  const dataUrlToPngBlob = (dataUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -10647,7 +10654,7 @@ async function downloadQrZip() {
         
         canvas.toBlob((blob) => {
           resolve(blob);
-        }, 'image/jpeg', 1.0);
+        }, 'image/png');
       };
       img.src = dataUrl;
     });
@@ -10661,13 +10668,13 @@ async function downloadQrZip() {
       // createDataURL returns GIF. Get it at module size 8 for high quality
       const gifDataUrl = qr.createDataURL(8, 0);
       
-      const jpegBlob = await dataUrlToJpegBlob(gifDataUrl);
+      const pngBlob = await dataUrlToPngBlob(gifDataUrl);
       
-      // Filename: [部材名]_[品名]_[現場名].jpeg
+      // Filename: [部材名]_[品名]_[現場名].png
       const safeFilename = (name) => name.replace(/[\\/:*?"<>|]/g, '-').trim();
-      let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.jpeg`;
+      let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.png`;
       
-      folder.file(filename, jpegBlob);
+      folder.file(filename, pngBlob);
     } catch (e) {
       console.error('QR生成エラー:', e);
     }
@@ -10677,7 +10684,14 @@ async function downloadQrZip() {
     const url = URL.createObjectURL(content);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "QR_Codes.zip";
+    
+    const safeFilename = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
+    let zipFilename = "QR_Codes.zip";
+    if (orders && orders.length > 0) {
+        let base = `${safeFilename(orders[0].projectName)}_${safeFilename(orders[0].productName)}`;
+        zipFilename = orders.length > 1 ? `${base}_他.zip` : `${base}.zip`;
+    }
+    a.download = zipFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

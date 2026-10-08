@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.55.0】 -->
+    <!-- 【強制キャッシュバスティング v6.56.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.55.0';
+            var currentVersion = 'v6.56.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.55.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.56.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -42913,10 +42913,17 @@ async function downloadQrZip() {
   }
 
   const zip = new JSZip();
-  const folder = zip.folder("QR_Codes");
+  
+  const safeFilename2 = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
+  let folderName = "QR_Codes";
+  if (orders && orders.length > 0) {
+      let base = `${safeFilename2(orders[0].projectName)}_${safeFilename2(orders[0].productName)}`;
+      folderName = orders.length > 1 ? `${base}_他` : base;
+  }
+  const folder = zip.folder(folderName);
 
   // Helper to convert GIF data URL to JPEG Blob
-  const dataUrlToJpegBlob = (dataUrl) => {
+  const dataUrlToPngBlob = (dataUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -42936,7 +42943,7 @@ async function downloadQrZip() {
         
         canvas.toBlob((blob) => {
           resolve(blob);
-        }, 'image/jpeg', 1.0);
+        }, 'image/png');
       };
       img.src = dataUrl;
     });
@@ -42950,13 +42957,13 @@ async function downloadQrZip() {
       // createDataURL returns GIF. Get it at module size 8 for high quality
       const gifDataUrl = qr.createDataURL(8, 0);
       
-      const jpegBlob = await dataUrlToJpegBlob(gifDataUrl);
+      const pngBlob = await dataUrlToPngBlob(gifDataUrl);
       
-      // Filename: [部材名]_[品名]_[現場名].jpeg
+      // Filename: [部材名]_[品名]_[現場名].png
       const safeFilename = (name) => name.replace(/[\\/:*?"<>|]/g, '-').trim();
-      let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.jpeg`;
+      let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.png`;
       
-      folder.file(filename, jpegBlob);
+      folder.file(filename, pngBlob);
     } catch (e) {
       console.error('QR生成エラー:', e);
     }
@@ -42966,7 +42973,14 @@ async function downloadQrZip() {
     const url = URL.createObjectURL(content);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "QR_Codes.zip";
+    
+    const safeFilename = (name) => (name || '').replace(/[\\/:*?"<>|]/g, '-').trim();
+    let zipFilename = "QR_Codes.zip";
+    if (orders && orders.length > 0) {
+        let base = `${safeFilename(orders[0].projectName)}_${safeFilename(orders[0].productName)}`;
+        zipFilename = orders.length > 1 ? `${base}_他.zip` : `${base}.zip`;
+    }
+    a.download = zipFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -43032,7 +43046,7 @@ async function downloadQrZip() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.55.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.56.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -43059,7 +43073,7 @@ async function downloadQrZip() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.55.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.56.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -43142,7 +43156,7 @@ async function downloadQrZip() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.55.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.56.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -44207,7 +44221,7 @@ async function downloadQrZip() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.55.0
+                    Version: v6.56.0
                 </div>
             </div>
         </div>
