@@ -8289,7 +8289,7 @@ function displayInvMonthlyResult(result) {
       const s = result.summary[code];
       const roundedAmount = Math.round(safeNum(s.amount));
       const roundedDiff = Math.round(safeNum(s.diff));
-      summaryRows += `<tr><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+      summaryRows += `<tr class="category-summary-row" data-cat="${code}" onclick="filterInvMonthlyItems('${code}')" style="cursor:pointer; transition: background-color 0.2s;" title="クリックでこの分類のみ表示"><td>${code}: ${s.name}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
       summaryTotal += roundedAmount;
       summaryDiff += roundedDiff;
       normalTotal += roundedAmount;
@@ -8302,7 +8302,7 @@ function displayInvMonthlyResult(result) {
     const s = result.summary['fixed'];
     const roundedAmount = Math.round(safeNum(s.amount));
     const roundedDiff = Math.round(safeNum(s.diff));
-    summaryRows += `<tr class="row-fixed-product"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+    summaryRows += `<tr class="category-summary-row row-fixed-product" data-cat="fixed" onclick="filterInvMonthlyItems('fixed')" style="cursor:pointer; transition: background-color 0.2s;" title="クリックで不動品のみ表示"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
     summaryTotal += roundedAmount;
     summaryDiff += roundedDiff;
     fixedTotal = roundedAmount;
@@ -8413,11 +8413,12 @@ function displayInvMonthlyResult(result) {
                 <th>当月在庫</th>
                 <th>差分</th>
                 <th>在庫金額</th>
+                <th>金額差</th>
               </tr>
             </thead>
             <tbody>
               ${result.items.map(i => `
-                <tr class="${i.isFixed ? 'row-fixed-product' : ''}">
+                <tr class="inv-monthly-item-row category-${i.isFixed ? 'fixed' : (i.category || '99')} ${i.isFixed ? 'row-fixed-product' : ''}">
                   <td>${i.productId}</td>
                   <td>${i.name}</td>
                   <td>¥${safeNum(i.price).toLocaleString()}</td>
@@ -8425,6 +8426,7 @@ function displayInvMonthlyResult(result) {
                   <td>${safeNum(i.currQty)}</td>
                   <td style="color: ${safeNum(i.diff) >= 0 ? 'green' : 'red'};">${safeNum(i.diff) >= 0 ? '+' : ''}${safeNum(i.diff)}</td>
                   <td>¥${safeNum(i.amount).toLocaleString()}</td>
+                  <td style="color: ${(safeNum(i.amount) - safeNum(i.prevAmount)) >= 0 ? 'green' : 'red'};">${(safeNum(i.amount) - safeNum(i.prevAmount)) >= 0 ? '+' : ''}¥${(safeNum(i.amount) - safeNum(i.prevAmount)).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -10689,4 +10691,36 @@ window.manualHealMonthlyData = function() {
   } catch(e) {
     alert("エラーが発生しました: " + e.message);
   }
+};
+
+// 分類別明細フィルタリング機能
+window.currentInvMonthlyFilter = null;
+window.filterInvMonthlyItems = function(catKey) {
+  const rows = document.querySelectorAll('.inv-monthly-item-row');
+  let showingAll = false;
+  
+  if (window.currentInvMonthlyFilter === String(catKey)) {
+    window.currentInvMonthlyFilter = null;
+    showingAll = true;
+  } else {
+    window.currentInvMonthlyFilter = String(catKey);
+  }
+  
+  rows.forEach(r => {
+    if (showingAll || r.classList.contains('category-' + catKey)) {
+      r.style.display = '';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+
+  document.querySelectorAll('.category-summary-row').forEach(r => {
+    if (r.dataset.cat === window.currentInvMonthlyFilter) {
+      r.style.backgroundColor = '#e2e8f0'; // Tailwind gray-200
+      r.style.fontWeight = 'bold';
+    } else {
+      r.style.backgroundColor = '';
+      r.style.fontWeight = 'normal';
+    }
+  });
 };
