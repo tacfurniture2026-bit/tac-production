@@ -1865,6 +1865,32 @@ function submitDefectRegForm(event) {
   if (Array.isArray(item.completed)) {
     item.completed = item.completed.filter(p => p !== processName);
   }
+  
+  // 枝番（サブアイテム）の自動生成
+  const recreateCheckbox = document.getElementById('defect-reg-recreate');
+  if (recreateCheckbox && recreateCheckbox.checked) {
+      const maxItemId = Math.max(0, ...order.items.map(i => i.id));
+      const newItemId = maxItemId + 1;
+      
+      const match = item.bomName.match(/\(再(\d*)\)$/);
+      let retryCount = 1;
+      let newBomName = `${item.bomName} (再)`;
+      
+      if (match) {
+          retryCount = (parseInt(match[1]) || 1) + 1;
+          newBomName = item.bomName.replace(/\(再\d*\)$/, `(再${retryCount})`);
+      }
+      
+      const newItem = {
+          id: newItemId,
+          bomName: newBomName,
+          partCode: item.partCode ? `${item.partCode}-R${retryCount}` : `R${retryCount}`,
+          processes: Array.isArray(item.processes) ? [...item.processes] : [],
+          completed: [] 
+      };
+      
+      order.items.push(newItem);
+  }
 
   DB.save(DB.KEYS.ORDERS, orders);
 

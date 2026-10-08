@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.48.0】 -->
+    <!-- 【強制キャッシュバスティング v6.49.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.48.0';
+            var currentVersion = 'v6.49.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.48.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.49.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -54,7 +54,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v6.48.0">
+    <link rel="stylesheet" href="styles-mobile.css?v=v6.49.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -204,8 +204,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.48.0"></script>
-    <script src="app-mobile.js?v=v6.48.0"></script>
+    <script src="data.js?v=v6.49.0"></script>
+    <script src="app-mobile.js?v=v6.49.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -262,7 +262,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.48.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.49.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -289,7 +289,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.48.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.49.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -372,7 +372,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.48.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.49.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -722,6 +722,10 @@
                                 <div class="form-group">
                                     <label>不良数量 *</label>
                                     <input type="number" id="defect-reg-count" class="form-input" value="1" min="1" required>
+                                </div>
+                                <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;">
+                                    <input type="checkbox" id="defect-reg-recreate" checked style="width: 20px; height: 20px;">
+                                    <label for="defect-reg-recreate" style="margin:0; font-weight: normal; cursor: pointer;">再製作用のサブアイテム（枝番）を自動追加する</label>
                                 </div>
                                 <button type="submit" class="btn btn-danger btn-full" style="font-size: 16px; padding: 12px; font-weight: bold;">⚠ 不良品を登録する</button>
                             </form>
@@ -1433,7 +1437,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.48.0
+                    Version: v6.49.0
                 </div>
             </div>
         </div>
