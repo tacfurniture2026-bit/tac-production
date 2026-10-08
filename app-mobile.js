@@ -9086,6 +9086,24 @@ async function downloadQrZip() {
     });
   };
 
+  
+  let htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QRコード一覧</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  .qr-item { display: inline-block; margin: 15px; text-align: center; border: 1px solid #ccc; padding: 10px; background: #fff; }
+  .qr-item img { display: block; margin: 0 auto 10px auto; }
+  .qr-info { font-size: 12px; font-weight: bold; color: #333; }
+</style>
+</head>
+<body>
+  <h2>QRコード一覧 (Excelへ直接コピー＆ペーストできます)</h2>
+  <p>※画像を右クリックして「画像をコピー」し、Excelに貼り付けてください。</p>
+  <div style="display: flex; flex-wrap: wrap;">
+`;
   for (let data of qrDataList) {
     try {
       const qr = qrcode(0, 'L');
@@ -9101,11 +9119,23 @@ async function downloadQrZip() {
       let filename = `${safeFilename(data.bomName)}_${safeFilename(data.productName)}_${safeFilename(data.projectName)}.png`;
       
       folder.file(filename, pngBlob);
+      htmlContent += `
+    <div class="qr-item">
+      <img src="${filename}" alt="${data.bomName}">
+      <div class="qr-info">${data.projectName}<br>${data.productName}<br>${data.bomName}</div>
+    </div>`;
     } catch (e) {
       console.error('QR生成エラー:', e);
     }
   }
 
+  
+  htmlContent += `
+  </div>
+</body>
+</html>`;
+  folder.file("一覧(Excelコピペ用).html", htmlContent);
+  
   zip.generateAsync({ type: "blob" }).then((content) => {
     const url = URL.createObjectURL(content);
     const a = document.createElement("a");
