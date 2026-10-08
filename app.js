@@ -530,8 +530,13 @@ function renderDashboard() {
   $('#stat-total').textContent = total;
   $('#stat-progress').textContent = inProgress;
   $('#stat-complete').textContent = complete;
+  
+  const pendingOrders = orders.filter(o => calculateProgress(o) < 100);
+  const pendingCount = pendingOrders.length;
+  const pendingQty = pendingOrders.reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
   const statPendingEl = $('#stat-pending');
-  if (statPendingEl) statPendingEl.textContent = (total - complete);
+  if (statPendingEl) statPendingEl.innerHTML = pendingCount + '<span style="font-size:1rem;">件</span><br><span style="font-size:1rem;">(' + pendingQty + '台)</span>';
+  
   $('#stat-defects').textContent = defects.length;
 
   // 緊急案件 (カテゴリ別)
@@ -10416,7 +10421,7 @@ ${JSON.stringify(payloadData)}
   showModal('🤖 AIマスターチェック', '<div style="text-align: center; padding: 2rem;">🔄 AIにデータを送信しチェックしています...<br>しばらくお待ちください。</div>', '');
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -10765,7 +10770,7 @@ window.sendAiChatMessage = async function() {
     
     try {
         const apiKey = localStorage.getItem('AI_API_KEY');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -10775,6 +10780,7 @@ window.sendAiChatMessage = async function() {
         if (!response.ok) throw new Error('API Error');
         const data = await response.json();
         let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
+        if (aiResult.includes('high demand') || aiResult.includes('Spikes in demand')) aiResult = '現在AIサーバーが非常に混み合っています。数分待ってから再度お試しください。';
         aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
         
         window.aiChatContext.push({ role: 'model', parts: [{ text: aiResult }] });
@@ -10787,6 +10793,6 @@ window.sendAiChatMessage = async function() {
         historyEl.appendChild(aiDiv);
         historyEl.scrollTop = historyEl.scrollHeight;
     } catch(e) {
-        loadDiv.innerHTML = '<span style="color:red;">エラーが発生しました</span>';
+        loadDiv.innerHTML = '<span style="color:red;">エラーが発生しました。AIサーバーが混雑している可能性があります。時間を置いて再度お試しください。</span>';
     }
 };
