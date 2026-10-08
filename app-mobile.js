@@ -392,6 +392,12 @@ function navigateTo(pageName) {
     }
   }
 
+  
+  // Stop any running scanners when changing pages
+  if (typeof stopQrScanner === 'function') stopQrScanner();
+  if (typeof stopDefectQrScanner === 'function') stopDefectQrScanner();
+  if (typeof stopInvScanner === 'function') stopInvScanner();
+
   // ページ切り替え
   $$('.page').forEach(p => p.classList.remove('active'));
   $(`#page-${pageName}`).classList.add('active');
@@ -937,7 +943,7 @@ function isMobileDevice() {
   return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-function startQrScanner() {
+async function startQrScanner() {
   const videoEl = $('#qr-video');
   const placeholder = $('#qr-scanner-placeholder');
   const startBtn = $('#start-scan-btn');
@@ -999,12 +1005,14 @@ function stopQrScanner() {
   const startBtn = $('#start-scan-btn');
   const stopBtn = $('#stop-scan-btn');
 
+  let p = Promise.resolve();
   if (qrScanner) {
-    qrScanner.stop().then(() => {
+    p = qrScanner.stop().then(() => {
       qrScanner.clear();
       qrScanner = null;
     }).catch(err => console.log(err));
   }
+  return p;
 
   // UIを元に戻す
   if (placeholder) placeholder.style.display = 'block';
@@ -1348,7 +1356,7 @@ function registerProgress(orderId, itemId, processName) {
 // 不良品QRスキャン & フォーム連携
 // ========================================
 
-function startDefectQrScanner() {
+async function startDefectQrScanner() {
   const placeholder = $('#defect-scanner-placeholder');
   const startBtn = $('#defect-start-scan-btn');
   const stopBtn = $('#defect-stop-scan-btn');
@@ -1360,8 +1368,8 @@ function startDefectQrScanner() {
   }
 
   // 他のスキャナーを停止
-  if (typeof stopQrScanner === 'function') stopQrScanner();
-  if (typeof stopInvScanner === 'function') stopInvScanner();
+  if (typeof stopQrScanner === 'function') await stopQrScanner();
+  if (typeof stopInvScanner === 'function') await stopInvScanner();
 
   if (placeholder) placeholder.style.display = 'none';
   if (startBtn) startBtn.style.display = 'none';
@@ -1402,12 +1410,14 @@ function stopDefectQrScanner() {
   const startBtn = $('#defect-start-scan-btn');
   const stopBtn = $('#defect-stop-scan-btn');
 
+  let p = Promise.resolve();
   if (defectQrScanner) {
-    defectQrScanner.stop().then(() => {
+    p = defectQrScanner.stop().then(() => {
       defectQrScanner.clear();
       defectQrScanner = null;
     }).catch(err => console.log(err));
   }
+  return p;
 
   if (placeholder) placeholder.style.display = 'block';
   if (startBtn) startBtn.style.display = 'inline-block';
@@ -5828,7 +5838,7 @@ function displayProductInfo(productId) {
   }
 }
 
-function startInvScanner() {
+async function startInvScanner() {
   const placeholder = $('#inv-scanner-placeholder');
   const videoEl = $('#inv-qr-video');
   const startBtn = $('#inv-start-scan-btn');
