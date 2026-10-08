@@ -1,0 +1,14 @@
+
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>生産管理システム 作業マニュアル</title>
+<style>
+  body { font-family: 'Meiryo', 'MS Gothic', sans-serif; }
+  h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 5px; }
+  h2 { color: #1e40af; border-left: 5px solid #1e40af; padding-left: 10px; margin-top: 20px; }
+  h3 { color: #3b82f6; margin-top: 15px; }
+  li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<h1>📱 生産管理システム 作業マニュアル（現場用）</h1><br>#<h1>1. はじめに</h1>本システムは、工場内での「今の作業進捗」や「不良品の発生」をスマホで簡単に記録し、全員で共有するためのシステムです。<br>スマホのカメラを使って、指示書に印刷された <strong>QRコード</strong> を読み取るだけで、キーボード入力の手間なく報告が完了します。<br><br>---<br><br>#<h1>2. メイン機能の使い方</h1><br>##<h1>① 【進捗登録】作業が終わったら報告する</h1>加工や組み立てなど、自分の担当工程が終わったタイミングで行います。<br><br>1. スマホの画面下のメニューから <strong>「📸 読取」</strong> または <strong>「🚀 進捗」</strong> タブを開きます。<br>2. <strong>「📷 スキャン開始」</strong> ボタンをタップし、カメラを起動します。<br>3. 作業した部品（指示書）についている <strong>QRコード</strong> を読み込みます。<br>4. 画面に「現場名」「品名」「部材」が自動入力されたことを確認します。<br>5. 「工程」の一覧から、<strong>完了した作業（例：面材カット）をタップ</strong> します。<br>6. すぐ下に出てくる <strong>「（工程名）を進捗登録する」</strong> という青いボタンを押すと、登録完了です！<br><br>##<h1>② 【不良品報告】やり直し（再製作）が必要になったら</h1>作業中にキズがついたり、寸法を間違えたりして、<strong>部品を作り直す必要がある場合</strong> に行います。<br><br>1. スマホのメニューから <strong>「△ 不良品」</strong> タブを開きます。<br>2. <strong>「📷 スキャン開始」</strong> をタップし、不良になった部品の <strong>QRコード</strong> を読み込みます。<br>3. 自動で情報が入るので、以下の項目を選択・入力します。<br>   - <strong>発生工程</strong>: 不良が発生した工程を選びます。<br>   - <strong>不良内容</strong>: 理由（キズ、寸法不良など）を選びます。<br>   - <strong>数量</strong>: ダメになった個数を入力します。<br>4. <strong>「☑ 再製作用のサブアイテム（枝番）を自動追加する」</strong> にチェックが入っていることを確認します。<br>   （※ここにチェックを入れておくと、自動的に「部材名 (再)」という作り直し用の新しいデータが作られます）<br>5. 最後に赤い <strong>「⚠ 不良品を登録する」</strong> ボタンを押せば報告完了です！<br>6. 作り直す時は、次から「〇〇 (再)」という部材を選んで進捗を登録してください。<br><br>##<h1>③ 【棚卸（たなおろし）】材料の数を数える</h1>月末など、木材や塗料の残りを数える時に使います。<br><br>1. メニューから <strong>「📦 棚卸」</strong> タブを開きます。<br>2. カメラで、棚や材料に貼ってある <strong>QRコード</strong> を読み込みます。<br>3. 今目の前にある <strong>実際の数（実在庫）</strong> を入力します。<br>4. <strong>「棚卸を記録する」</strong> ボタンを押して完了です。<br><br>---<br><br>#<h1>3. その他の便利な機能</h1><br>* <strong>📊 ダッシュボード（ホーム画面）</strong><br>  システムを開いて一番最初の画面（ホーム）では、「今、納期が迫っている注残（残りの作業）」が一覧で表示されます。朝イチで「今日やらなきゃいけないこと」を確認するのに便利です。<br>* <strong>🤖 AIチェック・相談</strong><br>  「この不良はどう直せばいい？」「操作がわからない」といった時は、画面の指示に従ってAIに質問すると、AIがアドバイスをくれます。<br>* <strong>画面が横長・小さくて見にくい時は？</strong><br>  スマホを縦向きにしてお使いください。表（リスト）が画面からはみ出ている場合は、<strong>指で横にスワイプ（スライド）</strong> すると右側を見ることができます。<br><br>---<br>
+</body></html>
