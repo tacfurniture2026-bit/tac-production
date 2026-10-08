@@ -1229,16 +1229,88 @@ function updateQrProcessSelect() {
 
 // 工程ボタン選択
 function selectProcess(btn, processName) {
-  // 他のボタンの選択を解除
+  // 1. UI Feedback (Selection only)
   const container = btn.closest('.process-btn-grid');
   if (container) {
     container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
   }
   btn.classList.add('selected');
-
-  // hidden inputに値をセット
-  const processHidden = $('#qr-process');
+  
+  // Set hidden input
+  const processHidden = document.getElementById('qr-process');
   if (processHidden) processHidden.value = processName;
+  
+  // Show submit button
+  const submitBtn = document.getElementById('qr-submit-btn');
+  if (submitBtn) {
+    submitBtn.style.display = 'block';
+    submitBtn.innerText = processName + ' を登録する';
+  }
+}
+
+function submitQrProgress() {
+  const orderId = parseInt(document.getElementById('qr-order').value);
+  const itemId = parseInt(document.getElementById('qr-item').value);
+  const processHidden = document.getElementById('qr-process');
+  
+  if (!orderId || !itemId) {
+    toast('指示書と部材が選択されていません', 'error');
+    return;
+  }
+  
+  if (!processHidden || !processHidden.value) {
+    toast('工程を選択してください', 'error');
+    return;
+  }
+  
+  const processName = processHidden.value;
+  const processContainer = document.getElementById('qr-process-buttons');
+  const btn = processContainer ? processContainer.querySelector(`.process-btn[data-process="${processName}"]`) : null;
+  
+  if (btn) {
+    btn.style.opacity = '0.7';
+    btn.innerText = '登録中...';
+  }
+  
+  // Disable submit button during process
+  const submitBtn = document.getElementById('qr-submit-btn');
+  if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = '登録中...';
+  }
+
+  setTimeout(() => {
+      const success = registerProgress(orderId, itemId, processName);
+
+      if (success) {
+        toast(`${processName} を完了として登録しました`, 'success');
+        if (btn) {
+            btn.classList.add('completed');
+            btn.innerText = `✓ ${processName}`;
+            btn.disabled = true;
+            btn.style.opacity = '1';
+        }
+        
+        // Hide submit button and clear hidden input
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+        processHidden.value = '';
+
+        if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
+      } else {
+        toast('登録に失敗しました', 'error');
+        if (btn) {
+            btn.style.opacity = '1';
+            btn.innerText = processName;
+        }
+        if (submitBtn) {
+            submitBtn.innerText = processName + ' を登録する';
+            submitBtn.disabled = false;
+        }
+      }
+  }, 100);
 }
 
 function registerProgress(orderId, itemId, processName) {

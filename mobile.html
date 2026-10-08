@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理 (Mobile)</title>
-    <!-- 【強制キャッシュバスティング v6.47.0】 -->
+    <!-- 【強制キャッシュバスティング v6.48.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.47.0';
+            var currentVersion = 'v6.48.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.47.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.48.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -35079,16 +35079,88 @@ function updateQrProcessSelect() {
 
 // 工程ボタン選択
 function selectProcess(btn, processName) {
-  // 他のボタンの選択を解除
+  // 1. UI Feedback (Selection only)
   const container = btn.closest('.process-btn-grid');
   if (container) {
     container.querySelectorAll('.process-btn').forEach(b => b.classList.remove('selected'));
   }
   btn.classList.add('selected');
-
-  // hidden inputに値をセット
-  const processHidden = $('#qr-process');
+  
+  // Set hidden input
+  const processHidden = document.getElementById('qr-process');
   if (processHidden) processHidden.value = processName;
+  
+  // Show submit button
+  const submitBtn = document.getElementById('qr-submit-btn');
+  if (submitBtn) {
+    submitBtn.style.display = 'block';
+    submitBtn.innerText = processName + ' を登録する';
+  }
+}
+
+function submitQrProgress() {
+  const orderId = parseInt(document.getElementById('qr-order').value);
+  const itemId = parseInt(document.getElementById('qr-item').value);
+  const processHidden = document.getElementById('qr-process');
+  
+  if (!orderId || !itemId) {
+    toast('指示書と部材が選択されていません', 'error');
+    return;
+  }
+  
+  if (!processHidden || !processHidden.value) {
+    toast('工程を選択してください', 'error');
+    return;
+  }
+  
+  const processName = processHidden.value;
+  const processContainer = document.getElementById('qr-process-buttons');
+  const btn = processContainer ? processContainer.querySelector(`.process-btn[data-process="${processName}"]`) : null;
+  
+  if (btn) {
+    btn.style.opacity = '0.7';
+    btn.innerText = '登録中...';
+  }
+  
+  // Disable submit button during process
+  const submitBtn = document.getElementById('qr-submit-btn');
+  if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = '登録中...';
+  }
+
+  setTimeout(() => {
+      const success = registerProgress(orderId, itemId, processName);
+
+      if (success) {
+        toast(`${processName} を完了として登録しました`, 'success');
+        if (btn) {
+            btn.classList.add('completed');
+            btn.innerText = `✓ ${processName}`;
+            btn.disabled = true;
+            btn.style.opacity = '1';
+        }
+        
+        // Hide submit button and clear hidden input
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+        processHidden.value = '';
+
+        if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
+      } else {
+        toast('登録に失敗しました', 'error');
+        if (btn) {
+            btn.style.opacity = '1';
+            btn.innerText = processName;
+        }
+        if (submitBtn) {
+            submitBtn.innerText = processName + ' を登録する';
+            submitBtn.disabled = false;
+        }
+      }
+  }, 100);
 }
 
 function registerProgress(orderId, itemId, processName) {
@@ -42799,7 +42871,7 @@ window.sendAiChatMessage = async function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.47.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.48.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -42826,7 +42898,7 @@ window.sendAiChatMessage = async function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.47.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.48.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -42909,7 +42981,7 @@ window.sendAiChatMessage = async function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.47.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.48.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -43137,11 +43209,12 @@ window.sendAiChatMessage = async function() {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>工程（タップして選択）</label>
+                                    <label>工程（タップして選択し、登録ボタンを押す）</label>
                                     <div id="qr-process-buttons" class="process-btn-grid">
                                         <p class="text-muted" style="width:100%;">先に部材を選択してください</p>
                                     </div>
                                     <input type="hidden" id="qr-process" value="">
+                                    <button type="button" class="btn btn-primary btn-full" style="margin-top: 1rem; padding: 1rem; font-size: 1.1rem; display: none;" id="qr-submit-btn" onclick="submitQrProgress()">進捗を登録する</button>
                                 </div>
                             </form>
                         </div>
@@ -43969,7 +44042,7 @@ window.sendAiChatMessage = async function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.47.0
+                    Version: v6.48.0
                 </div>
             </div>
         </div>
