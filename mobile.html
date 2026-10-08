@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.65.0】 -->
+    <!-- 【強制キャッシュバスティング v6.66.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.65.0';
+            var currentVersion = 'v6.66.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.65.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.66.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -41178,121 +41178,6 @@ function previewCsvFile(e) {
 
 // CSV解析
 // 進捗切り替え（Gantt）
-function toggleProcessStatus(el, orderId, itemIndex, process) {
-  toast('toggleProcessStatus called: ' + orderId + ', ' + itemIndex + ', ' + process, 'debug'); // Debug log
-
-  // イベント伝播防止
-  if (window.event) window.event.stopPropagation();
-
-  // Optimistic Update (UIを即時更新)
-  const isDone = el.classList.contains('status-done');
-  const newClass = isDone ? 'status-todo' : 'status-done';
-  const newText = isDone ? '<span style="font-size:10px; color:#94a3b8;">未</span>' : '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
-
-  el.className = `matrix-cell ${newClass}`;
-  el.innerHTML = newText;
-
-  // データ更新処理
-  setTimeout(() => {
-    try {
-      // 検索の堅牢化 (IDが文字列でも数値でも対応)
-      const orders = DB.get(DB.KEYS.ORDERS);
-      const order = orders.find(o => String(o.id) === String(orderId));
-
-      if (!order) {
-        console.error('Order not found:', orderId);
-        return;
-      }
-
-      if (!order.items || !order.items[itemIndex]) {
-        console.error('Target item not found', orderId, itemIndex, order.items);
-        return;
-      }
-
-      const item = order.items[itemIndex];
-      if (!Array.isArray(item.completed)) item.completed = [];
-
-      if (isDone) {
-        // 完了 -> 未完了 (削除)
-        item.completed = item.completed.filter(p => p !== process);
-      } else {
-        // 未完了 -> 完了 (追加)
-        if (!item.completed.includes(process)) {
-          item.completed.push(process);
-        }
-      }
-
-      // 保存
-      DB.save(DB.KEYS.ORDERS, orders);
-
-      // 進捗履歴の保存 (registerProgressと同じロジックならいいが、簡易的にここで済ますか、関数呼ぶか)
-      // ここでは履歴保存は省略するか、あるいはregisterProgressを呼ぶか。
-      // Ganttからのクリックは頻度が高いので履歴は必須ではないかもしれないが、
-      // 整合性を取るなら履歴もあったほうがいい。
-
-      // 再描画はFirebaseのリスナー任せにするか、遅延させる
-    } catch (e) {
-      console.error('Toggle Error:', e);
-      // UIを戻す処理が必要だが、シンプルにするため省略
-      toast('エラーが発生しました: ' + e.message, 'error');
-    }
-  }, 0);
-}
-
-window.saveSingleTempScan = function(productId) {
-  const input = document.getElementById(`inv-check-qty-${productId}`);
-  if (!input) return;
-  const newQty = parseInt(input.value) || 0;
-  const selectedMonth = $('#inv-check-month').value || new Date().toISOString().substring(0, 7);
-
-  const [y, m] = selectedMonth.split('-');
-  const lastDay = new Date(parseInt(y), parseInt(m), 0, 23, 59, 59);
-  const timestamp = lastDay.toISOString();
-  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || {};
-
-  // Firebase のルールエラーを回避しつつ古いデータも生かすため、新規・更新分はすべて INV_PRODUCTS に保存する
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const prodIndex = products.findIndex(p => p.id === productId);
-  
-  if (prodIndex !== -1) {
-    products[prodIndex].tempQty = newQty;
-    products[prodIndex].tempWorker = user.username || 'unknown';
-    products[prodIndex].tempWorkerName = user.displayName || '不明な作業者';
-    products[prodIndex].tempTimestamp = timestamp;
-    products[prodIndex].tempMonth = selectedMonth;
-    delete products[prodIndex].tempId;
-    
-    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-    toast('仮登録数量を保存しました', 'success');
-  } else {
-    toast('対象の資材が見つかりません', 'error');
-  }
-
-  renderInvCheckPage();
-};
-
-window.deleteSingleTempScan = function(productId) {
-  if (!confirm('仮スキャンデータを消去しますか？')) return;
-  
-  // INV_PRODUCTS 側のテンポラリデータを削除
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const prodIndex = products.findIndex(p => p.id === productId);
-  if (prodIndex !== -1) {
-    delete products[prodIndex].tempQty;
-    delete products[prodIndex].tempWorker;
-    delete products[prodIndex].tempWorkerName;
-    delete products[prodIndex].tempTimestamp;
-    delete products[prodIndex].tempMonth;
-    delete products[prodIndex].tempId;
-    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-  }
-  
-  toast('仮スキャンデータから削除しました', 'success');
-  renderInvCheckPage();
-};
-
-// 確実にグローバル公開
-window.toggleProcessStatus = toggleProcessStatus;
 
 function parseCsv(text) {
   const rows = [];
@@ -41574,7 +41459,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // 工程進捗トグル（完了/未完了の切り替え）
 // ========================================
 window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processName) {
-  // 1. 即時UIフィードバック（Optimistic Update）
+  // クリック時のイベント伝播を防止 (不要な親要素のクリックを防ぐ)
+  if (window.event) window.event.stopPropagation();
+
+  // 1. 即時UIフィードバック（Optimistic Update）で体感速度を爆速化
   let isDone = false;
   if (cellElement) {
     isDone = cellElement.classList.contains('status-done');
@@ -41587,58 +41475,58 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     }
   }
 
-  // 2. データ処理
-  try {
-    const orders = DB.get(DB.KEYS.ORDERS);
-    const order = orders.find(o => o.id == orderId);
+  // 画面の描画を確実に先に終わらせてから、裏側で重いDB処理を行う
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      // 2. データ処理
+      try {
+        const orders = DB.get(DB.KEYS.ORDERS);
+        const order = orders.find(o => String(o.id) === String(orderId));
 
-    if (!order) {
-      console.error('Order not found');
-      return;
-    }
+        if (!order) return;
 
-    const item = order.items && order.items[itemIdx];
-    if (!item) {
-      console.error('Item not found');
-      return;
-    }
+        const item = order.items && order.items[itemIdx];
+        if (!item) return;
 
-    if (!Array.isArray(item.completed)) {
-      item.completed = [];
-    }
-
-    // trim()して比較（目に見えない空白対策）
-    const proc = processName.trim();
-    const idx = item.completed.findIndex(p => p.trim() === proc);
-
-    if (idx > -1) {
-      item.completed.splice(idx, 1);
-    } else {
-      item.completed.push(proc);
-      
-      // 未完了/不良 -> 完了になる際、もしこの工程の保留中の不良データがあれば status を 'resolved' にする
-      const defects = DB.get(DB.KEYS.DEFECTS) || [];
-      let defectChanged = false;
-      defects.forEach(d => {
-        if (String(d.orderId) === String(order.id) &&
-            String(d.itemId) === String(item.id) &&
-            d.processName === proc &&
-            d.status === 'pending') {
-          d.status = 'resolved';
-          defectChanged = true;
+        if (!Array.isArray(item.completed)) {
+          item.completed = [];
         }
-      });
-      if (defectChanged) {
-        DB.save(DB.KEYS.DEFECTS, defects);
-      }
-    }
 
-    // 3. 保存
-    DB.save(DB.KEYS.ORDERS, orders);
-  } catch (e) {
-    console.error('Toggle Error:', e);
-    alert('エラーが発生しました: ' + e.message);
-  }
+        const proc = processName.trim();
+        const idx = item.completed.findIndex(p => p.trim() === proc);
+
+        if (idx > -1) {
+          // 完了 -> 未
+          item.completed.splice(idx, 1);
+        } else {
+          // 未 -> 完了
+          item.completed.push(proc);
+          
+          // 未完了/不良 -> 完了になる際、もしこの工程の保留中の不良データがあれば status を 'resolved' にする
+          const defects = DB.get(DB.KEYS.DEFECTS) || [];
+          let defectChanged = false;
+          defects.forEach(d => {
+            if (String(d.orderId) === String(order.id) &&
+                String(d.itemId) === String(item.id) &&
+                d.processName === proc &&
+                d.status === 'pending') {
+              d.status = 'resolved';
+              defectChanged = true;
+            }
+          });
+          if (defectChanged) {
+            DB.save(DB.KEYS.DEFECTS, defects);
+          }
+        }
+
+        // 3. 保存
+        DB.save(DB.KEYS.ORDERS, orders);
+      } catch (e) {
+        console.error('Toggle Error:', e);
+        // サイレントエラーにしてUIの邪魔をしない
+      }
+    }, 10); // 10ms待機して確実にUIをレンダリングさせる
+  });
 };
 
 // ========================================
@@ -43022,7 +42910,7 @@ function showQrCopyPasteGallery() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.65.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.66.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -43049,7 +42937,7 @@ function showQrCopyPasteGallery() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.65.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.66.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -43132,7 +43020,7 @@ function showQrCopyPasteGallery() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.65.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.66.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -44197,7 +44085,7 @@ function showQrCopyPasteGallery() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.65.0
+                    Version: v6.66.0
                 </div>
             </div>
         </div>
