@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.64.0】 -->
+    <!-- 【強制キャッシュバスティング v6.65.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.64.0';
+            var currentVersion = 'v6.65.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.64.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.65.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -33862,33 +33862,6 @@ const NEW_BOM_DATA = [
 </script>
     <script>
 
-window.getGeminiModelUrl = async function(apiKey) {
-    try {
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-        const res = await fetch(listUrl);
-        if (!res.ok) throw new Error('API key check failed');
-        const data = await res.json();
-        
-        let models = data.models || [];
-        models = models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'));
-        
-        // Priority: 1.5-flash -> 1.5-pro -> 1.0-pro -> anything gemini
-        let targetModel = models.find(m => m.name.includes('gemini-1.5-flash'));
-        if (!targetModel) targetModel = models.find(m => m.name.includes('gemini-1.5'));
-        if (!targetModel) targetModel = models.find(m => m.name.includes('gemini-pro'));
-        if (!targetModel) targetModel = models.find(m => m.name.includes('gemini'));
-        if (!targetModel) targetModel = models[0];
-        
-        if (targetModel) {
-            console.log("Auto-selected Gemini model:", targetModel.name);
-            return `https://generativelanguage.googleapis.com/v1beta/${targetModel.name}:generateContent?key=${apiKey}`;
-        }
-    } catch(e) {
-        console.warn("Failed to list models, using fallback", e);
-    }
-    // Fallback if list models fails
-    return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-};
 
 // ========================================
 // 生産管理システム - メインアプリケーション
@@ -42846,7 +42819,7 @@ window.sendAiChatMessage = async function() {
     
     try {
         const apiKey = localStorage.getItem('AI_API_KEY');
-        const url = await window.getGeminiModelUrl(apiKey);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
     
     let response;
     let data;
@@ -43049,7 +43022,7 @@ function showQrCopyPasteGallery() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.64.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.65.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -43076,7 +43049,7 @@ function showQrCopyPasteGallery() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.64.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.65.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -43159,7 +43132,7 @@ function showQrCopyPasteGallery() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.64.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.65.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -44224,7 +44197,7 @@ function showQrCopyPasteGallery() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.64.0
+                    Version: v6.65.0
                 </div>
             </div>
         </div>
