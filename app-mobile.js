@@ -600,7 +600,38 @@ function renderDashboard() {
     }).join('');
   };
 
+  
+  const pendingOrdersList = orders.filter(o => calculateProgress(o) < 100);
+  const generatePendingHtml = (list) => {
+    if (list.length === 0) return '<p class="text-muted">注残はありません</p>';
+    return list.map(o => {
+      const days = o.dueDate ? Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+      let daysStr = '未定';
+      let color = 'var(--color-text-muted)';
+      if (days !== null) {
+          daysStr = days <= 0 ? '今日' : `あと${days}日`;
+          color = days <= 1 ? 'red' : 'inherit';
+      }
+      return `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+          <div>
+            <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: bold;">${o.quantity}台</div>
+            <div style="font-size: 0.75rem; color: ${color};">${daysStr}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+  
+  const pendingListEl = $('#pending-orders-list');
+  if (pendingListEl) pendingListEl.innerHTML = generatePendingHtml(pendingOrdersList);
+
   $('#urgent-orders-pao').innerHTML = generateUrgentHtml(paoOrders);
+  
   $('#urgent-orders-grid').innerHTML = generateUrgentHtml(gridOrders);
   $('#urgent-orders-other').innerHTML = generateUrgentHtml(otherOrders);
 }
@@ -8815,15 +8846,34 @@ window.sendAiChatMessage = async function() {
     
     try {
         const apiKey = localStorage.getItem('AI_API_KEY');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(url, {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    
+    let response;
+    let data;
+    let retries = 3;
+    while (retries > 0) {
+        response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: window.aiChatContext })
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
         });
         
-        if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
+        if (response.ok) {
+            data = await response.json();
+            break;
+        }
+        
+        const err = await response.json();
+        const msg = err.error?.message || 'API Error';
+        
+        if (response.status === 503 || msg.includes('high demand') || msg.includes('Spikes in demand')) {
+            retries--;
+            if (retries === 0) throw new Error('AIサーバーが非常に混み合っています。数分待って再度お試しください。');
+            await new Promise(r => setTimeout(r, 2000));
+        } else {
+            throw new Error(msg);
+        }
+    }
         let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
         if (aiResult.includes('high demand') || aiResult.includes('Spikes in demand')) aiResult = '現在AIサーバーが非常に混み合っています。数分待ってから再度お試しください。';
         aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');

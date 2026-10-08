@@ -586,7 +586,38 @@ function renderDashboard() {
     }).join('');
   };
 
+  
+  const pendingOrdersList = orders.filter(o => calculateProgress(o) < 100);
+  const generatePendingHtml = (list) => {
+    if (list.length === 0) return '<p class="text-muted">注残はありません</p>';
+    return list.map(o => {
+      const days = o.dueDate ? Math.ceil((new Date(o.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+      let daysStr = '未定';
+      let color = 'var(--color-text-muted)';
+      if (days !== null) {
+          daysStr = days <= 0 ? '今日' : `あと${days}日`;
+          color = days <= 1 ? 'red' : 'inherit';
+      }
+      return `
+        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);">
+          <div>
+            <div style="font-weight: 500; cursor: pointer; color: var(--color-primary);" onclick="navigateToOrder(${o.id})">${o.projectName}</div>
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${o.productName}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: bold;">${o.quantity}台</div>
+            <div style="font-size: 0.75rem; color: ${color};">${daysStr}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+  
+  const pendingListEl = $('#pending-orders-list');
+  if (pendingListEl) pendingListEl.innerHTML = generatePendingHtml(pendingOrdersList);
+
   $('#urgent-orders-pao').innerHTML = generateUrgentHtml(paoOrders);
+  
   $('#urgent-orders-grid').innerHTML = generateUrgentHtml(gridOrders);
   $('#urgent-orders-other').innerHTML = generateUrgentHtml(otherOrders);
 
@@ -10421,364 +10452,34 @@ ${JSON.stringify(payloadData)}
   showModal('🤖 AIマスターチェック', '<div style="text-align: center; padding: 2rem;">🔄 AIにデータを送信しチェックしています...<br>しばらくお待ちください。</div>', '');
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }]
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'APIリクエストに失敗しました');
-    }
-
-    const data = await response.json();
-    let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || '結果を取得できませんでした。';
-
-    // MarkdownからHTMLへの簡易変換
-    aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
-
-
-    window.aiChatContext = [
-      { role: 'user', parts: [{ text: prompt }] },
-      { role: 'model', parts: [{ text: aiResult }] }
-    ];
-    const body = `
-      <div id="ai-chat-history" style="background: var(--color-bg-secondary); padding: 16px; border-radius: 8px; max-height: 50vh; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column;">
-        <div style="margin: 10px 0;"><span style="background:#f1f5f9; padding:8px 12px; border-radius:12px; display:inline-block; max-width:95%; border: 1px solid #e2e8f0;">${aiResult}</span></div>
-      </div>
-      <div style="display: flex; gap: 8px; border-top: 1px solid #cbd5e1; padding-top: 12px;">
-        <input type="text" id="ai-chat-input" class="form-input" placeholder="例: 【1】を修正してください" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAiChatMessage()">
-        <button class="btn btn-primary" onclick="sendAiChatMessage()" style="white-space: nowrap;">送信</button>
-      </div>
-    `;
-
-    const footer = `
-      <button class="btn btn-secondary" onclick="closeModal()">閉じる</button>
-    `;
-    $('#modal').style.maxWidth = '800px';
-    showModal('🤖 AIマスターチェック結果', body, footer);
-
-  } catch (error) {
-    console.error('AI Check Error:', error);
-    showModal('エラー', `<p style="color: red;">AIチェック中にエラーが発生しました。</p><p>${error.message}</p>`, '<button class="btn btn-secondary" onclick="closeModal()">閉じる</button>');
-  }
-}
-
-// ボタンへのイベント追加
-document.addEventListener('DOMContentLoaded', () => {
-  const aiCheckBtn = $('#ai-master-check-btn');
-  if (aiCheckBtn) aiCheckBtn.addEventListener('click', runAiMasterCheck);
-
-  const aiSettingsBtn = $('#ai-api-settings-btn');
-  if (aiSettingsBtn) aiSettingsBtn.addEventListener('click', openAiSettingsModal);
-});
-
-// --- Auto Healer for Duplicate Logs ---
-(function healDuplicateLogs() {
-  try {
-    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
-    let initialCount = logs.length;
-    let keepLogs = [];
-    let seen = new Set();
-    
-    // We want to keep the LATEST 'count' log for each (productId, month)
-    // regardless of whether it's from '初期在庫データ取込' or '棚卸確定'
-    for (let i = logs.length - 1; i >= 0; i--) {
-      const l = logs[i];
-      if (l.type === 'count') {
-        let month = '';
-        if (l.timestamp) {
-          month = l.timestamp.substring(0, 7);
-        } else if (l.note) {
-          const match = l.note.match(/\((\d{4}-\d{2})\)/);
-          if (match) month = match[1];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+        
+        let response;
+        let data;
+        let retries = 3;
+        while (retries > 0) {
+            response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: window.aiChatContext })
+            });
+            
+            if (response.ok) {
+                data = await response.json();
+                break;
+            }
+            
+            const err = await response.json();
+            const msg = err.error?.message || 'API Error';
+            
+            if (response.status === 503 || msg.includes('high demand') || msg.includes('Spikes in demand')) {
+                retries--;
+                if (retries === 0) throw new Error('AIサーバー混雑中');
+                await new Promise(r => setTimeout(r, 2000));
+            } else {
+                throw new Error(msg);
+            }
         }
-        if (month) {
-          const key = l.productId + '_' + month;
-          if (seen.has(key)) {
-            continue; // duplicate, skip it
-          }
-          seen.add(key);
-        }
-      }
-      keepLogs.unshift(l);
-    }
-    
-    if (keepLogs.length < initialCount) {
-      console.log('Healed strict duplicate logs:', initialCount - keepLogs.length);
-      DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(keepLogs)));
-    }
-  } catch (e) {
-    console.error('Healer error:', e);
-  }
-})();
-
-
-// 【究極の自動修復機能】商品マスタの重複やゴミデータを起動時に完全クリーンアップ
-(function healMasterData() {
-  try {
-    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    let initialCount = products.length;
-    if (initialCount === 0) return;
-
-    // 1. TEMP_商品はすべて削除（エクセルでIDがなかったゴミデータ）
-    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
-
-    // 2. IDの完全重複を排除
-    const uniqueById = new Map();
-    products.forEach(p => {
-      // 同じIDなら、後勝ち（最新）を残す
-      uniqueById.set(p.id, p);
-    });
-    products = Array.from(uniqueById.values());
-
-    if (products.length !== initialCount) {
-      console.log(`Healed master data: removed ${initialCount - products.length} invalid/duplicate products.`);
-      DB.save(DB.KEYS.INV_PRODUCTS, products);
-    }
-  } catch(e) {
-    console.error('Heal master failed', e);
-  }
-})();
-
-
-// 【究極の自動修復機能・第2弾】保存済みの月次データがバグで1億円になっている場合、起動時に自動で再計算して修正する
-
-
-
-(function healMonthlyData() {
-  try {
-    let logs = DB.get(DB.KEYS.INV_LOGS) || [];
-    let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    let healed = false;
-    let dbUpdated = false;
-
-    // 1. 完全なる根絶: INV_LOGS に紛れ込んだ META_F1_TOTAL を完全削除
-    const initialLogsCount = logs.length;
-    logs = logs.filter(l => l.productId !== 'META_F1_TOTAL');
-    if (logs.length !== initialLogsCount) {
-        console.log(`Removed ${initialLogsCount - logs.length} infected META_F1_TOTAL logs.`);
-        DB.save(DB.KEYS.INV_LOGS, logs);
-        dbUpdated = true;
-    }
-
-    // 2. 完全なる根絶: INV_PRODUCTS に万が一紛れ込んでいたら削除
-    const initialProductsCount = products.length;
-    products = products.filter(p => p.id !== 'META_F1_TOTAL' && !String(p.id).startsWith('TEMP_'));
-    if (products.length !== initialProductsCount) {
-        console.log(`Removed ${initialProductsCount - products.length} infected META_F1_TOTAL products.`);
-        DB.save(DB.KEYS.INV_PRODUCTS, products);
-        dbUpdated = true;
-    }
-
-    // 3. 全ての月について、items 内の META_F1_TOTAL を削除し、合計金額を正しい計算で上書き
-    monthly.forEach(m => {
-      let monthModified = false;
-      
-      // items から META_F1_TOTAL を削除
-      if (m.items) {
-          const initialItemsCount = m.items.length;
-          m.items = m.items.filter(i => i.productId !== 'META_F1_TOTAL' && !String(i.productId).startsWith('TEMP_'));
-          if (m.items.length !== initialItemsCount) {
-              monthModified = true;
-          }
-      }
-
-      // META_F1_TOTAL を除外した正しい items で total を再計算 (isClosedロジックと同様だが安全)
-      if (m.items && m.total !== undefined) {
-          const correctTotal = m.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-          
-          // F1との差分があれば、total は F1 の値にする (エクセルとシステムは必ず整合性がとれることが大事)
-          let finalTotal = correctTotal;
-          if (m.f1Total !== undefined && m.f1Total !== null && !isNaN(m.f1Total)) {
-              if (true) {
-                  finalTotal = m.f1Total;
-              }
-          }
-
-          if (m.total !== finalTotal) {
-              console.log(`Fixed total for ${m.month}: ${m.total} -> ${finalTotal}`);
-              m.total = finalTotal;
-              monthModified = true;
-          }
-      }
-      
-      if (monthModified) {
-          healed = true;
-      }
-    });
-
-    if (healed) {
-      console.log('Saved fully healed monthly data.');
-      DB.save(DB.KEYS.INV_MONTHLY, monthly);
-    }
-
-    // 4. 清掃作業：すでに確定済みの月の tempScans を削除して容量オーバー(QuotaExceededError)を防ぐ
-    const tempScans = DB.getTempScans() || [];
-    const closedMonths = new Set(monthly.map(m => m.month));
-    const initialTempScansCount = tempScans.length;
-    const cleanedTempScans = tempScans.filter(s => !closedMonths.has(s.month));
-    if (cleanedTempScans.length !== initialTempScansCount) {
-        console.log(`Cleaned up ${initialTempScansCount - cleanedTempScans.length} old temp scans.`);
-        DB.save(DB.KEYS.INV_SCAN_TEMP, cleanedTempScans);
-    }
-
-  } catch(e) {
-    console.error('Heal monthly failed', e);
-  }
-})();
-  
-  
-  
-
-
-
-
-
-
-
-
-
-window.manualHealMonthlyData = function() {
-  try {
-    let monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-    
-    // まずTEMP_商品を消す
-    let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-    products = products.filter(p => p.id && !String(p.id).startsWith('TEMP_') && p.id !== 'META_F1_TOTAL');
-    const uniqueById = new Map();
-    products.forEach(p => uniqueById.set(p.id, p));
-    products = Array.from(uniqueById.values());
-    DB.save(DB.KEYS.INV_PRODUCTS, products);
-
-    // ALL broken months
-    const brokenMonths = monthly.filter(x => x.total > 90000000 || x.total === 100223895 || x.total === 100223877);
-    
-    if (brokenMonths.length > 0) {
-        // Cache completely destroy!
-        let tempMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-        brokenMonths.forEach(m => {
-            tempMonthly = tempMonthly.filter(x => x.month !== m.month);
-        });
-        DB.save(DB.KEYS.INV_MONTHLY, tempMonthly);
-
-        let report = "【究極の修正完了】\n以下の月の異常キャッシュを破壊し、完全再計算しました。\n";
-        
-        let finalMonthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
-
-        brokenMonths.forEach(m => {
-            const tScans = DB.getTempScans() || [];
-            const meta = tScans.find(s => s.month === m.month && s.productId === 'META_F1_TOTAL');
-            let realF1 = meta ? meta.amountWithTax : null;
-            if (realF1 === 100223895 || realF1 === 100223877) realF1 = null;
-            
-            // NOW recalculate completely fresh without cache!
-            const finalResult = calculateInvMonthly(m.month, realF1);
-            
-            // Add back
-            const newData = {
-              month: m.month,
-              items: finalResult.items,
-              summary: finalResult.summary,
-              total: finalResult.total,
-              f1Total: finalResult.f1Total,
-              prevTotal: finalResult.prevTotal,
-              lastUpdated: new Date().toISOString()
-            };
-            const existingIdx = finalMonthly.findIndex(x => x.month === m.month);
-            if (existingIdx >= 0) finalMonthly[existingIdx] = newData;
-            else finalMonthly.push(newData);
-            
-            report += m.month + " の新しい合計: " + finalResult.total + "\n";
-        });
-        
-        DB.save(DB.KEYS.INV_MONTHLY, finalMonthly);
-        
-        alert(report + "\n画面を再読み込みします。");
-        location.reload();
-    } else {
-        alert("異常なデータは見つかりませんでした。（既に正常です）");
-    }
-  } catch(e) {
-    alert("エラーが発生しました: " + e.message);
-  }
-};
-
-// 分類別明細フィルタリング機能
-window.currentInvMonthlyFilter = null;
-window.filterInvMonthlyItems = function(catKey) {
-  const rows = document.querySelectorAll('.inv-monthly-item-row');
-  let showingAll = false;
-  
-  if (window.currentInvMonthlyFilter === String(catKey)) {
-    window.currentInvMonthlyFilter = null;
-    showingAll = true;
-  } else {
-    window.currentInvMonthlyFilter = String(catKey);
-  }
-  
-  rows.forEach(r => {
-    if (showingAll || r.classList.contains('category-' + catKey)) {
-      r.style.display = '';
-    } else {
-      r.style.display = 'none';
-    }
-  });
-
-  document.querySelectorAll('.category-summary-row').forEach(r => {
-    if (r.dataset.cat === window.currentInvMonthlyFilter) {
-      r.style.backgroundColor = '#e2e8f0'; // Tailwind gray-200
-      r.style.fontWeight = 'bold';
-    } else {
-      r.style.backgroundColor = '';
-      r.style.fontWeight = 'normal';
-    }
-  });
-};
-
-window.sendAiChatMessage = async function() {
-    const inputEl = document.getElementById('ai-chat-input');
-    const msg = inputEl.value.trim();
-    if(!msg) return;
-    
-    inputEl.value = '';
-    const historyEl = document.getElementById('ai-chat-history');
-    
-    const userDiv = document.createElement('div');
-    userDiv.style.margin = '10px 0';
-    userDiv.style.textAlign = 'right';
-    userDiv.innerHTML = `<span style="background:#3b82f6; color:white; padding:8px 12px; border-radius:12px; display:inline-block; max-width:80%; text-align:left;">${msg}</span>`;
-    historyEl.appendChild(userDiv);
-    historyEl.scrollTop = historyEl.scrollHeight;
-    
-    const loadDiv = document.createElement('div');
-    loadDiv.style.margin = '10px 0';
-    loadDiv.innerHTML = `<span style="background:#e2e8f0; padding:8px 12px; border-radius:12px; display:inline-block;">AIが応答を生成中...</span>`;
-    historyEl.appendChild(loadDiv);
-    historyEl.scrollTop = historyEl.scrollHeight;
-
-    window.aiChatContext.push({ role: 'user', parts: [{ text: msg }] });
-    
-    try {
-        const apiKey = localStorage.getItem('AI_API_KEY');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: window.aiChatContext })
-        });
-        
-        if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
         let aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
         if (aiResult.includes('high demand') || aiResult.includes('Spikes in demand')) aiResult = '現在AIサーバーが非常に混み合っています。数分待ってから再度お試しください。';
         aiResult = aiResult.replace(/```html/g, '').replace(/```/g, '');
