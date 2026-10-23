@@ -318,6 +318,10 @@ function emergencyRestoreProductsFromLogs() {
 window.refreshCurrentPage = function () {
   const activePage = localStorage.getItem('lastPage') || 'dashboard';
 
+  // 棚卸スキャン画面およびガントチャート操作中の全再描画抑止
+  if (activePage === 'inv-scan') return;
+  if (activePage === 'gantt' && window._isGanttLocalToggleActive) return;
+
   // 棚卸スキャン画面はカメラ起動中や入力中にFirebase同期による再描画が走ると
   // 画面が点滅したり入力フォーカスが外れる不具合があるため、自動再描画をスキップする
   if (activePage === 'inv-scan') return;
@@ -814,7 +818,7 @@ function renderGantt() {
 
             html += `
                <td class="matrix-cell ${statusClass}"
-                   onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}')"
+                   onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}', event)"
                    style="width: 100px; min-width: 100px;">
                    ${statusText}
                </td>
@@ -857,6 +861,7 @@ function renderGantt() {
 
 function toggleExpand(event, orderId) {
   if (event) event.stopPropagation();
+  if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
   // IDの数値・文字列ゆらぎ対策
   if (expandedOrders.has(orderId)) {
     expandedOrders.delete(orderId);
@@ -871,6 +876,7 @@ function toggleExpand(event, orderId) {
 }
 
 function expandAll() {
+  if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
   const orders = DB.get(DB.KEYS.ORDERS);
   expandedOrders = new Set();
   orders.forEach(o => {
@@ -882,6 +888,7 @@ function expandAll() {
 }
 
 function collapseAll() {
+  if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
   expandedOrders = new Set();
   renderGantt();
 }
@@ -5008,6 +5015,7 @@ document.addEventListener('DOMContentLoaded', () => {
       $$('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       ganttFilter = btn.dataset.filter;
+      if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
       renderGantt();
     });
   });
@@ -7638,75 +7646,131 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 // 工程進捗トグル（完了/未完了の切り替え）
 // ========================================
-window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processName) {
-  // クリック時のイベント伝播を防止 (不要な親要素のクリックを防ぐ)
-  if (window.event) window.event.stopPropagation();
+window._ganttSaveTimer = null;
+window._ganttDefectNeedsSave = false;
 
-  // 1. 即時UIフィードバック（Optimistic Update）で体感速度を爆速化
-  let isDone = false;
-  if (cellElement) {
-    isDone = cellElement.classList.contains('status-done');
-    if (isDone) {
-      cellElement.className = 'matrix-cell status-todo'; // クラスを完全に書き換え
-      cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
-    } else {
-      cellElement.className = 'matrix-cell status-done'; // クラスを完全に書き換え
-      cellElement.innerHTML = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+window.flushGanttSave = function () {
+  if (window._ganttSaveTimer) {
+    clearTimeout(window._ganttSaveTimer);
+    window._ganttSaveTimer = null;
+    try {
+      const orders = DB.get(DB.KEYS.ORDERS);
+      DB.save(DB.KEYS.ORDERS, orders);
+      if (window._ganttDefectNeedsSave) {
+        const defects = DB.get(DB.KEYS.DEFECTS);
+        DB.save(DB.KEYS.DEFECTS, defects);
+        window._ganttDefectNeedsSave = false;
+      }
+    } catch (e) {
+      console.error('Flush Gantt Save error:', e);
     }
   }
+};
 
-  // 画面の描画を確実に先に終わらせてから、裏側で重いDB処理を行う
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      // 2. データ処理
-      try {
-        const orders = DB.get(DB.KEYS.ORDERS);
-        const order = orders.find(o => String(o.id) === String(orderId));
+// ページ離脱時やタブ閉じ時に確実に保存
+window.addEventListener('beforeunload', () => {
+  if (typeof window.flushGanttSave === 'function') {
+    window.flushGanttSave();
+  }
+});
 
-        if (!order) return;
+window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processName, ev) {
+  // クリック時のイベント伝播を即座に防止
+  const e = ev || window.event;
+  if (e) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    if (e.preventDefault) e.preventDefault();
+  }
 
-        const item = order.items && order.items[itemIdx];
-        if (!item) return;
+  try {
+    // 1. メモリ上のデータを即座に同期更新（一切の遅延・タイムラグなし）
+    const orders = DB.get(DB.KEYS.ORDERS);
+    const order = orders.find(o => String(o.id) === String(orderId));
+    if (!order) {
+      console.error('Order not found:', orderId);
+      return;
+    }
 
-        if (!Array.isArray(item.completed)) {
-          item.completed = [];
+    const item = order.items && order.items[itemIdx];
+    if (!item) {
+      console.error('Item not found:', itemIdx);
+      return;
+    }
+
+    if (!Array.isArray(item.completed)) {
+      item.completed = [];
+    }
+
+    const proc = (processName || '').trim();
+    const idx = item.completed.findIndex(p => p.trim() === proc);
+    const willBeDone = (idx === -1);
+
+    if (willBeDone) {
+      // 未完了 -> 完了
+      item.completed.push(proc);
+
+      // 保留中の不良データがあれば resolved に更新
+      const defects = DB.get(DB.KEYS.DEFECTS) || [];
+      let defectChanged = false;
+      defects.forEach(d => {
+        if (String(d.orderId) === String(order.id) &&
+            String(d.itemId) === String(item.id) &&
+            d.processName === proc &&
+            d.status === 'pending') {
+          d.status = 'resolved';
+          defectChanged = true;
         }
-
-        const proc = processName.trim();
-        const idx = item.completed.findIndex(p => p.trim() === proc);
-
-        if (idx > -1) {
-          // 完了 -> 未
-          item.completed.splice(idx, 1);
-        } else {
-          // 未 -> 完了
-          item.completed.push(proc);
-          
-          // 未完了/不良 -> 完了になる際、もしこの工程の保留中の不良データがあれば status を 'resolved' にする
-          const defects = DB.get(DB.KEYS.DEFECTS) || [];
-          let defectChanged = false;
-          defects.forEach(d => {
-            if (String(d.orderId) === String(order.id) &&
-                String(d.itemId) === String(item.id) &&
-                d.processName === proc &&
-                d.status === 'pending') {
-              d.status = 'resolved';
-              defectChanged = true;
-            }
-          });
-          if (defectChanged) {
-            DB.save(DB.KEYS.DEFECTS, defects);
-          }
-        }
-
-        // 3. 保存
-        DB.save(DB.KEYS.ORDERS, orders);
-      } catch (e) {
-        console.error('Toggle Error:', e);
-        // サイレントエラーにしてUIの邪魔をしない
+      });
+      if (defectChanged) {
+        window._ganttDefectNeedsSave = true;
       }
-    }, 10); // 10ms待機して確実にUIをレンダリングさせる
-  });
+    } else {
+      // 完了 -> 未完了
+      item.completed.splice(idx, 1);
+    }
+
+    // 2. DOM要素を即座に更新 (0ms 体感レスポンス)
+    if (cellElement) {
+      if (willBeDone) {
+        cellElement.className = 'matrix-cell status-done';
+        cellElement.innerHTML = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+      } else {
+        cellElement.className = 'matrix-cell status-todo';
+        cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
+      }
+    }
+
+    // 3. ローカル操作中フラグ（Firebase同期やrefreshCurrentPageによるテーブル全体の無駄な再描画を抑止）
+    window._isGanttLocalToggleActive = true;
+
+    // 4. 重いLocalStorage圧縮保存 & Firebase同期をデバウンス（連打しても超軽快）
+    if (window._ganttSaveTimer) {
+      clearTimeout(window._ganttSaveTimer);
+    }
+    window._ganttSaveTimer = setTimeout(() => {
+      window._ganttSaveTimer = null;
+      try {
+        const curOrders = DB.get(DB.KEYS.ORDERS);
+        DB.save(DB.KEYS.ORDERS, curOrders);
+        if (window._ganttDefectNeedsSave) {
+          const curDefects = DB.get(DB.KEYS.DEFECTS);
+          DB.save(DB.KEYS.DEFECTS, curDefects);
+          window._ganttDefectNeedsSave = false;
+        }
+      } catch (err) {
+        console.error('Async Gantt Save error:', err);
+      } finally {
+        // Firebaseのリアルタイム同期エコーが落ち着くまで少しフラグを維持
+        setTimeout(() => {
+          window._isGanttLocalToggleActive = false;
+        }, 1000);
+      }
+    }, 250);
+
+  } catch (err) {
+    console.error('toggleProcessStatus error:', err);
+  }
 };
 
 // ========================================

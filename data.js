@@ -829,6 +829,9 @@ function refreshCurrentPage() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const pageId = activePage.id.replace('page-', '');
+        if (pageId === 'gantt' && typeof window !== 'undefined' && window._isGanttLocalToggleActive) {
+            return;
+        }
         if (typeof navigateTo === 'function') {
             // ナビゲーション状態は変えずに再描画のみ
             switch (pageId) {
