@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.68.0】 -->
+    <!-- 【強制キャッシュバスティング v6.69.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.68.0';
+            var currentVersion = 'v6.69.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.68.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.69.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -54,7 +54,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v6.68.0">
+    <link rel="stylesheet" href="styles-mobile.css?v=v6.69.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -217,8 +217,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.68.0"></script>
-    <script src="app-mobile.js?v=v6.68.0"></script>
+    <script src="data.js?v=v6.69.0"></script>
+    <script src="app-mobile.js?v=v6.69.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -241,6 +241,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- SheetJS (Excel解析) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.0.0/encoding.min.js"></script>
 </head>
 
 <body>
@@ -275,7 +276,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.68.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.69.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -302,7 +303,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.68.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.69.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -385,7 +386,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.68.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.69.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -961,6 +962,32 @@
                     <h1>▦ 棚卸スキャン <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.00</span></h1>
                     <p>QRコードをスキャンして棚卸を登録</p>
                 </div>
+                
+                <!-- KEYENCE BT-W85 ハンディターミナル バッチ取込パネル -->
+                <div class="card" id="ht-batch-banner-card" style="margin-bottom: 1.5rem; border: 2px solid #0284c7; background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);">
+                    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1.25rem;">
+                        <div style="flex: 1; min-width: 260px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+                                <span style="background: #0284c7; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">KEYENCE BT-W85 / BT-H10W 対応</span>
+                                <h3 style="margin: 0; color: #0369a1; font-size: 1.15rem;">📠 ハンディターミナル (HT) 棚卸データ一括取込</h3>
+                            </div>
+                            <p style="margin: 0; font-size: 0.875rem; color: #475569; line-height: 1.5;">
+                                スキャナ <strong>BT-W85</strong> で読み取った棚卸CSVデータ（<code>INV_LOG.CSV</code> 等）をバッチで一括取り込みし、現在の商品マスタと自動照合して仮登録へ反映します。（※下のスマホQRスキャンや手入力もそのまま併用可能です）
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <button type="button" class="btn btn-primary" onclick="openHtImportModal('import')" style="background-color: #0284c7; border-color: #0284c7; font-weight: bold; padding: 12px 20px; font-size: 1rem; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
+                                📥 HTデータ取り込み
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="openHtImportModal('master')" style="padding: 10px 14px; font-size: 0.875rem;">
+                                📤 HT用マスタ・アプリ出力
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="openHtImportModal('guide')" style="padding: 10px 14px; font-size: 0.875rem;">
+                                📖 HT開発・取込ガイド
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="qr-layout">
                     <!-- QRスキャナー -->
                     <div class="card">
@@ -1092,6 +1119,7 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="btn btn-secondary" id="export-inv-csv-btn">📤 CSV出力</button>
+                            <button class="btn btn-secondary" onclick="exportHtMasterCsv()" style="background-color: #0284c7; color: white; border-color: #0284c7;">📠 HT用マスタ出力</button>
                             <button class="btn btn-primary" id="add-inv-product-btn">+ 新規登録</button>
                         </div>
                     </div>
@@ -1188,6 +1216,7 @@
                             <p>仮登録された棚卸データの確認・修正・確定処理</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="openHtImportModal('import')" style="background-color: #0284c7; border-color: #0284c7; font-weight: bold;">📥 HTデータ取り込み</button>
                             <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
                             <button class="btn btn-danger" id="undo-confirm-inv-temp-btn">⏪ 確定取り消し</button>
@@ -1450,7 +1479,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.68.0
+                    Version: v6.69.0
                 </div>
             </div>
         </div>

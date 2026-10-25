@@ -1,0 +1,200 @@
+' ====================================================================
+' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション
+' ファイル名: TAC_TANAOROSHI.scp
+' 対象機種  : KEYENCE BT-W85 (BT-W80 / BT-W70 / BT-1000 シリーズ共通)
+' 開発環境  : KEYENCE BT-H10W (BT-Navigator / スクリプト開発環境)
+' 機能概要  : メニューは「棚卸スキャン」に特化。
+'             商品マスタ(MASTER.CSV)を参照して品名を表示し、
+'             実棚数量を入力して CSVファイル(INV_LOG.CSV)へ保存します。
+' ====================================================================
+
+Include "BT_Lib.inc"
+
+' --- グローバル変数定義 ---
+Dim g_strTerminalId As String
+Dim g_strLogFile As String
+Dim g_strMasterFile As String
+
+' ====================================================================
+' メインエントリポイント (端末起動時に自動実行)
+' ====================================================================
+Sub Main()
+    Dim key As String
+
+    ' 初期設定
+    g_strTerminalId = "BTW85"
+    g_strLogFile = "INV_LOG.CSV"
+    g_strMasterFile = "MASTER.CSV"
+
+    ' 画面モード設定 (標準文字サイズ)
+    LcdClear()
+
+    ' メインメニューループ（シンプル棚卸専用メニュー）
+    While (1)
+        LcdClear()
+        LcdPrint(1, 1, "=== TAC 棚卸システム ===")
+        LcdPrint(3, 1, "[1] 棚卸スキャン開始")
+        LcdPrint(5, 1, "[2] PCへデータ送信")
+        LcdPrint(7, 1, "[3] ログ件数確認/消去")
+        LcdPrint(9, 1, "番号キーを押してください")
+
+        key = KeyWait()
+
+        If key = "1" Or key = "ENT" Or key = "TRG" Then
+            Call DoInventoryScan()
+        ElseIf key = "2" Then
+            Call DoSendData()
+        ElseIf key = "3" Then
+            Call DoManageLog()
+        End If
+    Wend
+End Sub
+
+' ====================================================================
+' [1] 棚卸スキャン業務（メイン処理）
+' ====================================================================
+Sub DoInventoryScan()
+    Dim strCode As String
+    Dim strName As String
+    Dim strPrice As String
+    Dim strQty As String
+    Dim strDate As String
+    Dim strTime As String
+    Dim strRecord As String
+    Dim nCount As Integer
+
+    While (1)
+        LcdClear()
+        nCount = GetLogCount(g_strLogFile)
+        LcdPrint(1, 1, "【棚卸スキャン】件数:" & nCount)
+        LcdPrint(2, 1, "------------------------")
+        LcdPrint(3, 1, "資材QRを読取してください")
+        LcdPrint(4, 1, "コード:")
+        LcdPrint(9, 1, "[F1/CLR]:メニューへ戻る")
+
+        ' QRコード / バーコード / キー入力待ち
+        strCode = ScanOrInput(4, 8)
+        If strCode = "ESC" Or strCode = "F1" Or strCode = "" Then
+            Exit Sub
+        End If
+
+        ' 商品マスタ(MASTER.CSV)から品名・単価を検索（マスタが無くても動作可能）
+        strName = "（マスタ照合なし）"
+        strPrice = "-"
+        Call LookupMaster(strCode, strName, strPrice)
+
+        ' 品名・単価を画面に表示
+        LcdPrint(5, 1, "品名:" & Left(strName, 18))
+        LcdPrint(6, 1, "単価:¥" & strPrice)
+
+        ' 実棚数量の入力
+        LcdPrint(7, 1, "実棚数量を入力[ENT]:")
+        strQty = InputQuantity(8, 1, "1")
+
+        If strQty <> "ESC" And strQty <> "" Then
+            ' 現在日時取得
+            strDate = GetDateStr() ' YYYY/MM/DD
+            strTime = GetTimeStr() ' HH:MM:SS
+
+            ' CSVレコード作成: 日付,時刻,端末ID,資材ID,数量
+            strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & strCode & "," & strQty
+
+            ' INV_LOG.CSV へ追記保存
+            Call AppendCsvLine(g_strLogFile, strRecord)
+
+            ' 完了ブザー＆LED（緑点灯・ピッ）
+            Buzzer(1, 100)
+            Led(1, 200)
+
+            LcdPrint(9, 1, "=> 登録OK! (" & strQty & "個)   ")
+            Wait(300)
+        Else
+            ' キャンセル時は再度スキャン待ちへ
+            Buzzer(2, 50)
+        End If
+    Wend
+End Sub
+
+' ====================================================================
+' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID, 2列目=品名, 3列目=単価)
+' ====================================================================
+Sub LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String)
+    Dim fp As Integer
+    Dim lineStr As String
+    Dim col1 As String
+    Dim col2 As String
+    Dim col3 As String
+
+    If FileExists(g_strMasterFile) = 0 Then
+        outName = "マスタ登録品/新規"
+        outPrice = "-"
+        Exit Sub
+    End If
+
+    ' マスタファイルから該当IDを検索
+    fp = FileOpen(g_strMasterFile, "R")
+    If fp < 0 Then Exit Sub
+
+    While (FileEof(fp) = 0)
+        lineStr = FileReadLine(fp)
+        col1 = GetCsvCol(lineStr, 1)
+        If col1 = targetId Then
+            outName = GetCsvCol(lineStr, 2)
+            outPrice = GetCsvCol(lineStr, 3)
+            FileClose(fp)
+            Exit Sub
+        End If
+    Wend
+
+    FileClose(fp)
+    outName = "未登録(" & targetId & ")"
+    outPrice = "0"
+End Sub
+
+' ====================================================================
+' [2] PCへデータ送信（通信ユニット経由でINV_LOG.CSVを送信）
+' ====================================================================
+Sub DoSendData()
+    Dim key As String
+    LcdClear()
+    LcdPrint(1, 1, "=== PCへデータ送信 ===")
+    LcdPrint(3, 1, "本体を通信クレードルに")
+    LcdPrint(4, 1, "セットして[ENT]を押し")
+    LcdPrint(5, 1, "PC側で受信してください")
+    LcdPrint(7, 1, "ファイル: " & g_strLogFile)
+    LcdPrint(9, 1, "[ENT]:通信開始 [CLR]:戻")
+
+    key = KeyWait()
+    If key = "ENT" Then
+        LcdPrint(8, 1, "通信待機中...")
+        ' KEYENCE標準プロトコルファイル転送待機
+        CommSendFile(g_strLogFile)
+        Buzzer(1, 200)
+        LcdPrint(8, 1, "送信完了しました！    ")
+        Wait(1000)
+    End If
+End Sub
+
+' ====================================================================
+' [3] ログ件数確認・データ消去
+' ====================================================================
+Sub DoManageLog()
+    Dim key As String
+    Dim cnt As Integer
+
+    LcdClear()
+    cnt = GetLogCount(g_strLogFile)
+    LcdPrint(1, 1, "=== ログ管理 ===")
+    LcdPrint(3, 1, "現在の保存件数: " & cnt & " 件")
+    LcdPrint(5, 1, "データを全消去しますか？")
+    LcdPrint(6, 1, "※PC取込後に消去下さい")
+    LcdPrint(9, 1, "[F4]:全消去  [CLR]:戻る")
+
+    key = KeyWait()
+    If key = "F4" Then
+        FileDelete(g_strLogFile)
+        Buzzer(1, 200)
+        LcdPrint(8, 1, "全データを消去しました")
+        Wait(1000)
+    End If
+End Sub
