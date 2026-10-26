@@ -9824,6 +9824,9 @@ window.openHtImportModal = function(initialTab = 'import') {
               ・システム発行のQRを読み取り、既にスキャン済みの資材（ダブり）だった場合は<strong>警告ブザー＆「[1]➕追加(合算) / [2]✍️上書き修正 / [3]❌キャンセル」のアラート画面</strong>が表示されます！
             </p>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+              <a href="bt-w85-app/TAC_INV.zip" download="TAC_INV.zip" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7; text-decoration: none; font-weight: bold;">
+                📦 BT開発・運用ツール 完成プロジェクト一式 (TAC_INV.zip) をダウンロード
+              </a>
               <button type="button" class="btn btn-primary" onclick="downloadBtH10wAppSource()" style="background: #0f766e; border-color: #0f766e;">
                 💻 BT-H10W アプリ (TAC_TANAOROSHI.scp v2.0) をダウンロード
               </button>
@@ -10011,10 +10014,11 @@ window.parseHtCsvFile = function() {
             }
           }
 
-          // Step C: 数量列を右端から探索（資材ID列・担当者列・日付・時刻を除く最初の数値列）
+          // Step C: 数量列を右端から探索（資材ID列・担当者列・日付・時刻・シリアル番号を除く最初の数値列）
           let qtyColIdx = -1;
           for (let c = cleanCols.length - 1; c >= 1; c--) {
             if (c === prodColIdx || userColIndices.includes(c)) continue;
+            if (c === 2 && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) continue;
             const val = cleanCols[c];
             if (!val || isDateCol(val) || isTimeCol(val)) continue;
             if (/^-?\d+(\.\d+)?$/.test(val)) {
@@ -10026,7 +10030,14 @@ window.parseHtCsvFile = function() {
 
           // Step D: マスタ未登録資材やHT新規追加ユーザーがある場合の補完
           if (!detectedId || (!csvWorkerId && cleanCols.length >= 4)) {
-            if (cleanCols.length >= 7 && !detectedId && prodColIdx === -1) {
+            if ((cleanCols.length === 9 || cleanCols.length === 6) && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) {
+              // TAC_INV (Record.csv) 標準フォーマット: [日付(0), 時刻(1), シリアル番号(2), 担当者(3), 資材ID(4), 数量(5), ...]
+              if (!csvWorkerId && cleanCols[3]) csvWorkerId = cleanCols[3].replace(/^USER:/i, "").trim();
+              if (!detectedId && cleanCols[4]) detectedId = cleanCols[4].replace(/^INV:/i, "").trim();
+              if ((detectedQty === null || isNaN(detectedQty)) && cleanCols[5] && /^-?\d+(\.\d+)?$/.test(cleanCols[5])) {
+                detectedQty = parseFloat(cleanCols[5]);
+              }
+            } else if (cleanCols.length === 7 && !detectedId && prodColIdx === -1) {
               // 標準7列フォーマット [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
               if (!csvWorkerId) csvWorkerId = cleanCols[3];
               if (!csvWorkerName) csvWorkerName = cleanCols[4];
@@ -10034,6 +10045,7 @@ window.parseHtCsvFile = function() {
             } else {
               for (let c = 0; c < cleanCols.length; c++) {
                 if (c === prodColIdx || c === qtyColIdx || userColIndices.includes(c)) continue;
+                if (c === 2 && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) continue; // シリアル番号列をスキップ
                 const s = cleanCols[c].replace(/^INV:/i, "").trim();
                 if (!s || isDateCol(s) || isTimeCol(s) || isTermCol(s)) continue;
                 if (!detectedId) {
