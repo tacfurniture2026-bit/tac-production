@@ -10381,10 +10381,10 @@ window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
   const lines = products
     .filter(p => p && p.id && !String(p.id).startsWith("TEMP_"))
     .map(p => {
-      const id = String(p.id || "").replace(/,/g, " ").trim();
-      const name = String(p.name || "").replace(/,/g, " ").replace(/[\r\n]/g, " ").trim();
+      const id = String(p.id || "").replace(/"/g, '""').trim();
+      const name = String(p.name || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").trim();
       const price = parseInt(p.price, 10) || 0;
-      return `${id},${name},${price}`;
+      return `"${id}","${name}","${price}"`;
     });
 
   const csvString = lines.join("\r\n") + "\r\n";
