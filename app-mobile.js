@@ -9462,41 +9462,41 @@ window.renderUsers = function() {
 };
 
 // BT-W85用 担当者マスタ (USERS.CSV) を Shift-JIS で出力
-window.exportHtUsersCsv = function() {
+window.exportHtUsersCsv = function(targetFileName = "user.txt") {
   const users = DB.get(DB.KEYS.USERS) || [];
   if (users.length === 0) {
-    toast('ユーザーが登録されていません', 'warning');
+    toast("ユーザーが登録されていません", "warning");
     return;
   }
 
   // フォーマット: username(ログインID),displayName(表示名),department(部門)
   const lines = users.map(u => {
-    const uname = String(u.username || '').replace(/,/g, '').trim();
-    const dname = String(u.displayName || uname).replace(/,/g, ' ').trim();
-    const dept = String(u.department || '製造部').replace(/,/g, ' ').trim();
+    const uname = String(u.username || "").replace(/,/g, "").trim();
+    const dname = String(u.displayName || uname).replace(/,/g, " ").trim();
+    const dept = String(u.department || "製造部").replace(/,/g, " ").trim();
     return `${uname},${dname},${dept}`;
   });
 
-  const csvString = lines.join('\r\n') + '\r\n';
+  const csvString = lines.join("\r\n") + "\r\n";
   let blob;
-  if (typeof Encoding !== 'undefined') {
+  if (typeof Encoding !== "undefined") {
     const unicodeArray = Encoding.stringToCode(csvString);
-    const sjisArray = Encoding.convert(unicodeArray, { to: 'SJIS', from: 'UNICODE' });
-    blob = new Blob([new Uint8Array(sjisArray)], { type: 'text/csv;charset=shift_jis;' });
+    const sjisArray = Encoding.convert(unicodeArray, { to: "SJIS", from: "UNICODE" });
+    blob = new Blob([new Uint8Array(sjisArray)], { type: "text/csv;charset=shift_jis;" });
   } else {
-    blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
   }
 
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = 'USERS.CSV';
+  link.download = targetFileName || "user.txt";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  toast(`📤 BT-W85用 担当者マスタ (USERS.CSV: ${users.length}名) をダウンロードしました`, 'success');
+  toast(`📤 BT開発・運用ツール用 担当者マスタ (${targetFileName}: ${users.length}名) をダウンロードしました`, "success");
 };
 
 // HT本体で増減（追加・削除）された USERS.CSV を生産管理システムの「ユーザー管理」へ同期
@@ -9798,11 +9798,14 @@ window.openHtImportModal = function(initialTab = 'import') {
               また、BT-W85 本体側で担当者を増減（追加・削除）した場合は「📥 HT担当者CSV取込」からシステムへ逆同期できます。
             </p>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-              <button type="button" class="btn btn-primary" onclick="exportHtMasterCsv()" style="background: #0284c7; border-color: #0284c7;">
-                📤 商品マスタ (MASTER.CSV) 出力
+              <button type="button" class="btn btn-primary" onclick="exportHtMasterCsv('MasterFile_1.csv')" style="background: #0284c7; border-color: #0284c7;">
+                📤 商品マスタ (MasterFile_1.csv) 出力
               </button>
-              <button type="button" class="btn btn-primary" onclick="exportHtUsersCsv()" style="background: #0369a1; border-color: #0369a1;">
-                👤 担当者マスタ (USERS.CSV) 出力
+              <button type="button" class="btn btn-primary" onclick="exportHtUsersCsv('user.txt')" style="background: #0369a1; border-color: #0369a1;">
+                👤 ログイン担当者 (user.txt) 出力
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="exportHtUsersCsv('USERS.CSV')">
+                👤 USERS.CSV 出力
               </button>
               <button type="button" class="btn btn-secondary" onclick="openHtUsersSyncModal()">
                 📥 HT担当者CSV取込 (増減同期)
@@ -9972,51 +9975,73 @@ window.parseHtCsvFile = function() {
         let csvWorkerName = '';
 
         if (cleanCols.length === 1) {
-          detectedId = cleanCols[0];
+          detectedId = cleanCols[0].replace(/^INV:/i, "").trim();
           detectedQty = 1;
         } else if (cleanCols.length === 2) {
-          detectedId = cleanCols[0];
-          detectedQty = parseFloat(cleanCols[1].replace(/[^0-9.-]/g, ''));
-        } else if (cleanCols.length >= 7) {
-          // v2.0 標準7列フォーマット: [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
-          csvWorkerId = cleanCols[3];
-          csvWorkerName = cleanCols[4];
-          detectedId = cleanCols[5];
-          detectedQty = parseFloat(cleanCols[6].replace(/[^0-9.-]/g, ''));
+          detectedId = cleanCols[0].replace(/^INV:/i, "").trim();
+          detectedQty = parseFloat(cleanCols[1].replace(/[^0-9.-]/g, ""));
         } else {
-          // 3〜6列フォーマットの自動判別
-          for (let c = cleanCols.length - 1; c >= 1; c--) {
-            const val = cleanCols[c];
-            if (/^-?\d+(\.\d+)?$/.test(val)) {
-              detectedQty = parseFloat(val);
+          // BT開発・運用ツール (BT Application Design Tool) 全列数対応の自動判別
+          const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
+          const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
+          const isTermCol = (s) => /^(BTW|BT-W|HT\d*|KEYENCE)$/i.test(s);
+
+          let prodColIdx = -1;
+          let userColIndices = [];
+
+          // Step A: 商品マスタ(prodMap)と一致する列を最優先で特定
+          for (let c = 0; c < cleanCols.length; c++) {
+            const raw = cleanCols[c].replace(/^INV:/i, "").trim();
+            if (raw && prodMap[raw.toUpperCase()]) {
+              detectedId = prodMap[raw.toUpperCase()].id;
+              prodColIdx = c;
               break;
             }
           }
 
-          const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
-          const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
-          const isTermCol = (s) => /^(BTW|BT-W|HT\d*)$/i.test(s);
-
-          for (let c = 0; c < cleanCols.length - 1; c++) {
-            const s = cleanCols[c];
-            if (!s || isDateCol(s) || isTimeCol(s) || isTermCol(s)) continue;
-
-            // マスタにある資材IDかチェック
-            if (prodMap[s.toUpperCase()]) {
-              detectedId = prodMap[s.toUpperCase()].id;
-              continue;
-            }
-            // ユーザーマスタにある担当者かチェック
-            if (userMap[s.toLowerCase()]) {
-              const matchedU = userMap[s.toLowerCase()];
+          // Step B: ユーザーマスタ(userMap)と一致する列を特定
+          for (let c = 0; c < cleanCols.length; c++) {
+            if (c === prodColIdx) continue;
+            const raw = cleanCols[c].replace(/^USER:/i, "").trim();
+            if (raw && userMap[raw.toLowerCase()]) {
+              const matchedU = userMap[raw.toLowerCase()];
               csvWorkerId = matchedU.username;
               csvWorkerName = matchedU.displayName;
-              continue;
+              userColIndices.push(c);
             }
-            if (!detectedId) {
-              detectedId = s;
-            } else if (!csvWorkerId) {
-              csvWorkerId = s;
+          }
+
+          // Step C: 数量列を右端から探索（資材ID列・担当者列・日付・時刻を除く最初の数値列）
+          let qtyColIdx = -1;
+          for (let c = cleanCols.length - 1; c >= 1; c--) {
+            if (c === prodColIdx || userColIndices.includes(c)) continue;
+            const val = cleanCols[c];
+            if (!val || isDateCol(val) || isTimeCol(val)) continue;
+            if (/^-?\d+(\.\d+)?$/.test(val)) {
+              detectedQty = parseFloat(val);
+              qtyColIdx = c;
+              break;
+            }
+          }
+
+          // Step D: マスタ未登録資材やHT新規追加ユーザーがある場合の補完
+          if (!detectedId || (!csvWorkerId && cleanCols.length >= 4)) {
+            if (cleanCols.length >= 7 && !detectedId && prodColIdx === -1) {
+              // 標準7列フォーマット [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
+              if (!csvWorkerId) csvWorkerId = cleanCols[3];
+              if (!csvWorkerName) csvWorkerName = cleanCols[4];
+              detectedId = cleanCols[5].replace(/^INV:/i, "").trim();
+            } else {
+              for (let c = 0; c < cleanCols.length; c++) {
+                if (c === prodColIdx || c === qtyColIdx || userColIndices.includes(c)) continue;
+                const s = cleanCols[c].replace(/^INV:/i, "").trim();
+                if (!s || isDateCol(s) || isTimeCol(s) || isTermCol(s)) continue;
+                if (!detectedId) {
+                  detectedId = s;
+                } else if (!csvWorkerId) {
+                  csvWorkerId = s;
+                }
+              }
             }
           }
         }
@@ -10334,43 +10359,43 @@ window.executeHtBatchImport = function() {
 };
 
 // BT-W85用 商品マスタCSV (MASTER.CSV) を Shift-JIS で出力
-window.exportHtMasterCsv = function() {
+window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   if (products.length === 0) {
-    toast('商品マスタが登録されていません', 'warning');
+    toast("商品マスタが登録されていません", "warning");
     return;
   }
 
   const lines = products
-    .filter(p => p && p.id && !String(p.id).startsWith('TEMP_'))
+    .filter(p => p && p.id && !String(p.id).startsWith("TEMP_"))
     .map(p => {
-      const id = String(p.id || '').replace(/,/g, ' ').trim();
-      const name = String(p.name || '').replace(/,/g, ' ').replace(/[\r\n]/g, ' ').trim();
+      const id = String(p.id || "").replace(/,/g, " ").trim();
+      const name = String(p.name || "").replace(/,/g, " ").replace(/[\r\n]/g, " ").trim();
       const price = parseInt(p.price, 10) || 0;
       return `${id},${name},${price}`;
     });
 
-  const csvString = lines.join('\r\n') + '\r\n';
+  const csvString = lines.join("\r\n") + "\r\n";
   let blob;
 
-  if (typeof Encoding !== 'undefined') {
+  if (typeof Encoding !== "undefined") {
     const unicodeArray = Encoding.stringToCode(csvString);
-    const sjisArray = Encoding.convert(unicodeArray, { to: 'SJIS', from: 'UNICODE' });
-    blob = new Blob([new Uint8Array(sjisArray)], { type: 'text/csv;charset=shift_jis;' });
+    const sjisArray = Encoding.convert(unicodeArray, { to: "SJIS", from: "UNICODE" });
+    blob = new Blob([new Uint8Array(sjisArray)], { type: "text/csv;charset=shift_jis;" });
   } else {
-    blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
   }
 
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = 'MASTER.CSV';
+  link.download = targetFileName || "MasterFile_1.csv";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  toast('📤 BT-W85用 商品マスタ (MASTER.CSV) をダウンロードしました', 'success');
+  toast(`📤 BT開発・運用ツール用 商品マスタ (${targetFileName}) をダウンロードしました`, "success");
 };
 
 // BT-H10W マスタ転送設定ファイル (HTMasterFileInfo.ini: MASTER.CSV + USERS.CSV)
