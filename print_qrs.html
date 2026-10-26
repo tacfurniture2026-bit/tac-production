@@ -282,11 +282,12 @@
 
                 const catName = CATEGORY_NAMES[prod.category] || prod.category;
                 
-                // QRコードをローカルで生成
+                // QRコードをローカルで生成 (BT-W85の画面に資材CDと品名の両方が表示されるよう資材CD+品名を格納)
                 let qrDataUrl = '';
                 try {
                     const qr = qrcode(0, 'L');
-                    qr.addData(prod.id);
+                    const qrPayload = `${prod.id} ${prod.name || ''}`.trim();
+                    qr.addData(unescape(encodeURIComponent(qrPayload)));
                     qr.make();
                     qrDataUrl = qr.createDataURL(4, 0);
                 } catch (e) {

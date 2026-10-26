@@ -7360,9 +7360,10 @@ function onInvQrScanned(decodedText) {
   stopInvScanner();
 
   const rawScanned = decodedText.trim();
+  const firstToken = rawScanned.split(/[\s:：]+/)[0];
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const product = products.find(p => p.id === rawScanned || p.identCode === rawScanned);
-  const finalId = product ? product.id : rawScanned;
+  const product = products.find(p => p.id === rawScanned || p.identCode === rawScanned || p.id === firstToken || p.identCode === firstToken);
+  const finalId = product ? product.id : (firstToken || rawScanned);
 
   const resultDiv = $('#inv-scan-result');
   const dataDiv = $('#inv-scan-data');
@@ -11840,11 +11841,13 @@ window.parseHtCsvFile = function() {
           let prodColIdx = -1;
           let userColIndices = [];
 
-          // Step A: 商品マスタ(prodMap)と一致する列を最優先で特定
+          // Step A: 商品マスタ(prodMap)と一致する列を最優先で特定 (「資材CD 品名」形式のQRコードにも対応)
           for (let c = 0; c < cleanCols.length; c++) {
             const raw = cleanCols[c].replace(/^INV:/i, "").trim();
-            if (raw && prodMap[raw.toUpperCase()]) {
-              detectedId = prodMap[raw.toUpperCase()].id;
+            const token = raw.split(/[\s:：]+/)[0];
+            if (raw && (prodMap[raw.toUpperCase()] || (token && prodMap[token.toUpperCase()]))) {
+              const matched = prodMap[raw.toUpperCase()] || prodMap[token.toUpperCase()];
+              detectedId = matched.id;
               prodColIdx = c;
               break;
             }
@@ -11881,7 +11884,7 @@ window.parseHtCsvFile = function() {
             if ((cleanCols.length === 9 || cleanCols.length === 6) && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) {
               // TAC_INV (Record.csv) 標準フォーマット: [日付(0), 時刻(1), シリアル番号(2), 担当者(3), 資材ID(4), 数量(5), ...]
               if (!csvWorkerId && cleanCols[3]) csvWorkerId = cleanCols[3].replace(/^USER:/i, "").trim();
-              if (!detectedId && cleanCols[4]) detectedId = cleanCols[4].replace(/^INV:/i, "").trim();
+              if (!detectedId && cleanCols[4]) detectedId = cleanCols[4].replace(/^INV:/i, "").trim().split(/[\s:：]+/)[0];
               if ((detectedQty === null || isNaN(detectedQty)) && cleanCols[5] && /^-?\d+(\.\d+)?$/.test(cleanCols[5])) {
                 detectedQty = parseFloat(cleanCols[5]);
               }
@@ -11889,7 +11892,7 @@ window.parseHtCsvFile = function() {
               // 標準7列フォーマット [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
               if (!csvWorkerId) csvWorkerId = cleanCols[3];
               if (!csvWorkerName) csvWorkerName = cleanCols[4];
-              detectedId = cleanCols[5].replace(/^INV:/i, "").trim();
+              detectedId = cleanCols[5].replace(/^INV:/i, "").trim().split(/[\s:：]+/)[0];
             } else {
               for (let c = 0; c < cleanCols.length; c++) {
                 if (c === prodColIdx || c === qtyColIdx || userColIndices.includes(c)) continue;

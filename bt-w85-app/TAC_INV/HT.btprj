@@ -1615,312 +1615,6 @@
                   <LabelToolSettings version="0.2.0.0">
                     <_instanceKey>
                       <ToolInstanceKey version="0.2.0.0">
-                        <_guid>48955482-44cc-472e-b8c4-fa83a1be716a</_guid>
-                      </ToolInstanceKey>
-                    </_instanceKey>
-                    <_fontSettings>
-                      <TerminalFontSettings version="0.2.0.0">
-                        <BtwPointSize>12</BtwPointSize>
-                        <Bold>False</Bold>
-                        <BthSize>Medium</BthSize>
-                        <BthRatio>Normal</BthRatio>
-                      </TerminalFontSettings>
-                    </_fontSettings>
-                    <Imaging>False</Imaging>
-                    <ImagingFont>
-                      <ImagingFont version="0.2.0.0">
-                        <_name>Meiryo UI</_name>
-                        <_pointSize>12</_pointSize>
-                        <_style>Regular</_style>
-                      </ImagingFont>
-                    </ImagingFont>
-                    <UseNumberGroupSeparator>False</UseNumberGroupSeparator>
-                    <IsShared>False</IsShared>
-                    <SharedParameterKey>
-                      <SharedParameterKey version="0.2.0.0">
-                        <_key>
-                        </_key>
-                      </SharedParameterKey>
-                    </SharedParameterKey>
-                    <SharedParameterClearTiming>None</SharedParameterClearTiming>
-                    <ForeColor>Black</ForeColor>
-                    <BackColor>LightGray</BackColor>
-                    <Name>BtLabel_Person</Name>
-                    <Location>5, 29</Location>
-                    <Size>45, 22</Size>
-                    <Text>担当</Text>
-                    <Alignment>Near</Alignment>
-                    <BorderStyle>None</BorderStyle>
-                  </LabelToolSettings>
-                  <TextBoxToolSettings version="0.2.0.0">
-                    <_instanceKey>
-                      <ToolInstanceKey version="0.2.0.0">
-                        <_guid>dfad0ea7-a767-4a23-b64a-5dbbb4ed0225</_guid>
-                      </ToolInstanceKey>
-                    </_instanceKey>
-                    <_ocrFormatRegistrationNumbers>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                      <Value>True</Value>
-                    </_ocrFormatRegistrationNumbers>
-                    <_fontSettings>
-                      <TerminalFontSettings version="0.2.0.0">
-                        <BtwPointSize>12</BtwPointSize>
-                        <Bold>False</Bold>
-                        <BthSize>Medium</BthSize>
-                        <BthRatio>Normal</BthRatio>
-                      </TerminalFontSettings>
-                    </_fontSettings>
-                    <Name>BtTextBox_Person</Name>
-                    <Text>
-                    </Text>
-                    <Location>52, 29</Location>
-                    <Size>183, 22</Size>
-                    <BorderStyle>None</BorderStyle>
-                    <Alignment>Near</Alignment>
-                    <ForeColor>Black</ForeColor>
-                    <BackColor>LightGray</BackColor>
-                    <FocusedForeColor>Black</FocusedForeColor>
-                    <FocusedBackColor>168, 255, 255</FocusedBackColor>
-                    <InputMode>ScanAndKeyAlphanumeric</InputMode>
-                    <MaxLength>8192</MaxLength>
-                    <IsEmptyProhibited>True</IsEmptyProhibited>
-                    <DecimalPlaces>0</DecimalPlaces>
-                    <ValueRange>
-                      <Range-Decimal- version="0.2.0.0">
-                        <_maximum>2000000</_maximum>
-                        <_minimum>-2000000</_minimum>
-                      </Range-Decimal->
-                    </ValueRange>
-                    <IsCheckRepdigit>False</IsCheckRepdigit>
-                    <IsShowOutOfRangeError>False</IsShowOutOfRangeError>
-                    <IsEditOnF2>False</IsEditOnF2>
-                    <KeyInputModeSwitchingF3>True</KeyInputModeSwitchingF3>
-                    <ScanTarget>OnlyCode</ScanTarget>
-                    <ScanEnableCodeType>Jan|C39|C128|Gs128|Nw7|Itf|C93|Tof|Coop|Qr|Pdf|Dm|GsDb|Composite|All</ScanEnableCodeType>
-                    <Scan2DCodeSettings>
-                      <Scan2DCodeSettings version="0.2.0.0">
-                        <_scanInverseType>Positive</_scanInverseType>
-                        <_scanMirrorType>UnMirror</_scanMirrorType>
-                        <_scanRangeType>First</_scanRangeType>
-                        <_lightingEnabled>True</_lightingEnabled>
-                        <_btw370Settings>
-                          <BTW370Settings version="0.2.0.0">
-                            <_coaxialLightingEnabled>True</_coaxialLightingEnabled>
-                            <_coaxialLightingTarget>Normal</_coaxialLightingTarget>
-                            <_coaxialLightingTargetValue>128</_coaxialLightingTargetValue>
-                            <_multiAngleLightingEnabled>True</_multiAngleLightingEnabled>
-                            <_multiAngleLightingTarget>Normal</_multiAngleLightingTarget>
-                            <_multiAngleLightingTargetValue>128</_multiAngleLightingTargetValue>
-                            <_lowAngleLightingEnabled>True</_lowAngleLightingEnabled>
-                            <_lowAngleLightingTarget>Bright</_lowAngleLightingTarget>
-                            <_lowAngleLightingTargetValue>180</_lowAngleLightingTargetValue>
-                            <_threeDCharacterLightingEnabled>False</_threeDCharacterLightingEnabled>
-                            <_threeDCharacterLightingTarget>Dark</_threeDCharacterLightingTarget>
-                            <_threeDCharacterLightingTargetValue>80</_threeDCharacterLightingTargetValue>
-                            <_scan3D>ConcaveAndConvex</_scan3D>
-                            <_targetArea>Middle</_targetArea>
-                            <_liveViewEnabled>True</_liveViewEnabled>
-                            <_distanceLedEnabled>True</_distanceLedEnabled>
-                          </BTW370Settings>
-                        </_btw370Settings>
-                        <_fullDetectionDetails>
-                          <FullDetectionDetails version="0.2.0.0">
-                            <_settingsCount>1</_settingsCount>
-                            <_settingsList>
-                              <FullDetectionSettings version="0.2.0.0">
-                                <_codeType>Qr</_codeType>
-                                <_stepCount>2</_stepCount>
-                                <_steps>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                </_steps>
-                              </FullDetectionSettings>
-                              <FullDetectionSettings version="0.2.0.0">
-                                <_codeType>Qr</_codeType>
-                                <_stepCount>2</_stepCount>
-                                <_steps>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                </_steps>
-                              </FullDetectionSettings>
-                              <FullDetectionSettings version="0.2.0.0">
-                                <_codeType>Qr</_codeType>
-                                <_stepCount>2</_stepCount>
-                                <_steps>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                </_steps>
-                              </FullDetectionSettings>
-                              <FullDetectionSettings version="0.2.0.0">
-                                <_codeType>Qr</_codeType>
-                                <_stepCount>2</_stepCount>
-                                <_steps>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                  <FullDetectionStepSetting version="0.2.0.0">
-                                    <_minDigit>1</_minDigit>
-                                    <_maxDigit>7089</_maxDigit>
-                                    <_restriction>
-                                    </_restriction>
-                                  </FullDetectionStepSetting>
-                                </_steps>
-                              </FullDetectionSettings>
-                            </_settingsList>
-                          </FullDetectionDetails>
-                        </_fullDetectionDetails>
-                      </Scan2DCodeSettings>
-                    </Scan2DCodeSettings>
-                    <OcrSettingsFileName>
-                    </OcrSettingsFileName>
-                    <StorageDestination>Drive1</StorageDestination>
-                    <EnableOcrSettingsFile>False</EnableOcrSettingsFile>
-                    <EnableOcrFormatRegistrationNumbers>False</EnableOcrFormatRegistrationNumbers>
-                    <InputRestriction>
-                    </InputRestriction>
-                    <TriggerMode>AutoOff</TriggerMode>
-                    <PreventDuplicateReading>False</PreventDuplicateReading>
-                    <IsShared>False</IsShared>
-                    <SharedParameterKey>
-                      <SharedParameterKey version="0.2.0.0">
-                        <_key>
-                        </_key>
-                      </SharedParameterKey>
-                    </SharedParameterKey>
-                    <SharedParameterClearTiming>None</SharedParameterClearTiming>
-                  </TextBoxToolSettings>
-                  <LabelToolSettings version="0.2.0.0">
-                    <_instanceKey>
-                      <ToolInstanceKey version="0.2.0.0">
                         <_guid>e72c04aa-cafb-4be7-a7e1-4bab55f398de</_guid>
                       </ToolInstanceKey>
                     </_instanceKey>
@@ -1952,9 +1646,49 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <Name>BtLabel_ProcessNo</Name>
-                    <Location>5, 58</Location>
-                    <Size>60, 26</Size>
-                    <Text>資材QR</Text>
+                    <Location>5, 64</Location>
+                    <Size>230, 22</Size>
+                    <Text>資材QR (資材CD / 品名)</Text>
+                    <Alignment>Near</Alignment>
+                    <BorderStyle>None</BorderStyle>
+                  </LabelToolSettings>
+                  <LabelToolSettings version="0.2.0.0">
+                    <_instanceKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>b5156cb2-ab87-41f4-97fa-938efd0c2312</_guid>
+                      </ToolInstanceKey>
+                    </_instanceKey>
+                    <_fontSettings>
+                      <TerminalFontSettings version="0.2.0.0">
+                        <BtwPointSize>12</BtwPointSize>
+                        <Bold>False</Bold>
+                        <BthSize>Medium</BthSize>
+                        <BthRatio>Normal</BthRatio>
+                      </TerminalFontSettings>
+                    </_fontSettings>
+                    <Imaging>False</Imaging>
+                    <ImagingFont>
+                      <ImagingFont version="0.2.0.0">
+                        <_name>Meiryo UI</_name>
+                        <_pointSize>12</_pointSize>
+                        <_style>Regular</_style>
+                      </ImagingFont>
+                    </ImagingFont>
+                    <UseNumberGroupSeparator>False</UseNumberGroupSeparator>
+                    <IsShared>False</IsShared>
+                    <SharedParameterKey>
+                      <SharedParameterKey version="0.2.0.0">
+                        <_key>
+                        </_key>
+                      </SharedParameterKey>
+                    </SharedParameterKey>
+                    <SharedParameterClearTiming>None</SharedParameterClearTiming>
+                    <ForeColor>Black</ForeColor>
+                    <BackColor>White</BackColor>
+                    <Name>BtLabel_SerialNo</Name>
+                    <Location>5, 144</Location>
+                    <Size>55, 26</Size>
+                    <Text>数量</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>
@@ -2027,8 +1761,8 @@
                     <Name>BtTextBox_ProcessNo</Name>
                     <Text>
                     </Text>
-                    <Location>68, 58</Location>
-                    <Size>167, 26</Size>
+                    <Location>5, 88</Location>
+                    <Size>230, 48</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2224,135 +1958,276 @@
                     </SharedParameterKey>
                     <SharedParameterClearTiming>None</SharedParameterClearTiming>
                   </TextBoxToolSettings>
-                  <GridBoxToolSettings version="0.2.0.0">
+                  <TextBoxToolSettings version="0.2.0.0">
                     <_instanceKey>
                       <ToolInstanceKey version="0.2.0.0">
-                        <_guid>81a24e11-3c90-4a8d-9b2e-72f1d6c53b01</_guid>
+                        <_guid>dfad0ea7-a767-4a23-b64a-5dbbb4ed0225</_guid>
                       </ToolInstanceKey>
                     </_instanceKey>
-                    <EditingOptions>None</EditingOptions>
-                    <Name>BtTableView_ProductName</Name>
-                    <Location>5, 90</Location>
-                    <Size>230, 56</Size>
-                    <StyleSettings>
-                      <GridBoxStyleSettings version="0.2.0.0">
-                        <_rowNumberVisible>False</_rowNumberVisible>
-                        <_columnNameVisible>True</_columnNameVisible>
-                        <_rowNumberHeaderColumn>
-                          <GridBoxColumn version="0.2.0.0">
-                            <_width>40</_width>
-                            <_columnName>
-                            </_columnName>
-                          </GridBoxColumn>
-                        </_rowNumberHeaderColumn>
-                        <_columns>
-                          <GridBoxColumnCollection version="0.2.0.0">
-                            <_items>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>85</_width>
-                                <_columnName>資材CD</_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>140</_width>
-                                <_columnName>品名</_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
-                                <_columnName>
-                                </_columnName>
-                              </GridBoxColumn>
-                            </_items>
-                          </GridBoxColumnCollection>
-                        </_columns>
-                        <_cellBackColor>White</_cellBackColor>
-                        <_fontSettings>
-                          <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
-                            <Bold>False</Bold>
-                            <BthSize>Medium</BthSize>
-                            <BthRatio>Normal</BthRatio>
-                          </TerminalFontSettings>
-                        </_fontSettings>
-                        <ColumnCount>2</ColumnCount>
-                      </GridBoxStyleSettings>
-                    </StyleSettings>
-                    <TargetData>MasterData</TargetData>
-                    <TargetMasterData>
-                      <FileResourceKey version="0.2.0.0">
-                        <_storageDestination>Drive1</_storageDestination>
-                        <_filePath>
-                        </_filePath>
-                      </FileResourceKey>
-                    </TargetMasterData>
-                    <FilterSettings>
-                      <FilterSettings version="0.2.0.0">
-                        <_enabled>True</_enabled>
-                        <_filterDeterminationCount>1</_filterDeterminationCount>
-                        <_determinations>
-                          <FilterDeterminationCollection version="0.2.0.0">
-                            <_items>
-                              <FilterDetermination version="0.2.0.0">
-                                <_inputTextBoxKey>
-                                  <ToolInstanceKey version="0.2.0.0">
-                                    <_guid>cb5da652-6bc5-4c61-b8ca-7a42d92523fb</_guid>
-                                  </ToolInstanceKey>
-                                </_inputTextBoxKey>
-                                <_columnNo>1</_columnNo>
-                              </FilterDetermination>
-                              <FilterDetermination version="0.2.0.0">
-                                <_inputTextBoxKey>
-                                  <ToolInstanceKey version="0.2.0.0">
-                                    <_guid>00000000-0000-0000-0000-000000000000</_guid>
-                                  </ToolInstanceKey>
-                                </_inputTextBoxKey>
-                                <_columnNo>2</_columnNo>
-                              </FilterDetermination>
-                              <FilterDetermination version="0.2.0.0">
-                                <_inputTextBoxKey>
-                                  <ToolInstanceKey version="0.2.0.0">
-                                    <_guid>00000000-0000-0000-0000-000000000000</_guid>
-                                  </ToolInstanceKey>
-                                </_inputTextBoxKey>
-                                <_columnNo>3</_columnNo>
-                              </FilterDetermination>
-                            </_items>
-                          </FilterDeterminationCollection>
-                        </_determinations>
-                        <_determinationMode>All</_determinationMode>
-                      </FilterSettings>
-                    </FilterSettings>
-                    <MaxDataCount>1</MaxDataCount>
-                    <FilteringMatchType>ExactMatch</FilteringMatchType>
-                  </GridBoxToolSettings>
+                    <_ocrFormatRegistrationNumbers>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                      <Value>True</Value>
+                    </_ocrFormatRegistrationNumbers>
+                    <_fontSettings>
+                      <TerminalFontSettings version="0.2.0.0">
+                        <BtwPointSize>12</BtwPointSize>
+                        <Bold>False</Bold>
+                        <BthSize>Medium</BthSize>
+                        <BthRatio>Normal</BthRatio>
+                      </TerminalFontSettings>
+                    </_fontSettings>
+                    <Name>BtTextBox_Person</Name>
+                    <Text>
+                    </Text>
+                    <Location>62, 32</Location>
+                    <Size>173, 26</Size>
+                    <BorderStyle>FixedSingle</BorderStyle>
+                    <Alignment>Near</Alignment>
+                    <ForeColor>Black</ForeColor>
+                    <BackColor>White</BackColor>
+                    <FocusedForeColor>Black</FocusedForeColor>
+                    <FocusedBackColor>168, 255, 255</FocusedBackColor>
+                    <InputMode>ScanAndKeyAlphanumeric</InputMode>
+                    <MaxLength>8192</MaxLength>
+                    <IsEmptyProhibited>True</IsEmptyProhibited>
+                    <DecimalPlaces>0</DecimalPlaces>
+                    <ValueRange>
+                      <Range-Decimal- version="0.2.0.0">
+                        <_maximum>2000000</_maximum>
+                        <_minimum>-2000000</_minimum>
+                      </Range-Decimal->
+                    </ValueRange>
+                    <IsCheckRepdigit>False</IsCheckRepdigit>
+                    <IsShowOutOfRangeError>False</IsShowOutOfRangeError>
+                    <IsEditOnF2>False</IsEditOnF2>
+                    <KeyInputModeSwitchingF3>True</KeyInputModeSwitchingF3>
+                    <ScanTarget>OnlyCode</ScanTarget>
+                    <ScanEnableCodeType>Jan|C39|C128|Gs128|Nw7|Itf|C93|Tof|Coop|Qr|Pdf|Dm|GsDb|Composite|All</ScanEnableCodeType>
+                    <Scan2DCodeSettings>
+                      <Scan2DCodeSettings version="0.2.0.0">
+                        <_scanInverseType>Positive</_scanInverseType>
+                        <_scanMirrorType>UnMirror</_scanMirrorType>
+                        <_scanRangeType>First</_scanRangeType>
+                        <_lightingEnabled>True</_lightingEnabled>
+                        <_btw370Settings>
+                          <BTW370Settings version="0.2.0.0">
+                            <_coaxialLightingEnabled>True</_coaxialLightingEnabled>
+                            <_coaxialLightingTarget>Normal</_coaxialLightingTarget>
+                            <_coaxialLightingTargetValue>128</_coaxialLightingTargetValue>
+                            <_multiAngleLightingEnabled>True</_multiAngleLightingEnabled>
+                            <_multiAngleLightingTarget>Normal</_multiAngleLightingTarget>
+                            <_multiAngleLightingTargetValue>128</_multiAngleLightingTargetValue>
+                            <_lowAngleLightingEnabled>True</_lowAngleLightingEnabled>
+                            <_lowAngleLightingTarget>Bright</_lowAngleLightingTarget>
+                            <_lowAngleLightingTargetValue>180</_lowAngleLightingTargetValue>
+                            <_threeDCharacterLightingEnabled>False</_threeDCharacterLightingEnabled>
+                            <_threeDCharacterLightingTarget>Dark</_threeDCharacterLightingTarget>
+                            <_threeDCharacterLightingTargetValue>80</_threeDCharacterLightingTargetValue>
+                            <_scan3D>ConcaveAndConvex</_scan3D>
+                            <_targetArea>Middle</_targetArea>
+                            <_liveViewEnabled>True</_liveViewEnabled>
+                            <_distanceLedEnabled>True</_distanceLedEnabled>
+                          </BTW370Settings>
+                        </_btw370Settings>
+                        <_fullDetectionDetails>
+                          <FullDetectionDetails version="0.2.0.0">
+                            <_settingsCount>1</_settingsCount>
+                            <_settingsList>
+                              <FullDetectionSettings version="0.2.0.0">
+                                <_codeType>Qr</_codeType>
+                                <_stepCount>2</_stepCount>
+                                <_steps>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                </_steps>
+                              </FullDetectionSettings>
+                              <FullDetectionSettings version="0.2.0.0">
+                                <_codeType>Qr</_codeType>
+                                <_stepCount>2</_stepCount>
+                                <_steps>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                </_steps>
+                              </FullDetectionSettings>
+                              <FullDetectionSettings version="0.2.0.0">
+                                <_codeType>Qr</_codeType>
+                                <_stepCount>2</_stepCount>
+                                <_steps>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                </_steps>
+                              </FullDetectionSettings>
+                              <FullDetectionSettings version="0.2.0.0">
+                                <_codeType>Qr</_codeType>
+                                <_stepCount>2</_stepCount>
+                                <_steps>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                  <FullDetectionStepSetting version="0.2.0.0">
+                                    <_minDigit>1</_minDigit>
+                                    <_maxDigit>7089</_maxDigit>
+                                    <_restriction>
+                                    </_restriction>
+                                  </FullDetectionStepSetting>
+                                </_steps>
+                              </FullDetectionSettings>
+                            </_settingsList>
+                          </FullDetectionDetails>
+                        </_fullDetectionDetails>
+                      </Scan2DCodeSettings>
+                    </Scan2DCodeSettings>
+                    <OcrSettingsFileName>
+                    </OcrSettingsFileName>
+                    <StorageDestination>Drive1</StorageDestination>
+                    <EnableOcrSettingsFile>False</EnableOcrSettingsFile>
+                    <EnableOcrFormatRegistrationNumbers>False</EnableOcrFormatRegistrationNumbers>
+                    <InputRestriction>
+                    </InputRestriction>
+                    <TriggerMode>AutoOff</TriggerMode>
+                    <PreventDuplicateReading>False</PreventDuplicateReading>
+                    <IsShared>False</IsShared>
+                    <SharedParameterKey>
+                      <SharedParameterKey version="0.2.0.0">
+                        <_key>
+                        </_key>
+                      </SharedParameterKey>
+                    </SharedParameterKey>
+                    <SharedParameterClearTiming>None</SharedParameterClearTiming>
+                  </TextBoxToolSettings>
                   <LabelToolSettings version="0.2.0.0">
                     <_instanceKey>
                       <ToolInstanceKey version="0.2.0.0">
-                        <_guid>b5156cb2-ab87-41f4-97fa-938efd0c2312</_guid>
+                        <_guid>48955482-44cc-472e-b8c4-fa83a1be716a</_guid>
                       </ToolInstanceKey>
                     </_instanceKey>
                     <_fontSettings>
@@ -2382,10 +2257,10 @@
                     <SharedParameterClearTiming>None</SharedParameterClearTiming>
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
-                    <Name>BtLabel_SerialNo</Name>
-                    <Location>5, 154</Location>
-                    <Size>60, 26</Size>
-                    <Text>数量</Text>
+                    <Name>BtLabel_Person</Name>
+                    <Location>5, 32</Location>
+                    <Size>55, 26</Size>
+                    <Text>担当</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>
@@ -2458,15 +2333,15 @@
                     <Name>BtTextBox_SerialNo</Name>
                     <Text>
                     </Text>
-                    <Location>68, 154</Location>
-                    <Size>167, 26</Size>
+                    <Location>62, 144</Location>
+                    <Size>173, 26</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <FocusedForeColor>Black</FocusedForeColor>
                     <FocusedBackColor>168, 255, 255</FocusedBackColor>
-                    <InputMode>KeyNumeric</InputMode>
+                    <InputMode>ScanAndKeyAlphanumeric</InputMode>
                     <MaxLength>8192</MaxLength>
                     <IsEmptyProhibited>True</IsEmptyProhibited>
                     <DecimalPlaces>0</DecimalPlaces>
@@ -2479,7 +2354,7 @@
                     <IsCheckRepdigit>False</IsCheckRepdigit>
                     <IsShowOutOfRangeError>False</IsShowOutOfRangeError>
                     <IsEditOnF2>False</IsEditOnF2>
-                    <KeyInputModeSwitchingF3>False</KeyInputModeSwitchingF3>
+                    <KeyInputModeSwitchingF3>True</KeyInputModeSwitchingF3>
                     <ScanTarget>OnlyCode</ScanTarget>
                     <ScanEnableCodeType>Jan|C39|C128|Gs128|Nw7|Itf|C93|Tof|Coop|Qr|Pdf|Dm|GsDb|Composite|All</ScanEnableCodeType>
                     <Scan2DCodeSettings>
@@ -2665,7 +2540,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2675,7 +2550,7 @@
                         <ImagingFont>
                           <ImagingFont version="0.2.0.0">
                             <_name>Meiryo UI</_name>
-                            <_pointSize>12</_pointSize>
+                            <_pointSize>14</_pointSize>
                             <_style>Regular</_style>
                           </ImagingFont>
                         </ImagingFont>
@@ -2707,7 +2582,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2733,7 +2608,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2743,7 +2618,7 @@
                         <ImagingFont>
                           <ImagingFont version="0.2.0.0">
                             <_name>Meiryo UI</_name>
-                            <_pointSize>12</_pointSize>
+                            <_pointSize>14</_pointSize>
                             <_style>Regular</_style>
                           </ImagingFont>
                         </ImagingFont>
@@ -2775,7 +2650,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2801,7 +2676,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2811,7 +2686,7 @@
                         <ImagingFont>
                           <ImagingFont version="0.2.0.0">
                             <_name>Meiryo UI</_name>
-                            <_pointSize>12</_pointSize>
+                            <_pointSize>14</_pointSize>
                             <_style>Regular</_style>
                           </ImagingFont>
                         </ImagingFont>
@@ -2843,7 +2718,7 @@
                         </_instanceKey>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
+                            <BtwPointSize>14</BtwPointSize>
                             <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
@@ -2964,8 +2839,8 @@
                       </ToolInstanceKey>
                     </_instanceKey>
                     <Name>BtStopWatch</Name>
-                    <Location>0, 210</Location>
-                    <Size>240, 50</Size>
+                    <Location>0, 185</Location>
+                    <Size>240, 60</Size>
                     <StartDateTimeVisible>False</StartDateTimeVisible>
                     <EndDateTimeVisible>False</EndDateTimeVisible>
                     <ElapsedTimeVisible>False</ElapsedTimeVisible>
@@ -3342,9 +3217,9 @@
                     </_instanceKey>
                     <_fontSettings>
                       <TerminalFontSettings version="0.2.0.0">
-                        <BtwPointSize>18</BtwPointSize>
+                        <BtwPointSize>12</BtwPointSize>
                         <Bold>False</Bold>
-                        <BthSize>Large</BthSize>
+                        <BthSize>Medium</BthSize>
                         <BthRatio>Normal</BthRatio>
                       </TerminalFontSettings>
                     </_fontSettings>
@@ -3352,7 +3227,7 @@
                     <ImagingFont>
                       <ImagingFont version="0.2.0.0">
                         <_name>Meiryo UI</_name>
-                        <_pointSize>18</_pointSize>
+                        <_pointSize>12</_pointSize>
                         <_style>Regular</_style>
                       </ImagingFont>
                     </ImagingFont>
@@ -3369,7 +3244,7 @@
                     <BackColor>51, 51, 51</BackColor>
                     <Name>BtLabel_Title</Name>
                     <Location>0, 0</Location>
-                    <Size>240, 35</Size>
+                    <Size>240, 26</Size>
                     <Text>履歴データ</Text>
                     <Alignment>Center</Alignment>
                     <BorderStyle>None</BorderStyle>
