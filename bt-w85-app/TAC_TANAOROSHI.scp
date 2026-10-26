@@ -1,11 +1,15 @@
 ' ====================================================================
-' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション
+' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション (v2.0)
 ' ファイル名: TAC_TANAOROSHI.scp
 ' 対象機種  : KEYENCE BT-W85 (BT-W80 / BT-W70 / BT-1000 シリーズ共通)
 ' 開発環境  : KEYENCE BT-H10W (BT-Navigator / スクリプト開発環境)
-' 機能概要  : メニューは「棚卸スキャン」に特化。
-'             商品マスタ(MASTER.CSV)を参照して品名を表示し、
-'             実棚数量を入力して CSVファイル(INV_LOG.CSV)へ保存します。
+' 機能概要  :
+'   1. 担当者ログイン管理 (USERS.CSV 連携: 一覧選択・QRログイン)
+'   2. HT本体での担当者の追加・削除機能 (USERS.CSV 直接編集・保存)
+'   3. システム発行の品名QRコード読取 & 商品マスタ(MASTER.CSV)照合
+'   4. 重複スキャン(ダブり)検知時の警告ブザー＆アラート画面
+'      ([1]加算する / [2]上書き修正 / [3]キャンセル)
+'   5. 実行者(ユーザー名・表示名)付きCSV出力 (INV_LOG.CSV)
 ' ====================================================================
 
 Include "BT_Lib.inc"
@@ -14,6 +18,11 @@ Include "BT_Lib.inc"
 Dim g_strTerminalId As String
 Dim g_strLogFile As String
 Dim g_strMasterFile As String
+Dim g_strUsersFile As String
+
+' 現在ログイン中の担当者情報
+Dim g_strCurrentUsername As String
+Dim g_strCurrentDisplayName As String
 
 ' ====================================================================
 ' メインエントリポイント (端末起動時に自動実行)
@@ -25,158 +34,441 @@ Sub Main()
     g_strTerminalId = "BTW85"
     g_strLogFile = "INV_LOG.CSV"
     g_strMasterFile = "MASTER.CSV"
+    g_strUsersFile = "USERS.CSV"
 
-    ' 画面モード設定 (標準文字サイズ)
-    LcdClear()
+    g_strCurrentUsername = ""
+    g_strCurrentDisplayName = ""
 
-    ' メインメニューループ（シンプル棚卸専用メニュー）
+    ' 担当者マスタ(USERS.CSV)が無い場合は初期ユーザーを作成
+    Call EnsureDefaultUsersFile()
+
+    ' 起動時に必ず担当者ログインを実行
+    Call DoWorkerLogin()
+
+    ' メインメニューループ（棚卸スキャン特化メニュー）
     While (1)
         LcdClear()
         LcdPrint(1, 1, "=== TAC 棚卸システム ===")
-        LcdPrint(3, 1, "[1] 棚卸スキャン開始")
-        LcdPrint(5, 1, "[2] PCへデータ送信")
-        LcdPrint(7, 1, "[3] ログ件数確認/消去")
-        LcdPrint(9, 1, "番号キーを押してください")
+        LcdPrint(2, 1, "担当:" & Left(g_strCurrentDisplayName, 10) & "(" & g_strCurrentUsername & ")")
+        LcdPrint(3, 1, "------------------------")
+        LcdPrint(4, 1, "[1] 棚卸スキャン開始")
+        LcdPrint(5, 1, "[2] 担当者切替・増減管理")
+        LcdPrint(6, 1, "[3] PCへデータ送信(CSV)")
+        LcdPrint(7, 1, "[4] 履歴確認・データ消去")
+        LcdPrint(9, 1, "[1]またはENTでスキャンへ")
 
         key = KeyWait()
 
         If key = "1" Or key = "ENT" Or key = "TRG" Then
             Call DoInventoryScan()
         ElseIf key = "2" Then
-            Call DoSendData()
+            Call DoWorkerLogin()
         ElseIf key = "3" Then
+            Call DoSendData()
+        ElseIf key = "4" Then
             Call DoManageLog()
         End If
     Wend
 End Sub
 
 ' ====================================================================
-' [1] 棚卸スキャン業務（メイン処理）
+' 初期 USERS.CSV の自動生成（ファイル未転送時でも動作可能にする）
+' フォーマット: ユーザー名(username),表示名(displayName),部門(department)
+' ====================================================================
+Sub EnsureDefaultUsersFile()
+    If FileExists(g_strUsersFile) = 0 Then
+        Call AppendCsvLine(g_strUsersFile, "admin,管理者,管理部")
+        Call AppendCsvLine(g_strUsersFile, "worker,作業者A,製造部")
+    End If
+End Sub
+
+' ====================================================================
+' 担当者ログイン ＆ 担当者増減（追加・削除）画面
+' ====================================================================
+Sub DoWorkerLogin()
+    Dim key As String
+    Dim strInput As String
+    Dim uName As String
+    Dim dName As String
+    Dim page As Integer
+    Dim totalUsers As Integer
+
+    page = 0
+
+    While (1)
+        LcdClear()
+        LcdPrint(1, 1, "【担当者ログイン選択】")
+        If g_strCurrentUsername <> "" Then
+            LcdPrint(2, 1, "現在:" & Left(g_strCurrentDisplayName, 10) & "(" & g_strCurrentUsername & ")")
+        Else
+            LcdPrint(2, 1, "担当者を選択/QR読取:")
+        End If
+
+        ' USERS.CSV から一覧表示 (1ページ3名表示)
+        totalUsers = DisplayUsersList(page)
+
+        LcdPrint(7, 1, "[1-3]:選択 [QR]:ID読取")
+        LcdPrint(8, 1, "[F2]:追加 [F3]:削除")
+        LcdPrint(9, 1, "[▲/▼]:次頁 [CLR]:戻る")
+
+        ' QRスキャン（担当者QR）またはキー押下待ち
+        strInput = ScanOrKeyWait()
+
+        If strInput = "F2" Then
+            ' 担当者の新規追加 (HT単体で追加可能)
+            Call DoAddWorkerOnHt()
+        ElseIf strInput = "F3" Then
+            ' 担当者の削除 (HT単体で削除可能)
+            Call DoDeleteWorkerOnHt()
+        ElseIf strInput = "UP" Then
+            If page > 0 Then page = page - 1
+        ElseIf strInput = "DOWN" Then
+            If (page + 1) * 3 < totalUsers Then page = page + 1
+        ElseIf strInput = "CLR" Or strInput = "ESC" Then
+            If g_strCurrentUsername <> "" Then
+                Exit Sub
+            Else
+                Buzzer(2, 80) ' 未ログイン時は選択必須
+            End If
+        ElseIf strInput = "1" Or strInput = "2" Or strInput = "3" Then
+            ' 番号選択でログイン
+            If GetUserByIndex(page * 3 + Val(strInput), uName, dName) = 1 Then
+                g_strCurrentUsername = uName
+                g_strCurrentDisplayName = dName
+                Buzzer(1, 100)
+                Led(1, 200)
+                LcdClear()
+                LcdPrint(3, 1, "ログイン完了！")
+                LcdPrint(5, 1, "担当: " & g_strCurrentDisplayName)
+                LcdPrint(6, 1, "ID  : " & g_strCurrentUsername)
+                Wait(500)
+                Exit Sub
+            End If
+        Else
+            ' QRコード等でユーザーIDまたは「USER:username」をスキャンした場合
+            Call ParseUserQrCode(strInput, uName, dName)
+            If uName <> "" Then
+                g_strCurrentUsername = uName
+                g_strCurrentDisplayName = dName
+                Buzzer(1, 100)
+                Led(1, 200)
+                Exit Sub
+            End If
+        End If
+    Wend
+End Sub
+
+' ====================================================================
+' HT本体での担当者新規追加 (USERS.CSV へ追記)
+' ====================================================================
+Sub DoAddWorkerOnHt()
+    Dim newId As String
+    Dim newName As String
+
+    LcdClear()
+    LcdPrint(1, 1, "【担当者の新規追加】")
+    LcdPrint(3, 1, "ログインID(英数)を入力")
+    LcdPrint(4, 1, "(QRスキャンも可):")
+    newId = ScanOrInput(5, 1)
+    If newId = "" Or newId = "ESC" Then Exit Sub
+
+    LcdPrint(6, 1, "表示名(または番号)入力:")
+    newName = KeyInputString(7, 1, newId)
+    If newName = "" Or newName = "ESC" Then newName = newId
+
+    ' USERS.CSV に保存
+    Call AppendCsvLine(g_strUsersFile, newId & "," & newName & ",製造部")
+
+    g_strCurrentUsername = newId
+    g_strCurrentDisplayName = newName
+
+    Buzzer(1, 150)
+    LcdPrint(9, 1, "=> 担当者を追加しました!")
+    Wait(700)
+End Sub
+
+' ====================================================================
+' HT本体での担当者削除 (USERS.CSV から削除)
+' ====================================================================
+Sub DoDeleteWorkerOnHt()
+    Dim targetId As String
+    Dim confirmKey As String
+
+    LcdClear()
+    LcdPrint(1, 1, "【担当者の削除】")
+    LcdPrint(3, 1, "削除するログインIDを入力")
+    LcdPrint(4, 1, "またはQRをスキャン:")
+    targetId = ScanOrInput(5, 1)
+    If targetId = "" Or targetId = "ESC" Then Exit Sub
+
+    If targetId = "admin" Then
+        Buzzer(3, 200)
+        LcdPrint(7, 1, "※adminは削除できません")
+        Wait(1000)
+        Exit Sub
+    End If
+
+    LcdPrint(7, 1, "ID:" & targetId & " を削除?")
+    LcdPrint(9, 1, "[ENT]:削除実行 [CLR]:戻")
+    confirmKey = KeyWait()
+    If confirmKey = "ENT" Then
+        Call RemoveCsvRecordByKey(g_strUsersFile, 1, targetId)
+        Buzzer(1, 150)
+        LcdPrint(8, 1, "=> 削除しました")
+        Wait(700)
+    End If
+End Sub
+
+' ====================================================================
+' [1] 棚卸スキャン業務（システムQR読取 ＆ 重複ダブりアラート搭載）
 ' ====================================================================
 Sub DoInventoryScan()
     Dim strCode As String
     Dim strName As String
     Dim strPrice As String
     Dim strQty As String
+    Dim strExistingQty As String
+    Dim strExistingWorker As String
+    Dim nExistingLine As Integer
+    Dim dupChoice As String
+    Dim nNewQty As Long
+    Dim nPrevQty As Long
+    Dim nTotalQty As Long
     Dim strDate As String
     Dim strTime As String
     Dim strRecord As String
     Dim nCount As Integer
+    Dim unregKey As String
+
+    If g_strCurrentUsername = "" Then
+        Call DoWorkerLogin()
+    End If
 
     While (1)
         LcdClear()
         nCount = GetLogCount(g_strLogFile)
-        LcdPrint(1, 1, "【棚卸スキャン】件数:" & nCount)
+        LcdPrint(1, 1, "【棚卸】件数:" & nCount & " 担:" & Left(g_strCurrentDisplayName, 6))
         LcdPrint(2, 1, "------------------------")
-        LcdPrint(3, 1, "資材QRを読取してください")
-        LcdPrint(4, 1, "コード:")
+        LcdPrint(3, 1, "システム発行のQRをスキャン")
+        LcdPrint(4, 1, "資材ID:")
         LcdPrint(9, 1, "[F1/CLR]:メニューへ戻る")
 
-        ' QRコード / バーコード / キー入力待ち
-        strCode = ScanOrInput(4, 8)
-        If strCode = "ESC" Or strCode = "F1" Or strCode = "" Then
+        ' 1. QRコード / バーコード読取
+        strCode = ScanOrInput(4, 9)
+        If strCode = "ESC" Or strCode = "F1" Or strCode = "CLR" Or strCode = "" Then
             Exit Sub
         End If
 
-        ' 商品マスタ(MASTER.CSV)から品名・単価を検索（マスタが無くても動作可能）
-        strName = "（マスタ照合なし）"
-        strPrice = "-"
-        Call LookupMaster(strCode, strName, strPrice)
+        ' 2. 商品マスタ(MASTER.CSV)照合
+        strName = ""
+        strPrice = "0"
+        If LookupMaster(strCode, strName, strPrice) = 0 Then
+            ' マスタ未登録品のアラート確認（通常の棚卸スキャンと同じ挙動）
+            Buzzer(2, 150)
+            Led(2, 300)
+            LcdClear()
+            LcdPrint(1, 1, "⚠️ マスタ未登録のQRです")
+            LcdPrint(3, 1, "ID: " & strCode)
+            LcdPrint(5, 1, "このまま数量登録しますか?")
+            LcdPrint(8, 1, "[ENT]:仮登録を続ける")
+            LcdPrint(9, 1, "[CLR]:キャンセル")
+            unregKey = KeyWait()
+            If unregKey <> "ENT" Then
+                GoTo NextScanLoop
+            End If
+            strName = "未登録(" & strCode & ")"
+            strPrice = "0"
+            LcdClear()
+            LcdPrint(1, 1, "【棚卸(未登録品)】")
+            LcdPrint(4, 1, "資材ID:" & strCode)
+        End If
 
-        ' 品名・単価を画面に表示
+        ' 品名・単価を表示
         LcdPrint(5, 1, "品名:" & Left(strName, 18))
         LcdPrint(6, 1, "単価:¥" & strPrice)
 
-        ' 実棚数量の入力
+        ' 3. 実棚数量の入力
         LcdPrint(7, 1, "実棚数量を入力[ENT]:")
-        strQty = InputQuantity(8, 1, "1")
+        strQty = InputQuantity(8, 1, "")
+        If strQty = "ESC" Or strQty = "CLR" Or strQty = "" Then
+            Buzzer(2, 50)
+            GoTo NextScanLoop
+        End If
 
-        If strQty <> "ESC" And strQty <> "" Then
-            ' 現在日時取得
-            strDate = GetDateStr() ' YYYY/MM/DD
-            strTime = GetTimeStr() ' HH:MM:SS
+        nNewQty = Val(strQty)
+        strDate = GetDateStr()
+        strTime = GetTimeStr()
 
-            ' CSVレコード作成: 日付,時刻,端末ID,資材ID,数量
-            strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & strCode & "," & strQty
+        ' 4. 重複スキャン（ダブり）チェック！
+        ' INV_LOG.CSV 内に同じ資材ID(6列目)が既に存在するか検索
+        nExistingLine = FindExistingScanInLog(g_strLogFile, strCode, strExistingQty, strExistingWorker)
 
-            ' INV_LOG.CSV へ追記保存
+        If nExistingLine > 0 Then
+            ' ====================================================
+            ' ⚠️ ダブり（重複スキャン）検知時のアラート画面！
+            ' （Webアプリの showDuplicateScanModal と完全同一仕様）
+            ' ====================================================
+            nPrevQty = Val(strExistingQty)
+            nTotalQty = nPrevQty + nNewQty
+
+            Buzzer(3, 150) ' 警告音（ピピピッ）
+            Led(2, 400)    ' 橙/赤LED点灯
+
+            LcdClear()
+            LcdPrint(1, 1, "⚠️ スキャン重複(ダブり)!")
+            LcdPrint(2, 1, Left(strName, 22))
+            LcdPrint(3, 1, "現在保存数: " & nPrevQty & " 個")
+            LcdPrint(4, 1, "今回入力数: " & nNewQty & " 個")
+            LcdPrint(5, 1, "------------------------")
+            LcdPrint(6, 1, "[1] ➕追加 (" & nPrevQty & "+" & nNewQty & "=" & nTotalQty & ")")
+            LcdPrint(7, 1, "[2] ✍️上書き修正 (" & nNewQty & "個)")
+            LcdPrint(8, 1, "[3] ❌登録しない(キャンセル)")
+
+            While (1)
+                dupChoice = KeyWait()
+                If dupChoice = "1" Or dupChoice = "ENT" Then
+                    ' [1] 追加（合算）して既存行を更新
+                    strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & g_strCurrentUsername & "," & g_strCurrentDisplayName & "," & strCode & "," & Str(nTotalQty)
+                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)
+                    Buzzer(1, 100)
+                    Led(1, 200)
+                    LcdPrint(9, 1, "=> 合算(" & nTotalQty & "個)で更新!")
+                    Wait(500)
+                    Exit While
+                ElseIf dupChoice = "2" Then
+                    ' [2] 今回の数量で上書き修正
+                    strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & g_strCurrentUsername & "," & g_strCurrentDisplayName & "," & strCode & "," & Str(nNewQty)
+                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)
+                    Buzzer(1, 100)
+                    Led(1, 200)
+                    LcdPrint(9, 1, "=> 上書き(" & nNewQty & "個)完了!")
+                    Wait(500)
+                    Exit While
+                ElseIf dupChoice = "3" Or dupChoice = "CLR" Or dupChoice = "ESC" Then
+                    ' [3] キャンセル
+                    Buzzer(2, 80)
+                    LcdPrint(9, 1, "=> キャンセルしました")
+                    Wait(400)
+                    Exit While
+                End If
+            Wend
+        Else
+            ' 初回スキャンの場合：そのまま追記保存
+            ' CSVフォーマット: 日付,時刻,端末ID,ユーザー名(username),表示名(displayName),資材ID,数量
+            strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & g_strCurrentUsername & "," & g_strCurrentDisplayName & "," & strCode & "," & Str(nNewQty)
             Call AppendCsvLine(g_strLogFile, strRecord)
 
-            ' 完了ブザー＆LED（緑点灯・ピッ）
             Buzzer(1, 100)
             Led(1, 200)
-
-            LcdPrint(9, 1, "=> 登録OK! (" & strQty & "個)   ")
+            LcdPrint(9, 1, "=> 登録OK! (" & nNewQty & "個)   ")
             Wait(300)
-        Else
-            ' キャンセル時は再度スキャン待ちへ
-            Buzzer(2, 50)
         End If
+
+NextScanLoop:
     Wend
 End Sub
 
 ' ====================================================================
 ' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID, 2列目=品名, 3列目=単価)
+' 戻り値: 1=一致あり, 0=未登録(ただしマスタファイル自体が無い場合は1扱い)
 ' ====================================================================
-Sub LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String)
+Function LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String) As Integer
     Dim fp As Integer
     Dim lineStr As String
     Dim col1 As String
-    Dim col2 As String
-    Dim col3 As String
 
     If FileExists(g_strMasterFile) = 0 Then
-        outName = "マスタ登録品/新規"
+        outName = "資材(" & targetId & ")"
         outPrice = "-"
-        Exit Sub
+        LookupMaster = 1
+        Exit Function
     End If
 
-    ' マスタファイルから該当IDを検索
     fp = FileOpen(g_strMasterFile, "R")
-    If fp < 0 Then Exit Sub
+    If fp < 0 Then
+        LookupMaster = 1
+        Exit Function
+    End If
 
     While (FileEof(fp) = 0)
         lineStr = FileReadLine(fp)
         col1 = GetCsvCol(lineStr, 1)
-        If col1 = targetId Then
+        If UCase(col1) = UCase(targetId) Then
             outName = GetCsvCol(lineStr, 2)
             outPrice = GetCsvCol(lineStr, 3)
             FileClose(fp)
-            Exit Sub
+            LookupMaster = 1
+            Exit Function
         End If
     Wend
 
     FileClose(fp)
-    outName = "未登録(" & targetId & ")"
-    outPrice = "0"
-End Sub
+    LookupMaster = 0
+End Function
 
 ' ====================================================================
-' [2] PCへデータ送信（通信ユニット経由でINV_LOG.CSVを送信）
+' ログファイル内の重複スキャン検索 (6列目=資材ID または 4列目=資材ID)
+' 戻り値: 見つかった行番号 (なければ 0)
+' ====================================================================
+Function FindExistingScanInLog(ByVal logFile As String, ByVal targetCode As String, ByRef outPrevQty As String, ByRef outPrevWorker As String) As Integer
+    Dim fp As Integer
+    Dim lineStr As String
+    Dim lineNo As Integer
+    Dim cCode As String
+
+    FindExistingScanInLog = 0
+    If FileExists(logFile) = 0 Then Exit Function
+
+    fp = FileOpen(logFile, "R")
+    If fp < 0 Then Exit Function
+
+    lineNo = 0
+    While (FileEof(fp) = 0)
+        lineNo = lineNo + 1
+        lineStr = FileReadLine(fp)
+        cCode = GetCsvCol(lineStr, 6)
+        If UCase(cCode) = UCase(targetCode) Then
+            outPrevWorker = GetCsvCol(lineStr, 5)
+            outPrevQty = GetCsvCol(lineStr, 7)
+            FileClose(fp)
+            FindExistingScanInLog = lineNo
+            Exit Function
+        End If
+    Wend
+
+    FileClose(fp)
+End Function
+
+' ====================================================================
+' [3] PCへデータ送信（INV_LOG.CSV および USERS.CSV の送信）
 ' ====================================================================
 Sub DoSendData()
     Dim key As String
     LcdClear()
     LcdPrint(1, 1, "=== PCへデータ送信 ===")
-    LcdPrint(3, 1, "本体を通信クレードルに")
-    LcdPrint(4, 1, "セットして[ENT]を押し")
-    LcdPrint(5, 1, "PC側で受信してください")
-    LcdPrint(7, 1, "ファイル: " & g_strLogFile)
-    LcdPrint(9, 1, "[ENT]:通信開始 [CLR]:戻")
+    LcdPrint(3, 1, "[1] 棚卸データ送信(INV_LOG)")
+    LcdPrint(5, 1, "[2] 担当者リスト送信(USERS)")
+    LcdPrint(7, 1, "クレードルに置いて選択:")
+    LcdPrint(9, 1, "[1/ENT]:棚卸送信 [CLR]:戻")
 
     key = KeyWait()
-    If key = "ENT" Then
-        LcdPrint(8, 1, "通信待機中...")
-        ' KEYENCE標準プロトコルファイル転送待機
+    If key = "1" Or key = "ENT" Then
+        LcdPrint(8, 1, "INV_LOG.CSV 送信中...")
         CommSendFile(g_strLogFile)
         Buzzer(1, 200)
         LcdPrint(8, 1, "送信完了しました！    ")
+        Wait(1000)
+    ElseIf key = "2" Then
+        LcdPrint(8, 1, "USERS.CSV 送信中...")
+        CommSendFile(g_strUsersFile)
+        Buzzer(1, 200)
+        LcdPrint(8, 1, "担当者送信完了！      ")
         Wait(1000)
     End If
 End Sub
 
 ' ====================================================================
-' [3] ログ件数確認・データ消去
+' [4] ログ件数確認・データ消去
 ' ====================================================================
 Sub DoManageLog()
     Dim key As String
@@ -184,10 +476,10 @@ Sub DoManageLog()
 
     LcdClear()
     cnt = GetLogCount(g_strLogFile)
-    LcdPrint(1, 1, "=== ログ管理 ===")
+    LcdPrint(1, 1, "=== 棚卸データ管理 ===")
     LcdPrint(3, 1, "現在の保存件数: " & cnt & " 件")
-    LcdPrint(5, 1, "データを全消去しますか？")
-    LcdPrint(6, 1, "※PC取込後に消去下さい")
+    LcdPrint(4, 1, "ログイン担当: " & g_strCurrentDisplayName)
+    LcdPrint(6, 1, "※PC取込後に全消去下さい")
     LcdPrint(9, 1, "[F4]:全消去  [CLR]:戻る")
 
     key = KeyWait()

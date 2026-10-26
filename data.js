@@ -400,7 +400,7 @@ const DB = {
         
         const products = this.get(this.KEYS.INV_PRODUCTS) || [];
         const newScans = products
-            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .filter(p => p && p.tempQty !== undefined && p.tempQty !== null)
             .map(p => ({
                 id: p.tempId || p.id,
                 productId: p.id,
@@ -414,47 +414,65 @@ const DB = {
 
         const dedicatedTempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
 
-        // マージ（同じproductIdがある場合は新しいnewScansを優先）
+        // 【バグ修正】productId単体ではなく「month + productId」でマージし、過去月データが当月データを上書き消失させる不具合を防止
         const mergedMap = {};
-        legacyScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan;
-            }
-        });
-        newScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan; // 上書き
-            }
-        });
-        dedicatedTempScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan; // 上書き（これが最新かつ正）
-            }
-        });
+        const putScan = (scan) => {
+            if (!scan || !scan.productId) return;
+            const m = scan.month || (scan.timestamp ? String(scan.timestamp).substring(0, 7) : '');
+            const key = m + '__' + scan.productId;
+            mergedMap[key] = Object.assign({}, scan, { month: m || scan.month });
+        };
+
+        legacyScans.forEach(putScan);
+        dedicatedTempScans.forEach(putScan);
+        newScans.forEach(putScan); // INV_PRODUCTSの最新状態を優先しつつ統合
         
         return Object.values(mergedMap);
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
+        const targetMonth = month || (timestamp ? String(timestamp).substring(0, 7) : new Date().toISOString().substring(0, 7));
+        const scanId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
         const newScan = {
-            id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            id: scanId,
             productId: productId,
             quantity: quantity,
-            worker: worker,
-            workerName: workerName,
-            timestamp: timestamp,
-            month: month,
+            worker: worker || 'unknown',
+            workerName: workerName || worker || '不明な作業者',
+            timestamp: timestamp || new Date().toISOString(),
+            month: targetMonth,
             terminalId: terminalId || '',
             type: 'count_temp'
         };
-        // Firebaseルールに合わせるため INV_LOGS に保存する
+
+        // 1. INV_PRODUCTS 側の仮登録プロパティを同期更新
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prodIndex = products.findIndex(p => p && String(p.id).toUpperCase() === String(productId).toUpperCase());
+        if (prodIndex !== -1) {
+            products[prodIndex].tempQty = quantity;
+            products[prodIndex].tempWorker = newScan.worker;
+            products[prodIndex].tempWorkerName = newScan.workerName;
+            products[prodIndex].tempTimestamp = newScan.timestamp;
+            products[prodIndex].tempMonth = targetMonth;
+            products[prodIndex].tempId = scanId;
+            this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+        }
+
+        // 2. INV_SCAN_TEMP 側を同期更新
+        const tempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const existingIdx = tempScans.findIndex(s => s && String(s.productId).toUpperCase() === String(productId).toUpperCase() && s.month === targetMonth);
+        if (existingIdx >= 0) {
+            tempScans[existingIdx] = newScan;
+        } else {
+            tempScans.push(newScan);
+        }
+        this.save(this.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(tempScans)));
+
+        // 3. INV_LOGS 側にも保存
         this.add(this.KEYS.INV_LOGS, newScan);
     },
 
     deleteTempScan(scanId) {
-        // Firebaseでremoveが禁止されている可能性を考慮し、deleteではなく論理削除(0に更新)するか、
-        // 少なくとも INV_LOGS からの削除を試みるがエラーはcatchする。
-        // ここは一旦 INV_LOGSのdeleteに戻す
         this.delete(this.KEYS.INV_LOGS, scanId);
     },
 

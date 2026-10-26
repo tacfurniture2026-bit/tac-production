@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.69.0】 -->
+    <!-- 【強制キャッシュバスティング v6.70.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.69.0';
+            var currentVersion = 'v6.70.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.69.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.70.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -2739,7 +2739,7 @@ const DB = {
         
         const products = this.get(this.KEYS.INV_PRODUCTS) || [];
         const newScans = products
-            .filter(p => p.tempQty !== undefined && p.tempQty !== null)
+            .filter(p => p && p.tempQty !== undefined && p.tempQty !== null)
             .map(p => ({
                 id: p.tempId || p.id,
                 productId: p.id,
@@ -2753,47 +2753,65 @@ const DB = {
 
         const dedicatedTempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
 
-        // マージ（同じproductIdがある場合は新しいnewScansを優先）
+        // 【バグ修正】productId単体ではなく「month + productId」でマージし、過去月データが当月データを上書き消失させる不具合を防止
         const mergedMap = {};
-        legacyScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan;
-            }
-        });
-        newScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan; // 上書き
-            }
-        });
-        dedicatedTempScans.forEach(scan => {
-            if (scan && scan.productId) {
-                mergedMap[scan.productId] = scan; // 上書き（これが最新かつ正）
-            }
-        });
+        const putScan = (scan) => {
+            if (!scan || !scan.productId) return;
+            const m = scan.month || (scan.timestamp ? String(scan.timestamp).substring(0, 7) : '');
+            const key = m + '__' + scan.productId;
+            mergedMap[key] = Object.assign({}, scan, { month: m || scan.month });
+        };
+
+        legacyScans.forEach(putScan);
+        dedicatedTempScans.forEach(putScan);
+        newScans.forEach(putScan); // INV_PRODUCTSの最新状態を優先しつつ統合
         
         return Object.values(mergedMap);
     },
 
     saveTempScan(productId, quantity, worker, workerName, timestamp, month, terminalId) {
+        const targetMonth = month || (timestamp ? String(timestamp).substring(0, 7) : new Date().toISOString().substring(0, 7));
+        const scanId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
         const newScan = {
-            id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            id: scanId,
             productId: productId,
             quantity: quantity,
-            worker: worker,
-            workerName: workerName,
-            timestamp: timestamp,
-            month: month,
+            worker: worker || 'unknown',
+            workerName: workerName || worker || '不明な作業者',
+            timestamp: timestamp || new Date().toISOString(),
+            month: targetMonth,
             terminalId: terminalId || '',
             type: 'count_temp'
         };
-        // Firebaseルールに合わせるため INV_LOGS に保存する
+
+        // 1. INV_PRODUCTS 側の仮登録プロパティを同期更新
+        const products = this.get(this.KEYS.INV_PRODUCTS) || [];
+        const prodIndex = products.findIndex(p => p && String(p.id).toUpperCase() === String(productId).toUpperCase());
+        if (prodIndex !== -1) {
+            products[prodIndex].tempQty = quantity;
+            products[prodIndex].tempWorker = newScan.worker;
+            products[prodIndex].tempWorkerName = newScan.workerName;
+            products[prodIndex].tempTimestamp = newScan.timestamp;
+            products[prodIndex].tempMonth = targetMonth;
+            products[prodIndex].tempId = scanId;
+            this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+        }
+
+        // 2. INV_SCAN_TEMP 側を同期更新
+        const tempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const existingIdx = tempScans.findIndex(s => s && String(s.productId).toUpperCase() === String(productId).toUpperCase() && s.month === targetMonth);
+        if (existingIdx >= 0) {
+            tempScans[existingIdx] = newScan;
+        } else {
+            tempScans.push(newScan);
+        }
+        this.save(this.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(tempScans)));
+
+        // 3. INV_LOGS 側にも保存
         this.add(this.KEYS.INV_LOGS, newScan);
     },
 
     deleteTempScan(scanId) {
-        // Firebaseでremoveが禁止されている可能性を考慮し、deleteではなく論理削除(0に更新)するか、
-        // 少なくとも INV_LOGS からの削除を試みるがエラーはcatchする。
-        // ここは一旦 INV_LOGSのdeleteに戻す
         this.delete(this.KEYS.INV_LOGS, scanId);
     },
 
@@ -43029,7 +43047,516 @@ function showQrCopyPasteGallery() {
 
 
 // ============================================================================
-// 📠 KEYENCE BT-W85 / BT-H10W ハンディターミナル (HT) バッチ棚卸連携システム
+// 📠 KEYENCE BT-W85 / BT-H10W ハンディターミナル (HT) バッチ棚卸連携システム (v2.0)
+//    ＋ 担当者ログイン管理・増減同期・重複スキャンアラート・保存同期バグ修正
+// ============================================================================
+
+// --- 【バグ修正】単一仮スキャン保存・削除の3層完全同期 (INV_PRODUCTS / INV_SCAN_TEMP / INV_LOGS) ---
+window.saveSingleTempScan = function(productId) {
+  const input = document.getElementById(`inv-check-qty-${productId}`);
+  if (!input) return;
+  const newQty = parseInt(input.value, 10) || 0;
+  const selectedMonth = ($('#inv-check-month') && $('#inv-check-month').value) || new Date().toISOString().substring(0, 7);
+
+  const [y, m] = selectedMonth.split('-');
+  const lastDay = new Date(parseInt(y, 10), parseInt(m, 10), 0, 23, 59, 59);
+  const timestamp = lastDay.toISOString();
+  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || {};
+  const workerId = user.username || 'admin';
+  const workerName = user.displayName || '管理者';
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p && String(p.id) === String(productId));
+
+  if (prodIndex !== -1) {
+    const scanId = Date.now() + '_single_' + productId;
+    products[prodIndex].tempQty = newQty;
+    products[prodIndex].tempWorker = workerId;
+    products[prodIndex].tempWorkerName = workerName;
+    products[prodIndex].tempTimestamp = timestamp;
+    products[prodIndex].tempMonth = selectedMonth;
+    products[prodIndex].tempId = scanId;
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+
+    // INV_SCAN_TEMP 側も同期更新（古い値が残って上書きされるバグを防止）
+    const tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+    const tIdx = tempScans.findIndex(s => s && String(s.productId) === String(productId) && s.month === selectedMonth);
+    const scanObj = {
+      id: scanId,
+      productId: productId,
+      quantity: newQty,
+      worker: workerId,
+      workerName: workerName,
+      timestamp: timestamp,
+      month: selectedMonth,
+      type: 'count_temp'
+    };
+    if (tIdx >= 0) {
+      tempScans[tIdx] = scanObj;
+    } else {
+      tempScans.push(scanObj);
+    }
+    DB.save(DB.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(tempScans)));
+
+    toast('仮登録数量を保存しました', 'success');
+  } else {
+    toast('対象の資材が見つかりません', 'error');
+  }
+
+  if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+};
+
+window.deleteSingleTempScan = function(productId) {
+  if (!confirm('この資材の仮スキャンデータを消去しますか？')) return;
+  const selectedMonth = ($('#inv-check-month') && $('#inv-check-month').value) || new Date().toISOString().substring(0, 7);
+
+  // 1. INV_PRODUCTS 側のテンポラリデータを削除
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prodIndex = products.findIndex(p => p && String(p.id) === String(productId));
+  if (prodIndex !== -1) {
+    delete products[prodIndex].tempQty;
+    delete products[prodIndex].tempWorker;
+    delete products[prodIndex].tempWorkerName;
+    delete products[prodIndex].tempTimestamp;
+    delete products[prodIndex].tempMonth;
+    delete products[prodIndex].tempId;
+    DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+  }
+
+  // 2. INV_SCAN_TEMP 側からも削除
+  let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
+  tempScans = tempScans.filter(s => !(s && String(s.productId) === String(productId) && (!s.month || s.month === selectedMonth)));
+  DB.save(DB.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(tempScans)));
+
+  // 3. INV_LOGS 側からも削除
+  let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  logs = logs.filter(l => !(l && l.type === 'count_temp' && String(l.productId) === String(productId) && (!l.month || l.month === selectedMonth || (l.timestamp && l.timestamp.startsWith(selectedMonth)))));
+  DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(logs)));
+
+  toast('仮スキャンデータから削除しました', 'success');
+  if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+};
+
+// --- 【バグ修正】通常の棚卸スキャン画面(PC/スマホ共通)での重複スキャン(ダブり)検知＆アラート ---
+window.submitInventoryCount = function() {
+  const productIdEl = $('#inv-scan-product-id');
+  const qtyEl = $('#inv-scan-quantity');
+  if (!productIdEl || !qtyEl) return;
+
+  let rawId = productIdEl.value.trim();
+  const quantity = parseInt(qtyEl.value, 10) || 0;
+
+  if (!rawId) {
+    toast('資材IDを入力してください', 'error');
+    return;
+  }
+
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p && (String(p.id).toUpperCase() === rawId.toUpperCase() || (p.identCode && String(p.identCode).toUpperCase() === rawId.toUpperCase())));
+
+  if (!product) {
+    if (typeof showQuickProductRegisterModal === 'function') {
+      const isLocalBatchMode = !!document.getElementById('inv-local-batch-list');
+      showQuickProductRegisterModal(rawId, quantity, isLocalBatchMode);
+    } else {
+      toast('商品マスタに未登録の資材IDです: ' + rawId, 'error');
+    }
+    return;
+  }
+
+  const productId = product.id;
+
+  // スキャン画面からのマスタ単価更新（金額差異チェック）
+  const newPriceInput = $('#inv-scan-unit-price');
+  if (newPriceInput && newPriceInput.value !== '') {
+    const newPrice = parseFloat(newPriceInput.value);
+    if (!isNaN(newPrice) && product.price !== newPrice) {
+      product.price = newPrice;
+      DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
+      toast(`マスタの単価を ¥${newPrice} に上書き更新しました`, 'success');
+    }
+  }
+
+  let targetMonth = '';
+  const monthInput = $('#inv-scan-month');
+  if (monthInput && monthInput.value) {
+    targetMonth = monthInput.value;
+  } else if (typeof getInventoryNextTargetMonth === 'function') {
+    targetMonth = getInventoryNextTargetMonth();
+  } else {
+    targetMonth = new Date().toISOString().substring(0, 7);
+  }
+
+  // モバイルのローカルバッチモードかどうか判定
+  const isLocalBatchMode = !!document.getElementById('inv-local-batch-list');
+
+  if (isLocalBatchMode) {
+    const localScans = DB.getLocalBatchScans() || [];
+    const existingLocal = localScans.find(s => s && String(s.productId).toUpperCase() === String(productId).toUpperCase());
+    if (existingLocal) {
+      showUnifiedDuplicateScanModal(productId, product.name, quantity, existingLocal.quantity, targetMonth, 'local', existingLocal.workerName || existingLocal.worker || '端末保存分');
+      return;
+    }
+  }
+
+  // サーバー仮登録データ(getTempScans)内の当月重複チェック
+  const tempScans = (DB.getTempScans() || []).filter(s => s && s.month === targetMonth);
+  const existingTemp = tempScans.find(s => String(s.productId).toUpperCase() === String(productId).toUpperCase());
+  if (existingTemp) {
+    showUnifiedDuplicateScanModal(productId, product.name, quantity, existingTemp.quantity, targetMonth, isLocalBatchMode ? 'local_vs_temp' : 'temp', existingTemp.workerName || existingTemp.worker || '-');
+    return;
+  }
+
+  // 重複なし：通常登録
+  commitUnifiedInventoryScan(productId, quantity, product.name, targetMonth, isLocalBatchMode);
+};
+
+window.commitUnifiedInventoryScan = function(productId, quantity, productName, targetMonth, isLocalBatchMode) {
+  const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || { username: 'admin', displayName: '管理者' };
+  const targetTimestamp = new Date().toISOString();
+
+  if (isLocalBatchMode && typeof proceedWithLocalBatchSave === 'function') {
+    proceedWithLocalBatchSave(productId, quantity, productName);
+    return;
+  }
+
+  DB.saveTempScan(productId, quantity, user.username, user.displayName, targetTimestamp, targetMonth);
+  toast(`${productName || productId} の棚卸を仮登録しました（${quantity}個 / 担当: ${user.displayName}）`, 'success');
+
+  // フォームリセット
+  if ($('#inv-scan-product-id')) $('#inv-scan-product-id').value = '';
+  if ($('#inv-scan-quantity')) $('#inv-scan-quantity').value = '';
+  if ($('#inv-scan-unit-price')) $('#inv-scan-unit-price').value = '';
+  if ($('#inv-product-info')) $('#inv-product-info').style.display = 'none';
+  if ($('#inv-scan-result')) $('#inv-scan-result').style.display = 'none';
+
+  if (typeof renderTodayInvLogs === 'function') renderTodayInvLogs();
+  if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+};
+
+window.showUnifiedDuplicateScanModal = function(productId, productName, newQty, currentQty, targetMonth, mode, prevWorkerName) {
+  const safeProductId = String(productId).replace(/'/g, "\\'");
+  const safeMonth = String(targetMonth).replace(/'/g, "\\'");
+  const safeMode = String(mode).replace(/'/g, "\\'");
+
+  const body = `
+    <div style="padding: 1rem;">
+      <div style="background: #fffbeb; border-left: 5px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 1.25rem;">
+        <div style="font-weight: bold; color: #b45309; font-size: 1.05rem; margin-bottom: 4px;">
+          ⚠️ この資材は既にスキャン（仮登録）されています！
+        </div>
+        <div style="font-size: 0.9rem; color: #78350f;">
+          資材: <strong>${productName || productId}</strong> (<code>${productId}</code>)<br>
+          現在の登録数量: <span style="font-size: 1.2rem; font-weight: bold; color: #d97706;">${currentQty} 個</span> （前回実行者: ${prevWorkerName || '-'}）<br>
+          今回入力した数量: <span style="font-size: 1.2rem; font-weight: bold; color: #0284c7;">${newQty} 個</span>
+        </div>
+      </div>
+      <p style="margin-bottom: 0.75rem; font-weight: 600;">どのように処理しますか？</p>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button type="button" class="btn btn-primary" onclick="resolveUnifiedDuplicateScan('${safeProductId}', 'add', ${newQty}, ${currentQty}, '${safeMonth}', '${safeMode}')" style="font-size: 1.05rem; padding: 12px; font-weight: bold;">
+          ➕ 数量を追加（合算）する （${currentQty} + ${newQty} = ${currentQty + newQty} 個）
+        </button>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <input type="number" id="unified-dup-override-qty" class="form-input" value="${newQty}" style="width: 110px; text-align: center; font-size: 1.1rem; font-weight: bold;">
+          <button type="button" class="btn btn-warning" onclick="resolveUnifiedDuplicateScan('${safeProductId}', 'overwrite', 0, 0, '${safeMonth}', '${safeMode}')" style="flex: 1; padding: 12px; font-weight: bold; background: #f59e0b; color: white; border-color: #f59e0b;">
+            ✍️ この数量で上書き修正する
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const footer = `
+    <button type="button" class="btn btn-secondary" onclick="resolveUnifiedDuplicateScan('${safeProductId}', 'cancel', 0, 0, '${safeMonth}', '${safeMode}')">❌ 登録しない（キャンセル）</button>
+  `;
+
+  showModal('⚠️ スキャン重複（ダブり）確認アラート', body, footer);
+};
+
+window.resolveUnifiedDuplicateScan = function(productId, action, newQty, currentQty, targetMonth, mode) {
+  hideModal();
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const product = products.find(p => p && String(p.id) === String(productId));
+  const productName = product ? product.name : productId;
+
+  if (action === 'cancel') {
+    if ($('#inv-scan-product-id')) $('#inv-scan-product-id').value = '';
+    if ($('#inv-scan-quantity')) $('#inv-scan-quantity').value = '';
+    if ($('#inv-product-info')) $('#inv-product-info').style.display = 'none';
+    if ($('#inv-scan-result')) $('#inv-scan-result').style.display = 'none';
+    toast('登録をキャンセルしました', 'info');
+    return;
+  }
+
+  let finalQty = newQty;
+  if (action === 'add') {
+    finalQty = currentQty + newQty;
+  } else if (action === 'overwrite') {
+    const overrideInput = document.getElementById('unified-dup-override-qty');
+    finalQty = overrideInput ? (parseInt(overrideInput.value, 10) || 0) : newQty;
+  }
+
+  if (mode === 'local') {
+    DB.updateLocalBatchScan(productId, finalQty);
+    toast(`${productName} の数量を ${finalQty} 個に更新しました`, 'success');
+    if (typeof renderLocalBatchScans === 'function') renderLocalBatchScans();
+  } else {
+    const user = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || { username: 'admin', displayName: '管理者' };
+    DB.saveTempScan(productId, finalQty, user.username, user.displayName, new Date().toISOString(), targetMonth);
+    toast(`${productName} の仮登録数量を ${finalQty} 個に更新しました（担当: ${user.displayName}）`, 'success');
+    if (typeof renderTodayInvLogs === 'function') renderTodayInvLogs();
+    if (typeof renderInvCheckPage === 'function') renderInvCheckPage();
+  }
+
+  if ($('#inv-scan-product-id')) $('#inv-scan-product-id').value = '';
+  if ($('#inv-scan-quantity')) $('#inv-scan-quantity').value = '';
+  if ($('#inv-scan-unit-price')) $('#inv-scan-unit-price').value = '';
+  if ($('#inv-product-info')) $('#inv-product-info').style.display = 'none';
+  if ($('#inv-scan-result')) $('#inv-scan-result').style.display = 'none';
+};
+
+// ============================================================================
+// 👤 担当者マスタ連携 (USERS.CSV 出力 / HTからの担当者増減同期 / ログインQR一覧)
+// ============================================================================
+
+// ユーザー管理テーブルにログインQRボタンも追加表示するよう拡張
+const _origRenderUsers = typeof renderUsers === 'function' ? renderUsers : null;
+window.renderUsers = function() {
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const tbody = $('#users-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><code style="background: var(--color-bg-secondary); padding: 0.125rem 0.375rem; border-radius: 4px; font-weight: bold;">${u.username}</code></td>
+      <td><strong>${u.displayName}</strong></td>
+      <td><span class="badge ${u.role === 'admin' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? '管理者' : '作業者'}</span></td>
+      <td>${u.department || '-'}</td>
+      <td>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="showUserLoginQrGallery('${String(u.username).replace(/'/g, "\\'")}')">📱 HTログインQR</button>
+          ${u.username !== 'admin' ? `
+            <button class="btn btn-primary btn-sm" type="button" onclick="showEditUserModal(${u.id})">編集</button>
+            <button class="btn btn-danger btn-sm" type="button" onclick="deleteUser(${u.id})">削除</button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+};
+
+// BT-W85用 担当者マスタ (USERS.CSV) を Shift-JIS で出力
+window.exportHtUsersCsv = function() {
+  const users = DB.get(DB.KEYS.USERS) || [];
+  if (users.length === 0) {
+    toast('ユーザーが登録されていません', 'warning');
+    return;
+  }
+
+  // フォーマット: username(ログインID),displayName(表示名),department(部門)
+  const lines = users.map(u => {
+    const uname = String(u.username || '').replace(/,/g, '').trim();
+    const dname = String(u.displayName || uname).replace(/,/g, ' ').trim();
+    const dept = String(u.department || '製造部').replace(/,/g, ' ').trim();
+    return `${uname},${dname},${dept}`;
+  });
+
+  const csvString = lines.join('\r\n') + '\r\n';
+  let blob;
+  if (typeof Encoding !== 'undefined') {
+    const unicodeArray = Encoding.stringToCode(csvString);
+    const sjisArray = Encoding.convert(unicodeArray, { to: 'SJIS', from: 'UNICODE' });
+    blob = new Blob([new Uint8Array(sjisArray)], { type: 'text/csv;charset=shift_jis;' });
+  } else {
+    blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'USERS.CSV';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  toast(`📤 BT-W85用 担当者マスタ (USERS.CSV: ${users.length}名) をダウンロードしました`, 'success');
+};
+
+// HT本体で増減（追加・削除）された USERS.CSV を生産管理システムの「ユーザー管理」へ同期
+window.openHtUsersSyncModal = function() {
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const body = `
+    <div style="padding: 1rem;">
+      <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #0c4a6e;">
+        <strong>🔄 BT-W85 で追加・削除した担当者リスト (<code>USERS.CSV</code>) の同期：</strong><br>
+        ハンディターミナル (BT-W85) 本体で担当者の追加や削除を行った場合、BT-W85 から送信した <code>USERS.CSV</code> をここで読み込むと、システムの「ユーザー管理」（現在 <strong>${users.length}名</strong>）へ反映できます。
+      </div>
+      <div class="form-group">
+        <label style="font-weight: bold;">同期モード</label>
+        <select id="ht-users-sync-mode" class="form-input">
+          <option value="merge_add" selected>➕ 追加のみ反映（HTで追加された新規担当者をシステムへ追加）</option>
+          <option value="full_sync">🔄 完全同期（HT側で削除された担当者はシステム側からも削除 ※admin除く）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label style="font-weight: bold;">BT-W85 の <code>USERS.CSV</code> ファイルを選択</label>
+        <input type="file" id="ht-users-csv-input" accept=".csv,.txt" class="form-input">
+      </div>
+    </div>
+  `;
+  const footer = `
+    <button type="button" class="btn btn-secondary" onclick="hideModal()">キャンセル</button>
+    <button type="button" class="btn btn-primary" onclick="executeHtUsersSync()" style="background:#0284c7; border-color:#0284c7;">📥 担当者マスタを同期する</button>
+  `;
+  showModal('📥 HT担当者マスタ (USERS.CSV) の増減同期', body, footer);
+};
+
+window.executeHtUsersSync = function() {
+  const fileInput = document.getElementById('ht-users-csv-input');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+    toast('USERS.CSV ファイルを選択してください', 'error');
+    return;
+  }
+  const syncMode = (document.getElementById('ht-users-sync-mode') || {}).value || 'merge_add';
+  const file = fileInput.files[0];
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const uint8 = new Uint8Array(evt.target.result);
+      const text = (typeof decodeCsvBuffer === 'function')
+        ? decodeCsvBuffer(uint8)
+        : new TextDecoder('utf-8').decode(uint8);
+      const rows = (typeof parseCsv === 'function')
+        ? parseCsv(text)
+        : text.split(/\r?\n/).map(l => l.split(',').map(c => c.trim()));
+
+      const htUsers = [];
+      rows.forEach((r, idx) => {
+        if (!r || r.length === 0) return;
+        const uname = String(r[0] || '').trim().replace(/^"|"$/g, '');
+        const dname = String(r[1] || uname).trim().replace(/^"|"$/g, '');
+        const dept = String(r[2] || '製造部').trim().replace(/^"|"$/g, '');
+        if (!uname) return;
+        if (idx === 0 && (uname.toUpperCase() === 'USERNAME' || uname.includes('ユーザー名') || uname.includes('ログインID'))) return;
+        htUsers.push({ username: uname, displayName: dname || uname, department: dept || '製造部' });
+      });
+
+      if (htUsers.length === 0) {
+        toast('有効な担当者データが見つかりませんでした', 'error');
+        return;
+      }
+
+      let currentUsers = DB.get(DB.KEYS.USERS) || [];
+      let addedCount = 0;
+      let updatedCount = 0;
+      let deletedCount = 0;
+
+      let maxId = currentUsers.reduce((max, u) => Math.max(max, Number(u.id) || 0), 0);
+
+      htUsers.forEach(hu => {
+        const existingIdx = currentUsers.findIndex(u => u && String(u.username).toLowerCase() === hu.username.toLowerCase());
+        if (existingIdx >= 0) {
+          if (currentUsers[existingIdx].displayName !== hu.displayName) {
+            currentUsers[existingIdx].displayName = hu.displayName;
+            updatedCount++;
+          }
+        } else {
+          maxId++;
+          currentUsers.push({
+            id: maxId,
+            username: hu.username,
+            password: hu.username + '123',
+            displayName: hu.displayName,
+            role: 'worker',
+            department: hu.department
+          });
+          addedCount++;
+        }
+      });
+
+      if (syncMode === 'full_sync') {
+        const htUserSet = new Set(htUsers.map(hu => hu.username.toLowerCase()));
+        const beforeLen = currentUsers.length;
+        currentUsers = currentUsers.filter(u => {
+          if (!u || u.username === 'admin' || u.role === 'admin') return true;
+          return htUserSet.has(String(u.username).toLowerCase());
+        });
+        deletedCount = beforeLen - currentUsers.length;
+      }
+
+      DB.save(DB.KEYS.USERS, JSON.parse(JSON.stringify(currentUsers)));
+      hideModal();
+      if (typeof renderUsers === 'function') renderUsers();
+      toast(`✅ 担当者同期完了（追加: ${addedCount}名 / 更新: ${updatedCount}名 / 削除: ${deletedCount}名）`, 'success', 5000);
+    } catch (e) {
+      console.error('Users sync error:', e);
+      toast('担当者CSVの読み込みに失敗しました: ' + e.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+// 担当者ログイン用QRコード一覧表示（BT-W85でスキャンして一発ログイン用）
+window.showUserLoginQrGallery = function(filterUsername = '') {
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const targetUsers = filterUsername
+    ? users.filter(u => u && u.username === filterUsername)
+    : users;
+
+  if (targetUsers.length === 0) {
+    toast('表示対象のユーザーがいません', 'warning');
+    return;
+  }
+
+  const cardsHtml = targetUsers.map(u => {
+    let qrDataUrl = '';
+    if (typeof qrcode === 'function') {
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(String(u.username));
+        qr.make();
+        qrDataUrl = qr.createDataURL(5, 2);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return `
+      <div style="border: 2px solid #cbd5e1; border-radius: 10px; padding: 14px; text-align: center; background: #fff; width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="font-size: 0.75rem; color: #0284c7; font-weight: bold; margin-bottom: 4px;">${u.department || '製造部'} / ${u.role === 'admin' ? '管理者' : '作業者'}</div>
+        <div style="font-size: 1.1rem; font-weight: bold; color: #1e293b; margin-bottom: 4px;">${u.displayName}</div>
+        <div style="font-size: 0.8rem; color: #64748b; font-family: monospace; margin-bottom: 8px;">ID: ${u.username}</div>
+        ${qrDataUrl ? `<img src="${qrDataUrl}" alt="${u.username}" style="width: 130px; height: 130px; display: block; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px;">` : '<div style="padding:20px; color:#ef4444;">QR生成不可</div>'}
+        <div style="font-size: 0.72rem; color: #64748b; margin-top: 6px;">BT-W85 ログイン用QR</div>
+      </div>
+    `;
+  }).join('');
+
+  const body = `
+    <div style="padding: 0.5rem;">
+      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 1rem;">
+        💡 <strong>BT-W85 の「担当者ログイン選択」画面</strong>でこのQRコードをスキャンすると、番号キーを押さなくてもその担当者（ユーザー名・表示名）で即座にログインできます。（右クリックで画像をコピーして名札や一覧表に貼り付け可能です）
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; max-height: 450px; overflow-y: auto; padding: 0.5rem; background: #f8fafc; border-radius: 8px;">
+        ${cardsHtml}
+      </div>
+    </div>
+  `;
+  const footer = `
+    <button type="button" class="btn btn-secondary" onclick="hideModal()">閉じる</button>
+    <button type="button" class="btn btn-primary" onclick="exportHtUsersCsv()" style="background:#0284c7; border-color:#0284c7;">📤 HT用 USERS.CSV もダウンロード</button>
+  `;
+  showModal('📱 BT-W85 担当者ログイン用QRコード一覧', body, footer);
+  const modalEl = $('#modal');
+  if (modalEl) {
+    modalEl.style.maxWidth = '760px';
+    modalEl.style.width = '95%';
+  }
+};
+
+// ============================================================================
+// 📥 HTデータ取り込みモーダル (v2.0: 担当者ログイン管理 ＆ ダブり重複アラート搭載)
 // ============================================================================
 
 window._parsedHtBatchItems = [];
@@ -43040,6 +43567,13 @@ window.openHtImportModal = function(initialTab = 'import') {
     : (($('#inv-check-month') && $('#inv-check-month').value) || ($('#inv-scan-month') && $('#inv-scan-month').value) || new Date().toISOString().substring(0, 7));
 
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const currentLoginUser = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || users[0] || { username: 'admin', displayName: '管理者' };
+
+  const userOptionsHtml = [
+    `<option value="__CSV_PRIORITY__" selected>📄 CSV内のログイン担当者情報を優先（未記載時は「${currentLoginUser.displayName}」）</option>`,
+    ...users.map(u => `<option value="${u.username}">👤 ${u.displayName} (${u.username}) として一括登録</option>`)
+  ].join('');
 
   const body = `
     <div style="padding: 0.5rem;">
@@ -43049,7 +43583,7 @@ window.openHtImportModal = function(initialTab = 'import') {
           📥 1. HTデータ取り込み (CSV)
         </button>
         <button type="button" id="ht-tab-btn-master" class="btn" onclick="switchHtModalTab('master')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
-          📤 2. BT-W85用マスタ & ソフト出力
+          📤 2. マスタ・担当者・HTソフト出力
         </button>
         <button type="button" id="ht-tab-btn-guide" class="btn" onclick="switchHtModalTab('guide')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
           📖 3. BT-H10W 開発・取込手順書
@@ -43059,66 +43593,78 @@ window.openHtImportModal = function(initialTab = 'import') {
       <!-- タブ1: HTデータ取り込み -->
       <div id="ht-tab-content-import" style="display: block;">
         <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #0c4a6e;">
-          <strong>💡 BT-W85 からのCSV取り込み：</strong><br>
-          ハンディターミナル（BT-W85）でスキャンして出力されたCSVファイル（<code>INV_LOG.CSV</code> 等）を選択してください。<br>
-          現在の商品マスタ（登録数: <strong>${products.length}件</strong>）と自動で資材ID照合を行い、棚卸の「仮登録データ」へ一括反映します。
+          <strong>💡 システム発行QR ＆ 担当者ログイン連携：</strong><br>
+          BT-W85 で誰がスキャンしたか（ユーザー名・表示名）を自動読取し、「棚卸スキャン確認」画面の<strong>スキャン実行者欄</strong>に反映します。<br>
+          また、CSV内の重複スキャンや、既にシステムに仮登録されている資材との<strong>ダブり（重複）があればアラート表示</strong>します。
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem; background: var(--color-bg-secondary); padding: 1rem; border-radius: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; background: var(--color-bg-secondary); padding: 1rem; border-radius: 8px;">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.85rem;">📅 棚卸対象年月</label>
-            <input type="month" id="ht-import-month" class="form-input" value="${defaultMonth}">
+            <label style="font-weight: bold; font-size: 0.82rem;">📅 棚卸対象年月</label>
+            <input type="month" id="ht-import-month" class="form-input" value="${defaultMonth}" onchange="parseHtCsvFile()">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.85rem;">🔢 同一資材IDが複数行ある場合</label>
+            <label style="font-weight: bold; font-size: 0.82rem;">👤 スキャン実行者（担当者）</label>
+            <select id="ht-worker-select" class="form-input" onchange="parseHtCsvFile()">
+              ${userOptionsHtml}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: bold; font-size: 0.82rem;">🔢 ダブり（重複スキャン）時の計算</label>
             <select id="ht-duplicate-mode" class="form-input" onchange="parseHtCsvFile()">
-              <option value="sum" selected>➕ 数量を合算（加算）する【推奨】</option>
-              <option value="overwrite">🔄 最後のスキャン行の数量で上書き</option>
+              <option value="sum" selected>➕ 数量を追加（合算）する【推奨】</option>
+              <option value="overwrite">✍️ 新しいスキャン数量で上書き修正</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.85rem;">🗂 既存の仮登録データとの統合</label>
-            <select id="ht-merge-mode" class="form-input">
-              <option value="merge_overwrite" selected>🔄 既存データを残しHT読取分を更新</option>
-              <option value="merge_add">➕ 既存の仮登録数量にさらに加算する</option>
-              <option value="replace_all">🧹 当月の仮登録を一旦全消去して新規反映</option>
+            <label style="font-weight: bold; font-size: 0.82rem;">🗂 既存仮登録データとの統合</label>
+            <select id="ht-merge-mode" class="form-input" onchange="parseHtCsvFile()">
+              <option value="merge_add" selected>➕ 既存仮登録がある資材は合算する</option>
+              <option value="merge_overwrite">✍️ 既存仮登録をHT数量で上書きする</option>
+              <option value="replace_all">🧹 当月の既存仮登録を全クリアして反映</option>
             </select>
           </div>
         </div>
 
-        <div style="border: 2px dashed #0284c7; border-radius: 8px; padding: 1.25rem; text-align: center; background: #f8fafc; margin-bottom: 1rem;">
-          <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📂 CSV / TXT ファイルを選択</div>
-          <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem;">
-            対応形式: <code>[資材ID, 数量]</code> または <code>[日付, 時刻, 端末ID, 資材ID, (品名), 数量]</code> （Shift-JIS / UTF-8 自動判別）
-          </p>
-          <input type="file" id="ht-csv-file-input" accept=".csv,.txt,.log,.dat" class="form-input" style="max-width: 450px; margin: 0 auto;" onchange="parseHtCsvFile()">
-          <div style="margin-top: 0.75rem;">
+        <div style="border: 2px dashed #0284c7; border-radius: 8px; padding: 1rem; text-align: center; background: #f8fafc; margin-bottom: 1rem;">
+          <div style="font-size: 1.15rem; font-weight: bold; color: #0369a1; margin-bottom: 0.35rem;">📂 BT-W85 の棚卸CSVファイル (INV_LOG.CSV) を選択</div>
+          <input type="file" id="ht-csv-file-input" accept=".csv,.txt,.log,.dat" class="form-input" style="max-width: 450px; margin: 0.4rem auto;" onchange="parseHtCsvFile()">
+          <div style="margin-top: 0.4rem;">
             <button type="button" class="btn btn-sm btn-secondary" onclick="downloadSampleHtCsv()" style="font-size: 0.78rem;">
-              🧪 動作確認用のサンプルHTデータ(CSV)をダウンロードして試す
+              🧪 担当者＆ダブり検証用のサンプルCSVをダウンロードして試す
             </button>
           </div>
         </div>
 
         <div style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-          <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
-            <input type="checkbox" id="ht-auto-register-unknown" checked>
-            マスタ未登録の資材IDが含まれる場合、仮マスタとして自動追加して取り込む
-          </label>
-          <div id="ht-preview-summary" style="font-size: 0.875rem; font-weight: bold; color: #0369a1;"></div>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="ht-auto-register-unknown" checked>
+              マスタ未登録の資材も仮マスタとして登録する
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="ht-auto-register-user" checked>
+              HTで新規追加された担当者も「ユーザー管理」へ自動追加する
+            </label>
+          </div>
+          <div id="ht-preview-summary" style="font-size: 0.85rem; font-weight: bold; color: #0369a1;"></div>
         </div>
 
+        <!-- ⚠️ 重複（ダブり）・未登録アラート表示エリア -->
+        <div id="ht-duplicate-alert-banner" style="display: none; margin-bottom: 0.75rem;"></div>
+
         <!-- プレビューテーブル -->
-        <div id="ht-preview-container" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
-          <table class="table" style="font-size: 0.85rem; margin: 0;">
+        <div id="ht-preview-container" style="max-height: 260px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
+          <table class="table" style="font-size: 0.82rem; margin: 0;">
             <thead style="position: sticky; top: 0; background: var(--color-bg-tertiary); z-index: 2;">
               <tr>
                 <th>資材ID</th>
-                <th>分類</th>
                 <th>品名（マスタ照合）</th>
-                <th>単価</th>
-                <th style="width: 110px; text-align: center;">取込数量</th>
-                <th>読取回数</th>
-                <th>照合状態</th>
+                <th>スキャン実行者</th>
+                <th style="text-align: center;">既存仮登録</th>
+                <th style="text-align: center;">今回HT読取</th>
+                <th style="width: 105px; text-align: center;">反映後数量</th>
+                <th>判定 / ダブり確認</th>
               </tr>
             </thead>
             <tbody id="ht-preview-tbody"></tbody>
@@ -43126,37 +43672,44 @@ window.openHtImportModal = function(initialTab = 'import') {
         </div>
       </div>
 
-      <!-- タブ2: BT-W85用マスタ & ソフト出力 -->
+      <!-- タブ2: マスタ・担当者・ソフト出力 -->
       <div id="ht-tab-content-master" style="display: none;">
         <div style="display: grid; gap: 1rem;">
-          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.25rem; background: #fff;">
-            <h4 style="margin: 0 0 0.5rem 0; color: #0369a1;">① BT-W85用 商品マスタファイル (MASTER.CSV) 出力</h4>
-            <p style="font-size: 0.875rem; color: #475569; margin-bottom: 1rem; line-height: 1.5;">
-              現在この生産管理システムに登録されている商品マスタ（<strong>${products.length}件</strong>）を、ハンディターミナル <strong>BT-W85</strong> 用の形式（Shift-JIS / <code>資材ID,品名,単価</code>）で出力します。<br>
-              ※BT-W85に転送しておくと、スキャン時にハンディの画面に「品名」と「単価」が表示されます。（マスタ転送なしでもQRコードの資材IDだけでスキャン＆取込は可能です）
+          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
+            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">① 商品マスタ (MASTER.CSV) ＆ 担当者マスタ (USERS.CSV) 出力</h4>
+            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
+              現在の商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）を BT-W85 用の Shift-JIS CSV で出力します。<br>
+              また、BT-W85 本体側で担当者を増減（追加・削除）した場合は「📥 HT担当者CSV取込」からシステムへ逆同期できます。
             </p>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-primary" onclick="exportHtMasterCsv()" style="background: #0284c7; border-color: #0284c7;">
-                📤 MASTER.CSV をダウンロード (BT-W85用 Shift-JIS)
+                📤 商品マスタ (MASTER.CSV) 出力
               </button>
-              <button type="button" class="btn btn-secondary" onclick="downloadBtH10wMasterIni()">
-                ⚙️ HTMasterFileInfo.ini をダウンロード
+              <button type="button" class="btn btn-primary" onclick="exportHtUsersCsv()" style="background: #0369a1; border-color: #0369a1;">
+                👤 担当者マスタ (USERS.CSV) 出力
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="openHtUsersSyncModal()">
+                📥 HT担当者CSV取込 (増減同期)
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="showUserLoginQrGallery()">
+                📱 担当者ログインQR一覧
               </button>
             </div>
           </div>
 
-          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.25rem; background: #fff;">
-            <h4 style="margin: 0 0 0.5rem 0; color: #0f766e;">② BT-H10W 用 棚卸専用アプリケーション (TAC_TANAOROSHI.scp)</h4>
-            <p style="font-size: 0.875rem; color: #475569; margin-bottom: 1rem; line-height: 1.5;">
-              KEYENCE <strong>BT-H10W</strong> 用の棚卸スキャン専用プログラムソースコードです。<br>
-              メニューは<strong>「棚卸スキャン」</strong>に特化しており、QRコード読取 ➔ 実棚数量入力 ➔ <code>INV_LOG.CSV</code> 出力を行います。
+          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
+            <h4 style="margin: 0 0 0.4rem 0; color: #0f766e;">② BT-H10W 用 棚卸専用アプリケーション v2.0 (TAC_TANAOROSHI.scp)</h4>
+            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
+              <strong>【v2.0 改良点】</strong><br>
+              ・起動時の<strong>担当者ログイン選択（一覧選択 / QRログイン）</strong>および<strong>HT本体での担当者追加（F2）・削除（F3）</strong>に対応！<br>
+              ・システム発行のQRを読み取り、既にスキャン済みの資材（ダブり）だった場合は<strong>警告ブザー＆「[1]➕追加(合算) / [2]✍️上書き修正 / [3]❌キャンセル」のアラート画面</strong>が表示されます！
             </p>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-primary" onclick="downloadBtH10wAppSource()" style="background: #0f766e; border-color: #0f766e;">
-                💻 BT-H10W スクリプト (TAC_TANAOROSHI.scp) をダウンロード
+                💻 BT-H10W アプリ (TAC_TANAOROSHI.scp v2.0) をダウンロード
               </button>
-              <button type="button" class="btn btn-secondary" onclick="downloadSampleHtCsv()">
-                🧪 テスト用HT出力サンプル (INV_LOG.CSV) をダウンロード
+              <button type="button" class="btn btn-secondary" onclick="downloadBtH10wMasterIni()">
+                ⚙️ HTMasterFileInfo.ini をダウンロード
               </button>
             </div>
           </div>
@@ -43164,45 +43717,23 @@ window.openHtImportModal = function(initialTab = 'import') {
       </div>
 
       <!-- タブ3: 開発・取込手順書 -->
-      <div id="ht-tab-content-guide" style="display: none; max-height: 460px; overflow-y: auto; padding: 0.75rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.875rem; line-height: 1.65; color: #1e293b;">
-        <h4 style="color: #0369a1; margin-top: 0; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📘 ステップ1：BT-H10W（BT-Navigator）でのアプリ作成手順（5分で完了）</h4>
-        <ol style="padding-left: 1.25rem; margin-bottom: 1rem;">
-          <li>PCで <strong>KEYENCE BT-H10W（BT-Navigator / アプリケーション簡単作成ツール）</strong> を起動し、対象機種に <strong>「BT-W85（またはBT-W80シリーズ）」</strong> を選択して新規作成します。</li>
-          <li><strong>メニュー設定：</strong> 不要な業務メニューのチェックを外し、<strong>「棚卸（またはログ収集）」の1業務のみ</strong>にします（起動後すぐに棚卸スキャンが始まる設定も可能です）。</li>
-          <li><strong>マスタ設定（任意）：</strong> 上の「2. BT-W85用マスタ出力」タブからダウンロードした <code>MASTER.CSV</code>（1列目:資材ID、2列目:品名、3列目:単価）を参照するように設定します。<strong>「マスタにないコードも入力許可する（照合エラーで止めない）」</strong>にします。</li>
-          <li><strong>入力項目設定：</strong>
-            <ul>
-              <li><strong>項目1（資材ID）</strong>：読取種別＝「QRコード / バーコードすべて許可」、桁数制限＝なし。</li>
-              <li><strong>項目2（実棚数量）</strong>：入力種別＝「数値（テンキー入力）」、初期値＝「1（または空欄）」、最大桁数＝6桁。</li>
-            </ul>
-          </li>
-          <li><strong>出力ログ設定（CSV形式）：</strong>
-            <ul>
-              <li>ファイル名：<code>INV_LOG.CSV</code>（または <code>TANAOROSHI.CSV</code>）</li>
-              <li>区切り文字：カンマ（<code>,</code>）</li>
-              <li>出力項目：<code>日付, 時刻, 端末番号, 資材ID(項目1), 数量(項目2)</code>（※<code>資材ID, 数量</code> の2列のみでも自動認識します）</li>
-            </ul>
-          </li>
-          <li><strong>実機へ転送：</strong> BT-W85をUSB通信ユニット（クレードル）に置き、BT-W85側で「システムメニュー」➔「通信待受」にして、PCのBT-H10Wから<strong>「アプリ送信（およびマスタ送信）」</strong>をクリックします。</li>
-        </ol>
+      <div id="ht-tab-content-guide" style="display: none; max-height: 440px; overflow-y: auto; padding: 0.75rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.85rem; line-height: 1.65; color: #1e293b;">
+        <h4 style="color: #0369a1; margin-top: 0; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📘 1. 担当者ログイン管理と HT での担当者増減について</h4>
+        <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
+          <li>生産管理システムの「◉ ユーザー管理」に登録されている<strong>ユーザー名（ログインID）</strong>と<strong>表示名</strong>を <code>USERS.CSV</code> として出力し、BT-W85 へ転送できます。</li>
+          <li>BT-W85 起動時に<strong>「担当者ログイン選択」</strong>が表示され、番号キー選択または「担当者ログインQR」をスキャンしてログインします。</li>
+          <li>現場で急遽メンバーが増減した場合は、BT-W85 のログイン画面で <strong><code>[F2] 追加</code> / <code>[F3] 削除</code></strong> を押すことで、ハンディ本体上で直接担当者を増減できます。</li>
+          <li>スキャンしたデータには必ず「誰がスキャンしたか（ユーザー名・表示名）」が記録され、システムの「☑ 棚卸スキャン確認」画面の<strong>スキャン実行者欄</strong>に表示されます。</li>
+        </ul>
 
-        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📗 ステップ2：現場での BT-W85 棚卸スキャン手順</h4>
-        <ol style="padding-left: 1.25rem; margin-bottom: 1rem;">
-          <li>BT-W85の電源を入れ、<strong>「棚卸スキャン」</strong>を開きます。</li>
-          <li>棚や資材に貼られている<strong>「品名QRコード」</strong>（当システムの商品マスタや棚卸確認画面から印刷したもの）をトリガーボタンでスキャンします。</li>
-          <li>画面に品名が表示されます。テンキーで<strong>「実棚数量」</strong>を入力し、<strong>[ENT]キー</strong>を押します。</li>
-          <li>「ピッ」と音が鳴り、端末内のCSVに1行保存され、すぐに次のQRスキャン待機に戻ります。これを繰り返します。</li>
-        </ol>
-
-        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📙 ステップ3：PCへのCSV回収と、生産管理システムへの取り込み手順</h4>
-        <ol style="padding-left: 1.25rem; margin-bottom: 0.5rem;">
-          <li>スキャンが終わったら、BT-W85をPC接続されたクレードル（USB通信ユニット）に置きます。</li>
-          <li>PCの「データ転送ソフト（BT-Navigator通信ツール）」で<strong>「ログ受信（データ受信）」</strong>を実行すると、PCの受信フォルダに <code>INV_LOG.CSV</code> が保存されます。</li>
-          <li>この生産管理システムの「棚卸スキャン」または「棚卸スキャン確認」画面にある <strong>「📥 HTデータ取り込み」</strong> ボタンを押します。</li>
-          <li>保存された <code>INV_LOG.CSV</code> を選択すると、自動でマスタ照合＆数量集計されたプレビューが表示されます。</li>
-          <li>下の <strong>「🚀 棚卸仮登録へ一括反映する」</strong> ボタンを押せば取り込み完了です！</li>
-          <li>そのまま「☑ 棚卸スキャン確認」画面で未スキャン漏れがないか確認し、<strong>「✓ 棚卸確定 (締め処理)」</strong>を押して月次在庫を確定させます。</li>
-        </ol>
+        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📗 2. システム発行QRのスキャンと「ダブり（重複）アラート」</h4>
+        <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
+          <li>「商品マスタ」または「棚卸スキャン確認」画面の <strong>「🖨️ QR印刷」</strong> で発行した品名QRコードを BT-W85 でスキャンします。</li>
+          <li>同じ資材を2回スキャン（ダブり）した場合、BT-W85 画面上でピピピッと警告音が鳴り、通常の棚卸スキャンと全く同じように：<br>
+            <strong><code>[1] ➕追加(合算)する</code> / <code>[2] ✍️今回数で上書き修正</code> / <code>[3] ❌登録しない(キャンセル)</code></strong><br>
+            の選択アラートが表示されます。</li>
+          <li>さらに、PCの生産管理システムへCSVを取り込む際にも、複数台のHT間でのダブりや既存の仮登録データとのダブりを自動検知してアラートバナーで知らせます。</li>
+        </ul>
       </div>
     </div>
   `;
@@ -43214,11 +43745,11 @@ window.openHtImportModal = function(initialTab = 'import') {
     </button>
   `;
 
-  showModal('📠 ハンディターミナル (BT-W85) 棚卸バッチ取込 & 連携', body, footer);
+  showModal('📠 ハンディターミナル (BT-W85) 棚卸バッチ取込 & 担当者ログイン管理', body, footer);
 
   const modalEl = $('#modal');
   if (modalEl) {
-    modalEl.style.maxWidth = '920px';
+    modalEl.style.maxWidth = '960px';
     modalEl.style.width = '95%';
   }
 
@@ -43250,24 +43781,42 @@ window.switchHtModalTab = function(tabName) {
   }
 };
 
-// スマートCSV解析: BT-W85のあらゆるCSV列構成を自動判別して集計
+// スマートCSV解析 v2.0: 担当者ログイン情報 + CSV内ダブり + 既存仮登録ダブりを完全解析
 window.parseHtCsvFile = function() {
   const fileInput = document.getElementById('ht-csv-file-input');
   if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
 
   const file = fileInput.files[0];
+  const targetMonth = (document.getElementById('ht-import-month') || {}).value || new Date().toISOString().substring(0, 7);
   const dupMode = (document.getElementById('ht-duplicate-mode') || {}).value || 'sum';
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_add';
+  const selectedWorkerOpt = (document.getElementById('ht-worker-select') || {}).value || '__CSV_PRIORITY__';
 
-  // 高速照合マップ作成 (id と identCode の両方に対応)
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const currentLoginUser = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || users[0] || { username: 'admin', displayName: '管理者' };
+
+  // 当月の既存仮登録マップを作成 (ダブり検知用)
+  const existingTempScans = (DB.getTempScans() || []).filter(s => s && s.month === targetMonth);
+  const existingTempMap = {};
+  existingTempScans.forEach(s => {
+    if (s && s.productId) {
+      existingTempMap[String(s.productId).toUpperCase()] = s;
+    }
+  });
+
+  // 商品マスタ照合マップ (id と identCode)
   const prodMap = {};
   products.forEach(p => {
-    if (p && p.id) {
-      prodMap[String(p.id).trim().toUpperCase()] = p;
-    }
-    if (p && p.identCode) {
-      prodMap[String(p.identCode).trim().toUpperCase()] = p;
-    }
+    if (p && p.id) prodMap[String(p.id).trim().toUpperCase()] = p;
+    if (p && p.identCode) prodMap[String(p.identCode).trim().toUpperCase()] = p;
+  });
+
+  // ユーザー照合マップ (username と displayName)
+  const userMap = {};
+  users.forEach(u => {
+    if (u && u.username) userMap[String(u.username).trim().toLowerCase()] = u;
+    if (u && u.displayName) userMap[String(u.displayName).trim().toLowerCase()] = u;
   });
 
   const reader = new FileReader();
@@ -43282,41 +43831,44 @@ window.parseHtCsvFile = function() {
         ? parseCsv(text)
         : text.split(/\r?\n/).map(line => line.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
 
-      const aggregated = {}; // productId -> { productId, rawCode, name, category, price, quantity, scanCount, isMatched, worker }
+      const aggregated = {};
 
       rows.forEach((row, idx) => {
         if (!row || row.length === 0) return;
         const cleanCols = row.map(c => String(c || '').trim().replace(/^"|"$/g, ''));
         if (cleanCols.every(c => c === '')) return;
 
-        // 1行目がヘッダー行かどうかを判定
+        // ヘッダー行スキップ
         const joinedUpper = cleanCols.join(',').toUpperCase();
         if (idx === 0 && (
           joinedUpper.includes('資材ID') ||
           joinedUpper.includes('商品コード') ||
-          joinedUpper.includes('PRODUCT') ||
-          joinedUpper.includes('BARCODE') ||
+          joinedUpper.includes('USERNAME') ||
           joinedUpper.includes('数量') ||
           joinedUpper.includes('QTY')
         )) {
-          return; // ヘッダー行スキップ
+          return;
         }
 
         let detectedId = '';
         let detectedQty = null;
-        let detectedWorker = 'BT-W85';
+        let csvWorkerId = '';
+        let csvWorkerName = '';
 
-        // 1列のみの場合（QR連続スキャンで1スキャン=1個カウントのケース）
         if (cleanCols.length === 1) {
           detectedId = cleanCols[0];
           detectedQty = 1;
         } else if (cleanCols.length === 2) {
-          // 2列: [資材ID, 数量]
           detectedId = cleanCols[0];
           detectedQty = parseFloat(cleanCols[1].replace(/[^0-9.-]/g, ''));
+        } else if (cleanCols.length >= 7) {
+          // v2.0 標準7列フォーマット: [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
+          csvWorkerId = cleanCols[3];
+          csvWorkerName = cleanCols[4];
+          detectedId = cleanCols[5];
+          detectedQty = parseFloat(cleanCols[6].replace(/[^0-9.-]/g, ''));
         } else {
-          // 3列以上（例: [日付, 時刻, 端末ID, 資材ID, (品名), 数量] または [資材ID, 品名, 数量]）
-          // まず末尾の数値列を数量として取得
+          // 3〜6列フォーマットの自動判別
           for (let c = cleanCols.length - 1; c >= 1; c--) {
             const val = cleanCols[c];
             if (/^-?\d+(\.\d+)?$/.test(val)) {
@@ -43325,31 +43877,30 @@ window.parseHtCsvFile = function() {
             }
           }
 
-          // 次にマスタに一致する列があるか探す
+          const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
+          const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
+          const isTermCol = (s) => /^(BTW|BT-W|HT\d*)$/i.test(s);
+
           for (let c = 0; c < cleanCols.length - 1; c++) {
-            const candidate = cleanCols[c].toUpperCase();
-            if (prodMap[candidate]) {
-              detectedId = prodMap[candidate].id;
-              break;
+            const s = cleanCols[c];
+            if (!s || isDateCol(s) || isTimeCol(s) || isTermCol(s)) continue;
+
+            // マスタにある資材IDかチェック
+            if (prodMap[s.toUpperCase()]) {
+              detectedId = prodMap[s.toUpperCase()].id;
+              continue;
             }
-          }
-
-          // マスタにないコードの場合、日付・時刻・端末名を除外して資材ID列を特定
-          if (!detectedId) {
-            const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
-            const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
-            const isTermCol = (s) => /^(BTW|BT-|HT|TERM|USER|WORKER|ADMIN)/i.test(s);
-
-            for (let c = 0; c < cleanCols.length - 1; c++) {
-              const s = cleanCols[c];
-              if (!s) continue;
-              if (isDateCol(s) || isTimeCol(s)) continue;
-              if (isTermCol(s)) {
-                detectedWorker = s;
-                continue;
-              }
+            // ユーザーマスタにある担当者かチェック
+            if (userMap[s.toLowerCase()]) {
+              const matchedU = userMap[s.toLowerCase()];
+              csvWorkerId = matchedU.username;
+              csvWorkerName = matchedU.displayName;
+              continue;
+            }
+            if (!detectedId) {
               detectedId = s;
-              break;
+            } else if (!csvWorkerId) {
+              csvWorkerId = s;
             }
           }
         }
@@ -43357,28 +43908,64 @@ window.parseHtCsvFile = function() {
         if (!detectedId) return;
         if (detectedQty === null || isNaN(detectedQty)) detectedQty = 1;
 
-        // マスタ照合
+        // 担当者の決定（プルダウン指定 or CSV内担当者照合）
+        let finalWorkerId = currentLoginUser.username;
+        let finalWorkerName = currentLoginUser.displayName;
+        let isNewHtUser = false;
+
+        if (selectedWorkerOpt !== '__CSV_PRIORITY__') {
+          const forcedUser = userMap[selectedWorkerOpt.toLowerCase()];
+          if (forcedUser) {
+            finalWorkerId = forcedUser.username;
+            finalWorkerName = forcedUser.displayName;
+          }
+        } else if (csvWorkerId || csvWorkerName) {
+          const matchedU = userMap[(csvWorkerId || '').toLowerCase()] || userMap[(csvWorkerName || '').toLowerCase()];
+          if (matchedU) {
+            finalWorkerId = matchedU.username;
+            finalWorkerName = matchedU.displayName;
+          } else {
+            finalWorkerId = csvWorkerId || csvWorkerName;
+            finalWorkerName = csvWorkerName || csvWorkerId;
+            isNewHtUser = true;
+          }
+        }
+
         const matchedProd = prodMap[detectedId.toUpperCase()];
         const finalId = matchedProd ? matchedProd.id : detectedId;
+        const existingScan = (mergeMode !== 'replace_all') ? existingTempMap[finalId.toUpperCase()] : null;
+        const prevTempQty = existingScan ? (Number(existingScan.quantity) || 0) : 0;
 
         if (!aggregated[finalId]) {
+          const htQty = detectedQty;
+          const resultQty = (existingScan && mergeMode === 'merge_add') ? (prevTempQty + htQty) : htQty;
           aggregated[finalId] = {
             productId: finalId,
             name: matchedProd ? matchedProd.name : `未登録資材 (${finalId})`,
             category: matchedProd ? (matchedProd.category || '99') : '99',
             price: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
-            quantity: detectedQty,
+            prevTempQty: prevTempQty,
+            hasExistingTemp: !!existingScan,
+            htQuantity: htQty,
+            quantity: resultQty,
             scanCount: 1,
             isMatched: !!matchedProd,
-            worker: detectedWorker
+            worker: finalWorkerId,
+            workerName: finalWorkerName,
+            isNewHtUser: isNewHtUser
           };
         } else {
           aggregated[finalId].scanCount += 1;
           if (dupMode === 'sum') {
-            aggregated[finalId].quantity += detectedQty;
+            aggregated[finalId].htQuantity += detectedQty;
           } else {
-            aggregated[finalId].quantity = detectedQty;
+            aggregated[finalId].htQuantity = detectedQty;
           }
+          aggregated[finalId].quantity = (aggregated[finalId].hasExistingTemp && mergeMode === 'merge_add')
+            ? (aggregated[finalId].prevTempQty + aggregated[finalId].htQuantity)
+            : aggregated[finalId].htQuantity;
+          aggregated[finalId].worker = finalWorkerId;
+          aggregated[finalId].workerName = finalWorkerName;
         }
       });
 
@@ -43388,45 +43975,78 @@ window.parseHtCsvFile = function() {
       const container = document.getElementById('ht-preview-container');
       const tbody = document.getElementById('ht-preview-tbody');
       const summaryEl = document.getElementById('ht-preview-summary');
+      const dupBannerEl = document.getElementById('ht-duplicate-alert-banner');
       const execBtn = document.getElementById('ht-execute-import-btn');
 
       if (items.length === 0) {
         if (container) container.style.display = 'none';
+        if (dupBannerEl) dupBannerEl.style.display = 'none';
         if (summaryEl) summaryEl.innerHTML = '<span style="color:#dc2626;">⚠️ 有効な棚卸データが見つかりませんでした</span>';
         if (execBtn) execBtn.disabled = true;
         return;
       }
 
-      const matchedCount = items.filter(i => i.isMatched).length;
-      const unknownCount = items.length - matchedCount;
+      const csvDupItems = items.filter(i => i.scanCount > 1);
+      const existingDupItems = items.filter(i => i.hasExistingTemp);
+      const unknownItems = items.filter(i => !i.isMatched);
       const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
 
+      // 重複（ダブり）アラートバナーの表示
+      if (dupBannerEl) {
+        if (csvDupItems.length > 0 || existingDupItems.length > 0) {
+          dupBannerEl.style.display = 'block';
+          dupBannerEl.innerHTML = `
+            <div style="background: #fffbeb; border-left: 5px solid #f59e0b; padding: 10px 14px; border-radius: 6px; font-size: 0.84rem; color: #92400e;">
+              <strong>⚠️ スキャン重複（ダブり）検知アラート：</strong><br>
+              ${csvDupItems.length > 0 ? `・HTファイル内で複数回スキャンされた資材が <strong>${csvDupItems.length}件</strong> あります（設定に従い「${dupMode === 'sum' ? '➕合算' : '✍️上書き'}」で計算済）。<br>` : ''}
+              ${existingDupItems.length > 0 ? `・既にシステムに当月の仮登録がある資材との重複が <strong>${existingDupItems.length}件</strong> あります（設定に従い「${mergeMode === 'merge_add' ? '➕既存数に加算' : '✍️HT数で上書き'}」で計算済）。` : ''}
+              <span style="display:block; margin-top:3px; color:#b45309;">※下の表の「反映後数量」で個別に数値を直接修正することも可能です。</span>
+            </div>
+          `;
+        } else {
+          dupBannerEl.style.display = 'none';
+        }
+      }
+
       if (summaryEl) {
-        summaryEl.innerHTML = `読取資材: <strong>${items.length}種類</strong> （マスタ一致: <span style="color:#16a34a;">${matchedCount}件</span>${unknownCount > 0 ? ` / 未登録: <span style="color:#d97706;">${unknownCount}件</span>` : ''} / 合計数量: <strong>${totalQty.toLocaleString()}</strong>）`;
+        summaryEl.innerHTML = `対象: <strong>${items.length}件</strong> / 反映後総数: <strong>${totalQty.toLocaleString()}個</strong>`;
       }
 
       if (tbody) {
         tbody.innerHTML = items.map((item, idx) => {
-          const catLabel = (typeof INV_CATEGORIES !== 'undefined' && INV_CATEGORIES[item.category])
-            ? INV_CATEGORIES[item.category]
-            : item.category;
-          const badge = item.isMatched
-            ? '<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.75rem;">✓ マスタ一致</span>'
-            : '<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.75rem;">⚠️ マスタ未登録</span>';
+          const badges = [];
+          if (!item.isMatched) {
+            badges.push('<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ マスタ未登録</span>');
+          }
+          if (item.scanCount > 1) {
+            badges.push(`<span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ CSV内重複(${item.scanCount}回)</span>`);
+          }
+          if (item.hasExistingTemp) {
+            badges.push('<span style="background:#fce7f3; color:#9d174d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 既存仮登録あり</span>');
+          }
+          if (badges.length === 0) {
+            badges.push('<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">✓ 新規照合OK</span>');
+          }
+
+          const rowBg = (item.scanCount > 1 || item.hasExistingTemp) ? 'background:#fffbeb;' : (!item.isMatched ? 'background:#fef2f2;' : '');
 
           return `
-            <tr style="${!item.isMatched ? 'background:#fffbeb;' : ''}">
+            <tr style="${rowBg}">
               <td><strong>${item.productId}</strong></td>
-              <td>${catLabel}</td>
               <td>${item.name}</td>
-              <td>¥${item.price.toLocaleString()}</td>
+              <td>
+                <strong>${item.workerName}</strong>
+                <span style="font-size:0.75rem; color:#64748b;">(${item.worker})</span>
+                ${item.isNewHtUser ? '<span style="background:#e0f2fe; color:#0369a1; font-size:0.68rem; padding:1px 4px; border-radius:3px; margin-left:4px;">HT新規</span>' : ''}
+              </td>
+              <td style="text-align: center; color: #64748b;">${item.hasExistingTemp ? item.prevTempQty + '個' : '-'}</td>
+              <td style="text-align: center; font-weight: 600; color: #0284c7;">${item.htQuantity}個</td>
               <td style="text-align: center;">
                 <input type="number" class="form-input" value="${item.quantity}" min="0"
                        style="width: 90px; padding: 4px; text-align: center; font-weight: bold;"
                        onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].quantity = parseFloat(this.value) || 0;">
               </td>
-              <td style="text-align: center;">${item.scanCount}回</td>
-              <td>${badge}</td>
+              <td>${badges.join(' ')}</td>
             </tr>
           `;
         }).join('');
@@ -43434,7 +44054,6 @@ window.parseHtCsvFile = function() {
 
       if (container) container.style.display = 'block';
       if (execBtn) execBtn.disabled = false;
-      toast(`HTファイルから ${items.length} 件の資材データを解析しました`, 'info');
     } catch (e) {
       console.error('HT CSV Parse Error:', e);
       toast('CSVの解析中にエラーが発生しました: ' + e.message, 'error');
@@ -43444,7 +44063,7 @@ window.parseHtCsvFile = function() {
   reader.readAsArrayBuffer(file);
 };
 
-// HTデータを棚卸仮登録(INV_PRODUCTS / INV_SCAN_TEMP / INV_LOGS)へ一括反映
+// HTデータを棚卸仮登録(INV_PRODUCTS / INV_SCAN_TEMP / INV_LOGS) および ユーザー管理(USERS) へ一括反映
 window.executeHtBatchImport = function() {
   const items = window._parsedHtBatchItems || [];
   if (items.length === 0) {
@@ -43453,9 +44072,12 @@ window.executeHtBatchImport = function() {
   }
 
   const targetMonth = (document.getElementById('ht-import-month') || {}).value || new Date().toISOString().substring(0, 7);
-  const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_overwrite';
+  const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_add';
   const autoRegisterUnknown = document.getElementById('ht-auto-register-unknown')
     ? document.getElementById('ht-auto-register-unknown').checked
+    : true;
+  const autoRegisterUser = document.getElementById('ht-auto-register-user')
+    ? document.getElementById('ht-auto-register-user').checked
     : true;
 
   const [y, m] = targetMonth.split('-');
@@ -43465,11 +44087,39 @@ window.executeHtBatchImport = function() {
   let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   let tempScans = DB.get(DB.KEYS.INV_SCAN_TEMP) || [];
   let logs = DB.get(DB.KEYS.INV_LOGS) || [];
+  let users = DB.get(DB.KEYS.USERS) || [];
+  let userAddedCount = 0;
+
+  // HTで新規追加された担当者を USERS マスタへ自動登録
+  if (autoRegisterUser) {
+    let maxUserId = users.reduce((max, u) => Math.max(max, Number(u.id) || 0), 0);
+    items.forEach(item => {
+      if (item.isNewHtUser && item.worker) {
+        const exists = users.some(u => u && String(u.username).toLowerCase() === String(item.worker).toLowerCase());
+        if (!exists) {
+          maxUserId++;
+          users.push({
+            id: maxUserId,
+            username: item.worker,
+            password: item.worker + '123',
+            displayName: item.workerName || item.worker,
+            role: 'worker',
+            department: '製造部'
+          });
+          userAddedCount++;
+        }
+      }
+    });
+    if (userAddedCount > 0) {
+      DB.save(DB.KEYS.USERS, JSON.parse(JSON.stringify(users)));
+      if (typeof renderUsers === 'function') renderUsers();
+    }
+  }
 
   // 当月既存クリアモードの場合
   if (mergeMode === 'replace_all') {
     products.forEach(p => {
-      if (p.tempMonth === targetMonth) {
+      if (p && p.tempMonth === targetMonth) {
         delete p.tempQty;
         delete p.tempWorker;
         delete p.tempWorkerName;
@@ -43490,7 +44140,7 @@ window.executeHtBatchImport = function() {
     let prodIdx = products.findIndex(p => p && String(p.id).toUpperCase() === String(item.productId).toUpperCase());
 
     if (prodIdx === -1) {
-      if (!autoRegisterUnknown) return; // スキップ
+      if (!autoRegisterUnknown) return;
       const newProd = {
         id: item.productId,
         name: item.name,
@@ -43504,21 +44154,19 @@ window.executeHtBatchImport = function() {
     }
 
     const prod = products[prodIdx];
-    const prevTempQty = (prod.tempMonth === targetMonth && typeof prod.tempQty === 'number') ? prod.tempQty : 0;
-    const finalQty = (mergeMode === 'merge_add') ? (prevTempQty + item.quantity) : item.quantity;
-
+    const finalQty = item.quantity;
     const scanId = Date.now() + '_ht_' + idx + '_' + prod.id;
 
-    // 1. INV_PRODUCTS 側の仮登録プロパティ更新
+    // 1. INV_PRODUCTS 側の仮登録プロパティ更新 (実行者のログインIDと表示名を保存)
     prod.tempQty = finalQty;
-    prod.tempWorker = item.worker || 'BT-W85';
-    prod.tempWorkerName = 'HT(BT-W85)';
+    prod.tempWorker = item.worker || 'admin';
+    prod.tempWorkerName = item.workerName || '管理者';
     prod.tempTimestamp = lastDay;
     prod.tempMonth = targetMonth;
     prod.tempId = scanId;
 
     // 2. INV_SCAN_TEMP 側の更新
-    const existingTempIdx = tempScans.findIndex(s => s && s.productId === prod.id && s.month === targetMonth);
+    const existingTempIdx = tempScans.findIndex(s => s && String(s.productId).toUpperCase() === String(prod.id).toUpperCase() && s.month === targetMonth);
     const scanRecord = {
       id: scanId,
       productId: prod.id,
@@ -43536,8 +44184,8 @@ window.executeHtBatchImport = function() {
       tempScans.push(scanRecord);
     }
 
-    // 3. INV_LOGS 側の更新 (本日の履歴・互換用)
-    logs = logs.filter(l => !(l && l.type === 'count_temp' && l.productId === prod.id && (l.month === targetMonth || (l.timestamp && l.timestamp.startsWith(targetMonth)))));
+    // 3. INV_LOGS 側の更新
+    logs = logs.filter(l => !(l && l.type === 'count_temp' && String(l.productId).toUpperCase() === String(prod.id).toUpperCase() && (l.month === targetMonth || (l.timestamp && l.timestamp.startsWith(targetMonth)))));
     logs.push({
       ...scanRecord,
       timestamp: nowIso
@@ -43547,14 +44195,12 @@ window.executeHtBatchImport = function() {
     totalImportedQty += finalQty;
   });
 
-  // 保存
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
   DB.save(DB.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(tempScans)));
   DB.save(DB.KEYS.INV_LOGS, JSON.parse(JSON.stringify(logs)));
 
   hideModal();
 
-  // 対象月セレクタを同期
   if ($('#inv-check-month')) $('#inv-check-month').value = targetMonth;
   if ($('#inv-scan-month')) $('#inv-scan-month').value = targetMonth;
 
@@ -43564,7 +44210,7 @@ window.executeHtBatchImport = function() {
 
   toast(`✅ HTデータ ${importedCount}件（総数量: ${totalImportedQty.toLocaleString()}）を ${targetMonth} の仮登録に反映しました`, 'success', 5000);
 
-  if (confirm(`✅ BT-W85 棚卸データの取り込みが完了しました！\n\n・反映件数: ${importedCount} 件${newMasterCount > 0 ? ` (うち新規マスタ追加: ${newMasterCount}件)` : ''}\n・対象年月: ${targetMonth}\n\n続けて「☑ 棚卸スキャン確認」画面を開き、未スキャン漏れの確認や確定（締め）処理を行いますか？`)) {
+  if (confirm(`✅ BT-W85 棚卸データの取り込みが完了しました！\n\n・反映資材数: ${importedCount} 件\n・総数量: ${totalImportedQty.toLocaleString()} 個${userAddedCount > 0 ? `\n・新規担当者追加: ${userAddedCount} 名` : ''}\n\n続けて「☑ 棚卸スキャン確認」画面を開き、スキャン実行者や未スキャン漏れの確認を行いますか？`)) {
     if (typeof navigateTo === 'function') {
       navigateTo('inv-check');
     }
@@ -43579,7 +44225,6 @@ window.exportHtMasterCsv = function() {
     return;
   }
 
-  // BT-W85の画面表示に最適化したシンプル3列フォーマット: 資材ID,品名,単価
   const lines = products
     .filter(p => p && p.id && !String(p.id).startsWith('TEMP_'))
     .map(p => {
@@ -43592,12 +44237,10 @@ window.exportHtMasterCsv = function() {
   const csvString = lines.join('\r\n') + '\r\n';
   let blob;
 
-  // Encoding.js が利用可能な場合は BT-W85 ネイティブの Shift-JIS に変換して文字化けを完全防止
   if (typeof Encoding !== 'undefined') {
     const unicodeArray = Encoding.stringToCode(csvString);
     const sjisArray = Encoding.convert(unicodeArray, { to: 'SJIS', from: 'UNICODE' });
-    const uint8Array = new Uint8Array(sjisArray);
-    blob = new Blob([uint8Array], { type: 'text/csv;charset=shift_jis;' });
+    blob = new Blob([new Uint8Array(sjisArray)], { type: 'text/csv;charset=shift_jis;' });
   } else {
     blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   }
@@ -43614,7 +44257,7 @@ window.exportHtMasterCsv = function() {
   toast('📤 BT-W85用 商品マスタ (MASTER.CSV) をダウンロードしました', 'success');
 };
 
-// BT-H10W マスタ転送設定ファイル (HTMasterFileInfo.ini) ダウンロード
+// BT-H10W マスタ転送設定ファイル (HTMasterFileInfo.ini: MASTER.CSV + USERS.CSV)
 window.downloadBtH10wMasterIni = function() {
   const iniContent = [
     '[MasterFile1]',
@@ -43627,6 +44270,19 @@ window.downloadBtH10wMasterIni = function() {
     'Field2Length=64',
     'Field3Type=NUMERIC',
     'Field3Length=12',
+    'Delimiter=COMMA',
+    'Quote=NONE',
+    '',
+    '[MasterFile2]',
+    'FileName=USERS.CSV',
+    'FieldCount=3',
+    'KeyField1=1',
+    'Field1Type=STRING',
+    'Field1Length=32',
+    'Field2Type=STRING',
+    'Field2Length=64',
+    'Field3Type=STRING',
+    'Field3Length=32',
     'Delimiter=COMMA',
     'Quote=NONE',
     ''
@@ -43644,93 +44300,9 @@ window.downloadBtH10wMasterIni = function() {
   toast('⚙️ HTMasterFileInfo.ini をダウンロードしました', 'success');
 };
 
-// BT-H10W スクリプトソースコード (TAC_TANAOROSHI.scp) ダウンロード
+// BT-H10W スクリプトソースコード v2.0 (TAC_TANAOROSHI.scp) ダウンロード
 window.downloadBtH10wAppSource = function() {
-  const scpContent = `' ====================================================================
-' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション
-' ファイル名: TAC_TANAOROSHI.scp
-' 対象機種  : KEYENCE BT-W85
-' メニュー  : 棚卸スキャンのみ（CSV出力: INV_LOG.CSV）
-' ====================================================================
-
-Include "BT_Lib.inc"
-
-Dim g_strTerminalId As String
-Dim g_strLogFile As String
-Dim g_strMasterFile As String
-
-Sub Main()
-    Dim key As String
-    g_strTerminalId = "BTW85"
-    g_strLogFile = "INV_LOG.CSV"
-    g_strMasterFile = "MASTER.CSV"
-
-    While (1)
-        LcdClear()
-        LcdPrint(1, 1, "=== TAC 棚卸システム ===")
-        LcdPrint(3, 1, "[1] 棚卸スキャン開始")
-        LcdPrint(5, 1, "[2] PCへデータ送信")
-        LcdPrint(7, 1, "[3] ログ件数確認/消去")
-        LcdPrint(9, 1, "[1]またはENTで開始")
-
-        key = KeyWait()
-        If key = "1" Or key = "ENT" Or key = "TRG" Then
-            Call DoInventoryScan()
-        ElseIf key = "2" Then
-            Call DoSendData()
-        ElseIf key = "3" Then
-            Call DoManageLog()
-        End If
-    Wend
-End Sub
-
-Sub DoInventoryScan()
-    Dim strCode As String
-    Dim strName As String
-    Dim strPrice As String
-    Dim strQty As String
-    Dim strDate As String
-    Dim strTime As String
-    Dim strRecord As String
-    Dim nCount As Integer
-
-    While (1)
-        LcdClear()
-        nCount = GetLogCount(g_strLogFile)
-        LcdPrint(1, 1, "【棚卸スキャン】件数:" & nCount)
-        LcdPrint(2, 1, "------------------------")
-        LcdPrint(3, 1, "資材QRを読取してください")
-        LcdPrint(4, 1, "コード:")
-        LcdPrint(9, 1, "[F1/CLR]:メニューへ戻る")
-
-        strCode = ScanOrInput(4, 8)
-        If strCode = "ESC" Or strCode = "F1" Or strCode = "" Then
-            Exit Sub
-        End If
-
-        strName = "（マスタ照合）"
-        strPrice = "-"
-        Call LookupMaster(strCode, strName, strPrice)
-
-        LcdPrint(5, 1, "品名:" & Left(strName, 18))
-        LcdPrint(6, 1, "単価:¥" & strPrice)
-        LcdPrint(7, 1, "実棚数量を入力[ENT]:")
-        strQty = InputQuantity(8, 1, "1")
-
-        If strQty <> "ESC" And strQty <> "" Then
-            strDate = GetDateStr()
-            strTime = GetTimeStr()
-            strRecord = strDate & "," & strTime & "," & g_strTerminalId & "," & strCode & "," & strQty
-            Call AppendCsvLine(g_strLogFile, strRecord)
-            Buzzer(1, 100)
-            Led(1, 200)
-            LcdPrint(9, 1, "=> 登録OK! (" & strQty & "個)   ")
-            Wait(300)
-        End If
-    Wend
-End Sub
-`;
-
+  const scpContent = "' ====================================================================\n' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション (v2.0)\n' ファイル名: TAC_TANAOROSHI.scp\n' 対象機種  : KEYENCE BT-W85 (BT-W80 / BT-W70 / BT-1000 シリーズ共通)\n' 開発環境  : KEYENCE BT-H10W (BT-Navigator / スクリプト開発環境)\n' 機能概要  :\n'   1. 担当者ログイン管理 (USERS.CSV 連携: 一覧選択・QRログイン)\n'   2. HT本体での担当者の追加・削除機能 (USERS.CSV 直接編集・保存)\n'   3. システム発行の品名QRコード読取 & 商品マスタ(MASTER.CSV)照合\n'   4. 重複スキャン(ダブり)検知時の警告ブザー＆アラート画面\n'      ([1]加算する / [2]上書き修正 / [3]キャンセル)\n'   5. 実行者(ユーザー名・表示名)付きCSV出力 (INV_LOG.CSV)\n' ====================================================================\n\nInclude \"BT_Lib.inc\"\n\n' --- グローバル変数定義 ---\nDim g_strTerminalId As String\nDim g_strLogFile As String\nDim g_strMasterFile As String\nDim g_strUsersFile As String\n\n' 現在ログイン中の担当者情報\nDim g_strCurrentUsername As String\nDim g_strCurrentDisplayName As String\n\n' ====================================================================\n' メインエントリポイント (端末起動時に自動実行)\n' ====================================================================\nSub Main()\n    Dim key As String\n\n    ' 初期設定\n    g_strTerminalId = \"BTW85\"\n    g_strLogFile = \"INV_LOG.CSV\"\n    g_strMasterFile = \"MASTER.CSV\"\n    g_strUsersFile = \"USERS.CSV\"\n\n    g_strCurrentUsername = \"\"\n    g_strCurrentDisplayName = \"\"\n\n    ' 担当者マスタ(USERS.CSV)が無い場合は初期ユーザーを作成\n    Call EnsureDefaultUsersFile()\n\n    ' 起動時に必ず担当者ログインを実行\n    Call DoWorkerLogin()\n\n    ' メインメニューループ（棚卸スキャン特化メニュー）\n    While (1)\n        LcdClear()\n        LcdPrint(1, 1, \"=== TAC 棚卸システム ===\")\n        LcdPrint(2, 1, \"担当:\" & Left(g_strCurrentDisplayName, 10) & \"(\" & g_strCurrentUsername & \")\")\n        LcdPrint(3, 1, \"------------------------\")\n        LcdPrint(4, 1, \"[1] 棚卸スキャン開始\")\n        LcdPrint(5, 1, \"[2] 担当者切替・増減管理\")\n        LcdPrint(6, 1, \"[3] PCへデータ送信(CSV)\")\n        LcdPrint(7, 1, \"[4] 履歴確認・データ消去\")\n        LcdPrint(9, 1, \"[1]またはENTでスキャンへ\")\n\n        key = KeyWait()\n\n        If key = \"1\" Or key = \"ENT\" Or key = \"TRG\" Then\n            Call DoInventoryScan()\n        ElseIf key = \"2\" Then\n            Call DoWorkerLogin()\n        ElseIf key = \"3\" Then\n            Call DoSendData()\n        ElseIf key = \"4\" Then\n            Call DoManageLog()\n        End If\n    Wend\nEnd Sub\n\n' ====================================================================\n' 初期 USERS.CSV の自動生成（ファイル未転送時でも動作可能にする）\n' フォーマット: ユーザー名(username),表示名(displayName),部門(department)\n' ====================================================================\nSub EnsureDefaultUsersFile()\n    If FileExists(g_strUsersFile) = 0 Then\n        Call AppendCsvLine(g_strUsersFile, \"admin,管理者,管理部\")\n        Call AppendCsvLine(g_strUsersFile, \"worker,作業者A,製造部\")\n    End If\nEnd Sub\n\n' ====================================================================\n' 担当者ログイン ＆ 担当者増減（追加・削除）画面\n' ====================================================================\nSub DoWorkerLogin()\n    Dim key As String\n    Dim strInput As String\n    Dim uName As String\n    Dim dName As String\n    Dim page As Integer\n    Dim totalUsers As Integer\n\n    page = 0\n\n    While (1)\n        LcdClear()\n        LcdPrint(1, 1, \"【担当者ログイン選択】\")\n        If g_strCurrentUsername <> \"\" Then\n            LcdPrint(2, 1, \"現在:\" & Left(g_strCurrentDisplayName, 10) & \"(\" & g_strCurrentUsername & \")\")\n        Else\n            LcdPrint(2, 1, \"担当者を選択/QR読取:\")\n        End If\n\n        ' USERS.CSV から一覧表示 (1ページ3名表示)\n        totalUsers = DisplayUsersList(page)\n\n        LcdPrint(7, 1, \"[1-3]:選択 [QR]:ID読取\")\n        LcdPrint(8, 1, \"[F2]:追加 [F3]:削除\")\n        LcdPrint(9, 1, \"[▲/▼]:次頁 [CLR]:戻る\")\n\n        ' QRスキャン（担当者QR）またはキー押下待ち\n        strInput = ScanOrKeyWait()\n\n        If strInput = \"F2\" Then\n            ' 担当者の新規追加 (HT単体で追加可能)\n            Call DoAddWorkerOnHt()\n        ElseIf strInput = \"F3\" Then\n            ' 担当者の削除 (HT単体で削除可能)\n            Call DoDeleteWorkerOnHt()\n        ElseIf strInput = \"UP\" Then\n            If page > 0 Then page = page - 1\n        ElseIf strInput = \"DOWN\" Then\n            If (page + 1) * 3 < totalUsers Then page = page + 1\n        ElseIf strInput = \"CLR\" Or strInput = \"ESC\" Then\n            If g_strCurrentUsername <> \"\" Then\n                Exit Sub\n            Else\n                Buzzer(2, 80) ' 未ログイン時は選択必須\n            End If\n        ElseIf strInput = \"1\" Or strInput = \"2\" Or strInput = \"3\" Then\n            ' 番号選択でログイン\n            If GetUserByIndex(page * 3 + Val(strInput), uName, dName) = 1 Then\n                g_strCurrentUsername = uName\n                g_strCurrentDisplayName = dName\n                Buzzer(1, 100)\n                Led(1, 200)\n                LcdClear()\n                LcdPrint(3, 1, \"ログイン完了！\")\n                LcdPrint(5, 1, \"担当: \" & g_strCurrentDisplayName)\n                LcdPrint(6, 1, \"ID  : \" & g_strCurrentUsername)\n                Wait(500)\n                Exit Sub\n            End If\n        Else\n            ' QRコード等でユーザーIDまたは「USER:username」をスキャンした場合\n            Call ParseUserQrCode(strInput, uName, dName)\n            If uName <> \"\" Then\n                g_strCurrentUsername = uName\n                g_strCurrentDisplayName = dName\n                Buzzer(1, 100)\n                Led(1, 200)\n                Exit Sub\n            End If\n        End If\n    Wend\nEnd Sub\n\n' ====================================================================\n' HT本体での担当者新規追加 (USERS.CSV へ追記)\n' ====================================================================\nSub DoAddWorkerOnHt()\n    Dim newId As String\n    Dim newName As String\n\n    LcdClear()\n    LcdPrint(1, 1, \"【担当者の新規追加】\")\n    LcdPrint(3, 1, \"ログインID(英数)を入力\")\n    LcdPrint(4, 1, \"(QRスキャンも可):\")\n    newId = ScanOrInput(5, 1)\n    If newId = \"\" Or newId = \"ESC\" Then Exit Sub\n\n    LcdPrint(6, 1, \"表示名(または番号)入力:\")\n    newName = KeyInputString(7, 1, newId)\n    If newName = \"\" Or newName = \"ESC\" Then newName = newId\n\n    ' USERS.CSV に保存\n    Call AppendCsvLine(g_strUsersFile, newId & \",\" & newName & \",製造部\")\n\n    g_strCurrentUsername = newId\n    g_strCurrentDisplayName = newName\n\n    Buzzer(1, 150)\n    LcdPrint(9, 1, \"=> 担当者を追加しました!\")\n    Wait(700)\nEnd Sub\n\n' ====================================================================\n' HT本体での担当者削除 (USERS.CSV から削除)\n' ====================================================================\nSub DoDeleteWorkerOnHt()\n    Dim targetId As String\n    Dim confirmKey As String\n\n    LcdClear()\n    LcdPrint(1, 1, \"【担当者の削除】\")\n    LcdPrint(3, 1, \"削除するログインIDを入力\")\n    LcdPrint(4, 1, \"またはQRをスキャン:\")\n    targetId = ScanOrInput(5, 1)\n    If targetId = \"\" Or targetId = \"ESC\" Then Exit Sub\n\n    If targetId = \"admin\" Then\n        Buzzer(3, 200)\n        LcdPrint(7, 1, \"※adminは削除できません\")\n        Wait(1000)\n        Exit Sub\n    End If\n\n    LcdPrint(7, 1, \"ID:\" & targetId & \" を削除?\")\n    LcdPrint(9, 1, \"[ENT]:削除実行 [CLR]:戻\")\n    confirmKey = KeyWait()\n    If confirmKey = \"ENT\" Then\n        Call RemoveCsvRecordByKey(g_strUsersFile, 1, targetId)\n        Buzzer(1, 150)\n        LcdPrint(8, 1, \"=> 削除しました\")\n        Wait(700)\n    End If\nEnd Sub\n\n' ====================================================================\n' [1] 棚卸スキャン業務（システムQR読取 ＆ 重複ダブりアラート搭載）\n' ====================================================================\nSub DoInventoryScan()\n    Dim strCode As String\n    Dim strName As String\n    Dim strPrice As String\n    Dim strQty As String\n    Dim strExistingQty As String\n    Dim strExistingWorker As String\n    Dim nExistingLine As Integer\n    Dim dupChoice As String\n    Dim nNewQty As Long\n    Dim nPrevQty As Long\n    Dim nTotalQty As Long\n    Dim strDate As String\n    Dim strTime As String\n    Dim strRecord As String\n    Dim nCount As Integer\n    Dim unregKey As String\n\n    If g_strCurrentUsername = \"\" Then\n        Call DoWorkerLogin()\n    End If\n\n    While (1)\n        LcdClear()\n        nCount = GetLogCount(g_strLogFile)\n        LcdPrint(1, 1, \"【棚卸】件数:\" & nCount & \" 担:\" & Left(g_strCurrentDisplayName, 6))\n        LcdPrint(2, 1, \"------------------------\")\n        LcdPrint(3, 1, \"システム発行のQRをスキャン\")\n        LcdPrint(4, 1, \"資材ID:\")\n        LcdPrint(9, 1, \"[F1/CLR]:メニューへ戻る\")\n\n        ' 1. QRコード / バーコード読取\n        strCode = ScanOrInput(4, 9)\n        If strCode = \"ESC\" Or strCode = \"F1\" Or strCode = \"CLR\" Or strCode = \"\" Then\n            Exit Sub\n        End If\n\n        ' 2. 商品マスタ(MASTER.CSV)照合\n        strName = \"\"\n        strPrice = \"0\"\n        If LookupMaster(strCode, strName, strPrice) = 0 Then\n            ' マスタ未登録品のアラート確認（通常の棚卸スキャンと同じ挙動）\n            Buzzer(2, 150)\n            Led(2, 300)\n            LcdClear()\n            LcdPrint(1, 1, \"⚠️ マスタ未登録のQRです\")\n            LcdPrint(3, 1, \"ID: \" & strCode)\n            LcdPrint(5, 1, \"このまま数量登録しますか?\")\n            LcdPrint(8, 1, \"[ENT]:仮登録を続ける\")\n            LcdPrint(9, 1, \"[CLR]:キャンセル\")\n            unregKey = KeyWait()\n            If unregKey <> \"ENT\" Then\n                GoTo NextScanLoop\n            End If\n            strName = \"未登録(\" & strCode & \")\"\n            strPrice = \"0\"\n            LcdClear()\n            LcdPrint(1, 1, \"【棚卸(未登録品)】\")\n            LcdPrint(4, 1, \"資材ID:\" & strCode)\n        End If\n\n        ' 品名・単価を表示\n        LcdPrint(5, 1, \"品名:\" & Left(strName, 18))\n        LcdPrint(6, 1, \"単価:¥\" & strPrice)\n\n        ' 3. 実棚数量の入力\n        LcdPrint(7, 1, \"実棚数量を入力[ENT]:\")\n        strQty = InputQuantity(8, 1, \"\")\n        If strQty = \"ESC\" Or strQty = \"CLR\" Or strQty = \"\" Then\n            Buzzer(2, 50)\n            GoTo NextScanLoop\n        End If\n\n        nNewQty = Val(strQty)\n        strDate = GetDateStr()\n        strTime = GetTimeStr()\n\n        ' 4. 重複スキャン（ダブり）チェック！\n        ' INV_LOG.CSV 内に同じ資材ID(6列目)が既に存在するか検索\n        nExistingLine = FindExistingScanInLog(g_strLogFile, strCode, strExistingQty, strExistingWorker)\n\n        If nExistingLine > 0 Then\n            ' ====================================================\n            ' ⚠️ ダブり（重複スキャン）検知時のアラート画面！\n            ' （Webアプリの showDuplicateScanModal と完全同一仕様）\n            ' ====================================================\n            nPrevQty = Val(strExistingQty)\n            nTotalQty = nPrevQty + nNewQty\n\n            Buzzer(3, 150) ' 警告音（ピピピッ）\n            Led(2, 400)    ' 橙/赤LED点灯\n\n            LcdClear()\n            LcdPrint(1, 1, \"⚠️ スキャン重複(ダブり)!\")\n            LcdPrint(2, 1, Left(strName, 22))\n            LcdPrint(3, 1, \"現在保存数: \" & nPrevQty & \" 個\")\n            LcdPrint(4, 1, \"今回入力数: \" & nNewQty & \" 個\")\n            LcdPrint(5, 1, \"------------------------\")\n            LcdPrint(6, 1, \"[1] ➕追加 (\" & nPrevQty & \"+\" & nNewQty & \"=\" & nTotalQty & \")\")\n            LcdPrint(7, 1, \"[2] ✍️上書き修正 (\" & nNewQty & \"個)\")\n            LcdPrint(8, 1, \"[3] ❌登録しない(キャンセル)\")\n\n            While (1)\n                dupChoice = KeyWait()\n                If dupChoice = \"1\" Or dupChoice = \"ENT\" Then\n                    ' [1] 追加（合算）して既存行を更新\n                    strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nTotalQty)\n                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)\n                    Buzzer(1, 100)\n                    Led(1, 200)\n                    LcdPrint(9, 1, \"=> 合算(\" & nTotalQty & \"個)で更新!\")\n                    Wait(500)\n                    Exit While\n                ElseIf dupChoice = \"2\" Then\n                    ' [2] 今回の数量で上書き修正\n                    strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nNewQty)\n                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)\n                    Buzzer(1, 100)\n                    Led(1, 200)\n                    LcdPrint(9, 1, \"=> 上書き(\" & nNewQty & \"個)完了!\")\n                    Wait(500)\n                    Exit While\n                ElseIf dupChoice = \"3\" Or dupChoice = \"CLR\" Or dupChoice = \"ESC\" Then\n                    ' [3] キャンセル\n                    Buzzer(2, 80)\n                    LcdPrint(9, 1, \"=> キャンセルしました\")\n                    Wait(400)\n                    Exit While\n                End If\n            Wend\n        Else\n            ' 初回スキャンの場合：そのまま追記保存\n            ' CSVフォーマット: 日付,時刻,端末ID,ユーザー名(username),表示名(displayName),資材ID,数量\n            strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nNewQty)\n            Call AppendCsvLine(g_strLogFile, strRecord)\n\n            Buzzer(1, 100)\n            Led(1, 200)\n            LcdPrint(9, 1, \"=> 登録OK! (\" & nNewQty & \"個)   \")\n            Wait(300)\n        End If\n\nNextScanLoop:\n    Wend\nEnd Sub\n\n' ====================================================================\n' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID, 2列目=品名, 3列目=単価)\n' 戻り値: 1=一致あり, 0=未登録(ただしマスタファイル自体が無い場合は1扱い)\n' ====================================================================\nFunction LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String) As Integer\n    Dim fp As Integer\n    Dim lineStr As String\n    Dim col1 As String\n\n    If FileExists(g_strMasterFile) = 0 Then\n        outName = \"資材(\" & targetId & \")\"\n        outPrice = \"-\"\n        LookupMaster = 1\n        Exit Function\n    End If\n\n    fp = FileOpen(g_strMasterFile, \"R\")\n    If fp < 0 Then\n        LookupMaster = 1\n        Exit Function\n    End If\n\n    While (FileEof(fp) = 0)\n        lineStr = FileReadLine(fp)\n        col1 = GetCsvCol(lineStr, 1)\n        If UCase(col1) = UCase(targetId) Then\n            outName = GetCsvCol(lineStr, 2)\n            outPrice = GetCsvCol(lineStr, 3)\n            FileClose(fp)\n            LookupMaster = 1\n            Exit Function\n        End If\n    Wend\n\n    FileClose(fp)\n    LookupMaster = 0\nEnd Function\n\n' ====================================================================\n' ログファイル内の重複スキャン検索 (6列目=資材ID または 4列目=資材ID)\n' 戻り値: 見つかった行番号 (なければ 0)\n' ====================================================================\nFunction FindExistingScanInLog(ByVal logFile As String, ByVal targetCode As String, ByRef outPrevQty As String, ByRef outPrevWorker As String) As Integer\n    Dim fp As Integer\n    Dim lineStr As String\n    Dim lineNo As Integer\n    Dim cCode As String\n\n    FindExistingScanInLog = 0\n    If FileExists(logFile) = 0 Then Exit Function\n\n    fp = FileOpen(logFile, \"R\")\n    If fp < 0 Then Exit Function\n\n    lineNo = 0\n    While (FileEof(fp) = 0)\n        lineNo = lineNo + 1\n        lineStr = FileReadLine(fp)\n        cCode = GetCsvCol(lineStr, 6)\n        If UCase(cCode) = UCase(targetCode) Then\n            outPrevWorker = GetCsvCol(lineStr, 5)\n            outPrevQty = GetCsvCol(lineStr, 7)\n            FileClose(fp)\n            FindExistingScanInLog = lineNo\n            Exit Function\n        End If\n    Wend\n\n    FileClose(fp)\nEnd Function\n\n' ====================================================================\n' [3] PCへデータ送信（INV_LOG.CSV および USERS.CSV の送信）\n' ====================================================================\nSub DoSendData()\n    Dim key As String\n    LcdClear()\n    LcdPrint(1, 1, \"=== PCへデータ送信 ===\")\n    LcdPrint(3, 1, \"[1] 棚卸データ送信(INV_LOG)\")\n    LcdPrint(5, 1, \"[2] 担当者リスト送信(USERS)\")\n    LcdPrint(7, 1, \"クレードルに置いて選択:\")\n    LcdPrint(9, 1, \"[1/ENT]:棚卸送信 [CLR]:戻\")\n\n    key = KeyWait()\n    If key = \"1\" Or key = \"ENT\" Then\n        LcdPrint(8, 1, \"INV_LOG.CSV 送信中...\")\n        CommSendFile(g_strLogFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"送信完了しました！    \")\n        Wait(1000)\n    ElseIf key = \"2\" Then\n        LcdPrint(8, 1, \"USERS.CSV 送信中...\")\n        CommSendFile(g_strUsersFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"担当者送信完了！      \")\n        Wait(1000)\n    End If\nEnd Sub\n\n' ====================================================================\n' [4] ログ件数確認・データ消去\n' ====================================================================\nSub DoManageLog()\n    Dim key As String\n    Dim cnt As Integer\n\n    LcdClear()\n    cnt = GetLogCount(g_strLogFile)\n    LcdPrint(1, 1, \"=== 棚卸データ管理 ===\")\n    LcdPrint(3, 1, \"現在の保存件数: \" & cnt & \" 件\")\n    LcdPrint(4, 1, \"ログイン担当: \" & g_strCurrentDisplayName)\n    LcdPrint(6, 1, \"※PC取込後に全消去下さい\")\n    LcdPrint(9, 1, \"[F4]:全消去  [CLR]:戻る\")\n\n    key = KeyWait()\n    If key = \"F4\" Then\n        FileDelete(g_strLogFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"全データを消去しました\")\n        Wait(1000)\n    End If\nEnd Sub\n";
   const blob = new Blob([scpContent], { type: 'text/plain;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -43740,27 +44312,32 @@ End Sub
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  toast('💻 BT-H10W用スクリプト (TAC_TANAOROSHI.scp) をダウンロードしました', 'success');
+  toast('💻 BT-H10W用スクリプト v2.0 (TAC_TANAOROSHI.scp) をダウンロードしました', 'success');
 };
 
-// 動作確認用のサンプルHT出力CSV (INV_LOG.CSV) を生成・ダウンロード
+// 動作確認用のサンプルHT出力CSV (担当者ログイン情報＆重複ダブり行つき)
 window.downloadSampleHtCsv = function() {
   const products = (DB.get(DB.KEYS.INV_PRODUCTS) || []).filter(p => p && p.id && !String(p.id).startsWith('TEMP_'));
-  const sampleItems = products.slice(0, 5);
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const u1 = users[0] || { username: 'admin', displayName: '管理者' };
+  const u2 = users[1] || u1;
+
+  const sampleItems = products.slice(0, 4);
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
 
   let lines = [];
   if (sampleItems.length > 0) {
     sampleItems.forEach((p, idx) => {
-      const time = `09:1${idx}:00`;
-      const sampleQty = (idx + 1) * 10;
-      lines.push(`${today},${time},BTW85,${p.id},${sampleQty}`);
+      const u = (idx % 2 === 0) ? u1 : u2;
+      lines.push(`${today},09:1${idx}:00,BTW85,${u.username},${u.displayName},${p.id},${(idx + 1) * 10}`);
     });
+    // 1件目の資材を別箇所でもう一度スキャンした（ダブりテスト用）行を追加
+    lines.push(`${today},09:25:00,BTW85,${u1.username},${u1.displayName},${sampleItems[0].id},5`);
   } else {
     lines = [
-      `${today},09:10:00,BTW85,N01-001,25`,
-      `${today},09:12:30,BTW85,N01-002,10`,
-      `${today},09:15:45,BTW85,N02-001,50`
+      `${today},09:10:00,BTW85,${u1.username},${u1.displayName},N01-001,20`,
+      `${today},09:12:30,BTW85,${u2.username},${u2.displayName},N01-002,15`,
+      `${today},09:15:45,BTW85,${u1.username},${u1.displayName},N01-001,5`
     ];
   }
 
@@ -43769,12 +44346,12 @@ window.downloadSampleHtCsv = function() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'INV_LOG_SAMPLE.CSV';
+  link.download = 'INV_LOG_SAMPLE_V2.CSV';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  toast('🧪 テスト用サンプルCSV (INV_LOG_SAMPLE.CSV) をダウンロードしました。ファイル選択から読み込んでお試しください！', 'info', 5000);
+  toast('🧪 担当者＆ダブり検証用サンプルCSV (INV_LOG_SAMPLE_V2.CSV) をダウンロードしました！', 'info', 5000);
 };
 
 </script>
@@ -43835,7 +44412,7 @@ window.downloadSampleHtCsv = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.69.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.70.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -43862,7 +44439,7 @@ window.downloadSampleHtCsv = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.69.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.70.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -43945,7 +44522,7 @@ window.downloadSampleHtCsv = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.69.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.70.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -44454,7 +45031,12 @@ window.downloadSampleHtCsv = function() {
                             <h1>◉ ユーザー管理</h1>
                             <p>システムユーザーの管理</p>
                         </div>
-                        <button class="btn btn-primary" id="add-user-btn">+ 新規作成</button>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" type="button" onclick="exportHtUsersCsv()" style="background-color: #0284c7; color: white; border-color: #0284c7;">📤 HT担当者CSV</button>
+                            <button class="btn btn-secondary" type="button" onclick="openHtUsersSyncModal()">📥 HT担当者同期</button>
+                            <button class="btn btn-secondary" type="button" onclick="showUserLoginQrGallery()">🖨️ 担当者QR</button>
+                            <button class="btn btn-primary" id="add-user-btn" onclick="showAddUserModal()">+ 新規作成</button>
+                        </div>
                     </div>
                 </div>
                 <div class="card">
@@ -45038,7 +45620,7 @@ window.downloadSampleHtCsv = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.69.0
+                    Version: v6.70.0
                 </div>
             </div>
         </div>
