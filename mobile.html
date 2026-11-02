@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.75.0】 -->
+    <!-- 【強制キャッシュバスティング v6.76.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.75.0';
+            var currentVersion = 'v6.76.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.75.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.76.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -2108,6 +2108,233 @@ body.dark-mode .summary-value {
     opacity: 0 !important;
     pointer-events: none !important;
 }
+
+/* ========================================
+   生産管理ガントチャート（納期優先スケジュール & 順番飛ばし防止）
+   ======================================== */
+.pms-priority-guide-box {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.6rem;
+    border: 1px solid #334155;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.pms-priority-violation-banner {
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    border-left: 6px solid #dc2626;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.6rem;
+    color: #7f1d1d;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.pms-gantt-scroll-container {
+    max-height: 75vh;
+    overflow: auto;
+    position: relative;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.pms-gantt-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max-content;
+    min-width: 100%;
+    font-size: 0.8125rem;
+}
+
+.pms-gantt-table th,
+.pms-gantt-table td {
+    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+.pms-gantt-sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 16;
+    width: 370px;
+    min-width: 370px;
+    max-width: 370px;
+    background: var(--color-bg-card);
+    box-shadow: 3px 0 6px rgba(0, 0, 0, 0.08);
+    padding: 8px 10px;
+    text-align: left;
+}
+
+.pms-gantt-table thead .pms-gantt-sticky-col {
+    z-index: 25;
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.pms-gantt-month-th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #0f172a;
+    color: #f8fafc;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 6px;
+    text-align: center;
+    height: 26px;
+    border-bottom: 1px solid #334155 !important;
+}
+
+.pms-gantt-day-th {
+    position: sticky;
+    top: 26px;
+    z-index: 20;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 3px 0;
+    line-height: 1.15;
+    height: 34px;
+    border-bottom: 2px solid #334155 !important;
+}
+
+.pms-gantt-day-th.is-sat {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+.pms-gantt-day-th.is-sun {
+    background: #451a24;
+    color: #fca5a5;
+}
+
+.pms-gantt-day-th.is-today {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    font-weight: 800;
+}
+
+.pms-gantt-order-row:hover .pms-gantt-sticky-col {
+    filter: brightness(0.97);
+}
+
+.pms-gantt-bar-track {
+    position: relative;
+    width: 100%;
+    min-height: 68px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pms-gantt-planned-bar {
+    position: absolute;
+    top: 8px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(203, 213, 225, 0.55);
+    border: 1.5px solid #94a3b8;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 4;
+    cursor: pointer;
+}
+
+.pms-gantt-actual-fill {
+    height: 100%;
+    transition: width 0.25s ease;
+    border-radius: 4px 0 0 4px;
+}
+
+.pms-gantt-bar-label {
+    position: absolute;
+    left: 8px;
+    right: 6px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.9), 0 0 5px rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.pms-gantt-proc-pills {
+    position: relative;
+    z-index: 4;
+    margin-top: 38px;
+    padding: 2px 8px 4px 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.pms-proc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.pms-proc-pill.done {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.pms-proc-pill.active {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #60a5fa;
+    font-weight: 800;
+}
+
+.pms-proc-pill.todo {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+
+.pms-proc-pill.defect {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #f87171;
+    font-weight: 800;
+}
+
+@media (max-width: 768px) {
+    .pms-gantt-sticky-col {
+        width: 225px;
+        min-width: 225px;
+        max-width: 225px;
+        padding: 6px 7px;
+    }
+}
+
 
     /* Mobile Overrides injected by build script */
     #version-banner { display: none !important; }
@@ -33978,6 +34205,8 @@ if (!currentTerminalId) {
 let currentUser = null;
 let expandedOrders = new Set();
 let ganttFilter = 'all';
+let ganttViewMode = localStorage.getItem('pms_gantt_view_mode') || 'timeline'; // 'timeline' | 'matrix'
+let _ganttInitialScrolledToToday = false;
 
 // カテゴリ別カラー定義
 const CATEGORY_COLORS = {
@@ -34538,32 +34767,360 @@ function renderDashboard() {
 
 
 // ========================================
-// ガントチャート（工程管理）- Monorevo風
+// ガントチャート（工程管理）- 納期優先スケジュール & 工程マトリクス
 // ========================================
 
+function parseGanttDate(dateStr, fallbackYear) {
+  if (!dateStr) return null;
+  const s = String(dateStr).trim();
+  if (!s || s === '-') return null;
+  const parts = s.split(/[\/\-]/);
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+  } else if (parts.length === 2) {
+    const y = fallbackYear || new Date().getFullYear();
+    const m = parseInt(parts[0], 10);
+    const d = parseInt(parts[1], 10);
+    if (!isNaN(m) && !isNaN(d)) {
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+  }
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) {
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+  }
+  return null;
+}
+
+function getOrderProcessStats(order, defects, allProcesses) {
+  let totalCount = 0;
+  let doneCount = 0;
+  const procMap = new Map();
+
+  const processOrderList = Array.isArray(allProcesses) && allProcesses.length > 0
+    ? allProcesses
+    : (typeof STANDARD_PROCESSES !== 'undefined' ? STANDARD_PROCESSES : []);
+
+  if (order && Array.isArray(order.items)) {
+    order.items.forEach(item => {
+      if (!item || !Array.isArray(item.processes)) return;
+      const completedArr = Array.isArray(item.completed) ? item.completed : [];
+      item.processes.forEach(p => {
+        totalCount++;
+        const isDone = completedArr.includes(p);
+        if (isDone) doneCount++;
+        if (!procMap.has(p)) {
+          procMap.set(p, { name: p, total: 0, done: 0, hasDefect: false });
+        }
+        const entry = procMap.get(p);
+        entry.total++;
+        if (isDone) entry.done++;
+        if (Array.isArray(defects) && defects.some(d =>
+          String(d.orderId) === String(order.id) &&
+          String(d.itemId) === String(item.id) &&
+          d.processName === p &&
+          d.status === 'pending'
+        )) {
+          entry.hasDefect = true;
+        }
+      });
+    });
+  }
+
+  const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  const orderedProcs = [];
+  processOrderList.forEach(p => {
+    if (procMap.has(p)) orderedProcs.push(procMap.get(p));
+  });
+  procMap.forEach((v) => {
+    if (!orderedProcs.includes(v)) orderedProcs.push(v);
+  });
+
+  let nextProcess = null;
+  orderedProcs.forEach(entry => {
+    if (entry.done < entry.total && !nextProcess) {
+      nextProcess = entry.name;
+    }
+  });
+
+  orderedProcs.forEach(entry => {
+    if (entry.hasDefect) {
+      entry.state = 'defect';
+    } else if (entry.done >= entry.total && entry.total > 0) {
+      entry.state = 'done';
+    } else if (entry.done > 0 || entry.name === nextProcess) {
+      entry.state = 'active';
+    } else {
+      entry.state = 'todo';
+    }
+  });
+
+  return {
+    totalCount,
+    doneCount,
+    progress,
+    nextProcess: progress === 100 ? '全工程完了' : (nextProcess || '未設定'),
+    processBreakdown: orderedProcs
+  };
+}
+
+function analyzeDueDatePriority(orders) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const incomplete = (orders || []).filter(o => calculateProgress(o) < 100);
+  incomplete.sort((a, b) => {
+    const da = parseGanttDate(a.dueDate);
+    const db = parseGanttDate(b.dueDate);
+    if (!da && !db) return (Number(a.id) || 0) - (Number(b.id) || 0);
+    if (!da) return 1;
+    if (!db) return -1;
+    if (da.getTime() !== db.getTime()) return da.getTime() - db.getTime();
+    const sa = parseGanttDate(a.startDate);
+    const sb = parseGanttDate(b.startDate);
+    if (sa && sb && sa.getTime() !== sb.getTime()) return sa.getTime() - sb.getTime();
+    return (Number(a.id) || 0) - (Number(b.id) || 0);
+  });
+
+  const priorityRankMap = new Map();
+  incomplete.forEach((o, idx) => {
+    priorityRankMap.set(String(o.id), idx + 1);
+  });
+
+  const skippedIds = new Set();
+  const outOfOrderIds = new Set();
+  const violationPairs = [];
+
+  for (let i = 0; i < incomplete.length; i++) {
+    const earlier = incomplete[i];
+    const earlierDue = parseGanttDate(earlier.dueDate);
+    if (!earlierDue) continue;
+    const earlierProg = calculateProgress(earlier);
+
+    for (let j = i + 1; j < incomplete.length; j++) {
+      const later = incomplete[j];
+      const laterDue = parseGanttDate(later.dueDate);
+      if (!laterDue) continue;
+      const laterProg = calculateProgress(later);
+
+      const daysUntilEarlier = Math.round((earlierDue.getTime() - today.getTime()) / 86400000);
+      const isSkipped = (laterDue.getTime() > earlierDue.getTime()) &&
+        laterProg > 0 &&
+        (earlierProg === 0 || (daysUntilEarlier <= 3 && earlierProg + 20 <= laterProg));
+
+      if (isSkipped) {
+        skippedIds.add(String(earlier.id));
+        outOfOrderIds.add(String(later.id));
+        violationPairs.push({ earlier, later });
+      }
+    }
+  }
+
+  return {
+    incompleteSorted: incomplete,
+    priorityRankMap,
+    skippedIds,
+    outOfOrderIds,
+    violationPairs
+  };
+}
+
+window.switchGanttViewMode = function(mode) {
+  if (mode !== 'timeline' && mode !== 'matrix') return;
+  if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
+  ganttViewMode = mode;
+  localStorage.setItem('pms_gantt_view_mode', mode);
+  if (mode === 'timeline') {
+    _ganttInitialScrolledToToday = false;
+  }
+  renderGantt();
+};
+
+window.scrollGanttToToday = function() {
+  const container = document.querySelector('.pms-gantt-scroll-container');
+  const todayTh = document.querySelector('.pms-gantt-day-th.is-today');
+  if (container && todayTh) {
+    const stickyCol = container.querySelector('.pms-gantt-sticky-col');
+    const stickyW = stickyCol ? stickyCol.offsetWidth : 230;
+    const targetLeft = Math.max(0, todayTh.offsetLeft - stickyW - 76);
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+  } else if (ganttViewMode !== 'timeline') {
+    window.switchGanttViewMode('timeline');
+  }
+};
+
+window.focusGanttOrder = function(orderId) {
+  expandedOrders.add(orderId);
+  expandedOrders.add(String(orderId));
+  expandedOrders.add(Number(orderId));
+  renderGantt();
+  setTimeout(() => {
+    const row = document.getElementById(`gantt-order-row-${orderId}`);
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const origOutline = row.style.outline;
+      row.style.outline = '3px solid #f59e0b';
+      setTimeout(() => { row.style.outline = origOutline || ''; }, 2200);
+    }
+  }, 100);
+};
+
+function jumpToOrder(orderId) {
+  navigateToOrder(orderId);
+}
+
+function renderGanttPriorityBanner(priorityInfo) {
+  const alertArea = document.getElementById('gantt-priority-alert-area');
+  if (!alertArea) return;
+
+  const { incompleteSorted, priorityRankMap, skippedIds, outOfOrderIds } = priorityInfo;
+  if (!incompleteSorted || incompleteSorted.length === 0) {
+    alertArea.innerHTML = '';
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const top3 = incompleteSorted.slice(0, 3);
+  const top3Html = top3.map((o, idx) => {
+    const rank = idx + 1;
+    const prog = calculateProgress(o);
+    const dueObj = parseGanttDate(o.dueDate);
+    const diffDays = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
+    let dueBadge = '';
+    if (diffDays !== null) {
+      if (diffDays < 0) dueBadge = `<span style="background:#dc2626; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">超過${Math.abs(diffDays)}日</span>`;
+      else if (diffDays === 0) dueBadge = `<span style="background:#ea580c; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">今日納期</span>`;
+      else if (diffDays <= 3) dueBadge = `<span style="background:#f59e0b; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">残${diffDays}日</span>`;
+      else dueBadge = `<span style="background:#334155; color:#e2e8f0; padding:1px 5px; border-radius:4px; font-size:0.7rem;">残${diffDays}日</span>`;
+    }
+    const stats = getOrderProcessStats(o, [], []);
+    const rankBg = rank === 1 ? '#ef4444' : (rank === 2 ? '#f59e0b' : '#3b82f6');
+    return `
+      <div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:8px; padding:6px 10px; display:flex; align-items:center; gap:8px; flex:1; min-width:220px;">
+        <span style="background:${rankBg}; color:#fff; font-weight:800; font-size:0.78rem; padding:3px 8px; border-radius:6px; white-space:nowrap;">
+          ${rank === 1 ? '🔥 優先 #1' : `優先 #${rank}`}
+        </span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:0.82rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            [${o.orderNo || '-'}] ${o.projectName} <span style="color:#93c5fd;">/ ${o.productName}</span>
+          </div>
+          <div style="font-size:0.72rem; color:#cbd5e1; display:flex; align-items:center; gap:6px; margin-top:2px; flex-wrap:wrap;">
+            <span>納期: <strong style="color:#fff;">${formatDate(o.dueDate)}</strong> ${dueBadge}</span>
+            <span>進捗: <strong style="color:#fde047;">${prog}%</strong></span>
+            <span style="background:rgba(59,130,246,0.3); color:#bfdbfe; padding:0 5px; border-radius:4px;">次: ${stats.nextProcess}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  let violationBannerHtml = '';
+  if (skippedIds.size > 0 && outOfOrderIds.size > 0) {
+    const skippedOrders = incompleteSorted.filter(o => skippedIds.has(String(o.id))).slice(0, 3);
+    const outOfOrderOrders = incompleteSorted.filter(o => outOfOrderIds.has(String(o.id))).slice(0, 3);
+
+    violationBannerHtml = `
+      <div class="pms-priority-violation-banner">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+          <div style="font-weight:800; font-size:0.9rem; color:#b91c1c; display:flex; align-items:center; gap:6px;">
+            <span>🚨 【納期順ルール違反（順番飛ばし）警告】</span>
+            <span style="font-size:0.78rem; font-weight:600; color:#7f1d1d;">納期が早い未完了案件より先に、後の納期案件が作業されています！</span>
+          </div>
+          <span style="background:#dc2626; color:#fff; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:999px;">納期順（#1 → #2 → #3）厳守</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:8px; font-size:0.78rem;">
+          <div style="background:#ffffff; border:1px solid #fca5a5; border-radius:6px; padding:6px 10px;">
+            <div style="font-weight:800; color:#dc2626; margin-bottom:3px;">🔥 今すぐ先に着手すべき案件（追い越され中）:</div>
+            ${skippedOrders.map(o => {
+              const r = priorityRankMap.get(String(o.id));
+              return `<div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; padding:2px 0; text-decoration:underline; font-weight:700; color:#991b1b;">
+                ・[優先 #${r}] ${o.projectName} / ${o.productName}（納期: ${formatDate(o.dueDate)}・進捗 ${calculateProgress(o)}%）
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:6px 10px;">
+            <div style="font-weight:800; color:#b45309; margin-bottom:3px;">⚠️ 順番を抜かして先行作業されている後納期案件:</div>
+            ${outOfOrderOrders.map(o => {
+              const r = priorityRankMap.get(String(o.id));
+              return `<div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; padding:2px 0; color:#92400e; font-weight:600;">
+                ・[優先 #${r}] ${o.projectName} / ${o.productName}（納期: ${formatDate(o.dueDate)}・進捗 ${calculateProgress(o)}%）
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  alertArea.innerHTML = `
+    ${violationBannerHtml}
+    <div class="pms-priority-guide-box">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+        <div style="font-weight:800; font-size:0.86rem; color:#fde047; display:flex; align-items:center; gap:6px;">
+          <span>🎯 生産着手の優先順位（納期が早い順 TOP 3）</span>
+          <span style="font-size:0.75rem; color:#cbd5e1; font-weight:500;">※必ず「優先 #1」から順番に生産を進めてください（タップで該当行を展開）</span>
+        </div>
+        <span style="font-size:0.75rem; color:#94a3b8;">未完了案件: 全 ${incompleteSorted.length} 件</span>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${top3Html}
+      </div>
+    </div>
+  `;
+}
+
 function renderGantt() {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const boms = DB.get(DB.KEYS.BOM);
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const boms = DB.get(DB.KEYS.BOM) || [];
   const defects = DB.get(DB.KEYS.DEFECTS) || [];
 
+  const btnTimeline = document.getElementById('gantt-view-timeline');
+  const btnMatrix = document.getElementById('gantt-view-matrix');
+  const btnToday = document.getElementById('gantt-scroll-today');
+  if (btnTimeline && btnMatrix) {
+    if (ganttViewMode === 'timeline') {
+      btnTimeline.className = 'btn btn-primary btn-sm';
+      btnMatrix.className = 'btn btn-secondary btn-sm';
+      if (btnToday) btnToday.style.display = 'inline-flex';
+    } else {
+      btnTimeline.className = 'btn btn-secondary btn-sm';
+      btnMatrix.className = 'btn btn-primary btn-sm';
+      if (btnToday) btnToday.style.display = 'none';
+    }
+  }
+
+  const priorityInfo = analyzeDueDatePriority(orders);
+  renderGanttPriorityBanner(priorityInfo);
+
   // フィルタリング
-  let filtered = orders;
-  if (ganttFilter === 'complete') {
+  let filtered = [...orders];
+  if (ganttFilter === 'progress') {
+    filtered = orders.filter(o => {
+      const p = calculateProgress(o);
+      return p > 0 && p < 100;
+    });
+  } else if (ganttFilter === 'complete') {
     filtered = orders.filter(o => calculateProgress(o) === 100);
   } else if (ganttFilter === 'pending') {
     filtered = orders.filter(o => calculateProgress(o) === 0);
   } else if (ganttFilter === 'incomplete') {
-    // 未完了 = 進行中 OR 未着手 (進捗 < 100)
     filtered = orders.filter(o => calculateProgress(o) < 100);
   } else if (['pao_incomplete', 'grid_incomplete', 'other_incomplete'].includes(ganttFilter)) {
     filtered = orders.filter(o => {
-      if (calculateProgress(o) === 100) return false; // 完了は除外
+      if (calculateProgress(o) === 100) return false;
 
-      // カテゴリ判定
       const bom = boms ? boms.find(b => b.productName === o.productName) : null;
       const category = bom ? (bom.category || '') : '';
-      const isPAO = category.includes('PAO') || o.productName.includes('PAO');
-      const isGRID = category.includes('GRID') || o.productName.includes('GRID');
+      const isPAO = category.includes('PAO') || (o.productName && o.productName.includes('PAO'));
+      const isGRID = category.includes('GRID') || (o.productName && o.productName.includes('GRID'));
 
       if (ganttFilter === 'pao_incomplete') return isPAO;
       if (ganttFilter === 'grid_incomplete') return isGRID;
@@ -34572,14 +35129,24 @@ function renderGantt() {
     });
   }
 
-  // 納期順にソート（昇順）
+  // 納期順にソート（未完了案件を優先順位順で先頭に）
   filtered.sort((a, b) => {
-    if (!a.dueDate) return 1;
-    if (!b.dueDate) return -1;
-    return new Date(a.dueDate) - new Date(b.dueDate);
+    const progA = calculateProgress(a);
+    const progB = calculateProgress(b);
+    const isDoneA = progA === 100 ? 1 : 0;
+    const isDoneB = progB === 100 ? 1 : 0;
+    if (ganttFilter === 'all' && isDoneA !== isDoneB) {
+      return isDoneA - isDoneB;
+    }
+    const da = parseGanttDate(a.dueDate);
+    const db = parseGanttDate(b.dueDate);
+    if (!da && !db) return (Number(a.id) || 0) - (Number(b.id) || 0);
+    if (!da) return 1;
+    if (!db) return -1;
+    return da.getTime() - db.getTime();
   });
 
-  // 全工程リストを取得（ユニーク: 標準 + 実データから収集）
+  // 全工程リストを取得
   const allProcesses = [...STANDARD_PROCESSES];
   filtered.forEach(order => {
     if (order.items) {
@@ -34594,10 +35161,7 @@ function renderGantt() {
       });
     }
   });
-  console.log('Active Processes:', allProcesses); // Debug log
 
-  // マトリクス表示のメインコンテナ
-  // index.htmlには .card-body がないので .gantt-container-mono をターゲットにする
   const pageBody = document.querySelector('.gantt-container-mono');
   if (!pageBody) {
     console.error('Target container .gantt-container-mono not found');
@@ -34609,7 +35173,14 @@ function renderGantt() {
     return;
   }
 
-  // HTML生成開始
+  if (ganttViewMode === 'timeline') {
+    renderGanttTimelineView(filtered, boms, defects, allProcesses, priorityInfo, pageBody);
+    return;
+  }
+
+  // ========================================
+  // 従来の工程マトリクス表示 (ganttViewMode === 'matrix')
+  // ========================================
   let html = `
     <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative;">
       <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
@@ -34623,16 +35194,21 @@ function renderGantt() {
   `;
 
   filtered.forEach(order => {
-    // オーダーヘッダー行
-    const daysUntilDue = order.dueDate ? Math.ceil((new Date(order.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+    const dueObj = parseGanttDate(order.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysUntilDue = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
     let dueStyle = '';
     if (daysUntilDue !== null && daysUntilDue <= 1) dueStyle = 'color: #ef4444; font-weight: bold;';
     else if (daysUntilDue !== null && daysUntilDue <= 3) dueStyle = 'color: #f59e0b;';
 
-    const isExpanded = expandedOrders.has(order.id);
+    const isExpanded = expandedOrders.has(order.id) || expandedOrders.has(String(order.id)) || expandedOrders.has(Number(order.id));
     const expandIcon = isExpanded ? '▼' : '▶';
+    const rank = priorityInfo.priorityRankMap.get(String(order.id));
+    const rankBadge = rank
+      ? `<span style="background:${rank === 1 ? '#ef4444' : (rank <= 3 ? '#f59e0b' : '#334155')}; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; margin-right:6px;">${rank === 1 ? '🔥優先#1' : `優先#${rank}`}</span>`
+      : `<span style="background:#22c55e; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700; margin-right:6px;">✓完了</span>`;
 
-    // カテゴリ色判定
     let rowStyle = '';
     const bom = boms ? boms.find(b => b.productName === order.productName) : null;
     const category = bom ? (bom.category || '') : '';
@@ -34641,31 +35217,27 @@ function renderGantt() {
     }
 
     html += `
-      <tr style="${rowStyle}">
+      <tr id="gantt-order-row-${order.id}" style="${rowStyle}">
         <td colspan="${allProcesses.length + 1}" class="matrix-group-header" style="${rowStyle}">
-          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, '${order.id}')">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
+              ${rankBadge}
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">生産指示書 ↗</span>
               <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
               ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
-              納期: ${formatDate(order.dueDate)}
+              納期: ${formatDate(order.dueDate)} (進捗: <strong data-gantt-prog-text="${order.id}">${calculateProgress(order)}%</strong>)
             </span>
           </div>
         </td>
       </tr>
     `;
 
-    // アイテム（部材）行 - 展開時のみ表示
     if (isExpanded && order.items && order.items.length > 0) {
       order.items.forEach((item, itemIdx) => {
-        // データ整合性
         if (!item) return;
-        // ID重複対策
-        const uniqueItemId = `${order.id}-${item.id || itemIdx}`;
-
         html += `
            <tr>
              <td class="col-part-name">
@@ -34674,7 +35246,6 @@ function renderGantt() {
              </td>
          `;
 
-        // 各工程セル
         allProcesses.forEach(process => {
           const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
           const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
@@ -34698,7 +35269,6 @@ function renderGantt() {
               statusText = '<span style="font-size:10px; color:#ffffff; font-weight:bold;">不良</span>';
             }
 
-            // エスケープ処理（シングルクォート対策）
             const safeProcess = process.replace(/'/g, "\\'");
             const safeOrderId = String(order.id).replace(/'/g, "\\'");
 
@@ -34715,7 +35285,6 @@ function renderGantt() {
         html += `</tr>`;
       });
     } else if (isExpanded) {
-      // 展開しているがアイテムがない場合
       html += `<tr><td colspan="${allProcesses.length + 1}" style="text-align:center; color:var(--color-text-muted); padding: 1rem;">部材データなし</td></tr>`;
     }
   });
@@ -34726,7 +35295,6 @@ function renderGantt() {
     </div>
   `;
 
-  // スクロール位置の保存
   const oldContainer = pageBody.querySelector('.matrix-container');
   let savedScrollTop = 0;
   let savedScrollLeft = 0;
@@ -34737,12 +35305,433 @@ function renderGantt() {
 
   pageBody.innerHTML = html;
 
-  // スクロール位置の復元
   const newContainer = pageBody.querySelector('.matrix-container');
   if (newContainer) {
     newContainer.scrollTop = savedScrollTop;
     newContainer.scrollLeft = savedScrollLeft;
   }
+}
+
+function renderGanttTimelineView(filtered, boms, defects, allProcesses, priorityInfo, pageBody) {
+  const DAY_WIDTH = 38;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const orderSchedules = filtered.map(order => {
+    const dueObj = parseGanttDate(order.dueDate);
+    let startObj = parseGanttDate(order.startDate, dueObj ? dueObj.getFullYear() : today.getFullYear());
+
+    let effectiveEnd = dueObj ? new Date(dueObj.getTime()) : new Date(today.getTime() + 5 * 86400000);
+    let effectiveStart = startObj ? new Date(startObj.getTime()) : new Date(effectiveEnd.getTime() - 5 * 86400000);
+    if (effectiveStart.getTime() > effectiveEnd.getTime()) {
+      effectiveStart = new Date(effectiveEnd.getTime() - 4 * 86400000);
+    }
+    return {
+      order,
+      dueObj,
+      startObj,
+      effectiveStart,
+      effectiveEnd
+    };
+  });
+
+  let minDate = new Date(today.getTime() - 5 * 86400000);
+  let maxDate = new Date(today.getTime() + 21 * 86400000);
+
+  const minClamp = new Date(today.getTime() - 35 * 86400000);
+  const maxClamp = new Date(today.getTime() + 50 * 86400000);
+
+  orderSchedules.forEach(s => {
+    if (s.effectiveStart >= minClamp && s.effectiveStart < minDate) {
+      minDate = new Date(s.effectiveStart.getTime() - 2 * 86400000);
+    }
+    if (s.effectiveEnd <= maxClamp && s.effectiveEnd > maxDate) {
+      maxDate = new Date(s.effectiveEnd.getTime() + 3 * 86400000);
+    }
+  });
+
+  const days = [];
+  const monthGroups = [];
+  const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+  let cur = new Date(minDate.getTime());
+  let todayIndex = -1;
+
+  while (cur.getTime() <= maxDate.getTime() && days.length < 100) {
+    const y = cur.getFullYear();
+    const m = cur.getMonth() + 1;
+    const d = cur.getDate();
+    const dow = cur.getDay();
+    const isToday = cur.getTime() === today.getTime();
+    if (isToday) todayIndex = days.length;
+
+    const monthLabel = `${y}年${m}月`;
+    if (monthGroups.length === 0 || monthGroups[monthGroups.length - 1].label !== monthLabel) {
+      monthGroups.push({ label: monthLabel, count: 1 });
+    } else {
+      monthGroups[monthGroups.length - 1].count++;
+    }
+
+    days.push({
+      date: new Date(cur.getTime()),
+      y,
+      m,
+      d,
+      dow,
+      dowStr: dowNames[dow],
+      isToday,
+      isSat: dow === 6,
+      isSun: dow === 0
+    });
+
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const totalTimelineWidth = days.length * DAY_WIDTH;
+
+  let html = `
+    <div class="pms-gantt-scroll-container">
+      <table class="pms-gantt-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="pms-gantt-sticky-col">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>優先順 / 案件・品名・納期・進捗</span>
+                <span style="font-size:0.65rem; font-weight:500; color:#93c5fd;">タップで展開</span>
+              </div>
+            </th>
+            ${monthGroups.map(mg => `<th colspan="${mg.count}" class="pms-gantt-month-th">${mg.label}</th>`).join('')}
+          </tr>
+          <tr>
+            ${days.map(day => {
+              const cls = [
+                'pms-gantt-day-th',
+                day.isToday ? 'is-today' : '',
+                day.isSat ? 'is-sat' : '',
+                day.isSun ? 'is-sun' : ''
+              ].filter(Boolean).join(' ');
+              return `<th class="${cls}" style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; max-width:${DAY_WIDTH}px;">
+                <div>${day.isToday ? '今日' : day.d}</div>
+                <div style="font-size:0.6rem; opacity:0.85;">${day.isToday ? `${day.m}/${day.d}` : day.dowStr}</div>
+              </th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  orderSchedules.forEach(({ order, dueObj, startObj, effectiveStart, effectiveEnd }) => {
+    const stats = getOrderProcessStats(order, defects, allProcesses);
+    const prog = stats.progress;
+    const rank = priorityInfo.priorityRankMap.get(String(order.id));
+    const isSkipped = priorityInfo.skippedIds.has(String(order.id));
+    const isOutOfOrder = priorityInfo.outOfOrderIds.has(String(order.id));
+
+    const isExpanded = expandedOrders.has(order.id) || expandedOrders.has(String(order.id)) || expandedOrders.has(Number(order.id));
+    const expandIcon = isExpanded ? '▼' : '▶';
+
+    const daysUntilDue = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
+
+    let barColor = '#3b82f6';
+    let dueBadgeHtml = '';
+    if (prog === 100) {
+      barColor = '#22c55e';
+      dueBadgeHtml = `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:700;">✓ 完了</span>`;
+    } else if (daysUntilDue !== null && daysUntilDue < 0) {
+      barColor = '#dc2626';
+      dueBadgeHtml = `<span style="background:#fee2e2; color:#b91c1c; border:1px solid #f87171; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">🚨 超過${Math.abs(daysUntilDue)}日</span>`;
+    } else if (daysUntilDue === 0) {
+      barColor = '#ea580c';
+      dueBadgeHtml = `<span style="background:#ffedd5; color:#c2410c; border:1px solid #fb923c; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">🔥 今日納期</span>`;
+    } else if (daysUntilDue !== null && daysUntilDue <= 3) {
+      barColor = '#f59e0b';
+      dueBadgeHtml = `<span style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">⚠ 残${daysUntilDue}日</span>`;
+    } else if (daysUntilDue !== null) {
+      barColor = prog > 0 ? '#3b82f6' : '#64748b';
+      dueBadgeHtml = `<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:600;">残${daysUntilDue}日</span>`;
+    } else {
+      barColor = prog > 0 ? '#3b82f6' : '#64748b';
+      dueBadgeHtml = `<span style="background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:4px; font-size:0.7rem;">納期未定</span>`;
+    }
+
+    if (isSkipped && prog < 100) {
+      barColor = '#dc2626';
+    }
+
+    let rankBadgeHtml = '';
+    if (prog === 100) {
+      rankBadgeHtml = `<span style="background:#22c55e; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:800;">✓ 完了</span>`;
+    } else if (rank === 1) {
+      rankBadgeHtml = `<span style="background:#dc2626; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.74rem; font-weight:800; box-shadow:0 1px 4px rgba(220,38,38,0.4);">🔥 優先 #1</span>`;
+    } else if (rank && rank <= 3) {
+      rankBadgeHtml = `<span style="background:#ea580c; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:800;">⚡ 優先 #${rank}</span>`;
+    } else if (rank) {
+      rankBadgeHtml = `<span style="background:#334155; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:700;">優先 #${rank}</span>`;
+    }
+
+    let violationBadgeHtml = '';
+    if (isSkipped) {
+      violationBadgeHtml = `<span style="background:#fef2f2; color:#dc2626; border:1.5px solid #ef4444; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800;">🚨 先に着手要！</span>`;
+    } else if (isOutOfOrder) {
+      violationBadgeHtml = `<span style="background:#fffbeb; color:#b45309; border:1.5px solid #f59e0b; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800;">⚠ 順番飛ばし先行</span>`;
+    }
+
+    const bom = boms ? boms.find(b => b.productName === order.productName) : null;
+    const category = bom ? (bom.category || '') : '';
+    let stickyBg = 'var(--color-bg-card)';
+    if (isSkipped) {
+      stickyBg = '#fff1f2';
+    } else if (typeof CATEGORY_COLORS !== 'undefined' && CATEGORY_COLORS[category]) {
+      stickyBg = CATEGORY_COLORS[category];
+    }
+
+    const startDiff = Math.round((effectiveStart.getTime() - minDate.getTime()) / 86400000);
+    const endDiff = Math.round((effectiveEnd.getTime() - minDate.getTime()) / 86400000);
+    const clampedStartIdx = Math.max(0, Math.min(days.length - 1, startDiff));
+    const clampedEndIdx = Math.max(clampedStartIdx, Math.min(days.length - 1, endDiff));
+    const barLeftPx = clampedStartIdx * DAY_WIDTH + 3;
+    const barWidthPx = Math.max(DAY_WIDTH - 6, (clampedEndIdx - clampedStartIdx + 1) * DAY_WIDTH - 6);
+
+    const plannedBorderColor = isSkipped ? '#dc2626' : (prog === 100 ? '#16a34a' : (daysUntilDue !== null && daysUntilDue <= 3 ? '#d97706' : '#64748b'));
+    const plannedBgColor = isSkipped ? 'rgba(254, 202, 202, 0.65)' : 'rgba(226, 232, 240, 0.75)';
+
+    const gridBgHtml = days.map((day) => {
+      let cellBg = 'transparent';
+      if (day.isToday) cellBg = 'rgba(239, 68, 68, 0.08)';
+      else if (day.isSun) cellBg = 'rgba(244, 63, 94, 0.05)';
+      else if (day.isSat) cellBg = 'rgba(59, 130, 246, 0.05)';
+      return `<div style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; height:100%; border-right:1px solid rgba(148,163,184,0.18); background:${cellBg}; box-sizing:border-box;"></div>`;
+    }).join('');
+
+    const todayLineHtml = todayIndex >= 0
+      ? `<div style="position:absolute; top:0; bottom:0; left:${todayIndex * DAY_WIDTH + Math.floor(DAY_WIDTH / 2)}px; width:2px; background:#ef4444; z-index:3; pointer-events:none;"></div>`
+      : '';
+
+    const procPillsHtml = renderOrderProcessPillsHtml(stats.processBreakdown);
+
+    html += `
+      <tr id="gantt-order-row-${order.id}" class="pms-gantt-order-row">
+        <td class="pms-gantt-sticky-col" style="background:${stickyBg}; color:#0f172a; cursor:pointer;" onclick="toggleExpand(event, '${order.id}')">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap; margin-bottom:4px;">
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+              <span style="font-weight:800; color:#0284c7; width:16px; display:inline-block; text-align:center;">${expandIcon}</span>
+              ${rankBadgeHtml}
+              ${violationBadgeHtml}
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              ${category ? `<span style="font-size:0.68rem; background:rgba(15,23,42,0.08); padding:1px 5px; border-radius:4px; font-weight:700; color:#334155;">${category}</span>` : ''}
+              <span style="background:#2563eb; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;" onclick="event.stopPropagation(); navigateToOrder('${order.id}')">指示書 ↗</span>
+            </div>
+          </div>
+
+          <div style="font-weight:800; font-size:0.82rem; color:#0f172a; line-height:1.25; margin-bottom:3px; word-break:break-word;">
+            <span style="color:#475569; font-size:0.72rem;">[${order.orderNo || '-'}]</span> ${order.projectName}
+            <span style="color:#0369a1;">/ ${order.productName}</span>
+            <span style="font-size:0.72rem; font-weight:700; color:#334155; margin-left:4px;">×${order.quantity}台</span>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; font-size:0.72rem; color:#334155; margin-bottom:5px; flex-wrap:wrap;">
+            <span><strong>${startObj ? formatDate(order.startDate) : formatDate(effectiveStart) + '(予)'}</strong>〜<strong style="color:#0f172a;">${formatDate(order.dueDate)}</strong></span>
+            ${dueBadgeHtml}
+          </div>
+
+          <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:60px; height:9px; background:rgba(148,163,184,0.3); border-radius:999px; overflow:hidden; border:1px solid rgba(100,116,139,0.25);">
+              <div data-gantt-prog-fill="${order.id}" style="width:${prog}%; height:100%; background:${barColor}; transition:width 0.25s ease;"></div>
+            </div>
+            <span data-gantt-prog-text="${order.id}" style="font-weight:800; font-size:0.73rem; color:#0f172a;">
+              ${prog}% <span style="font-weight:500; font-size:0.66rem; color:#475569;">(${stats.doneCount}/${stats.totalCount})</span>
+            </span>
+            <span data-gantt-next-proc="${order.id}" style="background:${prog === 100 ? '#dcfce7' : '#dbeafe'}; color:${prog === 100 ? '#166534' : '#1e40af'}; padding:1px 5px; border-radius:4px; font-size:0.66rem; font-weight:800; white-space:nowrap;">
+              ${prog === 100 ? '✓ 完了' : `次:${stats.nextProcess}`}
+            </span>
+          </div>
+        </td>
+
+        <td colspan="${days.length}" style="padding:0; position:relative; width:${totalTimelineWidth}px; min-width:${totalTimelineWidth}px; background:var(--color-bg-card);" onclick="toggleExpand(event, '${order.id}')">
+          <div class="pms-gantt-bar-track" style="width:${totalTimelineWidth}px;">
+            <div style="position:absolute; inset:0; display:flex; pointer-events:none; z-index:1;">
+              ${gridBgHtml}
+            </div>
+            ${todayLineHtml}
+
+            <div class="pms-gantt-planned-bar"
+                 style="left:${barLeftPx}px; width:${barWidthPx}px; background:${plannedBgColor}; border-color:${plannedBorderColor};"
+                 title="[${order.orderNo}] ${order.projectName} / ${order.productName} (納期: ${formatDate(order.dueDate)}・進捗: ${prog}%)">
+              <div class="pms-gantt-actual-fill" data-gantt-bar-fill="${order.id}" style="width:${prog}%; background:${barColor};"></div>
+              <div class="pms-gantt-bar-label" data-gantt-bar-label="${order.id}">
+                <span>${rank ? `[#${rank}] ` : ''}${order.projectName} (${prog}%)</span>
+                <span>🏁${formatDate(order.dueDate)}</span>
+              </div>
+            </div>
+
+            <div class="pms-gantt-proc-pills" data-gantt-proc-pills="${order.id}" style="margin-left:${Math.max(4, Math.min(barLeftPx, totalTimelineWidth - 360))}px;">
+              ${procPillsHtml}
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    if (isExpanded) {
+      html += `
+        <tr class="pms-gantt-expanded-row">
+          <td colspan="${days.length + 1}" style="padding:0; background:#f8fafc; border-bottom:2px solid #94a3b8;">
+            <div style="padding:8px 10px; overflow-x:auto; max-width:94vw; position:sticky; left:0;">
+              <div style="font-size:0.75rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+                <span>🔧 【部材別・工程チェック】 ${order.projectName} / ${order.productName} （タップで「未 ⇔ 完了」切替）</span>
+                <span style="font-size:0.7rem; color:#64748b;">部材数: ${order.items ? order.items.length : 0} 件</span>
+              </div>
+              ${renderInlineOrderMatrixTable(order, allProcesses, defects)}
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const oldContainer = pageBody.querySelector('.pms-gantt-scroll-container');
+  let savedScrollTop = 0;
+  let savedScrollLeft = 0;
+  const hadOldContainer = !!oldContainer;
+  if (oldContainer) {
+    savedScrollTop = oldContainer.scrollTop;
+    savedScrollLeft = oldContainer.scrollLeft;
+  }
+
+  pageBody.innerHTML = html;
+
+  const newContainer = pageBody.querySelector('.pms-gantt-scroll-container');
+  if (newContainer) {
+    if (hadOldContainer && _ganttInitialScrolledToToday) {
+      newContainer.scrollTop = savedScrollTop;
+      newContainer.scrollLeft = savedScrollLeft;
+    } else if (todayIndex >= 0) {
+      _ganttInitialScrolledToToday = true;
+      const targetLeft = Math.max(0, (todayIndex - 2) * DAY_WIDTH);
+      newContainer.scrollLeft = targetLeft;
+    }
+  }
+}
+
+function renderOrderProcessPillsHtml(processBreakdown) {
+  if (!Array.isArray(processBreakdown) || processBreakdown.length === 0) {
+    return '<span style="font-size:0.68rem; color:#94a3b8;">工程なし</span>';
+  }
+  return processBreakdown.map(p => {
+    const icon = p.state === 'done' ? '✓' : (p.state === 'defect' ? '⚠' : (p.state === 'active' ? '▶' : '・'));
+    return `<span class="pms-proc-pill ${p.state}">${icon}${p.name}(${p.done}/${p.total})</span>`;
+  }).join('<span style="color:#94a3b8; font-size:0.65rem;">→</span>');
+}
+
+function renderInlineOrderMatrixTable(order, allProcesses, defects) {
+  if (!order.items || order.items.length === 0) {
+    return `<div style="padding:8px; color:#64748b; font-size:0.8rem;">部材データがありません</div>`;
+  }
+  const orderProcs = allProcesses.filter(p =>
+    order.items.some(it => Array.isArray(it.processes) && it.processes.includes(p))
+  );
+  const cols = orderProcs.length > 0 ? orderProcs : allProcesses;
+
+  let tbl = `
+    <table class="matrix-table" style="min-width:auto; width:auto; border-collapse:collapse; background:#fff; font-size:0.78rem;">
+      <thead>
+        <tr>
+          <th style="min-width:150px; padding:5px 8px; background:#e2e8f0; color:#1e293b; text-align:left; position:sticky; left:0; z-index:5;">部材名</th>
+          ${cols.map(p => `<th style="min-width:74px; width:74px; padding:5px 4px; background:#e2e8f0; color:#1e293b; font-size:0.7rem;">${p}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  order.items.forEach((item, itemIdx) => {
+    if (!item) return;
+    tbl += `
+      <tr>
+        <td style="padding:5px 8px; text-align:left; font-weight:600; background:#fff; position:sticky; left:0; z-index:4; border:1px solid #cbd5e1; white-space:nowrap;">
+          ┗ ${item.bomName || item.partCode || '(名称なし)'}
+        </td>
+    `;
+    cols.forEach(process => {
+      const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
+      const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
+      const hasPendingDefect = Array.isArray(defects) && defects.some(d =>
+        String(d.orderId) === String(order.id) &&
+        String(d.itemId) === String(item.id) &&
+        d.processName === process &&
+        d.status === 'pending'
+      );
+
+      if (!hasProcess) {
+        tbl += `<td class="matrix-cell status-disabled" style="height:32px; min-width:74px; width:74px; padding:4px;"></td>`;
+      } else {
+        let statusClass = 'status-todo';
+        let statusText = '<span style="font-size:10px; color:#94a3b8;">未</span>';
+        if (isComplete) {
+          statusClass = 'status-done';
+          statusText = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+        } else if (hasPendingDefect) {
+          statusClass = 'status-defect';
+          statusText = '<span style="font-size:10px; color:#ffffff; font-weight:bold;">不良</span>';
+        }
+        const safeProcess = process.replace(/'/g, "\\'");
+        const safeOrderId = String(order.id).replace(/'/g, "\\'");
+        tbl += `
+          <td class="matrix-cell ${statusClass}"
+              onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}', event)"
+              style="height:32px; min-width:74px; width:74px; padding:4px;">
+            ${statusText}
+          </td>
+        `;
+      }
+    });
+    tbl += `</tr>`;
+  });
+
+  tbl += `</tbody></table>`;
+  return tbl;
+}
+
+function updateGanttOrderSummaryDom(order, currentOrdersList) {
+  if (!order) return;
+  const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS) || [];
+  const stats = getOrderProcessStats(order, defects, STANDARD_PROCESSES);
+  const prog = stats.progress;
+
+  document.querySelectorAll(`[data-gantt-prog-fill="${order.id}"]`).forEach(el => {
+    el.style.width = `${prog}%`;
+    if (prog === 100) el.style.background = '#22c55e';
+  });
+  document.querySelectorAll(`[data-gantt-prog-text="${order.id}"]`).forEach(el => {
+    el.innerHTML = `${prog}% <span style="font-weight:500; font-size:0.66rem; color:#475569;">(${stats.doneCount}/${stats.totalCount})</span>`;
+  });
+  document.querySelectorAll(`[data-gantt-next-proc="${order.id}"]`).forEach(el => {
+    el.textContent = prog === 100 ? '✓ 完了' : `次:${stats.nextProcess}`;
+    el.style.background = prog === 100 ? '#dcfce7' : '#dbeafe';
+    el.style.color = prog === 100 ? '#166534' : '#1e40af';
+  });
+  document.querySelectorAll(`[data-gantt-bar-fill="${order.id}"]`).forEach(el => {
+    el.style.width = `${prog}%`;
+    if (prog === 100) el.style.background = '#22c55e';
+  });
+  document.querySelectorAll(`[data-gantt-bar-label="${order.id}"]`).forEach(el => {
+    const firstSpan = el.querySelector('span:first-child');
+    if (firstSpan) {
+      firstSpan.textContent = `${order.projectName} (${prog}%)`;
+    }
+  });
+  document.querySelectorAll(`[data-gantt-proc-pills="${order.id}"]`).forEach(el => {
+    el.innerHTML = renderOrderProcessPillsHtml(stats.processBreakdown);
+  });
+
+  const allOrders = currentOrdersList || window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS) || [];
+  const priorityInfo = analyzeDueDatePriority(allOrders);
+  renderGanttPriorityBanner(priorityInfo);
 }
 
 function toggleExpand(event, orderId) {
@@ -41623,16 +42612,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 window._ganttSaveTimer = null;
 window._ganttDefectNeedsSave = false;
+window._pendingGanttOrders = null;
+window._pendingGanttDefects = null;
 
 window.flushGanttSave = function () {
   if (window._ganttSaveTimer) {
     clearTimeout(window._ganttSaveTimer);
     window._ganttSaveTimer = null;
     try {
-      const orders = DB.get(DB.KEYS.ORDERS);
+      const orders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+      window._pendingGanttOrders = null;
       DB.save(DB.KEYS.ORDERS, orders);
       if (window._ganttDefectNeedsSave) {
-        const defects = DB.get(DB.KEYS.DEFECTS);
+        const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS);
+        window._pendingGanttDefects = null;
         DB.save(DB.KEYS.DEFECTS, defects);
         window._ganttDefectNeedsSave = false;
       }
@@ -41660,7 +42653,8 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
 
   try {
     // 1. メモリ上のデータを即座に同期更新（一切の遅延・タイムラグなし）
-    const orders = DB.get(DB.KEYS.ORDERS);
+    const orders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+    window._pendingGanttOrders = orders;
     const order = orders.find(o => String(o.id) === String(orderId));
     if (!order) {
       console.error('Order not found:', orderId);
@@ -41686,7 +42680,7 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
       item.completed.push(proc);
 
       // 保留中の不良データがあれば resolved に更新
-      const defects = DB.get(DB.KEYS.DEFECTS) || [];
+      const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS) || [];
       let defectChanged = false;
       defects.forEach(d => {
         if (String(d.orderId) === String(order.id) &&
@@ -41698,6 +42692,7 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         }
       });
       if (defectChanged) {
+        window._pendingGanttDefects = defects;
         window._ganttDefectNeedsSave = true;
       }
     } else {
@@ -41715,6 +42710,9 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
       }
     }
+    if (typeof updateGanttOrderSummaryDom === 'function') {
+      updateGanttOrderSummaryDom(order, orders);
+    }
 
     // 3. ローカル操作中フラグ（Firebase同期やrefreshCurrentPageによるテーブル全体の無駄な再描画を抑止）
     window._isGanttLocalToggleActive = true;
@@ -41726,10 +42724,12 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     window._ganttSaveTimer = setTimeout(() => {
       window._ganttSaveTimer = null;
       try {
-        const curOrders = DB.get(DB.KEYS.ORDERS);
+        const curOrders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+        window._pendingGanttOrders = null;
         DB.save(DB.KEYS.ORDERS, curOrders);
         if (window._ganttDefectNeedsSave) {
-          const curDefects = DB.get(DB.KEYS.DEFECTS);
+          const curDefects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS);
+          window._pendingGanttDefects = null;
           DB.save(DB.KEYS.DEFECTS, curDefects);
           window._ganttDefectNeedsSave = false;
         }
@@ -44542,7 +45542,7 @@ window.downloadSampleHtCsv = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.76.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -44569,7 +45569,7 @@ window.downloadSampleHtCsv = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.76.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -44652,7 +45652,7 @@ window.downloadSampleHtCsv = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.75.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.76.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -44730,27 +45730,38 @@ window.downloadSampleHtCsv = function() {
             <!-- ガントチャート（工程管理） -->
             <div id="page-gantt" class="page">
                 <div class="page-header">
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 0.5rem;">
                         <div>
                             <h1>▤ 工程管理</h1>
-                            <p>案件別スケジュール・進捗をリアルタイム確認</p>
+                            <p>納期優先スケジュール（ガントチャート）・工程別進捗をリアルタイム確認</p>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
-                            <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
-                            <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                            <div class="btn-group" style="background: var(--color-bg-tertiary); padding: 3px; border-radius: 8px; border: 1px solid var(--color-border);">
+                                <button class="btn btn-primary btn-sm" id="gantt-view-timeline" onclick="switchGanttViewMode('timeline')" style="font-weight: 700;">📊 ガントチャート(納期優先)</button>
+                                <button class="btn btn-secondary btn-sm" id="gantt-view-matrix" onclick="switchGanttViewMode('matrix')">📋 工程マトリクス(部材一覧)</button>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-secondary btn-sm" id="gantt-scroll-today" onclick="scrollGanttToToday()">📅 今日へ移動</button>
+                                <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
+                                <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
+                                <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- 納期優先順位ガイド & 順番飛ばし警告バナー -->
+                <div id="gantt-priority-alert-area" style="margin-bottom: 0.75rem;"></div>
+
                 <!-- 凡例 -->
-                <div class="gantt-legend">
-                    <div class="legend-title">工程凡例:</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #8CC63F;"></span>完了</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #F7941D;"></span>作業中
-                    </div>
-                    <div class="legend-item"><span class="legend-color" style="background: #E5E7EB;"></span>未着手
-                    </div>
+                <div class="gantt-legend" style="flex-wrap: wrap; gap: 0.75rem 1.25rem;">
+                    <div class="legend-title">表示凡例:</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #ef4444;"></span>納期超過・遅れ警戒</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #f59e0b;"></span>納期間近(3日以内)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #3b82f6;"></span>進行中(順調)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #22c55e;"></span>完了(100%)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #cbd5e1; border: 1px dashed #64748b;"></span>予定期間(着工〜納期)</div>
+                    <div class="legend-item"><span style="display:inline-block; width:3px; height:14px; background:#ef4444; margin-right:4px;"></span>今日(TODAY)</div>
                 </div>
 
                 <div class="filter-bar">
@@ -45754,7 +46765,7 @@ window.downloadSampleHtCsv = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.75.0
+                    Version: v6.76.0
                 </div>
             </div>
         </div>

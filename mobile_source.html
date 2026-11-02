@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.75.0】 -->
+    <!-- 【強制キャッシュバスティング v6.76.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.75.0';
+            var currentVersion = 'v6.76.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.75.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.76.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -54,7 +54,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v6.75.0">
+    <link rel="stylesheet" href="styles-mobile.css?v=v6.76.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -223,8 +223,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.75.0"></script>
-    <script src="app-mobile.js?v=v6.75.0"></script>
+    <script src="data.js?v=v6.76.0"></script>
+    <script src="app-mobile.js?v=v6.76.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -282,7 +282,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.76.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -309,7 +309,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.76.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -392,7 +392,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.75.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.76.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -470,27 +470,38 @@
             <!-- ガントチャート（工程管理） -->
             <div id="page-gantt" class="page">
                 <div class="page-header">
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 0.5rem;">
                         <div>
                             <h1>▤ 工程管理</h1>
-                            <p>案件別スケジュール・進捗をリアルタイム確認</p>
+                            <p>納期優先スケジュール（ガントチャート）・工程別進捗をリアルタイム確認</p>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
-                            <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
-                            <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                            <div class="btn-group" style="background: var(--color-bg-tertiary); padding: 3px; border-radius: 8px; border: 1px solid var(--color-border);">
+                                <button class="btn btn-primary btn-sm" id="gantt-view-timeline" onclick="switchGanttViewMode('timeline')" style="font-weight: 700;">📊 ガントチャート(納期優先)</button>
+                                <button class="btn btn-secondary btn-sm" id="gantt-view-matrix" onclick="switchGanttViewMode('matrix')">📋 工程マトリクス(部材一覧)</button>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-secondary btn-sm" id="gantt-scroll-today" onclick="scrollGanttToToday()">📅 今日へ移動</button>
+                                <button class="btn btn-secondary btn-sm" id="expand-all">▼ 全展開</button>
+                                <button class="btn btn-secondary btn-sm" id="collapse-all">▲ 全折畳</button>
+                                <button class="btn btn-secondary btn-sm" id="fullscreen-btn">⛶ フルスクリーン</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- 納期優先順位ガイド & 順番飛ばし警告バナー -->
+                <div id="gantt-priority-alert-area" style="margin-bottom: 0.75rem;"></div>
+
                 <!-- 凡例 -->
-                <div class="gantt-legend">
-                    <div class="legend-title">工程凡例:</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #8CC63F;"></span>完了</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #F7941D;"></span>作業中
-                    </div>
-                    <div class="legend-item"><span class="legend-color" style="background: #E5E7EB;"></span>未着手
-                    </div>
+                <div class="gantt-legend" style="flex-wrap: wrap; gap: 0.75rem 1.25rem;">
+                    <div class="legend-title">表示凡例:</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #ef4444;"></span>納期超過・遅れ警戒</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #f59e0b;"></span>納期間近(3日以内)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #3b82f6;"></span>進行中(順調)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #22c55e;"></span>完了(100%)</div>
+                    <div class="legend-item"><span class="legend-color" style="background: #cbd5e1; border: 1px dashed #64748b;"></span>予定期間(着工〜納期)</div>
+                    <div class="legend-item"><span style="display:inline-block; width:3px; height:14px; background:#ef4444; margin-right:4px;"></span>今日(TODAY)</div>
                 </div>
 
                 <div class="filter-bar">
@@ -1494,7 +1505,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.75.0
+                    Version: v6.76.0
                 </div>
             </div>
         </div>

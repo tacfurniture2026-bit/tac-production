@@ -85,6 +85,8 @@ migrateCorruptedData();
 let currentUser = null;
 let expandedOrders = new Set();
 let ganttFilter = 'all';
+let ganttViewMode = localStorage.getItem('pms_gantt_view_mode') || 'timeline'; // 'timeline' | 'matrix'
+let _ganttInitialScrolledToToday = false;
 
 // カテゴリ別カラー定義
 const CATEGORY_COLORS = {
@@ -737,16 +739,344 @@ function saveNoticeInline() {
 
 
 // ========================================
-// ガントチャート（工程管理）- Monorevo風
+// ガントチャート（工程管理）- 納期優先スケジュール & 工程マトリクス
 // ========================================
 
+function parseGanttDate(dateStr, fallbackYear) {
+  if (!dateStr) return null;
+  const s = String(dateStr).trim();
+  if (!s || s === '-') return null;
+  const parts = s.split(/[\/\-]/);
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+  } else if (parts.length === 2) {
+    const y = fallbackYear || new Date().getFullYear();
+    const m = parseInt(parts[0], 10);
+    const d = parseInt(parts[1], 10);
+    if (!isNaN(m) && !isNaN(d)) {
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+  }
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) {
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+  }
+  return null;
+}
+
+function getOrderProcessStats(order, defects, allProcesses) {
+  let totalCount = 0;
+  let doneCount = 0;
+  const procMap = new Map();
+
+  const processOrderList = Array.isArray(allProcesses) && allProcesses.length > 0
+    ? allProcesses
+    : (typeof STANDARD_PROCESSES !== 'undefined' ? STANDARD_PROCESSES : []);
+
+  if (order && Array.isArray(order.items)) {
+    order.items.forEach(item => {
+      if (!item || !Array.isArray(item.processes)) return;
+      const completedArr = Array.isArray(item.completed) ? item.completed : [];
+      item.processes.forEach(p => {
+        totalCount++;
+        const isDone = completedArr.includes(p);
+        if (isDone) doneCount++;
+        if (!procMap.has(p)) {
+          procMap.set(p, { name: p, total: 0, done: 0, hasDefect: false });
+        }
+        const entry = procMap.get(p);
+        entry.total++;
+        if (isDone) entry.done++;
+        if (Array.isArray(defects) && defects.some(d =>
+          String(d.orderId) === String(order.id) &&
+          String(d.itemId) === String(item.id) &&
+          d.processName === p &&
+          d.status === 'pending'
+        )) {
+          entry.hasDefect = true;
+        }
+      });
+    });
+  }
+
+  const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  // 工程順に沿ってソート
+  const orderedProcs = [];
+  processOrderList.forEach(p => {
+    if (procMap.has(p)) orderedProcs.push(procMap.get(p));
+  });
+  procMap.forEach((v, k) => {
+    if (!orderedProcs.includes(v)) orderedProcs.push(v);
+  });
+
+  let nextProcess = null;
+  orderedProcs.forEach(entry => {
+    if (entry.done < entry.total && !nextProcess) {
+      nextProcess = entry.name;
+    }
+  });
+
+  orderedProcs.forEach(entry => {
+    if (entry.hasDefect) {
+      entry.state = 'defect';
+    } else if (entry.done >= entry.total && entry.total > 0) {
+      entry.state = 'done';
+    } else if (entry.done > 0 || entry.name === nextProcess) {
+      entry.state = 'active';
+    } else {
+      entry.state = 'todo';
+    }
+  });
+
+  return {
+    totalCount,
+    doneCount,
+    progress,
+    nextProcess: progress === 100 ? '全工程完了' : (nextProcess || '未設定'),
+    processBreakdown: orderedProcs
+  };
+}
+
+function analyzeDueDatePriority(orders) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const incomplete = (orders || []).filter(o => calculateProgress(o) < 100);
+  incomplete.sort((a, b) => {
+    const da = parseGanttDate(a.dueDate);
+    const db = parseGanttDate(b.dueDate);
+    if (!da && !db) return (Number(a.id) || 0) - (Number(b.id) || 0);
+    if (!da) return 1;
+    if (!db) return -1;
+    if (da.getTime() !== db.getTime()) return da.getTime() - db.getTime();
+    const sa = parseGanttDate(a.startDate);
+    const sb = parseGanttDate(b.startDate);
+    if (sa && sb && sa.getTime() !== sb.getTime()) return sa.getTime() - sb.getTime();
+    return (Number(a.id) || 0) - (Number(b.id) || 0);
+  });
+
+  const priorityRankMap = new Map();
+  incomplete.forEach((o, idx) => {
+    priorityRankMap.set(String(o.id), idx + 1);
+  });
+
+  // 順番飛ばし（納期逆転着工）検知
+  // 条件: より納期が早い未着手案件(progress === 0)があるのに、より納期が遅い案件が既に着手(progress > 0)されている場合
+  const skippedIds = new Set();
+  const outOfOrderIds = new Set();
+  const violationPairs = [];
+
+  for (let i = 0; i < incomplete.length; i++) {
+    const earlier = incomplete[i];
+    const earlierDue = parseGanttDate(earlier.dueDate);
+    if (!earlierDue) continue;
+    const earlierProg = calculateProgress(earlier);
+
+    for (let j = i + 1; j < incomplete.length; j++) {
+      const later = incomplete[j];
+      const laterDue = parseGanttDate(later.dueDate);
+      if (!laterDue) continue;
+      const laterProg = calculateProgress(later);
+
+      // 納期が後の案件(laterDue > earlierDue)が進行中(laterProg > 0)なのに、
+      // 納期が前の案件(earlier)が未着手(0%) または 納期3日以内/超過で後案件より20%以上遅れている場合
+      const daysUntilEarlier = Math.round((earlierDue.getTime() - today.getTime()) / 86400000);
+      const isSkipped = (laterDue.getTime() > earlierDue.getTime()) &&
+        laterProg > 0 &&
+        (earlierProg === 0 || (daysUntilEarlier <= 3 && earlierProg + 20 <= laterProg));
+
+      if (isSkipped) {
+        skippedIds.add(String(earlier.id));
+        outOfOrderIds.add(String(later.id));
+        violationPairs.push({ earlier, later });
+      }
+    }
+  }
+
+  return {
+    incompleteSorted: incomplete,
+    priorityRankMap,
+    skippedIds,
+    outOfOrderIds,
+    violationPairs
+  };
+}
+
+window.switchGanttViewMode = function(mode) {
+  if (mode !== 'timeline' && mode !== 'matrix') return;
+  if (typeof window.flushGanttSave === 'function') window.flushGanttSave();
+  ganttViewMode = mode;
+  localStorage.setItem('pms_gantt_view_mode', mode);
+  if (mode === 'timeline') {
+    _ganttInitialScrolledToToday = false;
+  }
+  renderGantt();
+};
+
+window.scrollGanttToToday = function() {
+  const container = document.querySelector('.pms-gantt-scroll-container');
+  const todayTh = document.querySelector('.pms-gantt-day-th.is-today');
+  if (container && todayTh) {
+    const stickyCol = container.querySelector('.pms-gantt-sticky-col');
+    const stickyW = stickyCol ? stickyCol.offsetWidth : 300;
+    const targetLeft = Math.max(0, todayTh.offsetLeft - stickyW - 76);
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+  } else if (ganttViewMode !== 'timeline') {
+    window.switchGanttViewMode('timeline');
+  }
+};
+
+window.focusGanttOrder = function(orderId) {
+  expandedOrders.add(orderId);
+  expandedOrders.add(String(orderId));
+  expandedOrders.add(Number(orderId));
+  renderGantt();
+  setTimeout(() => {
+    const row = document.getElementById(`gantt-order-row-${orderId}`);
+    if (row) {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const origOutline = row.style.outline;
+      row.style.outline = '3px solid #f59e0b';
+      setTimeout(() => { row.style.outline = origOutline || ''; }, 2200);
+    }
+  }, 100);
+};
+
+function renderGanttPriorityBanner(priorityInfo) {
+  const alertArea = document.getElementById('gantt-priority-alert-area');
+  if (!alertArea) return;
+
+  const { incompleteSorted, priorityRankMap, skippedIds, outOfOrderIds } = priorityInfo;
+  if (!incompleteSorted || incompleteSorted.length === 0) {
+    alertArea.innerHTML = '';
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const top3 = incompleteSorted.slice(0, 3);
+  const top3Html = top3.map((o, idx) => {
+    const rank = idx + 1;
+    const prog = calculateProgress(o);
+    const dueObj = parseGanttDate(o.dueDate);
+    const diffDays = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
+    let dueBadge = '';
+    if (diffDays !== null) {
+      if (diffDays < 0) dueBadge = `<span style="background:#dc2626; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">超過${Math.abs(diffDays)}日</span>`;
+      else if (diffDays === 0) dueBadge = `<span style="background:#ea580c; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">今日納期</span>`;
+      else if (diffDays <= 3) dueBadge = `<span style="background:#f59e0b; color:#fff; padding:1px 5px; border-radius:4px; font-size:0.7rem; font-weight:800;">残${diffDays}日</span>`;
+      else dueBadge = `<span style="background:#334155; color:#e2e8f0; padding:1px 5px; border-radius:4px; font-size:0.7rem;">残${diffDays}日</span>`;
+    }
+    const stats = getOrderProcessStats(o, [], []);
+    const rankBg = rank === 1 ? '#ef4444' : (rank === 2 ? '#f59e0b' : '#3b82f6');
+    return `
+      <div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:8px; padding:6px 10px; display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
+        <span style="background:${rankBg}; color:#fff; font-weight:800; font-size:0.78rem; padding:3px 8px; border-radius:6px; white-space:nowrap;">
+          ${rank === 1 ? '🔥 優先 #1' : `優先 #${rank}`}
+        </span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:0.82rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            [${o.orderNo || '-'}] ${o.projectName} <span style="color:#93c5fd;">/ ${o.productName}</span>
+          </div>
+          <div style="font-size:0.72rem; color:#cbd5e1; display:flex; align-items:center; gap:6px; margin-top:2px; flex-wrap:wrap;">
+            <span>納期: <strong style="color:#fff;">${formatDate(o.dueDate)}</strong> ${dueBadge}</span>
+            <span>進捗: <strong style="color:#fde047;">${prog}%</strong></span>
+            <span style="background:rgba(59,130,246,0.3); color:#bfdbfe; padding:0 5px; border-radius:4px;">次: ${stats.nextProcess}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  let violationBannerHtml = '';
+  if (skippedIds.size > 0 && outOfOrderIds.size > 0) {
+    const skippedOrders = incompleteSorted.filter(o => skippedIds.has(String(o.id))).slice(0, 3);
+    const outOfOrderOrders = incompleteSorted.filter(o => outOfOrderIds.has(String(o.id))).slice(0, 3);
+
+    violationBannerHtml = `
+      <div class="pms-priority-violation-banner">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+          <div style="font-weight:800; font-size:0.9rem; color:#b91c1c; display:flex; align-items:center; gap:6px;">
+            <span>🚨 【納期順ルール違反（順番飛ばし）警告】</span>
+            <span style="font-size:0.78rem; font-weight:600; color:#7f1d1d;">納期が早い未完了案件より先に、後の納期案件が作業されています！</span>
+          </div>
+          <span style="background:#dc2626; color:#fff; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:999px;">納期順（#1 → #2 → #3）厳守</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:8px; font-size:0.78rem;">
+          <div style="background:#ffffff; border:1px solid #fca5a5; border-radius:6px; padding:6px 10px;">
+            <div style="font-weight:800; color:#dc2626; margin-bottom:3px;">🔥 今すぐ先に着手すべき案件（追い越され中）:</div>
+            ${skippedOrders.map(o => {
+              const r = priorityRankMap.get(String(o.id));
+              return `<div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; padding:2px 0; text-decoration:underline; font-weight:700; color:#991b1b;">
+                ・[優先 #${r}] ${o.projectName} / ${o.productName}（納期: ${formatDate(o.dueDate)}・進捗 ${calculateProgress(o)}%）
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:6px 10px;">
+            <div style="font-weight:800; color:#b45309; margin-bottom:3px;">⚠️ 順番を抜かして先行作業されている後納期案件:</div>
+            ${outOfOrderOrders.map(o => {
+              const r = priorityRankMap.get(String(o.id));
+              return `<div onclick="focusGanttOrder('${o.id}')" style="cursor:pointer; padding:2px 0; color:#92400e; font-weight:600;">
+                ・[優先 #${r}] ${o.projectName} / ${o.productName}（納期: ${formatDate(o.dueDate)}・進捗 ${calculateProgress(o)}%）
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  alertArea.innerHTML = `
+    ${violationBannerHtml}
+    <div class="pms-priority-guide-box">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+        <div style="font-weight:800; font-size:0.86rem; color:#fde047; display:flex; align-items:center; gap:6px;">
+          <span>🎯 生産着手の優先順位（納期が早い順 TOP 3）</span>
+          <span style="font-size:0.75rem; color:#cbd5e1; font-weight:500;">※必ず「優先 #1」から順番に生産を進めてください（クリックで該当行を展開）</span>
+        </div>
+        <span style="font-size:0.75rem; color:#94a3b8;">未完了案件: 全 ${incompleteSorted.length} 件</span>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        ${top3Html}
+      </div>
+    </div>
+  `;
+}
+
 function renderGantt() {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const boms = DB.get(DB.KEYS.BOM);
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const boms = DB.get(DB.KEYS.BOM) || [];
   const defects = DB.get(DB.KEYS.DEFECTS) || [];
 
+  // ビュー切替ボタンのアクティブ状態を同期
+  const btnTimeline = document.getElementById('gantt-view-timeline');
+  const btnMatrix = document.getElementById('gantt-view-matrix');
+  const btnToday = document.getElementById('gantt-scroll-today');
+  if (btnTimeline && btnMatrix) {
+    if (ganttViewMode === 'timeline') {
+      btnTimeline.className = 'btn btn-primary btn-sm';
+      btnMatrix.className = 'btn btn-secondary btn-sm';
+      if (btnToday) btnToday.style.display = 'inline-flex';
+    } else {
+      btnTimeline.className = 'btn btn-secondary btn-sm';
+      btnMatrix.className = 'btn btn-primary btn-sm';
+      if (btnToday) btnToday.style.display = 'none';
+    }
+  }
+
+  // 全案件から納期優先順位・順番飛ばし警告を解析してバナー描画
+  const priorityInfo = analyzeDueDatePriority(orders);
+  renderGanttPriorityBanner(priorityInfo);
+
   // フィルタリング
-  let filtered = orders;
+  let filtered = [...orders];
   if (ganttFilter === 'progress') {
     filtered = orders.filter(o => {
       const p = calculateProgress(o);
@@ -766,8 +1096,8 @@ function renderGantt() {
       // カテゴリ判定
       const bom = boms ? boms.find(b => b.productName === o.productName) : null;
       const category = bom ? (bom.category || '') : '';
-      const isPAO = category.includes('PAO') || o.productName.includes('PAO');
-      const isGRID = category.includes('GRID') || o.productName.includes('GRID');
+      const isPAO = category.includes('PAO') || (o.productName && o.productName.includes('PAO'));
+      const isGRID = category.includes('GRID') || (o.productName && o.productName.includes('GRID'));
 
       if (ganttFilter === 'pao_incomplete') return isPAO;
       if (ganttFilter === 'grid_incomplete') return isGRID;
@@ -776,11 +1106,21 @@ function renderGantt() {
     });
   }
 
-  // 納期順にソート（昇順）
+  // 納期順にソート（未完了案件を優先順位順で先頭に、完了案件はその後に納期順）
   filtered.sort((a, b) => {
-    if (!a.dueDate) return 1;
-    if (!b.dueDate) return -1;
-    return new Date(a.dueDate) - new Date(b.dueDate);
+    const progA = calculateProgress(a);
+    const progB = calculateProgress(b);
+    const isDoneA = progA === 100 ? 1 : 0;
+    const isDoneB = progB === 100 ? 1 : 0;
+    if (ganttFilter === 'all' && isDoneA !== isDoneB) {
+      return isDoneA - isDoneB; // 未完了を先頭に表示
+    }
+    const da = parseGanttDate(a.dueDate);
+    const db = parseGanttDate(b.dueDate);
+    if (!da && !db) return (Number(a.id) || 0) - (Number(b.id) || 0);
+    if (!da) return 1;
+    if (!db) return -1;
+    return da.getTime() - db.getTime();
   });
 
   // 全工程リストを取得（ユニーク: 標準 + 実データから収集）
@@ -798,10 +1138,8 @@ function renderGantt() {
       });
     }
   });
-  console.log('Active Processes:', allProcesses); // Debug log
 
-  // マトリクス表示のメインコンテナ
-  // index.htmlには .card-body がないので .gantt-container-mono をターゲットにする
+  // メインコンテナ
   const pageBody = document.querySelector('.gantt-container-mono');
   if (!pageBody) {
     console.error('Target container .gantt-container-mono not found');
@@ -813,7 +1151,14 @@ function renderGantt() {
     return;
   }
 
-  // HTML生成開始
+  if (ganttViewMode === 'timeline') {
+    renderGanttTimelineView(filtered, boms, defects, allProcesses, priorityInfo, pageBody);
+    return;
+  }
+
+  // ========================================
+  // 従来の工程マトリクス表示 (ganttViewMode === 'matrix')
+  // ========================================
   let html = `
     <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative;">
       <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
@@ -827,14 +1172,20 @@ function renderGantt() {
   `;
 
   filtered.forEach(order => {
-    // オーダーヘッダー行
-    const daysUntilDue = order.dueDate ? Math.ceil((new Date(order.dueDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+    const dueObj = parseGanttDate(order.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysUntilDue = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
     let dueStyle = '';
     if (daysUntilDue !== null && daysUntilDue <= 1) dueStyle = 'color: #ef4444; font-weight: bold;';
     else if (daysUntilDue !== null && daysUntilDue <= 3) dueStyle = 'color: #f59e0b;';
 
-    const isExpanded = expandedOrders.has(order.id);
+    const isExpanded = expandedOrders.has(order.id) || expandedOrders.has(String(order.id)) || expandedOrders.has(Number(order.id));
     const expandIcon = isExpanded ? '▼' : '▶';
+    const rank = priorityInfo.priorityRankMap.get(String(order.id));
+    const rankBadge = rank
+      ? `<span style="background:${rank === 1 ? '#ef4444' : (rank <= 3 ? '#f59e0b' : '#334155')}; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; margin-right:6px;">${rank === 1 ? '🔥優先#1' : `優先#${rank}`}</span>`
+      : `<span style="background:#22c55e; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700; margin-right:6px;">✓完了</span>`;
 
     // カテゴリ色判定
     let rowStyle = '';
@@ -845,17 +1196,18 @@ function renderGantt() {
     }
 
     html += `
-      <tr style="${rowStyle}">
+      <tr id="gantt-order-row-${order.id}" style="${rowStyle}">
         <td colspan="${allProcesses.length + 1}" class="matrix-group-header" style="${rowStyle}">
-          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, ${order.id})">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExpand(event, '${order.id}')">
             <div>
               <span class="expand-btn" style="margin-right: 8px; font-weight: bold; display: inline-block; width: 20px; text-align: center;">${expandIcon}</span>
+              ${rankBadge}
               <span style="display: inline-block; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 8px; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">生産指示書 ↗</span>
               <span style="font-weight:600; cursor: pointer;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">[${order.orderNo}] ${order.projectName}</span> / ${order.productName} (数量: ${order.quantity}, 部材数: ${order.items ? order.items.length : 0}) <span style="margin-left:8px; font-size:0.8rem; background:var(--color-bg-secondary); padding:2px 4px; border-radius:4px;">色: ${order.color || '-'}</span>
               ${category ? `<span style="font-size:0.7rem; background:rgba(255,255,255,0.7); padding:1px 4px; border-radius:3px; color:#333; margin-left:8px;">${category}</span>` : ''}
             </div>
             <span style="font-weight: normal; font-size: 0.85rem; ${dueStyle}">
-              納期: ${formatDate(order.dueDate)}
+              納期: ${formatDate(order.dueDate)} (進捗: <strong data-gantt-prog-text="${order.id}">${calculateProgress(order)}%</strong>)
             </span>
           </div>
         </td>
@@ -865,11 +1217,7 @@ function renderGantt() {
     // アイテム（部材）行 - 展開時のみ表示
     if (isExpanded && order.items && order.items.length > 0) {
       order.items.forEach((item, itemIdx) => {
-        // データ整合性
         if (!item) return;
-        // ID重複対策
-        const uniqueItemId = `${order.id}-${item.id || itemIdx}`;
-
         html += `
            <tr>
              <td class="col-part-name">
@@ -878,7 +1226,6 @@ function renderGantt() {
              </td>
          `;
 
-        // 各工程セル
         allProcesses.forEach(process => {
           const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
           const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
@@ -902,7 +1249,6 @@ function renderGantt() {
               statusText = '<span style="font-size:10px; color:#ffffff; font-weight:bold;">不良</span>';
             }
 
-            // エスケープ処理（シングルクォート対策）
             const safeProcess = process.replace(/'/g, "\\'");
             const safeOrderId = String(order.id).replace(/'/g, "\\'");
 
@@ -919,7 +1265,6 @@ function renderGantt() {
         html += `</tr>`;
       });
     } else if (isExpanded) {
-      // 展開しているがアイテムがない場合
       html += `<tr><td colspan="${allProcesses.length + 1}" style="text-align:center; color:var(--color-text-muted); padding: 1rem;">部材データなし</td></tr>`;
     }
   });
@@ -947,6 +1292,450 @@ function renderGantt() {
     newContainer.scrollTop = savedScrollTop;
     newContainer.scrollLeft = savedScrollLeft;
   }
+}
+
+// ========================================
+// ガントチャート（タイムライン＆優先順ビュー）描画
+// ========================================
+function renderGanttTimelineView(filtered, boms, defects, allProcesses, priorityInfo, pageBody) {
+  const DAY_WIDTH = 38;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 各案件の開始日・納期を決定
+  const orderSchedules = filtered.map(order => {
+    const dueObj = parseGanttDate(order.dueDate);
+    let startObj = parseGanttDate(order.startDate, dueObj ? dueObj.getFullYear() : today.getFullYear());
+
+    let effectiveEnd = dueObj ? new Date(dueObj.getTime()) : new Date(today.getTime() + 5 * 86400000);
+    let effectiveStart = startObj ? new Date(startObj.getTime()) : new Date(effectiveEnd.getTime() - 5 * 86400000);
+    if (effectiveStart.getTime() > effectiveEnd.getTime()) {
+      effectiveStart = new Date(effectiveEnd.getTime() - 4 * 86400000);
+    }
+    return {
+      order,
+      dueObj,
+      startObj,
+      effectiveStart,
+      effectiveEnd
+    };
+  });
+
+  // カレンダー表示期間を決定（今日を中心に、フィルタ案件の期間をカバー）
+  let minDate = new Date(today.getTime() - 5 * 86400000);
+  let maxDate = new Date(today.getTime() + 21 * 86400000);
+
+  // 未完了案件または表示対象案件の日付範囲を考慮（最大前後45日〜60日まで広げる）
+  const minClamp = new Date(today.getTime() - 35 * 86400000);
+  const maxClamp = new Date(today.getTime() + 50 * 86400000);
+
+  orderSchedules.forEach(s => {
+    if (s.effectiveStart >= minClamp && s.effectiveStart < minDate) {
+      minDate = new Date(s.effectiveStart.getTime() - 2 * 86400000);
+    }
+    if (s.effectiveEnd <= maxClamp && s.effectiveEnd > maxDate) {
+      maxDate = new Date(s.effectiveEnd.getTime() + 3 * 86400000);
+    }
+  });
+
+  // 日付配列と月ヘッダー配列を生成
+  const days = [];
+  const monthGroups = [];
+  const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+  let cur = new Date(minDate.getTime());
+  let todayIndex = -1;
+
+  while (cur.getTime() <= maxDate.getTime() && days.length < 100) {
+    const y = cur.getFullYear();
+    const m = cur.getMonth() + 1;
+    const d = cur.getDate();
+    const dow = cur.getDay();
+    const isToday = cur.getTime() === today.getTime();
+    if (isToday) todayIndex = days.length;
+
+    const monthLabel = `${y}年${m}月`;
+    if (monthGroups.length === 0 || monthGroups[monthGroups.length - 1].label !== monthLabel) {
+      monthGroups.push({ label: monthLabel, count: 1 });
+    } else {
+      monthGroups[monthGroups.length - 1].count++;
+    }
+
+    days.push({
+      date: new Date(cur.getTime()),
+      y,
+      m,
+      d,
+      dow,
+      dowStr: dowNames[dow],
+      isToday,
+      isSat: dow === 6,
+      isSun: dow === 0
+    });
+
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const totalTimelineWidth = days.length * DAY_WIDTH;
+
+  let html = `
+    <div class="pms-gantt-scroll-container">
+      <table class="pms-gantt-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="pms-gantt-sticky-col">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>優先順 / 案件・品名・納期・進捗</span>
+                <span style="font-size:0.7rem; font-weight:500; color:#93c5fd;">行クリックで部材展開</span>
+              </div>
+            </th>
+            ${monthGroups.map(mg => `<th colspan="${mg.count}" class="pms-gantt-month-th">${mg.label}</th>`).join('')}
+          </tr>
+          <tr>
+            ${days.map(day => {
+              const cls = [
+                'pms-gantt-day-th',
+                day.isToday ? 'is-today' : '',
+                day.isSat ? 'is-sat' : '',
+                day.isSun ? 'is-sun' : ''
+              ].filter(Boolean).join(' ');
+              return `<th class="${cls}" style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; max-width:${DAY_WIDTH}px;">
+                <div>${day.isToday ? '今日' : day.d}</div>
+                <div style="font-size:0.6rem; opacity:0.85;">${day.isToday ? `${day.m}/${day.d}` : day.dowStr}</div>
+              </th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  orderSchedules.forEach(({ order, dueObj, startObj, effectiveStart, effectiveEnd }) => {
+    const stats = getOrderProcessStats(order, defects, allProcesses);
+    const prog = stats.progress;
+    const rank = priorityInfo.priorityRankMap.get(String(order.id));
+    const isSkipped = priorityInfo.skippedIds.has(String(order.id));
+    const isOutOfOrder = priorityInfo.outOfOrderIds.has(String(order.id));
+
+    const isExpanded = expandedOrders.has(order.id) || expandedOrders.has(String(order.id)) || expandedOrders.has(Number(order.id));
+    const expandIcon = isExpanded ? '▼' : '▶';
+
+    const daysUntilDue = dueObj ? Math.round((dueObj.getTime() - today.getTime()) / 86400000) : null;
+
+    // ステータス色とバッジの判定
+    let barColor = '#3b82f6'; // 通常進行中(青)
+    let dueBadgeHtml = '';
+    if (prog === 100) {
+      barColor = '#22c55e'; // 完了(緑)
+      dueBadgeHtml = `<span style="background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:700;">✓ 完了</span>`;
+    } else if (daysUntilDue !== null && daysUntilDue < 0) {
+      barColor = '#dc2626'; // 納期超過(赤)
+      dueBadgeHtml = `<span style="background:#fee2e2; color:#b91c1c; border:1px solid #f87171; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">🚨 超過${Math.abs(daysUntilDue)}日</span>`;
+    } else if (daysUntilDue === 0) {
+      barColor = '#ea580c'; // 今日納期
+      dueBadgeHtml = `<span style="background:#ffedd5; color:#c2410c; border:1px solid #fb923c; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">🔥 今日納期</span>`;
+    } else if (daysUntilDue !== null && daysUntilDue <= 3) {
+      barColor = '#f59e0b'; // 3日以内(橙)
+      dueBadgeHtml = `<span style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:800;">⚠ 残${daysUntilDue}日</span>`;
+    } else if (daysUntilDue !== null) {
+      barColor = prog > 0 ? '#3b82f6' : '#64748b';
+      dueBadgeHtml = `<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:600;">残${daysUntilDue}日</span>`;
+    } else {
+      barColor = prog > 0 ? '#3b82f6' : '#64748b';
+      dueBadgeHtml = `<span style="background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:4px; font-size:0.7rem;">納期未定</span>`;
+    }
+
+    if (isSkipped && prog < 100) {
+      barColor = '#dc2626';
+    }
+
+    // 優先順位バッジ
+    let rankBadgeHtml = '';
+    if (prog === 100) {
+      rankBadgeHtml = `<span style="background:#22c55e; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:800;">✓ 完了</span>`;
+    } else if (rank === 1) {
+      rankBadgeHtml = `<span style="background:#dc2626; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.74rem; font-weight:800; box-shadow:0 1px 4px rgba(220,38,38,0.4);">🔥 優先 #1 (最優先)</span>`;
+    } else if (rank && rank <= 3) {
+      rankBadgeHtml = `<span style="background:#ea580c; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:800;">⚡ 優先 #${rank}</span>`;
+    } else if (rank) {
+      rankBadgeHtml = `<span style="background:#334155; color:#fff; padding:2px 7px; border-radius:5px; font-size:0.72rem; font-weight:700;">優先 #${rank}</span>`;
+    }
+
+    // 順番飛ばし警告バッジ
+    let violationBadgeHtml = '';
+    if (isSkipped) {
+      violationBadgeHtml = `<span style="background:#fef2f2; color:#dc2626; border:1.5px solid #ef4444; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800;">🚨 先に着手要！</span>`;
+    } else if (isOutOfOrder) {
+      violationBadgeHtml = `<span style="background:#fffbeb; color:#b45309; border:1.5px solid #f59e0b; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800;">⚠ 順番飛ばし先行</span>`;
+    }
+
+    // カテゴリ背景色
+    const bom = boms ? boms.find(b => b.productName === order.productName) : null;
+    const category = bom ? (bom.category || '') : '';
+    let stickyBg = 'var(--color-bg-card)';
+    if (isSkipped) {
+      stickyBg = '#fff1f2';
+    } else if (typeof CATEGORY_COLORS !== 'undefined' && CATEGORY_COLORS[category]) {
+      stickyBg = CATEGORY_COLORS[category];
+    }
+
+    // バーの位置計算 (minDate からのオフセット日数)
+    const startDiff = Math.round((effectiveStart.getTime() - minDate.getTime()) / 86400000);
+    const endDiff = Math.round((effectiveEnd.getTime() - minDate.getTime()) / 86400000);
+    const clampedStartIdx = Math.max(0, Math.min(days.length - 1, startDiff));
+    const clampedEndIdx = Math.max(clampedStartIdx, Math.min(days.length - 1, endDiff));
+    const barLeftPx = clampedStartIdx * DAY_WIDTH + 3;
+    const barWidthPx = Math.max(DAY_WIDTH - 6, (clampedEndIdx - clampedStartIdx + 1) * DAY_WIDTH - 6);
+
+    // 予定バーの枠色
+    const plannedBorderColor = isSkipped ? '#dc2626' : (prog === 100 ? '#16a34a' : (daysUntilDue !== null && daysUntilDue <= 3 ? '#d97706' : '#64748b'));
+    const plannedBgColor = isSkipped ? 'rgba(254, 202, 202, 0.65)' : 'rgba(226, 232, 240, 0.75)';
+
+    // 背景グリッド（土日・今日ハイライト＋今日赤ライン）
+    const gridBgHtml = days.map((day, idx) => {
+      let cellBg = 'transparent';
+      if (day.isToday) cellBg = 'rgba(239, 68, 68, 0.08)';
+      else if (day.isSun) cellBg = 'rgba(244, 63, 94, 0.05)';
+      else if (day.isSat) cellBg = 'rgba(59, 130, 246, 0.05)';
+      return `<div style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; height:100%; border-right:1px solid rgba(148,163,184,0.18); background:${cellBg}; box-sizing:border-box;"></div>`;
+    }).join('');
+
+    const todayLineHtml = todayIndex >= 0
+      ? `<div style="position:absolute; top:0; bottom:0; left:${todayIndex * DAY_WIDTH + Math.floor(DAY_WIDTH / 2)}px; width:2px; background:#ef4444; z-index:3; pointer-events:none;"></div>`
+      : '';
+
+    // 工程ステップピルHTML
+    const procPillsHtml = renderOrderProcessPillsHtml(stats.processBreakdown);
+
+    html += `
+      <tr id="gantt-order-row-${order.id}" class="pms-gantt-order-row">
+        <td class="pms-gantt-sticky-col" style="background:${stickyBg}; color:#0f172a; cursor:pointer;" onclick="toggleExpand(event, '${order.id}')">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap; margin-bottom:4px;">
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+              <span style="font-weight:800; color:#0284c7; width:16px; display:inline-block; text-align:center;">${expandIcon}</span>
+              ${rankBadgeHtml}
+              ${violationBadgeHtml}
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              ${category ? `<span style="font-size:0.68rem; background:rgba(15,23,42,0.08); padding:1px 5px; border-radius:4px; font-weight:700; color:#334155;">${category}</span>` : ''}
+              <span style="background:#2563eb; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;" onclick="event.stopPropagation(); jumpToOrder('${order.id}')">指示書 ↗</span>
+            </div>
+          </div>
+
+          <div style="font-weight:800; font-size:0.84rem; color:#0f172a; line-height:1.25; margin-bottom:3px; word-break:break-word;">
+            <span style="color:#475569; font-size:0.75rem;">[${order.orderNo || '-'}]</span> ${order.projectName}
+            <span style="color:#0369a1;">/ ${order.productName}</span>
+            <span style="font-size:0.74rem; font-weight:700; color:#334155; margin-left:4px;">×${order.quantity}台</span>
+            ${order.color ? `<span style="font-size:0.68rem; background:rgba(255,255,255,0.75); border:1px solid #cbd5e1; padding:0 4px; border-radius:3px; margin-left:4px; font-weight:600;">色:${order.color}</span>` : ''}
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:0.74rem; color:#334155; margin-bottom:5px; flex-wrap:wrap;">
+            <span>期間: <strong>${startObj ? formatDate(order.startDate) : formatDate(effectiveStart) + '(予)'}</strong> 〜 <strong style="color:#0f172a; font-size:0.8rem;">${formatDate(order.dueDate)}</strong></span>
+            ${dueBadgeHtml}
+          </div>
+
+          <div style="display:flex; align-items:center; gap:6px;">
+            <div style="flex:1; height:10px; background:rgba(148,163,184,0.3); border-radius:999px; overflow:hidden; border:1px solid rgba(100,116,139,0.25);">
+              <div data-gantt-prog-fill="${order.id}" style="width:${prog}%; height:100%; background:${barColor}; transition:width 0.25s ease;"></div>
+            </div>
+            <span data-gantt-prog-text="${order.id}" style="font-weight:800; font-size:0.76rem; color:#0f172a; min-width:74px; text-align:right;">
+              ${prog}% <span style="font-weight:500; font-size:0.68rem; color:#475569;">(${stats.doneCount}/${stats.totalCount})</span>
+            </span>
+            <span data-gantt-next-proc="${order.id}" style="background:${prog === 100 ? '#dcfce7' : '#dbeafe'}; color:${prog === 100 ? '#166534' : '#1e40af'}; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800; white-space:nowrap;">
+              ${prog === 100 ? '✓ 完了' : `次: ${stats.nextProcess}`}
+            </span>
+          </div>
+        </td>
+
+        <td colspan="${days.length}" style="padding:0; position:relative; width:${totalTimelineWidth}px; min-width:${totalTimelineWidth}px; background:var(--color-bg-card);" onclick="toggleExpand(event, '${order.id}')">
+          <div class="pms-gantt-bar-track" style="width:${totalTimelineWidth}px;">
+            <div style="position:absolute; inset:0; display:flex; pointer-events:none; z-index:1;">
+              ${gridBgHtml}
+            </div>
+            ${todayLineHtml}
+
+            <!-- 予定・実績2層ガントバー -->
+            <div class="pms-gantt-planned-bar"
+                 style="left:${barLeftPx}px; width:${barWidthPx}px; background:${plannedBgColor}; border-color:${plannedBorderColor};"
+                 title="[${order.orderNo}] ${order.projectName} / ${order.productName} (納期: ${formatDate(order.dueDate)}・進捗: ${prog}%)">
+              <div class="pms-gantt-actual-fill" data-gantt-bar-fill="${order.id}" style="width:${prog}%; background:${barColor};"></div>
+              <div class="pms-gantt-bar-label" data-gantt-bar-label="${order.id}">
+                <span>${rank ? `[#${rank}] ` : ''}${order.projectName} (${prog}%)</span>
+                <span>🏁${formatDate(order.dueDate)}</span>
+              </div>
+            </div>
+
+            <!-- 工程別進捗ステップピル -->
+            <div class="pms-gantt-proc-pills" data-gantt-proc-pills="${order.id}" style="margin-left:${Math.max(4, Math.min(barLeftPx, totalTimelineWidth - 360))}px;">
+              ${procPillsHtml}
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    // 展開時：その案件の直下に部材×工程マトリクスをインライン表示（ワンタップで完了切替可能）
+    if (isExpanded) {
+      html += `
+        <tr class="pms-gantt-expanded-row">
+          <td colspan="${days.length + 1}" style="padding:0; background:#f8fafc; border-bottom:2px solid #94a3b8;">
+            <div style="padding:8px 12px; overflow-x:auto; max-width:92vw; position:sticky; left:0;">
+              <div style="font-size:0.76rem; font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+                <span>🔧 【部材別・工程進捗チェック】 ${order.projectName} / ${order.productName} （セルをタップで「未 ⇔ 完了」を即時切替）</span>
+                <span style="font-size:0.72rem; color:#64748b;">部材数: ${order.items ? order.items.length : 0} 件</span>
+              </div>
+              ${renderInlineOrderMatrixTable(order, allProcesses, defects)}
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // スクロール位置の保存
+  const oldContainer = pageBody.querySelector('.pms-gantt-scroll-container');
+  let savedScrollTop = 0;
+  let savedScrollLeft = 0;
+  const hadOldContainer = !!oldContainer;
+  if (oldContainer) {
+    savedScrollTop = oldContainer.scrollTop;
+    savedScrollLeft = oldContainer.scrollLeft;
+  }
+
+  pageBody.innerHTML = html;
+
+  const newContainer = pageBody.querySelector('.pms-gantt-scroll-container');
+  if (newContainer) {
+    if (hadOldContainer && _ganttInitialScrolledToToday) {
+      newContainer.scrollTop = savedScrollTop;
+      newContainer.scrollLeft = savedScrollLeft;
+    } else if (todayIndex >= 0) {
+      _ganttInitialScrolledToToday = true;
+      const targetLeft = Math.max(0, (todayIndex - 3) * DAY_WIDTH);
+      newContainer.scrollLeft = targetLeft;
+    }
+  }
+}
+
+function renderOrderProcessPillsHtml(processBreakdown) {
+  if (!Array.isArray(processBreakdown) || processBreakdown.length === 0) {
+    return '<span style="font-size:0.68rem; color:#94a3b8;">工程なし</span>';
+  }
+  return processBreakdown.map(p => {
+    const icon = p.state === 'done' ? '✓' : (p.state === 'defect' ? '⚠' : (p.state === 'active' ? '▶' : '・'));
+    return `<span class="pms-proc-pill ${p.state}">${icon}${p.name}(${p.done}/${p.total})</span>`;
+  }).join('<span style="color:#94a3b8; font-size:0.65rem;">→</span>');
+}
+
+function renderInlineOrderMatrixTable(order, allProcesses, defects) {
+  if (!order.items || order.items.length === 0) {
+    return `<div style="padding:8px; color:#64748b; font-size:0.8rem;">部材データがありません</div>`;
+  }
+  // このオーダーで使用されている工程のみ（または標準工程）を抽出して見やすく表示
+  const orderProcs = allProcesses.filter(p =>
+    order.items.some(it => Array.isArray(it.processes) && it.processes.includes(p))
+  );
+  const cols = orderProcs.length > 0 ? orderProcs : allProcesses;
+
+  let tbl = `
+    <table class="matrix-table" style="min-width:auto; width:auto; border-collapse:collapse; background:#fff; font-size:0.78rem;">
+      <thead>
+        <tr>
+          <th style="min-width:170px; padding:5px 8px; background:#e2e8f0; color:#1e293b; text-align:left; position:sticky; left:0; z-index:5;">部材名</th>
+          ${cols.map(p => `<th style="min-width:78px; width:78px; padding:5px 4px; background:#e2e8f0; color:#1e293b; font-size:0.72rem;">${p}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  order.items.forEach((item, itemIdx) => {
+    if (!item) return;
+    tbl += `
+      <tr>
+        <td style="padding:5px 8px; text-align:left; font-weight:600; background:#fff; position:sticky; left:0; z-index:4; border:1px solid #cbd5e1; white-space:nowrap;">
+          ┗ ${item.bomName || item.partCode || '(名称なし)'}
+        </td>
+    `;
+    cols.forEach(process => {
+      const hasProcess = Array.isArray(item.processes) && item.processes.includes(process);
+      const isComplete = Array.isArray(item.completed) && item.completed.includes(process);
+      const hasPendingDefect = Array.isArray(defects) && defects.some(d =>
+        String(d.orderId) === String(order.id) &&
+        String(d.itemId) === String(item.id) &&
+        d.processName === process &&
+        d.status === 'pending'
+      );
+
+      if (!hasProcess) {
+        tbl += `<td class="matrix-cell status-disabled" style="height:32px; min-width:78px; width:78px; padding:4px;"></td>`;
+      } else {
+        let statusClass = 'status-todo';
+        let statusText = '<span style="font-size:10px; color:#94a3b8;">未</span>';
+        if (isComplete) {
+          statusClass = 'status-done';
+          statusText = '<span style="font-size:10px; color:#15803d; font-weight:bold;">完了</span>';
+        } else if (hasPendingDefect) {
+          statusClass = 'status-defect';
+          statusText = '<span style="font-size:10px; color:#ffffff; font-weight:bold;">不良</span>';
+        }
+        const safeProcess = process.replace(/'/g, "\\'");
+        const safeOrderId = String(order.id).replace(/'/g, "\\'");
+        tbl += `
+          <td class="matrix-cell ${statusClass}"
+              onclick="toggleProcessStatus(this, '${safeOrderId}', ${itemIdx}, '${safeProcess}', event)"
+              style="height:32px; min-width:78px; width:78px; padding:4px;">
+            ${statusText}
+          </td>
+        `;
+      }
+    });
+    tbl += `</tr>`;
+  });
+
+  tbl += `</tbody></table>`;
+  return tbl;
+}
+
+// 工程セルのトグル時にガントバー・進捗表示・優先順位バナーを0msで即時同期
+function updateGanttOrderSummaryDom(order, currentOrdersList) {
+  if (!order) return;
+  const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS) || [];
+  const stats = getOrderProcessStats(order, defects, STANDARD_PROCESSES);
+  const prog = stats.progress;
+
+  document.querySelectorAll(`[data-gantt-prog-fill="${order.id}"]`).forEach(el => {
+    el.style.width = `${prog}%`;
+    if (prog === 100) el.style.background = '#22c55e';
+  });
+  document.querySelectorAll(`[data-gantt-prog-text="${order.id}"]`).forEach(el => {
+    el.innerHTML = `${prog}% <span style="font-weight:500; font-size:0.68rem; color:#475569;">(${stats.doneCount}/${stats.totalCount})</span>`;
+  });
+  document.querySelectorAll(`[data-gantt-next-proc="${order.id}"]`).forEach(el => {
+    el.textContent = prog === 100 ? '✓ 完了' : `次: ${stats.nextProcess}`;
+    el.style.background = prog === 100 ? '#dcfce7' : '#dbeafe';
+    el.style.color = prog === 100 ? '#166534' : '#1e40af';
+  });
+  document.querySelectorAll(`[data-gantt-bar-fill="${order.id}"]`).forEach(el => {
+    el.style.width = `${prog}%`;
+    if (prog === 100) el.style.background = '#22c55e';
+  });
+  document.querySelectorAll(`[data-gantt-bar-label="${order.id}"]`).forEach(el => {
+    const firstSpan = el.querySelector('span:first-child');
+    if (firstSpan) {
+      firstSpan.textContent = `${order.projectName} (${prog}%)`;
+    }
+  });
+  document.querySelectorAll(`[data-gantt-proc-pills="${order.id}"]`).forEach(el => {
+    el.innerHTML = renderOrderProcessPillsHtml(stats.processBreakdown);
+  });
+
+  const allOrders = currentOrdersList || window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS) || [];
+  const priorityInfo = analyzeDueDatePriority(allOrders);
+  renderGanttPriorityBanner(priorityInfo);
 }
 
 function jumpToOrder(orderId) {
@@ -10081,16 +10870,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // ========================================
 window._ganttSaveTimer = null;
 window._ganttDefectNeedsSave = false;
+window._pendingGanttOrders = null;
+window._pendingGanttDefects = null;
 
 window.flushGanttSave = function () {
   if (window._ganttSaveTimer) {
     clearTimeout(window._ganttSaveTimer);
     window._ganttSaveTimer = null;
     try {
-      const orders = DB.get(DB.KEYS.ORDERS);
+      const orders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+      window._pendingGanttOrders = null;
       DB.save(DB.KEYS.ORDERS, orders);
       if (window._ganttDefectNeedsSave) {
-        const defects = DB.get(DB.KEYS.DEFECTS);
+        const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS);
+        window._pendingGanttDefects = null;
         DB.save(DB.KEYS.DEFECTS, defects);
         window._ganttDefectNeedsSave = false;
       }
@@ -10118,7 +10911,8 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
 
   try {
     // 1. メモリ上のデータを即座に同期更新（一切の遅延・タイムラグなし）
-    const orders = DB.get(DB.KEYS.ORDERS);
+    const orders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+    window._pendingGanttOrders = orders;
     const order = orders.find(o => String(o.id) === String(orderId));
     if (!order) {
       console.error('Order not found:', orderId);
@@ -10144,7 +10938,7 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
       item.completed.push(proc);
 
       // 保留中の不良データがあれば resolved に更新
-      const defects = DB.get(DB.KEYS.DEFECTS) || [];
+      const defects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS) || [];
       let defectChanged = false;
       defects.forEach(d => {
         if (String(d.orderId) === String(order.id) &&
@@ -10156,6 +10950,7 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         }
       });
       if (defectChanged) {
+        window._pendingGanttDefects = defects;
         window._ganttDefectNeedsSave = true;
       }
     } else {
@@ -10173,6 +10968,9 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
         cellElement.innerHTML = '<span style="font-size:10px; color:#94a3b8;">未</span>';
       }
     }
+    if (typeof updateGanttOrderSummaryDom === 'function') {
+      updateGanttOrderSummaryDom(order, orders);
+    }
 
     // 3. ローカル操作中フラグ（Firebase同期やrefreshCurrentPageによるテーブル全体の無駄な再描画を抑止）
     window._isGanttLocalToggleActive = true;
@@ -10184,10 +10982,12 @@ window.toggleProcessStatus = function (cellElement, orderId, itemIdx, processNam
     window._ganttSaveTimer = setTimeout(() => {
       window._ganttSaveTimer = null;
       try {
-        const curOrders = DB.get(DB.KEYS.ORDERS);
+        const curOrders = window._pendingGanttOrders || DB.get(DB.KEYS.ORDERS);
+        window._pendingGanttOrders = null;
         DB.save(DB.KEYS.ORDERS, curOrders);
         if (window._ganttDefectNeedsSave) {
-          const curDefects = DB.get(DB.KEYS.DEFECTS);
+          const curDefects = window._pendingGanttDefects || DB.get(DB.KEYS.DEFECTS);
+          window._pendingGanttDefects = null;
           DB.save(DB.KEYS.DEFECTS, curDefects);
           window._ganttDefectNeedsSave = false;
         }
