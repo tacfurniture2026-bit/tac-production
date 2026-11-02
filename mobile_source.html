@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.74.0】 -->
+    <!-- 【強制キャッシュバスティング v6.75.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.74.0';
+            var currentVersion = 'v6.75.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.74.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.75.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -36,7 +36,7 @@
                     name: "TAC製造部 生産管理",
                     short_name: "TAC生産管理",
                     display: "standalone",
-                    orientation: "portrait",
+                    orientation: "any",
                     theme_color: "#0071C1",
                     background_color: "#FFFFFF",
                     start_url: ".",
@@ -54,7 +54,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v6.74.0">
+    <link rel="stylesheet" href="styles-mobile.css?v=v6.75.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -170,8 +170,14 @@
             50% { transform: rotate(90deg); }
         }
         @media screen and (orientation: landscape) and (max-height: 600px) {
-            #landscape-overlay {
+            body:not(.allow-landscape) #landscape-overlay {
                 display: flex !important;
+            }
+            body.allow-landscape #landscape-overlay {
+                display: none !important;
+            }
+            body.allow-landscape .matrix-container {
+                max-height: 78vh !important;
             }
         }
       
@@ -217,8 +223,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.74.0"></script>
-    <script src="app-mobile.js?v=v6.74.0"></script>
+    <script src="data.js?v=v6.75.0"></script>
+    <script src="app-mobile.js?v=v6.75.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -276,7 +282,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.74.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -303,7 +309,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.74.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.75.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -386,7 +392,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.74.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.75.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -546,11 +552,15 @@
                                     <video id="qr-video"
                                         style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
                                 </div>
-                                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+                                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
                                     <button type="button" class="btn btn-primary" id="start-scan-btn" onclick="startQrScanner()">📷
                                         スキャン開始</button>
                                     <button type="button" class="btn btn-secondary" id="stop-scan-btn"
-                                        style="display: none;" onclick="stopQrScanner()">⏹ 停止</button>
+                                        style="display: none;" onclick="stopQrScanner(true)">⏹ 停止</button>
+                                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary); background: var(--color-bg-tertiary); padding: 6px 12px; border-radius: 9999px; cursor: pointer; user-select: none;">
+                                        <input type="checkbox" id="qr-continuous-mode" checked style="width: 16px; height: 16px; accent-color: #0284c7; margin: 0;">
+                                        🔄 連続スキャン
+                                    </label>
                                 </div>
                                 <div id="qr-scan-result"
                                     style="margin-top: 16px; padding: 12px; background: var(--color-bg-primary); border-radius: 8px; display: none;">
@@ -1484,7 +1494,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.74.0
+                    Version: v6.75.0
                 </div>
             </div>
         </div>

@@ -222,17 +222,6 @@ function showMainScreen() {
     el.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
   });
 
-  // 画面縦固定: Screen Orientation API でポートレートをロック試行
-  try {
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('portrait').catch(() => {
-        // API非対応・権限なしの場合は無視（CSS側で対応済み）
-      });
-    }
-  } catch (e) {
-    // 例外無視
-  }
-
   // モバイルナビの初期化
   initMobileNav();
 
@@ -318,8 +307,9 @@ function emergencyRestoreProductsFromLogs() {
 window.refreshCurrentPage = function () {
   const activePage = localStorage.getItem('lastPage') || 'dashboard';
 
-  // 棚卸スキャン画面およびガントチャート操作中の全再描画抑止
+  // 棚卸スキャン画面、進捗QR読取画面（カメラ起動中）、およびガントチャート操作中の全再描画抑止
   if (activePage === 'inv-scan') return;
+  if (activePage === 'qr' && qrScanner) return;
   if (activePage === 'gantt' && window._isGanttLocalToggleActive) return;
 
   // 棚卸スキャン画面はカメラ起動中や入力中にFirebase同期による再描画が走ると
@@ -389,6 +379,20 @@ function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
 
+  // 横長の画面（工程管理・生産指示書・BOM管理・月次報告・商品マスタ・棚卸スキャン確認・月次締め）ではスマホ横向き回転を許可
+  const landscapePages = ['gantt', 'orders', 'bom', 'report', 'inv-products', 'inv-check', 'inv-monthly'];
+  const allowLandscape = landscapePages.includes(pageName);
+  document.body.classList.toggle('allow-landscape', allowLandscape);
+  try {
+    if (screen.orientation) {
+      if (allowLandscape && typeof screen.orientation.unlock === 'function') {
+        screen.orientation.unlock();
+      } else if (!allowLandscape && typeof screen.orientation.lock === 'function') {
+        screen.orientation.lock('portrait').catch(() => {});
+      }
+    }
+  } catch (e) {}
+
   // iPad等タッチデバイスでのホバー残留対策
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) {
@@ -398,9 +402,8 @@ function navigateTo(pageName) {
     }
   }
 
-  
-  // Stop any running scanners when changing pages
-  if (typeof stopQrScanner === 'function') stopQrScanner();
+  // ページ切り替え時に稼働中のスキャナーを停止
+  if (typeof stopQrScanner === 'function') stopQrScanner(true);
   if (typeof stopDefectQrScanner === 'function') stopDefectQrScanner();
   if (typeof stopInvScanner === 'function') stopInvScanner();
 
@@ -419,13 +422,6 @@ function navigateTo(pageName) {
   if (mobileBtn) mobileBtn.classList.add('active');
 
   // ページ初期化
-  // カメラ停止（タブ切り替え時にリセット）
-  stopQrScanner();
-  stopInvScanner();
-  if (typeof stopDefectQrScanner === 'function') {
-    stopDefectQrScanner();
-  }
-
   switch (pageName) {
     case 'dashboard':
       renderDashboard();
@@ -900,18 +896,14 @@ function collapseAll() {
 // QRスキャナーインスタンス
 let qrScanner = null;
 let defectQrScanner = null;
+let qrContinuousActive = false;
+let lastQrScannedText = '';
+let lastQrScannedTime = 0;
 
-function renderQrPage() {
-  const orders = DB.get(DB.KEYS.ORDERS);
-  const history = DB.get(DB.KEYS.PROGRESS_HISTORY);
-
-  // 指示書セレクト
-  const orderSelect = $('#qr-order');
-  orderSelect.innerHTML = '<option value="">選択してください</option>' +
-    orders.map(o => `<option value="${o.id}">${o.projectName} - ${o.productName}</option>`).join('');
-
-  // 履歴表示
+function renderQrHisoryOnly() {
+  const history = DB.get(DB.KEYS.PROGRESS_HISTORY) || [];
   const historyContainer = $('#qr-history');
+  if (!historyContainer) return;
   if (history.length === 0) {
     historyContainer.innerHTML = '<p class="text-muted">履歴がありません</p>';
   } else {
@@ -925,6 +917,22 @@ function renderQrPage() {
       </div>
     `).join('');
   }
+}
+
+function renderQrPage() {
+  const orders = DB.get(DB.KEYS.ORDERS);
+  const currentOrderVal = $('#qr-order') ? $('#qr-order').value : '';
+
+  // 指示書セレクト（選択中の値があれば維持）
+  const orderSelect = $('#qr-order');
+  if (orderSelect) {
+    orderSelect.innerHTML = '<option value="">選択してください</option>' +
+      orders.map(o => `<option value="${o.id}">${o.projectName} - ${o.productName}</option>`).join('');
+    if (currentOrderVal) orderSelect.value = currentOrderVal;
+  }
+
+  // 履歴表示
+  renderQrHisoryOnly();
 
   // スキャナーボタンのイベント
   const startBtn = $('#start-scan-btn');
@@ -934,17 +942,8 @@ function renderQrPage() {
     startBtn.onclick = startQrScanner;
   }
   if (stopBtn) {
-    stopBtn.onclick = stopQrScanner;
+    stopBtn.onclick = () => stopQrScanner(true);
   }
-
-  // スマホの場合は自動でカメラ起動 -> 廃止（ボタンで起動）
-  /*
-  if (isMobileDevice()) {
-    setTimeout(() => {
-      startQrScanner();
-    }, 500);
-  }
-  */
 }
 
 // スマホ判定
@@ -958,6 +957,8 @@ async function startQrScanner() {
   const startBtn = $('#start-scan-btn');
   const stopBtn = $('#stop-scan-btn');
   const resultDiv = $('#qr-scan-result');
+  const continuousCheckbox = document.getElementById('qr-continuous-mode');
+  qrContinuousActive = continuousCheckbox ? continuousCheckbox.checked : true;
 
   // 二重起動防止
   if (qrScanner) {
@@ -967,17 +968,21 @@ async function startQrScanner() {
 
   // 競合する他のスキャナーを停止
   stopInvScanner();
+  if (typeof stopDefectQrScanner === 'function') await stopDefectQrScanner();
 
   // プレースホルダーを非表示、ビデオを表示
   if (placeholder) placeholder.style.display = 'none';
   if (videoEl) videoEl.style.display = 'block';
   if (startBtn) startBtn.style.display = 'none';
   if (stopBtn) stopBtn.style.display = 'inline-block';
-  if (resultDiv) resultDiv.style.display = 'none';
 
   // html5-qrcodeが読み込まれているか確認
   if (typeof Html5Qrcode === 'undefined') {
     toast('QRスキャナーが読み込めません。ページを再読み込みしてください。', 'error');
+    if (placeholder) placeholder.style.display = 'block';
+    if (videoEl) videoEl.style.display = 'none';
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (stopBtn) stopBtn.style.display = 'none';
     return;
   }
 
@@ -988,10 +993,10 @@ async function startQrScanner() {
     fps: 10,
     qrbox: (width, height) => {
       const min = Math.min(width, height);
-      const size = Math.floor(min * 0.7);
+      const size = Math.max(150, Math.floor(min * 0.72));
       return { width: size, height: size };
     },
-    aspectRatio: 1.333333
+    aspectRatio: 1
   };
 
   qrScanner.start(
@@ -1004,171 +1009,235 @@ async function startQrScanner() {
   ).catch(err => {
     console.error('カメラ起動エラー:', err);
     toast('カメラを起動できません。カメラの権限を許可してください。', 'error');
-    stopQrScanner();
+    stopQrScanner(true);
   });
 }
 
-function stopQrScanner() {
+function stopQrScanner(manualStop = false) {
+  if (manualStop) {
+    qrContinuousActive = false;
+    lastQrScannedText = '';
+  }
   const videoEl = $('#qr-video');
   const placeholder = $('#qr-scanner-placeholder');
   const startBtn = $('#start-scan-btn');
   const stopBtn = $('#stop-scan-btn');
 
-  let p = Promise.resolve();
-  if (qrScanner) {
-    p = qrScanner.stop().then(() => {
-      qrScanner.clear();
-      qrScanner = null;
-    }).catch(err => console.log(err));
-  }
-  return p;
-
-  // UIを元に戻す
+  // UIを元に戻す（returnの前に実行して確実にボタン状態を復元する）
   if (placeholder) placeholder.style.display = 'block';
   if (videoEl) videoEl.style.display = 'none';
   if (startBtn) startBtn.style.display = 'inline-block';
   if (stopBtn) stopBtn.style.display = 'none';
+
+  let p = Promise.resolve();
+  if (qrScanner) {
+    const scannerInstance = qrScanner;
+    qrScanner = null;
+    p = scannerInstance.stop().then(() => {
+      try { scannerInstance.clear(); } catch (e) {}
+    }).catch(err => {
+      console.log(err);
+      try { scannerInstance.clear(); } catch (e) {}
+    });
+  }
+  return p;
 }
 
-function onQrCodeScanned(decodedText) {
-  // スキャン成功時の処理
-  stopQrScanner();
-
-  const resultDiv = $('#qr-scan-result');
-  const dataDiv = $('#qr-scan-data');
-
-  if (resultDiv) resultDiv.style.display = 'block';
-
-  // QRコードのフォーマットを柔軟にパース
-  let projectName = '';
-  let productName = '';
-  let bomName = '';
-  let parsed = false;
-
-  // 1. JSON形式を試す {"project":"...","product":"...","bom":"..."}
+function onQrCodeScanned(decodedText, decodedResult) {
   try {
-    const json = JSON.parse(decodedText);
-    if (json.project || json.projectName) {
-      projectName = (json.project || json.projectName || '').trim();
-      productName = (json.product || json.productName || '').trim();
-      bomName = (json.bom || json.bomName || json.item || '').trim();
-      parsed = true;
+    const now = Date.now();
+    // 連続スキャン時、同一QRコードの直後の重複読み取り(2.5秒以内)をガード
+    if (decodedText === lastQrScannedText && (now - lastQrScannedTime) < 2500) {
+      return;
     }
-  } catch (e) { /* not JSON */ }
+    lastQrScannedText = decodedText;
+    lastQrScannedTime = now;
 
-  // 2. デリミタ形式 (パイプ、カンマ、タブ)
-  if (!parsed) {
-    const parts = decodedText.split(/[|\t]/);
-    if (parts.length >= 3) {
-      projectName = parts[0].trim();
-      productName = parts[1].trim();
-      bomName = parts[2].trim();
-      parsed = true;
-    } else {
-      // カンマ区切りの場合(3つ以上)
-      const commaParts = decodedText.split(',');
-      if (commaParts.length >= 3) {
-        projectName = commaParts[0].trim();
-        productName = commaParts[1].trim();
-        bomName = commaParts[2].trim();
+    // Define safeSet helper early
+    const safeSet = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+
+    console.log('Force Raw Data:', decodedText);
+    safeSet('qr-raw-data', decodedText);
+    console.log(`QR Scanned: ${decodedText}`);
+    const debugMsg = decodedText.length > 20 ? decodedText.substring(0, 20) + '...' : decodedText;
+    toast(`読取成功: ${debugMsg}`, 'success');
+
+    // 連続スキャンモード判定（チェックON時はカメラを止めずに連続読取、OFF時は停止してボタンを復元）
+    const continuousCheckbox = document.getElementById('qr-continuous-mode');
+    qrContinuousActive = continuousCheckbox ? continuousCheckbox.checked : true;
+    if (!qrContinuousActive) {
+      stopQrScanner(false);
+    }
+
+    const resultDiv = document.getElementById('qr-scan-result');
+    const dataDiv = document.getElementById('qr-scan-data');
+    if (resultDiv) resultDiv.style.display = 'block';
+
+    // Parse
+    let projectName = '';
+    let productName = '';
+    let bomName = '';
+    let parsed = false;
+
+    // 1. JSON
+    try {
+      const json = JSON.parse(decodedText);
+      if (json.project || json.projectName) {
+        projectName = (json.project || json.projectName || '').trim();
+        productName = (json.product || json.productName || '').trim();
+        bomName = (json.bom || json.bomName || json.item || '').trim();
+        parsed = true;
+      }
+    } catch (e) { }
+
+    // 2. Delimiter
+    if (!parsed) {
+      const parts = decodedText.split(/[|\t_]/);
+      if (parts.length >= 3) {
+        projectName = parts[0].trim();
+        productName = parts[1].trim();
+        bomName = parts[2].trim();
+        parsed = true;
+      } else {
+        const commaParts = decodedText.split(',');
+        if (commaParts.length >= 3) {
+          projectName = commaParts[0].trim();
+          productName = commaParts[1].trim();
+          bomName = commaParts[2].trim();
+          parsed = true;
+        }
+      }
+    }
+
+    // 3. Two parts
+    if (!parsed) {
+      const parts2 = decodedText.split(/[|,\t_]/);
+      if (parts2.length === 2) {
+        productName = parts2[0].trim();
+        bomName = parts2[1].trim();
         parsed = true;
       }
     }
-  }
 
-  // 3. 2パート: "品名|部材" または "現場|品名"
-  if (!parsed) {
-    const parts2 = decodedText.split(/[|,\t]/);
-    if (parts2.length === 2) {
-      // 品名と部材として扱う
-      productName = parts2[0].trim();
-      bomName = parts2[1].trim();
-      parsed = true;
-    }
-  }
+    // 4. Single string search
+    if (!parsed) {
+      const orders = DB.get(DB.KEYS.ORDERS) || [];
+      const searchText = decodedText.trim();
+      const matchOrder = orders.find(o =>
+        o.orderNo === searchText ||
+        o.projectName === searchText ||
+        o.productName === searchText ||
+        (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
+      );
 
-  // 4. 単一文字列: オーダーデータから検索
-  if (!parsed) {
-    const orders = DB.get(DB.KEYS.ORDERS);
-    const searchText = decodedText.trim();
-
-    // orderNo, projectName, productName, bomNameのいずれかに一致するか検索
-    const matchOrder = orders.find(o =>
-      o.orderNo === searchText ||
-      o.projectName === searchText ||
-      o.productName === searchText ||
-      (o.items && o.items.some(i => i.bomName === searchText || i.partCode === searchText))
-    );
-
-    if (matchOrder) {
-      projectName = matchOrder.projectName;
-      productName = matchOrder.productName;
-
-      // 部材まで一致した場合
-      const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
-      if (matchItem) {
-        bomName = matchItem.bomName;
+      if (matchOrder) {
+        projectName = matchOrder.projectName;
+        productName = matchOrder.productName;
+        const matchItem = matchOrder.items?.find(i => i.bomName === searchText || i.partCode === searchText);
+        if (matchItem) bomName = matchItem.bomName;
+        parsed = true;
       }
-      parsed = true;
     }
-  }
 
-  // スキャン結果を表示
-  if (dataDiv) {
-    if (parsed && (projectName || productName || bomName)) {
-      dataDiv.innerHTML = `
-        ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
-        ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
-        ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
-      `;
+    // Display and Auto Transcription
+    if (dataDiv) {
+      if (parsed && (projectName || productName || bomName)) {
+        dataDiv.innerHTML = `
+            ${projectName ? `<div><strong>現場名:</strong> ${projectName}</div>` : ''}
+            ${productName ? `<div><strong>品名:</strong> ${productName}</div>` : ''}
+            ${bomName ? `<div><strong>部材:</strong> ${bomName}</div>` : ''}
+          `;
+
+        safeSet('qr-project-name', projectName || '');
+        safeSet('qr-product-name', productName || '');
+        safeSet('qr-bom-name', bomName || '');
+
+      } else {
+        dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+      }
+    }
+
+    // Auto Select
+    if (parsed && (projectName || productName)) {
+      selectFromQrData(projectName, productName, bomName);
     } else {
-      dataDiv.innerHTML = `<div>読取データ: ${decodedText}</div>`;
+      toast('データが見つかりませんでした (転記不可)', 'warning');
     }
-  }
 
-  // 指示書自動選択
-  if (parsed && (projectName || productName)) {
-    selectFromQrData(projectName, productName, bomName);
-  } else {
-    toast('QRコードを読み取りましたが、対応するデータが見つかりませんでした', 'warning');
-  }
+    // Vibrate
+    if (navigator.vibrate) {
+      try { navigator.vibrate(100); } catch (e) { }
+    }
 
-  // 成功音（バイブレーション）
-  if (navigator.vibrate) {
-    navigator.vibrate(100);
+  } catch (e) {
+    console.error('QR Scan Error:', e);
+    toast('システムエラー: ' + e.message, 'error');
   }
-  toast('QRコードを読み取りました', 'success');
 }
 
 function selectFromQrData(projectName, productName, bomName) {
-  const orders = DB.get(DB.KEYS.ORDERS);
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
 
-  // 現場名と品名で指示書を検索
-  const order = orders.find(o =>
+  const normalize = s => (s || '').trim().replace(/\s+/g, '').replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).toLowerCase();
+
+  const pNameNorm = normalize(projectName);
+  const prodNameNorm = normalize(productName);
+  const bomNameNorm = normalize(bomName);
+
+  // 1. Strict
+  let order = orders.find(o =>
     o.projectName.includes(projectName) && o.productName.includes(productName)
   );
 
+  // 2. Fuzzy
   if (!order) {
-    toast(`指示書が見つかりません: ${projectName} - ${productName}`, 'warning');
+    order = orders.find(o =>
+      normalize(o.projectName).includes(pNameNorm) && normalize(o.productName).includes(prodNameNorm)
+    );
+  }
+
+  if (!order) {
+    toast(`該当データなし (現場: ${projectName}, 品名: ${productName})`, 'warning');
     return;
   }
 
-  // 指示書を選択
-  const orderSelect = $('#qr-order');
-  orderSelect.value = order.id;
+  // Select Order
+  const orderSelect = document.getElementById('qr-order');
+  if (orderSelect) {
+    const opt = orderSelect.querySelector(`option[value="${order.id}"]`);
+    if (!opt) {
+      const newOpt = document.createElement('option');
+      newOpt.value = order.id;
+      newOpt.text = `${order.projectName} - ${order.productName}`;
+      orderSelect.add(newOpt);
+    }
+    orderSelect.value = order.id;
+  }
+
   updateQrItemSelect();
 
-  // 部材を検索して選択
+  // Select Item
   setTimeout(() => {
-    const item = order.items?.find(i =>
-      i.bomName.includes(bomName) || i.partCode?.includes(bomName)
+    let item = order.items?.find(i =>
+      i.bomName.includes(bomName) || (i.partCode && i.partCode.includes(bomName))
     );
 
+    if (!item && bomNameNorm) {
+      item = order.items?.find(i =>
+        normalize(i.bomName).includes(bomNameNorm) || (i.partCode && normalize(i.partCode).includes(bomNameNorm))
+      );
+    }
+
     if (item) {
-      const itemSelect = $('#qr-item');
-      itemSelect.value = item.id;
+      const itemSelect = document.getElementById('qr-item');
+      if (itemSelect) {
+        itemSelect.value = item.id;
+      }
       updateQrProcessSelect();
-      toast('部材を自動選択しました。工程を選んで登録してください。', 'success');
+      toast(`指示書と部材を選択しました`, 'success');
     } else {
       toast(`部材が見つかりません: ${bomName}`, 'warning');
     }
@@ -1316,6 +1385,16 @@ function submitQrProgress() {
         processHidden.value = '';
 
         if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) { }
+
+        // 履歴表示を即時更新
+        renderQrHisoryOnly();
+
+        // 連続スキャンモードがONでカメラが停止していた場合は自動再開
+        const continuousCheckbox = document.getElementById('qr-continuous-mode');
+        const isCont = continuousCheckbox ? continuousCheckbox.checked : true;
+        if (isCont && !qrScanner) {
+          setTimeout(() => startQrScanner(), 350);
+        }
       } else {
         toast('登録に失敗しました', 'error');
         if (btn) {
@@ -1419,18 +1498,23 @@ function stopDefectQrScanner() {
   const startBtn = $('#defect-start-scan-btn');
   const stopBtn = $('#defect-stop-scan-btn');
 
-  let p = Promise.resolve();
-  if (defectQrScanner) {
-    p = defectQrScanner.stop().then(() => {
-      defectQrScanner.clear();
-      defectQrScanner = null;
-    }).catch(err => console.log(err));
-  }
-  return p;
-
+  // UIを元に戻す（returnの前に実行）
   if (placeholder) placeholder.style.display = 'block';
   if (startBtn) startBtn.style.display = 'inline-block';
   if (stopBtn) stopBtn.style.display = 'none';
+
+  let p = Promise.resolve();
+  if (defectQrScanner) {
+    const scannerInstance = defectQrScanner;
+    defectQrScanner = null;
+    p = scannerInstance.stop().then(() => {
+      try { scannerInstance.clear(); } catch (e) {}
+    }).catch(err => {
+      console.log(err);
+      try { scannerInstance.clear(); } catch (e) {}
+    });
+  }
+  return p;
 }
 
 function onDefectQrCodeScanned(decodedText) {
