@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>生産管理システム</title>
-    <!-- 【強制キャッシュバスティング v6.76.0】 -->
+    <!-- 【強制キャッシュバスティング v6.77.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.76.0';
+            var currentVersion = 'v6.77.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + currentVersion + window.location.hash;
@@ -26,14 +26,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.76.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.77.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v6.76.0">
+    <link rel="stylesheet" href="styles.css?v=v6.77.0">
     <style>
 html, body { 
     width: 100vw; 
@@ -140,8 +140,8 @@ html, body {
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.76.0"></script>
-    <script src="app.js?v=v6.76.0"></script>
+    <script src="data.js?v=v6.77.0"></script>
+    <script src="app.js?v=v6.77.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -210,7 +210,7 @@ html, body {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.76.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.77.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -249,6 +249,10 @@ html, body {
                 <a href="#" class="nav-item admin-only" data-page="report">
                     <span class="nav-icon">☷</span>
                     <span>月次報告</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="pao-analytics">
+                    <span class="nav-icon">📊</span>
+                    <span>PAO生産・トレンド分析</span>
                 </a>
                 <a href="#" class="nav-item admin-only" data-page="backup">
                     <span class="nav-icon">💾</span>
@@ -930,6 +934,94 @@ html, body {
                 <div id="report-content" class="report-container"></div>
             </div>
 
+            <!-- PAO生産・トレンド分析（管理者のみ） -->
+            <div id="page-pao-analytics" class="page">
+                <div class="page-header">
+                    <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 0.75rem;">
+                        <div>
+                            <h1>📊 PAO 生産数量・サイズ・色柄トレンド分析</h1>
+                            <p>PAO製品専用の年度別・月別生産台数、サイズ構成比、色柄トレンドを一括集計</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-primary" onclick="exportPaoAnalyticsExcel()" style="background-color: #16a34a; border-color: #16a34a; font-weight: 700;">
+                                📥 Excel出力 (.xlsx)
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="printPaoAnalyticsPdf()" style="background-color: #0284c7; border-color: #0284c7; font-weight: 700;">
+                                🖨️ PDF出力 / 印刷
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 集計条件フィルターカード -->
+                <div class="card" style="margin-bottom: 1.25rem;">
+                    <div class="card-header" style="padding: 0.75rem 1.25rem;">
+                        <h3 style="margin: 0; font-size: 0.95rem;">🔍 集計条件設定（年度・期間・対象ステータス）</h3>
+                    </div>
+                    <div class="card-body" style="padding: 1rem 1.25rem;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                            <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">集計年度</label>
+                                <select id="pao-filter-year" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="all">全期間（全年度）</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 160px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">年度区分（月並び）</label>
+                                <select id="pao-filter-year-type" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="calendar">暦年（1月〜12月）</option>
+                                    <option value="fiscal">会計年度（4月〜翌3月）</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 140px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">対象月絞込</label>
+                                <select id="pao-filter-month" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="all">全月（12ヶ月集計）</option>
+                                    <option value="1">1月のみ</option>
+                                    <option value="2">2月のみ</option>
+                                    <option value="3">3月のみ</option>
+                                    <option value="4">4月のみ</option>
+                                    <option value="5">5月のみ</option>
+                                    <option value="6">6月のみ</option>
+                                    <option value="7">7月のみ</option>
+                                    <option value="8">8月のみ</option>
+                                    <option value="9">9月のみ</option>
+                                    <option value="10">10月のみ</option>
+                                    <option value="11">11月のみ</option>
+                                    <option value="12">12月のみ</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">日付基準</label>
+                                <select id="pao-filter-date-basis" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="dueDate">納期基準 (標準)</option>
+                                    <option value="startDate">着工日基準</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 170px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">進捗ステータス</label>
+                                <select id="pao-filter-status" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="all">全案件（完了＋進行中・未完）</option>
+                                    <option value="complete">完了案件のみ（進捗100%）</option>
+                                    <option value="incomplete">未完了案件のみ（進行中・未着手）</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; min-width: 170px;">
+                                <label style="font-size: 0.8rem; font-weight: 700;">PAO対象範囲</label>
+                                <select id="pao-filter-scope" class="form-input" onchange="renderPaoAnalyticsPage()">
+                                    <option value="pao_strict">PAOシリーズ（品名PAO*）</option>
+                                    <option value="pao_category">PAOカテゴリ全機種（SEMI/CALM等含）</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="renderPaoAnalyticsPage()">🔄 再集計</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAO分析ダッシュボード＆帳票描画コンテナ -->
+                <div id="pao-analytics-content"></div>
+            </div>
+
             <!-- ========================================== -->
             <!-- 在庫管理セクション -->
             <!-- ========================================== -->
@@ -1509,6 +1601,10 @@ html, body {
                 <button class="more-menu-item admin-only" data-page="report">
                     <span class="more-menu-icon">☷</span>
                     <span>月次報告</span>
+                </button>
+                <button class="more-menu-item admin-only" data-page="pao-analytics">
+                    <span class="more-menu-icon">📊</span>
+                    <span>PAO生産・トレンド分析</span>
                 </button>
                 <button class="more-menu-item admin-only" data-page="inv-products">
                     <span class="more-menu-icon">▤</span>

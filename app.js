@@ -324,6 +324,7 @@ window.refreshCurrentPage = function () {
     case 'rates': renderRates(); break;
     case 'users': renderUsers(); break;
     case 'report': renderReport(); break;
+    case 'pao-analytics': renderPaoAnalyticsPage(); break;
     case 'backup': renderBackupPage(); break;
     case 'inv-scan': renderInvScanPage(); break;
     case 'inv-search': renderInvSearchPage(); break;
@@ -378,8 +379,8 @@ function navigateTo(pageName) {
   // ページ状態を保存
   localStorage.setItem('lastPage', pageName);
 
-  // 横長の画面（工程管理・生産指示書・BOM管理・月次報告・商品マスタ・棚卸スキャン確認・月次締め）ではスマホ横向き回転を許可
-  const landscapePages = ['gantt', 'orders', 'bom', 'report', 'inv-products', 'inv-check', 'inv-monthly'];
+  // 横長の画面（工程管理・生産指示書・BOM管理・月次報告・PAO分析・商品マスタ・棚卸スキャン確認・月次締め）ではスマホ横向き回転を許可
+  const landscapePages = ['gantt', 'orders', 'bom', 'report', 'pao-analytics', 'inv-products', 'inv-check', 'inv-monthly'];
   const allowLandscape = landscapePages.includes(pageName);
   document.body.classList.toggle('allow-landscape', allowLandscape);
   try {
@@ -448,6 +449,9 @@ function navigateTo(pageName) {
       break;
     case 'report':
       renderReport();
+      break;
+    case 'pao-analytics':
+      renderPaoAnalyticsPage();
       break;
     case 'backup':
       renderBackupPage();
@@ -13214,4 +13218,1066 @@ window.downloadSampleHtCsv = function() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   toast('🧪 担当者＆ダブり検証用サンプルCSV (INV_LOG_SAMPLE_V2.CSV) をダウンロードしました！', 'info', 5000);
+};
+
+// ============================================================================
+// 📊 PAO 生産数量・サイズ・色柄トレンド分析（管理者専用・v6.77.0）
+// ============================================================================
+
+function escapePaoHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * PAO品番からサイズ規格（0912, 1012, 1018, 1212, 1218, 1318, 1618, 2424, PAOBABY, DESK1200等）を判定
+ */
+function extractPaoSizeInfo(productName) {
+  const raw = String(productName || '').trim();
+  const upper = raw.toUpperCase().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+
+  if (upper.includes('0912')) return { key: '0912', label: '0912 (W900×D1200)', shortLabel: '0912', order: 10 };
+  if (upper.includes('1012')) return { key: '1012', label: '1012 (W1000×D1200)', shortLabel: '1012', order: 20 };
+  if (upper.includes('1018')) return { key: '1018', label: '1018 (W1000×D1800)', shortLabel: '1018', order: 30 };
+  if (upper.includes('1212')) return { key: '1212', label: '1212 (W1200×D1200)', shortLabel: '1212', order: 40 };
+  if (upper.includes('1218')) return { key: '1218', label: '1218 (W1200×D1800)', shortLabel: '1218', order: 50 };
+  if (upper.includes('1318')) return { key: '1318', label: '1318 (W1300×D1800 / BABY)', shortLabel: '1318', order: 60 };
+  if (upper.includes('1618')) return { key: '1618', label: '1618 (W1600×D1800)', shortLabel: '1618', order: 70 };
+  if (upper.includes('2424')) return { key: '2424', label: '2424 (W2400×D2400)', shortLabel: '2424', order: 80 };
+  if (upper.includes('BABY')) return { key: 'PAOBABY', label: 'PAOBABY (標準)', shortLabel: 'PAOBABY', order: 90 };
+  if (upper.includes('DESK1200') || upper.includes('DESK 1200')) return { key: 'DESK1200', label: 'PAODESK 1200 (W1200)', shortLabel: 'DESK1200', order: 100 };
+  if (upper.includes('DESK1400') || upper.includes('DESK 1400')) return { key: 'DESK1400', label: 'PAODESK 1400 (W1400)', shortLabel: 'DESK1400', order: 110 };
+  if (upper.includes('PAO-T') || upper.includes('PAOW-T')) return { key: 'PAO-T', label: 'PAO-T / PAOW-T (卓・オプション)', shortLabel: 'PAO-T', order: 120 };
+
+  const numMatch = upper.match(/(\d{4})/);
+  if (numMatch) {
+    return { key: numMatch[1], label: `${numMatch[1]}サイズ`, shortLabel: numMatch[1], order: 200 };
+  }
+  return { key: raw || 'OTHER', label: raw || 'その他PAO', shortLabel: raw || 'その他', order: 999 };
+}
+
+/**
+ * 注文データがPAO対象か判定する
+ */
+function isPaoTargetOrder(order, scope, bomsMap) {
+  if (!order) return false;
+  const pName = String(order.productName || '').trim();
+  const upper = pName.toUpperCase();
+  if (upper.includes('PAO')) return true;
+
+  if (scope === 'pao_category') {
+    const bomCat = bomsMap.get(pName);
+    if (bomCat && String(bomCat).toUpperCase() === 'PAO') return true;
+  }
+  return false;
+}
+
+/**
+ * 日付文字列 (YYYY-MM-DD / YYYY/MM/DD) から { year, month, fiscalYear } を抽出
+ */
+function parsePaoOrderDateInfo(order, dateBasis) {
+  const rawDate = (dateBasis === 'startDate')
+    ? (order.startDate || order.dueDate || order.createdAt || '')
+    : (order.dueDate || order.startDate || order.createdAt || '');
+  const str = String(rawDate).trim();
+  const m = str.match(/^(\d{4})[-/](\d{1,2})/);
+  if (m) {
+    const year = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10);
+    if (year >= 2000 && year <= 2100 && month >= 1 && month <= 12) {
+      const fiscalYear = (month >= 4) ? year : (year - 1);
+      return { year, month, fiscalYear, rawDate: str };
+    }
+  }
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const fiscalYear = (month >= 4) ? year : (year - 1);
+    return { year, month, fiscalYear, rawDate: str };
+  }
+  return null;
+}
+
+/**
+ * クイックフィルタ（年度切替）
+ */
+window.setPaoQuickYearFilter = function(yearVal) {
+  const sel = document.getElementById('pao-filter-year');
+  if (sel) {
+    sel.value = String(yearVal);
+    renderPaoAnalyticsPage();
+  }
+};
+
+/**
+ * PAO生産・トレンド分析データの集計コア関数
+ */
+function computePaoAnalyticsData() {
+  const orders = DB.get(DB.KEYS.ORDERS) || [];
+  const boms = DB.get(DB.KEYS.BOM) || [];
+  const bomsMap = new Map();
+  boms.forEach(b => {
+    if (b && b.productName) bomsMap.set(String(b.productName).trim(), b.category || '');
+  });
+  if (typeof NEW_BOM_DATA !== 'undefined' && Array.isArray(NEW_BOM_DATA)) {
+    NEW_BOM_DATA.forEach(b => {
+      if (b && b.productName && !bomsMap.has(String(b.productName).trim())) {
+        bomsMap.set(String(b.productName).trim(), b.category || '');
+      }
+    });
+  }
+
+  const yearSelect = document.getElementById('pao-filter-year');
+  const yearType = (document.getElementById('pao-filter-year-type')?.value) || 'calendar';
+  const monthFilter = (document.getElementById('pao-filter-month')?.value) || 'all';
+  const dateBasis = (document.getElementById('pao-filter-date-basis')?.value) || 'dueDate';
+  const statusFilter = (document.getElementById('pao-filter-status')?.value) || 'all';
+  const scopeFilter = (document.getElementById('pao-filter-scope')?.value) || 'pao_strict';
+
+  // 1. まずPAO対象かつ進捗ステータス条件を満たす全案件を抽出（年度一覧の構築と年度別比較表のため）
+  const allPaoRecords = [];
+  const availableYearsSet = new Set();
+  const currentCalYear = new Date().getFullYear();
+  availableYearsSet.add(currentCalYear);
+  availableYearsSet.add(currentCalYear - 1);
+
+  orders.forEach(o => {
+    if (!isPaoTargetOrder(o, scopeFilter, bomsMap)) return;
+    const progress = (typeof calculateOrderProgress === 'function') ? calculateOrderProgress(o.id) : 0;
+    const isComplete = progress === 100;
+    if (statusFilter === 'complete' && !isComplete) return;
+    if (statusFilter === 'incomplete' && isComplete) return;
+
+    const dateInfo = parsePaoOrderDateInfo(o, dateBasis);
+    if (!dateInfo) return;
+
+    const targetYear = (yearType === 'fiscal') ? dateInfo.fiscalYear : dateInfo.year;
+    availableYearsSet.add(targetYear);
+
+    const qty = Math.max(0, Number(o.quantity) || 0);
+    const sizeInfo = extractPaoSizeInfo(o.productName);
+    const rawColor = String(o.color || '').trim();
+    const colorName = rawColor ? rawColor : '未設定（色柄なし）';
+
+    allPaoRecords.push({
+      order: o,
+      id: o.id,
+      projectName: o.projectName || '-',
+      productName: String(o.productName || '').trim(),
+      quantity: qty,
+      color: colorName,
+      sizeKey: sizeInfo.key,
+      sizeLabel: sizeInfo.label,
+      sizeShort: sizeInfo.shortLabel,
+      sizeOrder: sizeInfo.order,
+      year: dateInfo.year,
+      fiscalYear: dateInfo.fiscalYear,
+      targetYear,
+      month: dateInfo.month,
+      rawDate: dateInfo.rawDate,
+      progress,
+      isComplete
+    });
+  });
+
+  const sortedYears = Array.from(availableYearsSet).sort((a, b) => b - a);
+
+  // 年度セレクトボックスの選択肢を同期更新
+  let selectedYear = yearSelect ? yearSelect.value : 'all';
+  if (yearSelect) {
+    const prevVal = yearSelect.value || 'all';
+    const yearSuffix = (yearType === 'fiscal') ? '年度 (4月〜翌3月)' : '年 (1月〜12月)';
+    let optsHtml = `<option value="all">全期間（全年度合計）</option>`;
+    sortedYears.forEach(y => {
+      optsHtml += `<option value="${y}">${y}${yearSuffix}</option>`;
+    });
+    yearSelect.innerHTML = optsHtml;
+    if (prevVal === 'all' || sortedYears.includes(Number(prevVal))) {
+      yearSelect.value = prevVal;
+      selectedYear = prevVal;
+    } else {
+      yearSelect.value = 'all';
+      selectedYear = 'all';
+    }
+  }
+
+  // 月の並び順（暦年: 1〜12月、会計年度: 4〜12月, 1〜3月）
+  const monthOrder = (yearType === 'fiscal')
+    ? [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3]
+    : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  // 2. 年度別サマリー集計（全年度比較テーブル用）
+  const yearlyMap = new Map();
+  sortedYears.forEach(y => {
+    yearlyMap.set(y, {
+      year: y,
+      totalQty: 0,
+      completeQty: 0,
+      incompleteQty: 0,
+      orderCount: 0,
+      monthlyQty: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 }
+    });
+  });
+
+  allPaoRecords.forEach(rec => {
+    if (monthFilter !== 'all' && rec.month !== Number(monthFilter)) return;
+    if (!yearlyMap.has(rec.targetYear)) {
+      yearlyMap.set(rec.targetYear, {
+        year: rec.targetYear,
+        totalQty: 0,
+        completeQty: 0,
+        incompleteQty: 0,
+        orderCount: 0,
+        monthlyQty: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 }
+      });
+    }
+    const yStat = yearlyMap.get(rec.targetYear);
+    yStat.totalQty += rec.quantity;
+    if (rec.isComplete) yStat.completeQty += rec.quantity;
+    else yStat.incompleteQty += rec.quantity;
+    yStat.orderCount += 1;
+    yStat.monthlyQty[rec.month] = (yStat.monthlyQty[rec.month] || 0) + rec.quantity;
+  });
+
+  const yearlyStats = Array.from(yearlyMap.values())
+    .filter(y => y.orderCount > 0 || sortedYears.slice(0, 3).includes(y.year))
+    .sort((a, b) => b.year - a.year);
+
+  // 3. 現在選択中の年度・月フィルタに合致するレコードを抽出
+  const filteredRecords = allPaoRecords.filter(rec => {
+    if (selectedYear !== 'all' && rec.targetYear !== Number(selectedYear)) return false;
+    if (monthFilter !== 'all' && rec.month !== Number(monthFilter)) return false;
+    return true;
+  });
+
+  // 4. 全体KPI・月別集計
+  let totalQty = 0;
+  let completeQty = 0;
+  let incompleteQty = 0;
+  const totalOrders = filteredRecords.length;
+  const monthlyTotals = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 };
+  const monthlyOrderCounts = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 };
+
+  // 5. サイズ別集計・品番別集計・色柄別集計・サイズ×色柄クロス集計
+  const sizeMap = new Map();
+  const modelMap = new Map();
+  const colorMap = new Map();
+  const crossMap = new Map(); // key: `${sizeKey}__${color}`
+
+  filteredRecords.forEach(rec => {
+    totalQty += rec.quantity;
+    if (rec.isComplete) completeQty += rec.quantity;
+    else incompleteQty += rec.quantity;
+
+    monthlyTotals[rec.month] = (monthlyTotals[rec.month] || 0) + rec.quantity;
+    monthlyOrderCounts[rec.month] = (monthlyOrderCounts[rec.month] || 0) + 1;
+
+    // サイズ別
+    if (!sizeMap.has(rec.sizeKey)) {
+      sizeMap.set(rec.sizeKey, {
+        key: rec.sizeKey,
+        label: rec.sizeLabel,
+        shortLabel: rec.sizeShort,
+        order: rec.sizeOrder,
+        qty: 0,
+        completeQty: 0,
+        incompleteQty: 0,
+        orderCount: 0,
+        monthly: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 },
+        models: new Set(),
+        topColors: new Map()
+      });
+    }
+    const sEntry = sizeMap.get(rec.sizeKey);
+    sEntry.qty += rec.quantity;
+    if (rec.isComplete) sEntry.completeQty += rec.quantity;
+    else sEntry.incompleteQty += rec.quantity;
+    sEntry.orderCount += 1;
+    sEntry.monthly[rec.month] += rec.quantity;
+    sEntry.models.add(rec.productName);
+    sEntry.topColors.set(rec.color, (sEntry.topColors.get(rec.color) || 0) + rec.quantity);
+
+    // 詳細品番別
+    if (!modelMap.has(rec.productName)) {
+      modelMap.set(rec.productName, {
+        productName: rec.productName,
+        sizeLabel: rec.sizeLabel,
+        sizeOrder: rec.sizeOrder,
+        qty: 0,
+        completeQty: 0,
+        incompleteQty: 0,
+        orderCount: 0,
+        monthly: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 },
+        colors: new Map()
+      });
+    }
+    const mEntry = modelMap.get(rec.productName);
+    mEntry.qty += rec.quantity;
+    if (rec.isComplete) mEntry.completeQty += rec.quantity;
+    else mEntry.incompleteQty += rec.quantity;
+    mEntry.orderCount += 1;
+    mEntry.monthly[rec.month] += rec.quantity;
+    mEntry.colors.set(rec.color, (mEntry.colors.get(rec.color) || 0) + rec.quantity);
+
+    // 色柄（トレンド）別
+    if (!colorMap.has(rec.color)) {
+      colorMap.set(rec.color, {
+        color: rec.color,
+        qty: 0,
+        completeQty: 0,
+        incompleteQty: 0,
+        orderCount: 0,
+        monthly: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0 },
+        sizes: new Map()
+      });
+    }
+    const cEntry = colorMap.get(rec.color);
+    cEntry.qty += rec.quantity;
+    if (rec.isComplete) cEntry.completeQty += rec.quantity;
+    else cEntry.incompleteQty += rec.quantity;
+    cEntry.orderCount += 1;
+    cEntry.monthly[rec.month] += rec.quantity;
+    cEntry.sizes.set(rec.sizeShort, (cEntry.sizes.get(rec.sizeShort) || 0) + rec.quantity);
+
+    // サイズ×色柄クロス集計
+    const crossKey = `${rec.sizeKey}__${rec.color}`;
+    crossMap.set(crossKey, (crossMap.get(crossKey) || 0) + rec.quantity);
+  });
+
+  // サイズ別リスト（生産数降順、同数ならサイズ規格順）
+  const sizeStatsByQty = Array.from(sizeMap.values()).map(s => {
+    const share = totalQty > 0 ? (s.qty / totalQty) * 100 : 0;
+    const topColorList = Array.from(s.topColors.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([c, q]) => `${c}(${q}台)`)
+      .join(' / ');
+    return {
+      ...s,
+      share,
+      modelListStr: Array.from(s.models).sort().join(', '),
+      topColorStr: topColorList || '-'
+    };
+  }).sort((a, b) => (b.qty - a.qty) || (a.order - b.order));
+
+  // サイズ規格順リスト（マトリクス表用）
+  const sizeStatsBySpec = [...sizeStatsByQty].sort((a, b) => (a.order - b.order) || (b.qty - a.qty));
+
+  // 詳細品番リスト（生産数降順）
+  const modelStats = Array.from(modelMap.values()).map(m => {
+    const share = totalQty > 0 ? (m.qty / totalQty) * 100 : 0;
+    const topColorStr = Array.from(m.colors.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([c, q]) => `${c}(${q})`)
+      .join(', ');
+    return { ...m, share, topColorStr: topColorStr || '-' };
+  }).sort((a, b) => (b.qty - a.qty) || a.productName.localeCompare(b.productName));
+
+  // 色柄トレンドリスト（生産数降順）
+  const colorStats = Array.from(colorMap.values()).map((c, idx) => {
+    const share = totalQty > 0 ? (c.qty / totalQty) * 100 : 0;
+    const sizeBreakdownStr = Array.from(c.sizes.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([sz, q]) => `${sz}:${q}台`)
+      .join(' / ');
+    return { ...c, share, sizeBreakdownStr: sizeBreakdownStr || '-' };
+  }).sort((a, b) => (b.qty - a.qty) || a.color.localeCompare(b.color));
+
+  const activeMonthsCount = Object.values(monthlyTotals).filter(v => v > 0).length || 1;
+  const avgMonthlyQty = totalQty > 0 ? (totalQty / activeMonthsCount) : 0;
+
+  return {
+    filters: {
+      selectedYear,
+      yearType,
+      monthFilter,
+      dateBasis,
+      statusFilter,
+      scopeFilter,
+      periodLabel: selectedYear === 'all'
+        ? '全期間（全年度合計）'
+        : `${selectedYear}${yearType === 'fiscal' ? '年度 (4月〜翌3月)' : '年 (1月〜12月)'}`,
+      monthLabel: monthFilter === 'all' ? '全月 (12ヶ月)' : `${monthFilter}月のみ`,
+      dateBasisLabel: dateBasis === 'startDate' ? '着工日基準' : '納期基準',
+      statusLabel: statusFilter === 'complete' ? '完了案件のみ' : (statusFilter === 'incomplete' ? '未完了案件のみ' : '全案件（完了＋未完）'),
+      scopeLabel: scopeFilter === 'pao_category' ? 'PAOカテゴリ全機種' : 'PAOシリーズ（品名PAO*）'
+    },
+    monthOrder,
+    sortedYears,
+    yearlyStats,
+    totalQty,
+    completeQty,
+    incompleteQty,
+    totalOrders,
+    avgMonthlyQty,
+    monthlyTotals,
+    monthlyOrderCounts,
+    sizeStatsByQty,
+    sizeStatsBySpec,
+    modelStats,
+    colorStats,
+    crossMap,
+    filteredRecords
+  };
+}
+
+/**
+ * PAO生産・トレンド分析ページのメイン描画関数
+ */
+function renderPaoAnalyticsPage() {
+  const container = document.getElementById('pao-analytics-content');
+  if (!container) return;
+
+  const data = computePaoAnalyticsData();
+  window._lastPaoAnalyticsData = data;
+
+  const {
+    filters,
+    monthOrder,
+    yearlyStats,
+    totalQty,
+    completeQty,
+    incompleteQty,
+    totalOrders,
+    avgMonthlyQty,
+    monthlyTotals,
+    monthlyOrderCounts,
+    sizeStatsByQty,
+    sizeStatsBySpec,
+    modelStats,
+    colorStats,
+    crossMap
+  } = data;
+
+  const topSize = sizeStatsByQty[0] || null;
+  const topColor = colorStats[0] || null;
+  const maxMonthQty = Math.max(1, ...Object.values(monthlyTotals));
+
+  // 年度クイック切替ピルボタン
+  const yearPillsHtml = [
+    `<button type="button" onclick="setPaoQuickYearFilter('all')" style="padding:4px 12px; border-radius:999px; font-size:0.78rem; font-weight:700; cursor:pointer; border:1px solid ${filters.selectedYear === 'all' ? '#1e40af' : '#cbd5e1'}; background:${filters.selectedYear === 'all' ? '#1e40af' : '#fff'}; color:${filters.selectedYear === 'all' ? '#fff' : '#334155'};">全期間</button>`,
+    ...yearlyStats.map(y => {
+      const isAct = String(filters.selectedYear) === String(y.year);
+      const yLabel = `${y.year}${filters.yearType === 'fiscal' ? '年度' : '年'} (${y.totalQty}台)`;
+      return `<button type="button" onclick="setPaoQuickYearFilter('${y.year}')" style="padding:4px 12px; border-radius:999px; font-size:0.78rem; font-weight:700; cursor:pointer; border:1px solid ${isAct ? '#1e40af' : '#cbd5e1'}; background:${isAct ? '#1e40af' : '#fff'}; color:${isAct ? '#fff' : '#334155'};">${yLabel}</button>`;
+    })
+  ].join('');
+
+  // ① 年度別・月別比較テーブル行
+  const yearlyRowsHtml = yearlyStats.map(y => {
+    const isSelected = String(filters.selectedYear) === String(y.year);
+    const rowBg = isSelected ? 'background:#eff6ff; font-weight:700;' : '';
+    const mCells = monthOrder.map(m => {
+      const v = y.monthlyQty[m] || 0;
+      return `<td style="text-align:right; padding:6px 6px; border-bottom:1px solid #e2e8f0; color:${v > 0 ? '#0f172a' : '#cbd5e1'}; font-weight:${v > 0 ? '600' : '400'};">${v > 0 ? v.toLocaleString() : '-'}</td>`;
+    }).join('');
+    return `
+      <tr style="${rowBg}">
+        <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#1e3a8a; white-space:nowrap;">
+          <a href="#" onclick="setPaoQuickYearFilter('${y.year}'); return false;" style="color:#1d4ed8; text-decoration:underline;">
+            ${y.year}${filters.yearType === 'fiscal' ? '年度' : '年'}
+          </a>
+        </td>
+        <td style="text-align:right; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:800; color:#0f172a; background:#f8fafc;">${y.totalQty.toLocaleString()} 台</td>
+        <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #e2e8f0; color:#16a34a; font-size:0.8rem;">${y.completeQty.toLocaleString()}</td>
+        <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #e2e8f0; color:#d97706; font-size:0.8rem;">${y.incompleteQty.toLocaleString()}</td>
+        <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #e2e8f0; color:#475569; font-size:0.8rem;">${y.orderCount.toLocaleString()} 件</td>
+        ${mCells}
+      </tr>
+    `;
+  }).join('');
+
+  // 選択年度の月別棒グラフ＆推移バー
+  const monthlyBarsHtml = monthOrder.map(m => {
+    const qty = monthlyTotals[m] || 0;
+    const cnt = monthlyOrderCounts[m] || 0;
+    const pct = totalQty > 0 ? Math.round((qty / maxMonthQty) * 100) : 0;
+    return `
+      <div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:46px;">
+        <div style="font-size:0.75rem; font-weight:700; color:${qty > 0 ? '#1e40af' : '#94a3b8'}; margin-bottom:4px;">${qty}台</div>
+        <div style="width:100%; max-width:34px; height:90px; background:#f1f5f9; border-radius:6px; display:flex; align-items:flex-end; overflow:hidden; border:1px solid #e2e8f0;">
+          <div style="width:100%; height:${qty > 0 ? Math.max(8, pct) : 0}%; background:linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%); border-radius:4px 4px 0 0;"></div>
+        </div>
+        <div style="font-size:0.78rem; font-weight:700; color:#334155; margin-top:5px;">${m}月</div>
+        <div style="font-size:0.68rem; color:#64748b;">(${cnt}件)</div>
+      </div>
+    `;
+  }).join('');
+
+  // ② サイズ規格別ランキング＆月別推移行
+  const sizeRankingRowsHtml = sizeStatsByQty.length === 0
+    ? `<tr><td colspan="${6 + monthOrder.length}" style="text-align:center; padding:1.5rem; color:#64748b;">該当するPAOデータがありません</td></tr>`
+    : sizeStatsByQty.map((s, idx) => {
+        const rankBadge = idx === 0 ? '🥇 1位' : (idx === 1 ? '🥈 2位' : (idx === 2 ? '🥉 3位' : `${idx + 1}位`));
+        const mCells = monthOrder.map(m => {
+          const v = s.monthly[m] || 0;
+          return `<td style="text-align:right; padding:6px 5px; border-bottom:1px solid #e2e8f0; color:${v > 0 ? '#0f172a' : '#cbd5e1'}; font-weight:${v > 0 ? '600' : '400'};">${v > 0 ? v : '-'}</td>`;
+        }).join('');
+        return `
+          <tr>
+            <td style="padding:7px 8px; border-bottom:1px solid #e2e8f0; font-weight:700; white-space:nowrap;">${rankBadge}</td>
+            <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; white-space:nowrap;">${escapePaoHtml(s.label)}</td>
+            <td style="text-align:right; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:800; color:#1e40af; background:#f8fafc; white-space:nowrap;">${s.qty.toLocaleString()} 台</td>
+            <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; min-width:130px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="flex:1; height:8px; background:#e2e8f0; border-radius:999px; overflow:hidden;">
+                  <div style="width:${Math.min(100, s.share).toFixed(1)}%; height:100%; background:#2563eb;"></div>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#334155; min-width:42px; text-align:right;">${s.share.toFixed(1)}%</span>
+              </div>
+            </td>
+            <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #e2e8f0; color:#475569; white-space:nowrap;">${s.orderCount} 件</td>
+            ${mCells}
+            <td style="padding:7px 8px; border-bottom:1px solid #e2e8f0; font-size:0.76rem; color:#475569;">${escapePaoHtml(s.topColorStr)}</td>
+          </tr>
+        `;
+      }).join('');
+
+  // 詳細品番（モデル）別内訳行
+  const modelRowsHtml = modelStats.length === 0
+    ? `<tr><td colspan="6" style="text-align:center; padding:1rem; color:#64748b;">データなし</td></tr>`
+    : modelStats.map((m, idx) => `
+        <tr>
+          <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; color:#64748b;">${idx + 1}</td>
+          <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a;">${escapePaoHtml(m.productName)}</td>
+          <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; color:#334155;">${escapePaoHtml(m.sizeLabel)}</td>
+          <td style="text-align:right; padding:6px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#1e40af;">${m.qty.toLocaleString()} 台</td>
+          <td style="text-align:right; padding:6px 8px; border-bottom:1px solid #e2e8f0; color:#334155;">${m.share.toFixed(1)}%</td>
+          <td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; font-size:0.78rem; color:#475569;">${escapePaoHtml(m.topColorStr)}</td>
+        </tr>
+      `).join('');
+
+  // ③ 色柄（トレンド）ランキング＆月別推移行
+  const colorRankingRowsHtml = colorStats.length === 0
+    ? `<tr><td colspan="${6 + monthOrder.length}" style="text-align:center; padding:1.5rem; color:#64748b;">該当する色柄データがありません</td></tr>`
+    : colorStats.map((c, idx) => {
+        const rankBadge = idx === 0 ? '🥇 1位' : (idx === 1 ? '🥈 2位' : (idx === 2 ? '🥉 3位' : `${idx + 1}位`));
+        const mCells = monthOrder.map(m => {
+          const v = c.monthly[m] || 0;
+          return `<td style="text-align:right; padding:6px 5px; border-bottom:1px solid #e2e8f0; color:${v > 0 ? '#0f172a' : '#cbd5e1'}; font-weight:${v > 0 ? '600' : '400'};">${v > 0 ? v : '-'}</td>`;
+        }).join('');
+        return `
+          <tr>
+            <td style="padding:7px 8px; border-bottom:1px solid #e2e8f0; font-weight:700; white-space:nowrap;">${rankBadge}</td>
+            <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a;">
+              <span style="display:inline-block; padding:2px 8px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px;">🎨 ${escapePaoHtml(c.color)}</span>
+            </td>
+            <td style="text-align:right; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:800; color:#7c3aed; background:#faf5ff; white-space:nowrap;">${c.qty.toLocaleString()} 台</td>
+            <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; min-width:130px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="flex:1; height:8px; background:#e2e8f0; border-radius:999px; overflow:hidden;">
+                  <div style="width:${Math.min(100, c.share).toFixed(1)}%; height:100%; background:#8b5cf6;"></div>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#334155; min-width:42px; text-align:right;">${c.share.toFixed(1)}%</span>
+              </div>
+            </td>
+            <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #e2e8f0; color:#475569; white-space:nowrap;">${c.orderCount} 件</td>
+            ${mCells}
+            <td style="padding:7px 8px; border-bottom:1px solid #e2e8f0; font-size:0.76rem; color:#475569;">${escapePaoHtml(c.sizeBreakdownStr)}</td>
+          </tr>
+        `;
+      }).join('');
+
+  // ④ サイズ規格 × 色柄（上位12色＋その他）クロス集計マトリクス表
+  const topColorsForCross = colorStats.slice(0, 12);
+  const crossHeaderCols = topColorsForCross.map(c =>
+    `<th style="text-align:right; padding:7px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; font-size:0.76rem; white-space:nowrap;">${escapePaoHtml(c.color)}</th>`
+  ).join('');
+  const crossBodyRows = sizeStatsBySpec.map(s => {
+    const cells = topColorsForCross.map(c => {
+      const val = crossMap.get(`${s.key}__${c.color}`) || 0;
+      const cellBg = val > 0 ? 'background:#eff6ff; font-weight:700; color:#1e3a8a;' : 'color:#cbd5e1;';
+      return `<td style="text-align:right; padding:6px 8px; border-bottom:1px solid #e2e8f0; ${cellBg}">${val > 0 ? val : '-'}</td>`;
+    }).join('');
+    return `
+      <tr>
+        <td style="padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; white-space:nowrap;">${escapePaoHtml(s.label)}</td>
+        <td style="text-align:right; padding:7px 10px; border-bottom:1px solid #e2e8f0; font-weight:800; color:#1e40af; background:#f8fafc; white-space:nowrap;">${s.qty.toLocaleString()} 台</td>
+        ${cells}
+      </tr>
+    `;
+  }).join('');
+
+  const monthHeaderCells = monthOrder.map(m =>
+    `<th style="text-align:right; padding:7px 6px; background:#f8fafc; border-bottom:2px solid #cbd5e1; font-size:0.76rem; white-space:nowrap;">${m}月</th>`
+  ).join('');
+
+  const monthTotalFooterCells = monthOrder.map(m => {
+    const v = monthlyTotals[m] || 0;
+    return `<td style="text-align:right; padding:7px 6px; font-weight:800; background:#f1f5f9; border-top:2px solid #94a3b8;">${v.toLocaleString()}</td>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div id="pao-report-print-area">
+      <!-- 印刷・PDF用ヘッダー情報バー -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; padding:0.75rem 1rem; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px;">
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span style="font-size:0.82rem; font-weight:700; color:#334155;">📅 クイック年度切替:</span>
+          ${yearPillsHtml}
+        </div>
+        <div style="font-size:0.78rem; color:#475569;">
+          集計条件: <strong>${escapePaoHtml(filters.periodLabel)}</strong> / ${escapePaoHtml(filters.monthLabel)} / ${escapePaoHtml(filters.dateBasisLabel)} / ${escapePaoHtml(filters.statusLabel)}
+        </div>
+      </div>
+
+      <!-- サマリーKPI 4カード -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+        <div class="card" style="padding:1rem 1.25rem; border-left:5px solid #2563eb;">
+          <div style="font-size:0.78rem; color:#64748b; font-weight:700;">📦 PAO 総生産数量 (${escapePaoHtml(filters.periodLabel)})</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#0f172a; margin:4px 0;">${totalQty.toLocaleString()} <span style="font-size:1rem; font-weight:600;">台</span></div>
+          <div style="font-size:0.78rem; color:#475569;">完了: <strong style="color:#16a34a;">${completeQty.toLocaleString()}台</strong> ／ 進行・未完: <strong style="color:#d97706;">${incompleteQty.toLocaleString()}台</strong></div>
+        </div>
+        <div class="card" style="padding:1rem 1.25rem; border-left:5px solid #0284c7;">
+          <div style="font-size:0.78rem; color:#64748b; font-weight:700;">📋 対象注文件数・月平均生産数</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#0f172a; margin:4px 0;">${totalOrders.toLocaleString()} <span style="font-size:1rem; font-weight:600;">件</span></div>
+          <div style="font-size:0.78rem; color:#475569;">稼働月平均: <strong>${avgMonthlyQty.toFixed(1)} 台/月</strong> (1件平均 ${(totalOrders > 0 ? (totalQty / totalOrders) : 0).toFixed(1)}台)</div>
+        </div>
+        <div class="card" style="padding:1rem 1.25rem; border-left:5px solid #16a34a;">
+          <div style="font-size:0.78rem; color:#64748b; font-weight:700;">📐 最多生産サイズ規格 (1位)</div>
+          <div style="font-size:1.35rem; font-weight:800; color:#15803d; margin:6px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${topSize ? escapePaoHtml(topSize.label) : 'データなし'}
+          </div>
+          <div style="font-size:0.78rem; color:#475569;">
+            ${topSize ? `生産数: <strong>${topSize.qty.toLocaleString()}台</strong> (構成比 <strong>${topSize.share.toFixed(1)}%</strong> / 全${sizeStatsByQty.length}規格)` : '-'}
+          </div>
+        </div>
+        <div class="card" style="padding:1rem 1.25rem; border-left:5px solid #8b5cf6;">
+          <div style="font-size:0.78rem; color:#64748b; font-weight:700;">🎨 色柄トレンド 1位 (人気色)</div>
+          <div style="font-size:1.35rem; font-weight:800; color:#6d28d9; margin:6px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${topColor ? escapePaoHtml(topColor.color) : 'データなし'}
+          </div>
+          <div style="font-size:0.78rem; color:#475569;">
+            ${topColor ? `生産数: <strong>${topColor.qty.toLocaleString()}台</strong> (シェア <strong>${topColor.share.toFixed(1)}%</strong> / 全${colorStats.length}色柄)` : '-'}
+          </div>
+        </div>
+      </div>
+
+      <!-- セクション1: 年度別・月別 生産数量集計 -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header" style="padding:0.85rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0; font-size:1rem;">📅 1. 年度別・月別 PAO生産数量推移</h3>
+          <span style="font-size:0.78rem; color:#64748b;">※年度をクリックすると該当年度の深掘り分析に切り替わります</span>
+        </div>
+        <div class="card-body" style="padding:1rem 1.25rem;">
+          <!-- 月別ビジュアル棒グラフ -->
+          <div style="margin-bottom:1.25rem; padding:1rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+            <div style="font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:0.75rem;">
+              📊 月別生産台数グラフ（${escapePaoHtml(filters.periodLabel)}）
+            </div>
+            <div style="display:flex; gap:6px; align-items:flex-end; overflow-x:auto; padding-bottom:4px;">
+              ${monthlyBarsHtml}
+            </div>
+          </div>
+
+          <!-- 年度別×12ヶ月 比較表 -->
+          <div class="table-container" style="overflow-x:auto;">
+            <table class="table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:8px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">年度</th>
+                  <th style="text-align:right; padding:8px 10px; background:#eff6ff; border-bottom:2px solid #cbd5e1; white-space:nowrap;">年間生産合計</th>
+                  <th style="text-align:right; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">完了台数</th>
+                  <th style="text-align:right; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">未完台数</th>
+                  <th style="text-align:right; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">注文件数</th>
+                  ${monthHeaderCells}
+                </tr>
+              </thead>
+              <tbody>
+                ${yearlyRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- セクション2: サイズ規格別 生産数量・構成比・月別推移 -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header" style="padding:0.85rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0; font-size:1rem;">📐 2. サイズ規格別 生産数ランキング・月別推移 (${escapePaoHtml(filters.periodLabel)})</h3>
+          <span style="font-size:0.78rem; color:#64748b;">どのサイズのPAOが何台・いつの月に多く生産されているかを表示</span>
+        </div>
+        <div class="card-body" style="padding:1rem 1.25rem;">
+          <div class="table-container" style="overflow-x:auto; margin-bottom:1rem;">
+            <table class="table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">順位</th>
+                  <th style="text-align:left; padding:8px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">サイズ規格</th>
+                  <th style="text-align:right; padding:8px 10px; background:#eff6ff; border-bottom:2px solid #cbd5e1; white-space:nowrap;">生産台数</th>
+                  <th style="text-align:left; padding:8px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">サイズ構成比</th>
+                  <th style="text-align:right; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">件数</th>
+                  ${monthHeaderCells}
+                  <th style="text-align:left; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">主な色柄内訳(上位3色)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sizeRankingRowsHtml}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" style="padding:8px 10px; font-weight:800; background:#f1f5f9; border-top:2px solid #94a3b8;">合計 (${sizeStatsByQty.length}規格)</td>
+                  <td style="text-align:right; padding:8px 10px; font-weight:800; color:#1e40af; background:#dbeafe; border-top:2px solid #94a3b8;">${totalQty.toLocaleString()} 台</td>
+                  <td style="padding:8px 10px; font-weight:800; background:#f1f5f9; border-top:2px solid #94a3b8;">100.0%</td>
+                  <td style="text-align:right; padding:8px 8px; font-weight:800; background:#f1f5f9; border-top:2px solid #94a3b8;">${totalOrders.toLocaleString()} 件</td>
+                  ${monthTotalFooterCells}
+                  <td style="background:#f1f5f9; border-top:2px solid #94a3b8;"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- 詳細品番別（BL-F / BR-F / SL-F / SR-F 等）折りたたみ展開 -->
+          <details style="margin-top:0.75rem; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc; padding:0.5rem 0.85rem;">
+            <summary style="cursor:pointer; font-weight:700; font-size:0.85rem; color:#1e3a8a;">
+              🔍 詳細品番別（PAO1012BL-F / SR-F 等 全${modelStats.length}品番）の生産数内訳を表示
+            </summary>
+            <div class="table-container" style="overflow-x:auto; margin-top:0.75rem; background:#fff; border-radius:4px;">
+              <table class="table" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left; padding:6px 8px; background:#f1f5f9;">No.</th>
+                    <th style="text-align:left; padding:6px 10px; background:#f1f5f9;">品番 (Product Name)</th>
+                    <th style="text-align:left; padding:6px 10px; background:#f1f5f9;">サイズ規格</th>
+                    <th style="text-align:right; padding:6px 10px; background:#f1f5f9;">生産台数</th>
+                    <th style="text-align:right; padding:6px 8px; background:#f1f5f9;">構成比</th>
+                    <th style="text-align:left; padding:6px 10px; background:#f1f5f9;">色柄内訳</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${modelRowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- セクション3: 色柄（トレンド）別 生産数量・シェア・月別推移 -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header" style="padding:0.85rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0; font-size:1rem;">🎨 3. 色柄（トレンド）別 生産数ランキング・月別トレンド推移 (${escapePaoHtml(filters.periodLabel)})</h3>
+          <span style="font-size:0.78rem; color:#64748b;">売れ筋の色柄・トレンド推移と採用サイズ内訳</span>
+        </div>
+        <div class="card-body" style="padding:1rem 1.25rem;">
+          <div class="table-container" style="overflow-x:auto;">
+            <table class="table" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">順位</th>
+                  <th style="text-align:left; padding:8px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">色柄 (Color / Pattern)</th>
+                  <th style="text-align:right; padding:8px 10px; background:#faf5ff; border-bottom:2px solid #cbd5e1; white-space:nowrap;">生産台数</th>
+                  <th style="text-align:left; padding:8px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">色柄シェア(構成比)</th>
+                  <th style="text-align:right; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">件数</th>
+                  ${monthHeaderCells}
+                  <th style="text-align:left; padding:8px 8px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">サイズ別採用内訳</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${colorRankingRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- セクション4: サイズ規格 × 色柄 クロス集計マトリクス -->
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header" style="padding:0.85rem 1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0; font-size:1rem;">🔀 4. 【サイズ規格 × 色柄】クロス集計マトリクス表 (上位色柄)</h3>
+          <span style="font-size:0.78rem; color:#64748b;">※全色柄の完全マトリクスは「Excel出力(.xlsx)」のシート4に出力されます</span>
+        </div>
+        <div class="card-body" style="padding:1rem 1.25rem;">
+          <div class="table-container" style="overflow-x:auto;">
+            <table class="table" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:7px 10px; background:#f8fafc; border-bottom:2px solid #cbd5e1; white-space:nowrap;">サイズ規格 ＼ 色柄</th>
+                  <th style="text-align:right; padding:7px 10px; background:#eff6ff; border-bottom:2px solid #cbd5e1; white-space:nowrap;">サイズ合計</th>
+                  ${crossHeaderCols}
+                </tr>
+              </thead>
+              <tbody>
+                ${crossBodyRows || '<tr><td colspan="14" style="text-align:center; padding:1rem; color:#64748b;">データなし</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * PAO生産・トレンド分析結果をExcel (.xlsx) の複数シートブックとして出力
+ */
+window.exportPaoAnalyticsExcel = function() {
+  if (typeof XLSX === 'undefined') {
+    toast('Excel出力ライブラリ(SheetJS)が読み込まれていません', 'error');
+    return;
+  }
+
+  const data = computePaoAnalyticsData();
+  const {
+    filters,
+    monthOrder,
+    yearlyStats,
+    totalQty,
+    completeQty,
+    incompleteQty,
+    totalOrders,
+    sizeStatsByQty,
+    sizeStatsBySpec,
+    modelStats,
+    colorStats,
+    crossMap,
+    filteredRecords
+  } = data;
+
+  const wb = XLSX.utils.book_new();
+  const monthHeaders = monthOrder.map(m => `${m}月`);
+
+  // --- シート1: サマリー・年度別月別生産数 ---
+  const sheet1Rows = [
+    ['📊 PAO 生産数量・サイズ・色柄トレンド分析レポート'],
+    ['出力日時', new Date().toLocaleString('ja-JP')],
+    ['集計年度', filters.periodLabel, '対象月', filters.monthLabel, '日付基準', filters.dateBasisLabel, '進捗条件', filters.statusLabel],
+    [],
+    ['【1. 集計サマリー (KPI)】'],
+    ['総生産台数 (台)', '完了台数 (台)', '未完・進行中台数 (台)', '対象注文件数 (件)', '最多サイズ規格 (1位)', '最多色柄トレンド (1位)'],
+    [
+      totalQty,
+      completeQty,
+      incompleteQty,
+      totalOrders,
+      sizeStatsByQty[0] ? `${sizeStatsByQty[0].label} (${sizeStatsByQty[0].qty}台 / ${sizeStatsByQty[0].share.toFixed(1)}%)` : '-',
+      colorStats[0] ? `${colorStats[0].color} (${colorStats[0].qty}台 / ${colorStats[0].share.toFixed(1)}%)` : '-'
+    ],
+    [],
+    ['【2. 年度別・月別 PAO生産数量推移】'],
+    ['年度', '年間生産合計(台)', '完了台数(台)', '未完台数(台)', '注文件数(件)', ...monthHeaders]
+  ];
+
+  yearlyStats.forEach(y => {
+    sheet1Rows.push([
+      `${y.year}${filters.yearType === 'fiscal' ? '年度' : '年'}`,
+      y.totalQty,
+      y.completeQty,
+      y.incompleteQty,
+      y.orderCount,
+      ...monthOrder.map(m => y.monthlyQty[m] || 0)
+    ]);
+  });
+
+  const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+  ws1['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, ...monthOrder.map(() => ({ wch: 8 }))];
+  XLSX.utils.book_append_sheet(wb, ws1, '1_年度別・月別生産数');
+
+  // --- シート2: サイズ規格別生産数（月別推移） ---
+  const sheet2Rows = [
+    [`📐 PAO サイズ規格別 生産数量・構成比・月別推移 (${filters.periodLabel})`],
+    ['順位', 'サイズ規格', '生産台数(台)', '構成比(%)', '完了台数(台)', '未完台数(台)', '注文件数(件)', ...monthHeaders, '主な採用色柄(上位3色)', '該当品番一覧']
+  ];
+  sizeStatsByQty.forEach((s, idx) => {
+    sheet2Rows.push([
+      idx + 1,
+      s.label,
+      s.qty,
+      Number(s.share.toFixed(2)),
+      s.completeQty,
+      s.incompleteQty,
+      s.orderCount,
+      ...monthOrder.map(m => s.monthly[m] || 0),
+      s.topColorStr,
+      s.modelListStr
+    ]);
+  });
+  sheet2Rows.push([
+    '合計',
+    `全${sizeStatsByQty.length}規格`,
+    totalQty,
+    totalQty > 0 ? 100 : 0,
+    completeQty,
+    incompleteQty,
+    totalOrders,
+    ...monthOrder.map(m => data.monthlyTotals[m] || 0),
+    '',
+    ''
+  ]);
+  const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+  ws2['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, ...monthOrder.map(() => ({ wch: 7 })), { wch: 28 }, { wch: 35 }];
+  XLSX.utils.book_append_sheet(wb, ws2, '2_サイズ別生産数');
+
+  // --- シート3: 色柄トレンド集計（月別推移） ---
+  const sheet3Rows = [
+    [`🎨 PAO 色柄（トレンド）別 生産数量・シェア・月別推移 (${filters.periodLabel})`],
+    ['順位', '色柄 (Color / Pattern)', '生産台数(台)', 'シェア(%)', '完了台数(台)', '未完台数(台)', '注文件数(件)', ...monthHeaders, 'サイズ別採用内訳']
+  ];
+  colorStats.forEach((c, idx) => {
+    sheet3Rows.push([
+      idx + 1,
+      c.color,
+      c.qty,
+      Number(c.share.toFixed(2)),
+      c.completeQty,
+      c.incompleteQty,
+      c.orderCount,
+      ...monthOrder.map(m => c.monthly[m] || 0),
+      c.sizeBreakdownStr
+    ]);
+  });
+  sheet3Rows.push([
+    '合計',
+    `全${colorStats.length}色柄`,
+    totalQty,
+    totalQty > 0 ? 100 : 0,
+    completeQty,
+    incompleteQty,
+    totalOrders,
+    ...monthOrder.map(m => data.monthlyTotals[m] || 0),
+    ''
+  ]);
+  const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+  ws3['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, ...monthOrder.map(() => ({ wch: 7 })), { wch: 35 }];
+  XLSX.utils.book_append_sheet(wb, ws3, '3_色柄トレンド集計');
+
+  // --- シート4: サイズ規格 × 色柄 クロス集計表 ---
+  const allColorNames = colorStats.map(c => c.color);
+  const sheet4Rows = [
+    [`🔀 PAO 【サイズ規格 × 色柄】クロス集計マトリクス (${filters.periodLabel})`],
+    ['サイズ規格', 'サイズ合計(台)', ...allColorNames]
+  ];
+  sizeStatsBySpec.forEach(s => {
+    sheet4Rows.push([
+      s.label,
+      s.qty,
+      ...allColorNames.map(cName => crossMap.get(`${s.key}__${cName}`) || 0)
+    ]);
+  });
+  sheet4Rows.push([
+    '色柄合計(台)',
+    totalQty,
+    ...colorStats.map(c => c.qty)
+  ]);
+  const ws4 = XLSX.utils.aoa_to_sheet(sheet4Rows);
+  ws4['!cols'] = [{ wch: 24 }, { wch: 14 }, ...allColorNames.map(() => ({ wch: 14 }))];
+  XLSX.utils.book_append_sheet(wb, ws4, '4_サイズ×色柄クロス表');
+
+  // --- シート5: 詳細品番別集計 ＆ 対象案件明細 ---
+  const sheet5Rows = [
+    [`📋 PAO 詳細品番別集計 (${filters.periodLabel})`],
+    ['順位', '品番 (Product Name)', 'サイズ規格', '生産台数(台)', '構成比(%)', '完了台数(台)', '未完台数(台)', '注文件数(件)', ...monthHeaders, '主な色柄'],
+    ...modelStats.map((m, idx) => [
+      idx + 1,
+      m.productName,
+      m.sizeLabel,
+      m.qty,
+      Number(m.share.toFixed(2)),
+      m.completeQty,
+      m.incompleteQty,
+      m.orderCount,
+      ...monthOrder.map(mo => m.monthly[mo] || 0),
+      m.topColorStr
+    ]),
+    [],
+    ['📋 対象PAO案件明細一覧'],
+    ['指示書ID', '集計年', '集計月', '着工日', '納期', '現場名', '品名(品番)', 'サイズ規格', '色柄', '台数', '進捗率(%)', 'ステータス']
+  ];
+
+  filteredRecords
+    .slice()
+    .sort((a, b) => String(a.rawDate).localeCompare(String(b.rawDate)))
+    .forEach(r => {
+      sheet5Rows.push([
+        r.id,
+        r.targetYear,
+        `${r.month}月`,
+        r.order.startDate || '',
+        r.order.dueDate || '',
+        r.projectName,
+        r.productName,
+        r.sizeLabel,
+        r.color,
+        r.quantity,
+        r.progress,
+        r.isComplete ? '完了' : '進行中/未完'
+      ]);
+    });
+
+  const ws5 = XLSX.utils.aoa_to_sheet(sheet5Rows);
+  ws5['!cols'] = [{ wch: 14 }, { wch: 20 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 8 }, { wch: 10 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, ws5, '5_品番別・案件明細');
+
+  const yTag = filters.selectedYear === 'all' ? '全期間' : `${filters.selectedYear}${filters.yearType === 'fiscal' ? '年度' : '年'}`;
+  const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const fileName = `PAO生産_サイズ_色柄トレンド分析_${yTag}_${todayStr}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+  toast(`📥 Excelファイル「${fileName}」を出力しました`, 'success');
+};
+
+/**
+ * PAO生産・トレンド分析結果をPDF出力 / 印刷プレビュー表示
+ */
+window.printPaoAnalyticsPdf = function() {
+  let printArea = document.getElementById('pao-report-print-area');
+  if (!printArea) {
+    renderPaoAnalyticsPage();
+    printArea = document.getElementById('pao-report-print-area');
+  }
+  if (!printArea) {
+    toast('印刷対象のPAOレポートが見つかりません', 'error');
+    return;
+  }
+
+  const data = window._lastPaoAnalyticsData || computePaoAnalyticsData();
+  const { filters } = data;
+
+  // 印刷用クローンを作成し、折りたたみ(details)をすべて開いた状態にする
+  const clone = printArea.cloneNode(true);
+  clone.querySelectorAll('details').forEach(d => d.setAttribute('open', 'open'));
+  clone.querySelectorAll('button').forEach(b => {
+    // 非アクティブなピルボタンは控えめにする
+    b.style.pointerEvents = 'none';
+  });
+
+  const reportHeaderHtml = `
+    <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #1e3a8a; display:flex; justify-content:space-between; align-items:flex-end;">
+      <div>
+        <div style="font-size:18pt; font-weight:800; color:#0f172a;">📊 PAO 生産数量・サイズ・色柄トレンド分析報告書</div>
+        <div style="font-size:9.5pt; color:#334155; margin-top:4px;">
+          集計期間: <strong>${escapePaoHtml(filters.periodLabel)}</strong> ／ 対象月: <strong>${escapePaoHtml(filters.monthLabel)}</strong> ／ 基準: <strong>${escapePaoHtml(filters.dateBasisLabel)}</strong> ／ 対象: <strong>${escapePaoHtml(filters.statusLabel)}</strong>
+        </div>
+      </div>
+      <div style="font-size:8.5pt; color:#475569; text-align:right;">
+        出力日時: ${new Date().toLocaleString('ja-JP')}
+      </div>
+    </div>
+  `;
+
+  const payload = {
+    title: `PAO 生産数量・サイズ・色柄トレンド分析報告書 (${filters.periodLabel})`,
+    startDate: filters.periodLabel,
+    endDate: filters.monthLabel,
+    html: reportHeaderHtml + clone.innerHTML
+  };
+
+  try {
+    sessionStorage.setItem('print_report_data', JSON.stringify(payload));
+    const win = window.open('print_report.html', '_blank');
+    if (!win) {
+      toast('ポップアップがブロックされたため、現在画面の印刷ダイアログを開きます', 'warning');
+      window.print();
+    } else {
+      toast('🖨️ PDF出力・印刷プレビュー画面を開きました', 'info');
+    }
+  } catch (err) {
+    console.error('PDF出力エラー:', err);
+    window.print();
+  }
 };

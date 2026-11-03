@@ -250,6 +250,11 @@
             }
             const data = JSON.parse(dataJson);
             document.getElementById('report-print-target').innerHTML = data.html;
+            if (data.title) {
+                document.title = data.title + ' - TAC製造部';
+                const titleEl = document.querySelector('.toolbar-title');
+                if (titleEl) titleEl.textContent = '🏭 TAC製造部 - ' + data.title;
+            }
             
             // デフォルトはA4サイズ設定で準備
             setupPageSize('A4');
