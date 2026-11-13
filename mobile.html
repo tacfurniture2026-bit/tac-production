@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.77.0】 -->
+    <!-- 【強制キャッシュバスティング v6.78.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.77.0';
+            var currentVersion = 'v6.78.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.77.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.78.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -50,9 +50,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300;400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
 /* ========================================
@@ -87,12 +85,16 @@
     /* アイコンフィルタ（青系または黒系） */
     --icon-filter: grayscale(100%) brightness(0.3);
 
-    /* タイポグラフィ */
-    --font-sans: 'Noto Sans JP',
-        'Inter',
-        'Hiragino Kaku Gothic ProN',
-        'Meiryo',
-        sans-serif;
+    /* タイポグラフィ（M PLUS 1p + Urbanist） */
+    --font-sans: "M PLUS 1p", "Urbanist", "メイリオ", Meiryo, "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-numeric: "Urbanist", sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+    font-family: var(--font-sans);
+    font-feature-settings: "palt";
+    letter-spacing: .02em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
     /* スペース・サイズ */
     --radius-sm: 4px;
@@ -143,10 +145,74 @@ body.dark-mode {
 
 body {
     font-family: var(--font-sans);
+    font-feature-settings: "palt";
+    letter-spacing: .02em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
     line-height: 1.6;
     min-height: 100vh;
+}
+
+/* 見出し共通ベース */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-sans);
+    font-feature-settings: "palt";
+    letter-spacing: .01em;
+    line-height: 1.35;
+    color: var(--color-text-primary);
+}
+
+/* フォーム要素等のフォント継承 */
+button,
+input,
+optgroup,
+select,
+textarea {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    letter-spacing: inherit;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 数値・金額・コードの共通クラス */
+.num,
+input[type=number] {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.stat-value,
+.kpi-value,
+.pao-kpi-value,
+.summary-value,
+.report-summary-value,
+td.num,
+td.price,
+td.qty,
+td.quantity,
+td.amount,
+td.rate,
+td[style*="text-align: right"],
+th[style*="text-align: right"] {
+    font-family: var(--font-numeric), var(--font-sans);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 等幅コード・識別番号 */
+.mono,
+.code-num,
+.part-code,
+.order-code {
+    font-family: var(--font-mono);
 }
 
 /* ========================================
@@ -336,10 +402,10 @@ body {
 
 .nav-section {
     padding: 0.5rem 1rem;
-    font-size: 0.625rem;
-    font-weight: 600;
+    font-size: 0.6875rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--color-text-muted);
     margin-top: 0.5rem;
     white-space: nowrap;
@@ -352,6 +418,10 @@ body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
     color: var(--color-text-secondary);
     text-decoration: none;
     transition: all var(--transition-fast);
@@ -469,12 +539,15 @@ body {
 .page-header h1 {
     font-size: 1.75rem;
     font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
     margin-bottom: 0.25rem;
 }
 
 .page-header p {
     color: var(--color-text-muted);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
 }
 
 /* ========================================
@@ -501,6 +574,8 @@ body {
 .card-header h3 {
     font-size: 1rem;
     font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
 }
 
 .card-body {
@@ -568,13 +643,18 @@ body {
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.875rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
 }
 
 .stat-label {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
     color: var(--color-text-secondary);
 }
 
@@ -596,19 +676,35 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    line-height: 1.5;
 }
 
 .table th,
 .table td {
-    padding: 0.75rem 1rem;
+    padding: 0.6875rem 0.875rem;
     text-align: left;
     border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
 }
 
 .table th {
     font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
     color: var(--color-text-secondary);
     background: var(--color-bg-secondary);
+    white-space: nowrap;
+}
+
+.table td.num,
+.table td.price,
+.table td.qty,
+.table td.quantity,
+.table td.amount,
+.table td.rate {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
     white-space: nowrap;
 }
 
@@ -644,16 +740,19 @@ body {
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
     color: var(--color-text-secondary);
 }
 
 .form-input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -690,15 +789,18 @@ textarea.form-input {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
+    padding: 0.5625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
     border-radius: var(--radius-md);
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
     font-family: inherit;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -733,8 +835,10 @@ textarea.form-input {
 }
 
 .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.35;
 }
 
 .btn-full {
@@ -833,9 +937,13 @@ textarea.form-input {
 }
 
 .progress-text {
-    font-weight: 600;
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 0.8125rem;
     color: var(--color-accent-primary);
-    min-width: 40px;
+    min-width: 42px;
+    text-align: right;
 }
 
 /* ========================================
@@ -857,7 +965,9 @@ textarea.form-input {
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     border-radius: var(--radius-full);
+    font-variant-numeric: tabular-nums;
 }
 
 .badge-info {
@@ -1040,7 +1150,9 @@ input:checked+.slider .moon {
 
 .modal-header h3 {
     font-size: 1.125rem;
-    font-weight: 600;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
 }
 
 .modal-body {
@@ -46570,7 +46682,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.77.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.78.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -46597,7 +46709,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.77.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.78.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -46684,7 +46796,7 @@ window.printPaoAnalyticsPdf = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.77.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.78.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -47889,7 +48001,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.77.0
+                    Version: v6.78.0
                 </div>
             </div>
         </div>
