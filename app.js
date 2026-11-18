@@ -12482,17 +12482,19 @@ window.openHtImportModal = function(initialTab = 'import') {
         <div id="ht-duplicate-alert-banner" style="display: none; margin-bottom: 0.75rem;"></div>
 
         <!-- プレビューテーブル -->
-        <div id="ht-preview-container" style="max-height: 260px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
+        <div id="ht-preview-container" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
           <table class="table" style="font-size: 0.82rem; margin: 0;">
             <thead style="position: sticky; top: 0; background: var(--color-bg-tertiary); z-index: 2;">
               <tr>
-                <th>資材ID</th>
+                <th style="width: 42px; text-align: center;">反映</th>
+                <th>資材CD</th>
                 <th>品名（マスタ照合）</th>
-                <th>スキャン実行者</th>
+                <th>作業者</th>
+                <th style="width: 95px; text-align: right;">最新単価(円)</th>
                 <th style="text-align: center;">既存仮登録</th>
                 <th style="text-align: center;">今回HT読取</th>
-                <th style="width: 105px; text-align: center;">反映後数量</th>
-                <th>判定 / ダブり確認</th>
+                <th style="width: 100px; text-align: center;">反映後数量</th>
+                <th>棚卸チェック判定</th>
               </tr>
             </thead>
             <tbody id="ht-preview-tbody"></tbody>
@@ -12804,6 +12806,17 @@ window.parseHtCsvFile = function() {
           }
         }
 
+        // QRコード内の2行目品名（「資材CD    品名」形式）を抽出
+        let qrEmbeddedName = '';
+        for (let c = 0; c < cleanCols.length; c++) {
+          const rawCell = cleanCols[c].replace(/^INV:/i, "").trim();
+          const parts = rawCell.split(/[\s　]+/);
+          if (parts.length >= 2 && parts[0].toUpperCase() === detectedId.toUpperCase()) {
+            qrEmbeddedName = parts.slice(1).join(' ').trim();
+            break;
+          }
+        }
+
         const matchedProd = prodMap[detectedId.toUpperCase()];
         const finalId = matchedProd ? matchedProd.id : detectedId;
         const existingScan = (mergeMode !== 'replace_all') ? existingTempMap[finalId.toUpperCase()] : null;
@@ -12813,10 +12826,12 @@ window.parseHtCsvFile = function() {
           const htQty = detectedQty;
           const resultQty = (existingScan && mergeMode === 'merge_add') ? (prevTempQty + htQty) : htQty;
           aggregated[finalId] = {
+            enabled: true,
             productId: finalId,
-            name: matchedProd ? matchedProd.name : `未登録資材 (${finalId})`,
+            name: matchedProd ? matchedProd.name : (qrEmbeddedName || `未登録資材 (${finalId})`),
             category: matchedProd ? (matchedProd.category || '99') : '99',
             price: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
+            originalPrice: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
             prevTempQty: prevTempQty,
             hasExistingTemp: !!existingScan,
             htQuantity: htQty,
@@ -12862,22 +12877,32 @@ window.parseHtCsvFile = function() {
       const csvDupItems = items.filter(i => i.scanCount > 1);
       const existingDupItems = items.filter(i => i.hasExistingTemp);
       const unknownItems = items.filter(i => !i.isMatched);
-      const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
+      const zeroPriceItems = items.filter(i => (Number(i.price) || 0) <= 0);
+      const abnormalQtyItems = items.filter(i => (Number(i.quantity) || 0) <= 0 || (Number(i.quantity) || 0) >= 10000);
+      const totalQty = items.reduce((acc, i) => acc + (i.enabled !== false ? i.quantity : 0), 0);
 
-      // 重複（ダブり）アラートバナーの表示
+      // 棚卸総合チェック（重複ダブり・未登録マスタ・単価0円・異常数量）アラートバナーの表示
       if (dupBannerEl) {
-        if (csvDupItems.length > 0 || existingDupItems.length > 0) {
+        if (csvDupItems.length > 0 || existingDupItems.length > 0 || unknownItems.length > 0 || zeroPriceItems.length > 0 || abnormalQtyItems.length > 0) {
           dupBannerEl.style.display = 'block';
           dupBannerEl.innerHTML = `
             <div style="background: #fffbeb; border-left: 5px solid #f59e0b; padding: 10px 14px; border-radius: 6px; font-size: 0.84rem; color: #92400e;">
-              <strong>⚠️ スキャン重複（ダブり）検知アラート：</strong><br>
-              ${csvDupItems.length > 0 ? `・HTファイル内で複数回スキャンされた資材が <strong>${csvDupItems.length}件</strong> あります（設定に従い「${dupMode === 'sum' ? '➕合算' : '✍️上書き'}」で計算済）。<br>` : ''}
-              ${existingDupItems.length > 0 ? `・既にシステムに当月の仮登録がある資材との重複が <strong>${existingDupItems.length}件</strong> あります（設定に従い「${mergeMode === 'merge_add' ? '➕既存数に加算' : '✍️HT数で上書き'}」で計算済）。` : ''}
-              <span style="display:block; margin-top:3px; color:#b45309;">※下の表の「反映後数量」で個別に数値を直接修正することも可能です。</span>
+              <strong>🛡️ 棚卸データ自動チェック結果（ダブり・マスタ・単価・数量）：</strong><br>
+              ${csvDupItems.length > 0 ? `・<strong>[CSV内ダブり]</strong> 同一HTファイル内で複数回スキャンされた資材が <strong>${csvDupItems.length}件</strong> あります（現在「${dupMode === 'sum' ? '➕合算' : '✍️上書き'}」設定）。<br>` : ''}
+              ${existingDupItems.length > 0 ? `・<strong>[既存仮登録ダブり]</strong> 当月既に仮登録済みの資材との重複が <strong>${existingDupItems.length}件</strong> あります（現在「${mergeMode === 'merge_add' ? '➕既存数に加算' : '✍️HT数で上書き'}」設定）。<br>` : ''}
+              ${unknownItems.length > 0 ? `・<strong>[マスタ未登録]</strong> 商品マスタに未登録の資材が <strong>${unknownItems.length}件</strong> あります。<br>` : ''}
+              ${zeroPriceItems.length > 0 ? `・<strong>[単価0円チェック]</strong> 単価が0円（未設定）の資材が <strong>${zeroPriceItems.length}件</strong> あります（表の「最新単価」欄で入力するとマスタ単価も同時更新されます）。<br>` : ''}
+              ${abnormalQtyItems.length > 0 ? `・<strong>[数量異常チェック]</strong> 数量が0以下または10,000以上の要確認データが <strong>${abnormalQtyItems.length}件</strong> あります。<br>` : ''}
+              <span style="display:block; margin-top:3px; color:#b45309;">※左端の「反映」チェックを外すとその行を除外（キャンセル）でき、「最新単価」「反映後数量」も直接修正できます。</span>
             </div>
           `;
         } else {
-          dupBannerEl.style.display = 'none';
+          dupBannerEl.style.display = 'block';
+          dupBannerEl.innerHTML = `
+            <div style="background: #f0fdf4; border-left: 5px solid #16a34a; padding: 8px 14px; border-radius: 6px; font-size: 0.84rem; color: #166534;">
+              <strong>✅ 棚卸データチェック完了：</strong> マスタ照合・単価設定・重複（ダブり）・数量範囲すべて問題ありません。
+            </div>
+          `;
         }
       }
 
@@ -12891,20 +12916,32 @@ window.parseHtCsvFile = function() {
           if (!item.isMatched) {
             badges.push('<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ マスタ未登録</span>');
           }
+          if ((Number(item.price) || 0) <= 0) {
+            badges.push('<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 単価0円</span>');
+          }
           if (item.scanCount > 1) {
-            badges.push(`<span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ CSV内重複(${item.scanCount}回)</span>`);
+            badges.push(`<span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">🔄 CSV内重複(${item.scanCount}回)</span>`);
           }
           if (item.hasExistingTemp) {
             badges.push('<span style="background:#fce7f3; color:#9d174d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 既存仮登録あり</span>');
           }
+          if ((Number(item.quantity) || 0) <= 0 || (Number(item.quantity) || 0) >= 10000) {
+            badges.push('<span style="background:#fef08a; color:#854d0e; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 数量要確認</span>');
+          }
           if (badges.length === 0) {
-            badges.push('<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">✓ 新規照合OK</span>');
+            badges.push('<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">✓ チェックOK</span>');
           }
 
-          const rowBg = (item.scanCount > 1 || item.hasExistingTemp) ? 'background:#fffbeb;' : (!item.isMatched ? 'background:#fef2f2;' : '');
+          const rowBg = (item.scanCount > 1 || item.hasExistingTemp)
+            ? 'background:#fffbeb;'
+            : ((!item.isMatched || (Number(item.price) || 0) <= 0) ? 'background:#fef2f2;' : '');
 
           return `
             <tr style="${rowBg}">
+              <td style="text-align: center;">
+                <input type="checkbox" ${item.enabled !== false ? 'checked' : ''}
+                       onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].enabled = this.checked;">
+              </td>
               <td><strong>${item.productId}</strong></td>
               <td>${item.name}</td>
               <td>
@@ -12912,11 +12949,16 @@ window.parseHtCsvFile = function() {
                 <span style="font-size:0.75rem; color:#64748b;">(${item.worker})</span>
                 ${item.isNewHtUser ? '<span style="background:#e0f2fe; color:#0369a1; font-size:0.68rem; padding:1px 4px; border-radius:3px; margin-left:4px;">HT新規</span>' : ''}
               </td>
+              <td style="text-align: right;">
+                <input type="number" class="form-input" value="${item.price}" min="0"
+                       style="width: 85px; padding: 4px; text-align: right; font-weight: bold; ${Number(item.price) <= 0 ? 'border-color:#ef4444; background:#fff1f2;' : ''}"
+                       onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].price = parseFloat(this.value) || 0;">
+              </td>
               <td style="text-align: center; color: #64748b;">${item.hasExistingTemp ? item.prevTempQty + '個' : '-'}</td>
               <td style="text-align: center; font-weight: 600; color: #0284c7;">${item.htQuantity}個</td>
               <td style="text-align: center;">
                 <input type="number" class="form-input" value="${item.quantity}" min="0"
-                       style="width: 90px; padding: 4px; text-align: center; font-weight: bold;"
+                       style="width: 85px; padding: 4px; text-align: center; font-weight: bold;"
                        onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].quantity = parseFloat(this.value) || 0;">
               </td>
               <td>${badges.join(' ')}</td>
@@ -12938,10 +12980,18 @@ window.parseHtCsvFile = function() {
 
 // HTデータを棚卸仮登録(INV_PRODUCTS / INV_SCAN_TEMP / INV_LOGS) および ユーザー管理(USERS) へ一括反映
 window.executeHtBatchImport = function() {
-  const items = window._parsedHtBatchItems || [];
+  const allItems = window._parsedHtBatchItems || [];
+  const items = allItems.filter(i => i && i.enabled !== false);
   if (items.length === 0) {
-    toast('取り込むデータがありません', 'error');
+    toast('取り込む対象データがありません（チェックが入っていません）', 'error');
     return;
+  }
+
+  // 単価0円の商品が含まれている場合は警告確認（生産管理の通常棚卸に準拠）
+  const zeroPriceCount = items.filter(i => (Number(i.price) || 0) <= 0).length;
+  if (zeroPriceCount > 0) {
+    const ok = confirm(`⚠️ 単価が 0円（未設定）の資材が ${zeroPriceCount}件 含まれています。\nこのまま仮登録へ反映してよろしいですか？\n（※キャンセルを押すと画面上で単価を入力してから反映できます）`);
+    if (!ok) return;
   }
 
   const targetMonth = (document.getElementById('ht-import-month') || {}).value || new Date().toISOString().substring(0, 7);
@@ -13007,6 +13057,7 @@ window.executeHtBatchImport = function() {
 
   let importedCount = 0;
   let newMasterCount = 0;
+  let priceUpdatedCount = 0;
   let totalImportedQty = 0;
 
   items.forEach((item, idx) => {
@@ -13018,7 +13069,7 @@ window.executeHtBatchImport = function() {
         id: item.productId,
         name: item.name,
         category: item.category || '99',
-        price: item.price || 0,
+        price: parseFloat(item.price) || 0,
         isFixed: false
       };
       products.push(newProd);
@@ -13029,6 +13080,13 @@ window.executeHtBatchImport = function() {
     const prod = products[prodIdx];
     const finalQty = item.quantity;
     const scanId = Date.now() + '_ht_' + idx + '_' + prod.id;
+
+    // 単価が変更・入力されていればマスタ単価も上書き更新（生産管理の通常棚卸スキャンに準拠）
+    const newPrice = parseFloat(item.price);
+    if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== (parseFloat(prod.price) || 0)) {
+      prod.price = newPrice;
+      priceUpdatedCount++;
+    }
 
     // 1. INV_PRODUCTS 側の仮登録プロパティ更新 (実行者のログインIDと表示名を保存)
     prod.tempQty = finalQty;

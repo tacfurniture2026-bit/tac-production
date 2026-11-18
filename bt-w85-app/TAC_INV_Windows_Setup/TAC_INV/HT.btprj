@@ -1646,9 +1646,9 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <Name>BtLabel_ProcessNo</Name>
-                    <Location>5, 64</Location>
+                    <Location>5, 62</Location>
                     <Size>230, 22</Size>
-                    <Text>資材QR (資材CD / 品名)</Text>
+                    <Text>資材QR (1行目:CD / 2行目:品名)</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>
@@ -1686,8 +1686,8 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <Name>BtLabel_SerialNo</Name>
-                    <Location>5, 144</Location>
-                    <Size>55, 26</Size>
+                    <Location>5, 148</Location>
+                    <Size>55, 28</Size>
                     <Text>数量</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
@@ -1761,8 +1761,8 @@
                     <Name>BtTextBox_ProcessNo</Name>
                     <Text>
                     </Text>
-                    <Location>5, 88</Location>
-                    <Size>230, 48</Size>
+                    <Location>5, 86</Location>
+                    <Size>230, 54</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2027,12 +2027,12 @@
                     <Name>BtTextBox_Person</Name>
                     <Text>
                     </Text>
-                    <Location>62, 32</Location>
+                    <Location>62, 30</Location>
                     <Size>173, 26</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
-                    <BackColor>White</BackColor>
+                    <BackColor>Gainsboro</BackColor>
                     <FocusedForeColor>Black</FocusedForeColor>
                     <FocusedBackColor>168, 255, 255</FocusedBackColor>
                     <InputMode>ScanAndKeyAlphanumeric</InputMode>
@@ -2256,11 +2256,11 @@
                     </SharedParameterKey>
                     <SharedParameterClearTiming>None</SharedParameterClearTiming>
                     <ForeColor>Black</ForeColor>
-                    <BackColor>White</BackColor>
+                    <BackColor>Gainsboro</BackColor>
                     <Name>BtLabel_Person</Name>
-                    <Location>5, 32</Location>
+                    <Location>5, 30</Location>
                     <Size>55, 26</Size>
-                    <Text>担当</Text>
+                    <Text>作業者</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>
@@ -2333,8 +2333,8 @@
                     <Name>BtTextBox_SerialNo</Name>
                     <Text>
                     </Text>
-                    <Location>62, 144</Location>
-                    <Size>173, 26</Size>
+                    <Location>62, 148</Location>
+                    <Size>173, 28</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2342,17 +2342,17 @@
                     <FocusedForeColor>Black</FocusedForeColor>
                     <FocusedBackColor>168, 255, 255</FocusedBackColor>
                     <InputMode>ScanAndKeyAlphanumeric</InputMode>
-                    <MaxLength>8192</MaxLength>
+                    <MaxLength>6</MaxLength>
                     <IsEmptyProhibited>True</IsEmptyProhibited>
                     <DecimalPlaces>0</DecimalPlaces>
                     <ValueRange>
                       <Range-Decimal- version="0.2.0.0">
-                        <_maximum>2000000</_maximum>
-                        <_minimum>-2000000</_minimum>
+                        <_maximum>999999</_maximum>
+                        <_minimum>1</_minimum>
                       </Range-Decimal->
                     </ValueRange>
                     <IsCheckRepdigit>False</IsCheckRepdigit>
-                    <IsShowOutOfRangeError>False</IsShowOutOfRangeError>
+                    <IsShowOutOfRangeError>True</IsShowOutOfRangeError>
                     <IsEditOnF2>False</IsEditOnF2>
                     <KeyInputModeSwitchingF3>True</KeyInputModeSwitchingF3>
                     <ScanTarget>OnlyCode</ScanTarget>
