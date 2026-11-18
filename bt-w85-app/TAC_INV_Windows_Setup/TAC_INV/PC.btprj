@@ -1,0 +1,2159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PermanencyDocument version="0.2.0.0">
+  <ServerProjectSettings version="0.2.0.0">
+    <_appFormSettings>
+      <AppFormToolSettings version="0.2.0.0">
+        <_size>1024, 550</_size>
+        <_windows>
+          <WindowPanelToolSettings version="0.2.0.0">
+            <_splitterDistance>0</_splitterDistance>
+            <_group1>
+              <GroupPanelToolSettings version="0.2.0.0">
+                <_sheets>
+                  <SheetPanelToolSettings version="0.2.0.0">
+                    <_size>1000, 424</_size>
+                    <_headerHeight>40</_headerHeight>
+                    <_footerHeight>40</_footerHeight>
+                    <_searchTree>
+                      <SearchTreeToolSettings version="0.2.0.0">
+                        <_conditions />
+                        <_comboBox>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>fab9d47d-3b7c-44d1-8c77-aba87b1df753</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtSearchDropDownBox_1</Name>
+                            <Location>3, 3</Location>
+                            <Size>104, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>None</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Match</SearchConditionType>
+                            <DropDownStyle>DropDownList</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_comboBox>
+                        <_button>
+                          <InternalServerButtonToolSettings version="0.2.0.0">
+                            <_instanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>25fed116-31b7-49f8-bbfd-5e9a611fc90f</_guid>
+                              </ToolInstanceKey>
+                            </_instanceKey>
+                            <IsShowConfirmMessage>True</IsShowConfirmMessage>
+                            <ConfirmMessage>
+                            </ConfirmMessage>
+                            <Name>BtSearchTreeButton_1</Name>
+                            <Location>121, 3</Location>
+                            <Size>50, 30</Size>
+                            <Text>編集</Text>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Control</BackColor>
+                            <TextAlign>MiddleCenter</TextAlign>
+                          </InternalServerButtonToolSettings>
+                        </_button>
+                        <_treeView>
+                          <InternalTreeViewToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>f8c03f65-9780-432f-bf51-1dbdb03e373d</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtSerchTreeView_1</Name>
+                            <Location>3, 36</Location>
+                            <Size>168, 305</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                          </InternalTreeViewToolSettings>
+                        </_treeView>
+                        <_size>174, 344</_size>
+                        <InstanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>8e10ad05-e016-4904-85f2-bc6a7de3bf3e</_guid>
+                          </ToolInstanceKey>
+                        </InstanceKey>
+                        <Name>BtSearchTree</Name>
+                        <Location>0, 40</Location>
+                        <SettingSearchConditions>False</SettingSearchConditions>
+                        <ShowSearchConditionSettingButton>True</ShowSearchConditionSettingButton>
+                        <BackColor>Control</BackColor>
+                      </SearchTreeToolSettings>
+                    </_searchTree>
+                    <_gridView>
+                      <GridViewToolSettings version="0.2.0.0">
+                        <_databaseColumns>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>日付</_name>
+                            <_width>106</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>時刻</_name>
+                            <_width>106</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>シリアル番号</_name>
+                            <_width>114</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>担当者</_name>
+                            <_width>110</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>資材ID</_name>
+                            <_width>180</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>数量</_name>
+                            <_width>110</_width>
+                            <_visible>True</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>開始時刻</_name>
+                            <_width>106</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>終了時刻</_name>
+                            <_width>106</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>経過時間</_name>
+                            <_width>106</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                          <ColumnSettings version="0.2.0.0">
+                            <_name>
+                            </_name>
+                            <_width>100</_width>
+                            <_visible>False</_visible>
+                            <_conditionExpressionSettings>
+                              <ConditionExpressionSettings version="0.2.0.0">
+                                <_fontSettings>
+                                  <ServerFontSettings version="0.2.0.0">
+                                    <_name>Meiryo</_name>
+                                    <_size>9.75</_size>
+                                    <_style>Regular</_style>
+                                  </ServerFontSettings>
+                                </_fontSettings>
+                                <_fontColor>ControlText</_fontColor>
+                                <_backColor>Control</_backColor>
+                                <_searchSettings>
+                                  <SearchSettings version="0.2.0.0">
+                                    <_conditionsEvaluation>All</_conditionsEvaluation>
+                                    <_searchConditions />
+                                  </SearchSettings>
+                                </_searchSettings>
+                              </ConditionExpressionSettings>
+                            </_conditionExpressionSettings>
+                            <_calculationFormulaSettings>
+                              <CalculationFormulaSettings version="0.2.0.0">
+                                <_firstValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_firstValue>
+                                <_operation>None</_operation>
+                                <_secondValue>
+                                  <CalculationTargetValue version="0.2.0.0">
+                                    <_targetColumn>DB1</_targetColumn>
+                                    <_isConstantValue>True</_isConstantValue>
+                                    <_constantValue>0</_constantValue>
+                                  </CalculationTargetValue>
+                                </_secondValue>
+                                <_showParcent>False</_showParcent>
+                                <_showDecimalPoint>False</_showDecimalPoint>
+                                <_decimalPoint>0</_decimalPoint>
+                              </CalculationFormulaSettings>
+                            </_calculationFormulaSettings>
+                          </ColumnSettings>
+                        </_databaseColumns>
+                        <_calculationColumns />
+                        <InstanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>3b759b8d-b13b-4f32-aad6-ed4268fd1d74</_guid>
+                          </ToolInstanceKey>
+                        </InstanceKey>
+                        <Name>BtTableGrid</Name>
+                        <Location>3, 40</Location>
+                        <Size>994, 344</Size>
+                        <FontSettings>
+                          <ServerFontSettings version="0.2.0.0">
+                            <_name>Meiryo</_name>
+                            <_size>9.75</_size>
+                            <_style>Regular</_style>
+                          </ServerFontSettings>
+                        </FontSettings>
+                        <ForeColor>ControlText</ForeColor>
+                        <GridViewCellBackColor>Blue</GridViewCellBackColor>
+                        <Stripe>True</Stripe>
+                        <ShowColumnName>True</ShowColumnName>
+                        <ShowRowNumber>False</ShowRowNumber>
+                        <ColumnHeaderFontSettings>
+                          <ServerFontSettings version="0.2.0.0">
+                            <_name>Meiryo</_name>
+                            <_size>9.75</_size>
+                            <_style>Regular</_style>
+                          </ServerFontSettings>
+                        </ColumnHeaderFontSettings>
+                        <ColumnHeaderAlignment>Center</ColumnHeaderAlignment>
+                        <ColumnHeaderForeColor>White</ColumnHeaderForeColor>
+                        <RowHeaderFontSettings>
+                          <ServerFontSettings version="0.2.0.0">
+                            <_name>Meiryo</_name>
+                            <_size>9.75</_size>
+                            <_style>Regular</_style>
+                          </ServerFontSettings>
+                        </RowHeaderFontSettings>
+                        <RowHeaderForeColor>ControlText</RowHeaderForeColor>
+                        <SearchSettings>
+                          <SearchSettings version="0.2.0.0">
+                            <_conditionsEvaluation>All</_conditionsEvaluation>
+                            <_searchConditions />
+                          </SearchSettings>
+                        </SearchSettings>
+                      </GridViewToolSettings>
+                    </_gridView>
+                    <_dateTimeLabel>
+                      <ServerDateTimeLabelToolSettings version="0.2.0.0">
+                        <_instanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>a3c273ad-c647-43a7-b596-b0d865a64230</_guid>
+                          </ToolInstanceKey>
+                        </_instanceKey>
+                        <DateTimeFormatPattern>YYYYMMDD_HHMM</DateTimeFormatPattern>
+                        <Name>BtDateTimeLabel_1</Name>
+                        <Location>840, 396</Location>
+                        <Size>133, 24</Size>
+                        <BorderStyle>None</BorderStyle>
+                        <FontSettings>
+                          <ServerFontSettings version="0.2.0.0">
+                            <_name>Meiryo</_name>
+                            <_size>9.75</_size>
+                            <_style>Regular</_style>
+                          </ServerFontSettings>
+                        </FontSettings>
+                        <ForeColor>ControlText</ForeColor>
+                        <BackColor>Control</BackColor>
+                        <TextAlign>MiddleCenter</TextAlign>
+                      </ServerDateTimeLabelToolSettings>
+                    </_dateTimeLabel>
+                    <_headerLayoutTools>
+                      <ServerFilterBoxToolSettings version="0.2.0.0">
+                        <_columnComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>444f3ee1-b22e-436c-bd1b-e9ce5fe04e0d</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtTargetDropDownBox_1</Name>
+                            <Location>3, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>Column</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Match</SearchConditionType>
+                            <DropDownStyle>DropDownList</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_columnComboBoxSettings>
+                        <_conditionComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>c10635b4-b023-4bc8-89dd-25376fc34b19</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtConditionDropDownBox_1</Name>
+                            <Location>127, 2</Location>
+                            <Size>125, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>Condition</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Include</SearchConditionType>
+                            <DropDownStyle>DropDownList</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_conditionComboBoxSettings>
+                        <_textComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>d110e370-68b5-4c2d-b484-8bc973d846b9</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtContentDropDownBox_1</Name>
+                            <Location>256, 2</Location>
+                            <Size>130, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>None</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Match</SearchConditionType>
+                            <DropDownStyle>DropDown</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_textComboBoxSettings>
+                        <_spinSettings>
+                          <InternalSpinToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>f4de264f-71c3-4619-8393-302d6586a9bf</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtNumericUpDown_1</Name>
+                            <Location>390, 2</Location>
+                            <Size>130, 30</Size>
+                            <TextAlign>Right</TextAlign>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <DecimalPlaces>0</DecimalPlaces>
+                          </InternalSpinToolSettings>
+                        </_spinSettings>
+                        <_dateFromDateBoxSettings>
+                          <InternalDateBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>d640318c-3f79-4c83-900b-4d1b1b481eef</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtFromDateBox_1</Name>
+                            <Location>260, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                          </InternalDateBoxToolSettings>
+                        </_dateFromDateBoxSettings>
+                        <_dateToDateBoxSettingsSettings>
+                          <InternalDateBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>7f3f7ad7-9cd2-48f3-b4f8-90873ad38444</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtToDateBox_1</Name>
+                            <Location>400, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                          </InternalDateBoxToolSettings>
+                        </_dateToDateBoxSettingsSettings>
+                        <_waveLineLabelSettingsSettings>
+                          <ServerLabelToolSettings version="0.2.0.0">
+                            <_instanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>fc255c0c-6134-4727-bf50-8b759b840808</_guid>
+                              </ToolInstanceKey>
+                            </_instanceKey>
+                            <Text>～</Text>
+                            <Name>BtBetweenLabel_1</Name>
+                            <Location>381, 2</Location>
+                            <Size>18, 30</Size>
+                            <BorderStyle>None</BorderStyle>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Control</BackColor>
+                            <TextAlign>MiddleCenter</TextAlign>
+                          </ServerLabelToolSettings>
+                        </_waveLineLabelSettingsSettings>
+                        <_filterButtonSettings>
+                          <InternalFilterButtonToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>b825a69f-e11f-4d54-abd3-5fc508d67d66</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtSearchBoxButton_1</Name>
+                            <Location>398, 2</Location>
+                            <Size>30, 30</Size>
+                          </InternalFilterButtonToolSettings>
+                        </_filterButtonSettings>
+                        <InstanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>deb3a6a2-d7b3-46f5-a299-7e6f563e7b92</_guid>
+                          </ToolInstanceKey>
+                        </InstanceKey>
+                        <Name>BtFilterBox_1</Name>
+                        <Location>0, 3</Location>
+                        <Size>430, 34</Size>
+                        <BorderStyle>FixedSingle</BorderStyle>
+                        <BackColor>240, 240, 240</BackColor>
+                        <OutputFormat>
+                          <DateFormat version="0.2.0.0">
+                            <Pattern>YYYYMMDD</Pattern>
+                            <Separator>Slash</Separator>
+                          </DateFormat>
+                        </OutputFormat>
+                        <FilteringType>Text</FilteringType>
+                        <ShowFilterColumnDropDown>True</ShowFilterColumnDropDown>
+                        <ShowFilterConditionDropDown>True</ShowFilterConditionDropDown>
+                      </ServerFilterBoxToolSettings>
+                      <ServerFilterBoxToolSettings version="0.2.0.0">
+                        <_columnComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>43f26561-2b52-4fe7-b1a9-7c3586a221c6</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtTargetDropDownBox_2</Name>
+                            <Location>3, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>Column</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Match</SearchConditionType>
+                            <DropDownStyle>DropDownList</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_columnComboBoxSettings>
+                        <_conditionComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>2933aa96-3c3a-4846-be1a-b4fa93af2cce</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtConditionDropDownBox_2</Name>
+                            <Location>127, 2</Location>
+                            <Size>100, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>Condition</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>FromTo</SearchConditionType>
+                            <DropDownStyle>DropDownList</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_conditionComboBoxSettings>
+                        <_textComboBoxSettings>
+                          <InternalComboBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>25fc9132-820f-4d8c-8851-1e15d66a6c7d</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtContentDropDownBox_2</Name>
+                            <Location>390, 2</Location>
+                            <Size>130, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <Role>None</Role>
+                            <SearchTarget>All</SearchTarget>
+                            <SearchConditionType>Match</SearchConditionType>
+                            <DropDownStyle>DropDown</DropDownStyle>
+                          </InternalComboBoxToolSettings>
+                        </_textComboBoxSettings>
+                        <_spinSettings>
+                          <InternalSpinToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>3fe2c420-7556-4c93-b804-896f42b1e37a</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtNumericUpDown_2</Name>
+                            <Location>390, 2</Location>
+                            <Size>130, 30</Size>
+                            <TextAlign>Right</TextAlign>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>Window</BackColor>
+                            <DecimalPlaces>0</DecimalPlaces>
+                          </InternalSpinToolSettings>
+                        </_spinSettings>
+                        <_dateFromDateBoxSettings>
+                          <InternalDateBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>85a61358-b2fc-408a-bffc-209c25b7ab82</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtFromDateBox_2</Name>
+                            <Location>230, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                          </InternalDateBoxToolSettings>
+                        </_dateFromDateBoxSettings>
+                        <_dateToDateBoxSettingsSettings>
+                          <InternalDateBoxToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>3affc73d-c063-469c-a15e-a6d3cb2d694c</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtToDateBox_2</Name>
+                            <Location>368, 2</Location>
+                            <Size>120, 30</Size>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                          </InternalDateBoxToolSettings>
+                        </_dateToDateBoxSettingsSettings>
+                        <_waveLineLabelSettingsSettings>
+                          <ServerLabelToolSettings version="0.2.0.0">
+                            <_instanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>9647d67e-5bd5-4564-8cff-e2a47625b52f</_guid>
+                              </ToolInstanceKey>
+                            </_instanceKey>
+                            <Text>～</Text>
+                            <Name>BtBetweenLabel_2</Name>
+                            <Location>350, 2</Location>
+                            <Size>18, 30</Size>
+                            <BorderStyle>None</BorderStyle>
+                            <FontSettings>
+                              <ServerFontSettings version="0.2.0.0">
+                                <_name>Meiryo</_name>
+                                <_size>9.75</_size>
+                                <_style>Regular</_style>
+                              </ServerFontSettings>
+                            </FontSettings>
+                            <ForeColor>ControlText</ForeColor>
+                            <BackColor>240, 240, 240</BackColor>
+                            <TextAlign>MiddleCenter</TextAlign>
+                          </ServerLabelToolSettings>
+                        </_waveLineLabelSettingsSettings>
+                        <_filterButtonSettings>
+                          <InternalFilterButtonToolSettings version="0.2.0.0">
+                            <InstanceKey>
+                              <ToolInstanceKey version="0.2.0.0">
+                                <_guid>cbc4c4fa-14ef-4309-872a-4717c67ec3ba</_guid>
+                              </ToolInstanceKey>
+                            </InstanceKey>
+                            <Name>BtSearchBoxButton_2</Name>
+                            <Location>504, 2</Location>
+                            <Size>30, 30</Size>
+                          </InternalFilterButtonToolSettings>
+                        </_filterButtonSettings>
+                        <InstanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>2e27cc45-9e12-4a4a-915d-9c3091c64587</_guid>
+                          </ToolInstanceKey>
+                        </InstanceKey>
+                        <Name>BtFilterBox_2</Name>
+                        <Location>433, 3</Location>
+                        <Size>536, 34</Size>
+                        <BorderStyle>FixedSingle</BorderStyle>
+                        <BackColor>240, 240, 240</BackColor>
+                        <OutputFormat>
+                          <DateFormat version="0.2.0.0">
+                            <Pattern>YYYYMMDD</Pattern>
+                            <Separator>Slash</Separator>
+                          </DateFormat>
+                        </OutputFormat>
+                        <FilteringType>Date</FilteringType>
+                        <ShowFilterColumnDropDown>True</ShowFilterColumnDropDown>
+                        <ShowFilterConditionDropDown>True</ShowFilterConditionDropDown>
+                      </ServerFilterBoxToolSettings>
+                    </_headerLayoutTools>
+                    <_footerLayoutTools>
+                      <ServerLabelToolSettings version="0.2.0.0">
+                        <_instanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>3d5cea33-2dc7-4988-909c-2042fabca866</_guid>
+                          </ToolInstanceKey>
+                        </_instanceKey>
+                        <Text>更新日時：</Text>
+                        <Name>BtLabel_1</Name>
+                        <Location>735, 396</Location>
+                        <Size>110, 24</Size>
+                        <BorderStyle>None</BorderStyle>
+                        <FontSettings>
+                          <ServerFontSettings version="0.2.0.0">
+                            <_name>Meiryo</_name>
+                            <_size>9.75</_size>
+                            <_style>Regular</_style>
+                          </ServerFontSettings>
+                        </FontSettings>
+                        <ForeColor>ControlText</ForeColor>
+                        <BackColor>Control</BackColor>
+                        <TextAlign>MiddleRight</TextAlign>
+                      </ServerLabelToolSettings>
+                    </_footerLayoutTools>
+                    <_showFilterTree>False</_showFilterTree>
+                    <InstanceKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>05313d41-95c6-4ba4-b556-c8d6b5f165bf</_guid>
+                      </ToolInstanceKey>
+                    </InstanceKey>
+                    <Name>BtSheet_RecordLog</Name>
+                    <Title>棚卸スキャン</Title>
+                    <BackColor>Control</BackColor>
+                    <HeaderAnchor>Left</HeaderAnchor>
+                    <FooterAnchor>Right</FooterAnchor>
+                    <ShowUpdateDateTime>True</ShowUpdateDateTime>
+                    <TargetJobKey>
+                      <JobKey version="0.2.0.0">
+                        <_toolInstanceKey>
+                          <ToolInstanceKey version="0.2.0.0">
+                            <_guid>37c77f0b-bb19-4302-ac10-14a39b089d59</_guid>
+                          </ToolInstanceKey>
+                        </_toolInstanceKey>
+                      </JobKey>
+                    </TargetJobKey>
+                    <TargetDatabaseType>Log</TargetDatabaseType>
+                  </SheetPanelToolSettings>
+                </_sheets>
+                <_sheetSize>1000, 424</_sheetSize>
+                <InstanceKey>
+                  <ToolInstanceKey version="0.2.0.0">
+                    <_guid>18bcfb41-2259-450e-a25a-44561620a8c9</_guid>
+                  </ToolInstanceKey>
+                </InstanceKey>
+                <Name>BtGroup_1</Name>
+              </GroupPanelToolSettings>
+            </_group1>
+            <_group2>
+              <GroupPanelToolSettings version="0.2.0.0">
+                <_sheets />
+                <_sheetSize>-8, -33</_sheetSize>
+                <InstanceKey>
+                  <ToolInstanceKey version="0.2.0.0">
+                    <_guid>d246077a-f7bb-4037-a7ad-00d864f32e1e</_guid>
+                  </ToolInstanceKey>
+                </InstanceKey>
+                <Name>BtGroup_2</Name>
+              </GroupPanelToolSettings>
+            </_group2>
+            <_size>1008, 457</_size>
+            <InstanceKey>
+              <ToolInstanceKey version="0.2.0.0">
+                <_guid>4c3a3e34-ccf9-4b84-abd0-868015890504</_guid>
+              </ToolInstanceKey>
+            </InstanceKey>
+            <Name>BtWindow_Record</Name>
+            <Title>棚卸スキャン</Title>
+            <TableRefresh>True</TableRefresh>
+            <SplitterStyle>None</SplitterStyle>
+          </WindowPanelToolSettings>
+        </_windows>
+        <Name>PCApplicationForm</Name>
+        <Title>TAC 棚卸データ受信アプリ</Title>
+        <BackColor>Control</BackColor>
+        <ShowCommunicationSettingsButton>True</ShowCommunicationSettingsButton>
+        <ShowRefreshButton>True</ShowRefreshButton>
+        <ShowMasterFileCreationButton>True</ShowMasterFileCreationButton>
+      </AppFormToolSettings>
+    </_appFormSettings>
+    <ApplicationSettings>
+      <ServerApplicationSettings version="0.2.0.0">
+        <_fileName>PCApplication</_fileName>
+        <_version>1.0.0.0</_version>
+        <_isCustomMode>False</_isCustomMode>
+      </ServerApplicationSettings>
+    </ApplicationSettings>
+  </ServerProjectSettings>
+</PermanencyDocument>

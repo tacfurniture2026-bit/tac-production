@@ -1,6 +1,6 @@
 # 🚀 TAC 生産管理システム 引き継ぎドキュメント (Antigravity 移行用)
 
-* **最終更新バージョン**: `v6.78.0`
+* **最終更新バージョン**: `v6.79.0`
 * **作成日時**: 2026-11-13
 * **GitHub リポジトリ**: `https://github.com/tacfurniture2026-bit/tac-production.git` (`main` ブランチ)
 
@@ -115,10 +115,10 @@
      * Excel出力：SheetJS (`XLSX`) により5シート構成（`1_年度別・月別生産数`, `2_サイズ別生産数`, `3_色柄トレンド集計`, `4_サイズ×色柄クロス表`, `5_品番別・案件明細`）の `.xlsx` ファイルを出力。
      * PDF出力：`print_report.html` と連携し、A4/A3印刷・PDF保存用のクリーンな報告書レイアウトを出力。
 
-### 🔹 フェーズ6：モダンビジネスUIフォント刷新（M PLUS 1p + Urbanist + tabular-nums）の実装 (`v6.78.0`)
+### 🔹 フェーズ6：モダンビジネスUIフォント刷新（M PLUS 1p + Urbanist + tabular-nums）の実装 (`v6.79.0`)
 * **課題**:
   * 業務システムとしての視認性・審美性を高め、数値データの桁揃えやレイアウトの端正さを向上させるため、フォント設定を「M PLUS 1p」および「Urbanist」を基調としたモダンビジネスUIフォントへ刷新する。
-* **解決内容 (`v6.78.0`)**:
+* **解決内容 (`v6.79.0`)**:
   1. Google Fonts より `M PLUS 1p` (300/400/500/700/900)、`Noto Sans JP` (400/500/700)、`Urbanist` (400/500/600/700) を読み込み。
   2. 日本語文字詰め（`font-feature-settings: "palt"`）および `-webkit-font-smoothing: antialiased` をグローバル適用。
   3. 金額・数量・コード等の数値データに対し、`Urbanist` かつ等幅数字（`font-variant-numeric: tabular-nums`）を適用（`.num`, `input[type=number]`, `.stat-value`, 各種テーブル右寄せセル）。

@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.78.0】 -->
+    <!-- 【強制キャッシュバスティング v6.79.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.78.0';
+            var currentVersion = 'v6.79.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.78.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.79.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -44787,22 +44787,22 @@ window.openHtImportModal = function(initialTab = 'import') {
       <!-- タブナビゲーション -->
       <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.25rem; flex-wrap: wrap;">
         <button type="button" id="ht-tab-btn-import" class="btn" onclick="switchHtModalTab('import')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #0284c7; color: white; padding: 10px 16px;">
-          📥 1. HTデータ取り込み (CSV)
+          📥 1. HTデータ取り込み (Record.csv)
         </button>
         <button type="button" id="ht-tab-btn-master" class="btn" onclick="switchHtModalTab('master')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
-          📤 2. マスタ・担当者・HTソフト出力
+          📦 2. Windows用アプリ一式・マスタ出力
         </button>
         <button type="button" id="ht-tab-btn-guide" class="btn" onclick="switchHtModalTab('guide')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
-          📖 3. BT-H10W 開発・取込手順書
+          📖 3. Windows かんたん設定手順 (3ステップ)
         </button>
       </div>
 
       <!-- タブ1: HTデータ取り込み -->
       <div id="ht-tab-content-import" style="display: block;">
         <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #0c4a6e;">
-          <strong>💡 システム発行QR ＆ 担当者ログイン連携：</strong><br>
-          BT-W85 で誰がスキャンしたか（ユーザー名・表示名）を自動読取し、「棚卸スキャン確認」画面の<strong>スキャン実行者欄</strong>に反映します。<br>
-          また、CSV内の重複スキャンや、既にシステムに仮登録されている資材との<strong>ダブり（重複）があればアラート表示</strong>します。
+          <strong>💡 BT開発・運用ツール (TAC_INV) ＆ 生産管理システム完全連携：</strong><br>
+          BT-W85 から送信された <strong><code>Record.csv</code></strong>（または <code>INV_LOG.CSV</code>）を選択すると、<strong>スキャン実行者（担当者）・資材ID・品名・数量</strong>を自動解析します。<br>
+          同一資材の重複スキャンや既存の仮登録データとの<strong>ダブり（重複）があれば赤い警告バナーで自動通知</strong>し、合算または上書きを選択できます。
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; background: var(--color-bg-secondary); padding: 1rem; border-radius: 8px;">
@@ -44834,7 +44834,8 @@ window.openHtImportModal = function(initialTab = 'import') {
         </div>
 
         <div style="border: 2px dashed #0284c7; border-radius: 8px; padding: 1rem; text-align: center; background: #f8fafc; margin-bottom: 1rem;">
-          <div style="font-size: 1.15rem; font-weight: bold; color: #0369a1; margin-bottom: 0.35rem;">📂 BT-W85 の棚卸CSVファイル (INV_LOG.CSV) を選択</div>
+          <div style="font-size: 1.15rem; font-weight: bold; color: #0369a1; margin-bottom: 0.25rem;">📂 BT-W85 棚卸データファイル (Record.csv / INV_LOG.CSV) を選択</div>
+          <div style="font-size: 0.8rem; color: #475569; margin-bottom: 0.35rem;">※Windows PC で <code>2_GET_RECORD_CSV.bat</code> を実行すると、デスクトップの <code>TAC_HT棚卸データ\Record.csv</code> に自動回収されます</div>
           <input type="file" id="ht-csv-file-input" accept=".csv,.txt,.log,.dat" class="form-input" style="max-width: 450px; margin: 0.4rem auto;" onchange="parseHtCsvFile()">
           <div style="margin-top: 0.4rem;">
             <button type="button" class="btn btn-sm btn-secondary" onclick="downloadSampleHtCsv()" style="font-size: 0.78rem;">
@@ -44882,17 +44883,39 @@ window.openHtImportModal = function(initialTab = 'import') {
       <!-- タブ2: マスタ・担当者・ソフト出力 -->
       <div id="ht-tab-content-master" style="display: none;">
         <div style="display: grid; gap: 1rem;">
+          <div style="border: 2px solid #0284c7; border-radius: 10px; padding: 1.25rem; background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);">
+            <div style="display: inline-block; background: #0284c7; color: #fff; font-weight: bold; font-size: 0.78rem; padding: 2px 10px; border-radius: 999px; margin-bottom: 6px;">Windows PC 専用・全自動セットアップパッケージ</div>
+            <h4 style="margin: 0 0 0.5rem 0; color: #0369a1; font-size: 1.1rem;">① 【Windows PC用】BT開発・運用ツール 完成アプリ＆自動配置セット</h4>
+            <p style="font-size: 0.86rem; color: #334155; margin-bottom: 0.9rem; line-height: 1.6;">
+              <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong>用の完成済みプロジェクト（<code>TAC_INV</code> 7ファイル）、自動配置バッチ（<code>1_SETUP_BT_TOOL.bat</code>）、受信データ自動回収バッチ（<code>2_GET_RECORD_CSV.bat</code>）、最新マスタ、オフライン図解マニュアルをすべて同梱しています。<br>
+              Windows PC でダウンロード・解凍して <strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリックするだけ</strong>で、フォルダ配置からBT開発・運用ツールの起動まで全自動で完了します！
+            </p>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <a href="bt-w85-app/TAC_INV_Windows_Setup.zip" download="TAC_INV_Windows_Setup.zip" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7; text-decoration: none; font-weight: bold; padding: 12px 20px; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(2,132,199,0.3);">
+                📦 Windows用 全自動セットアップ一式 (TAC_INV_Windows_Setup.zip) をダウンロード【推奨】
+              </a>
+              <a href="bt-w85-app/TAC_INV.zip" download="TAC_INV.zip" class="btn btn-secondary" style="text-decoration: none;">
+                📁 プロジェクト単体 (TAC_INV.zip)
+              </a>
+              <a href="bt-w85-app/TAC_INV_Windows_Setup/MANUAL_WINDOWS.html" target="_blank" class="btn btn-secondary" style="text-decoration: none;">
+                📖 Windows設定マニュアルを開く
+              </a>
+            </div>
+          </div>
+
           <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
-            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">① 商品マスタ (MASTER.CSV) ＆ 担当者マスタ (USERS.CSV) 出力</h4>
+            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">② 担当者ログインQR一覧 ＆ 最新マスタ個別出力</h4>
             <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
-              現在の商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）を BT-W85 用の Shift-JIS CSV で出力します。<br>
-              また、BT-W85 本体側で担当者を増減（追加・削除）した場合は「📥 HT担当者CSV取込」からシステムへ逆同期できます。
+              現在の商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）のログインQRシートおよび Shift-JIS CSV を出力します。
             </p>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary" onclick="showUserLoginQrGallery()" style="background: #0369a1; border-color: #0369a1;">
+                📱 担当者ログインQR一覧（印刷用）
+              </button>
               <button type="button" class="btn btn-primary" onclick="exportHtMasterCsv('MasterFile_1.csv')" style="background: #0284c7; border-color: #0284c7;">
                 📤 商品マスタ (MasterFile_1.csv) 出力
               </button>
-              <button type="button" class="btn btn-primary" onclick="exportHtUsersCsv('user.txt')" style="background: #0369a1; border-color: #0369a1;">
+              <button type="button" class="btn btn-secondary" onclick="exportHtUsersCsv('user.txt')">
                 👤 ログイン担当者 (user.txt) 出力
               </button>
               <button type="button" class="btn btn-secondary" onclick="exportHtUsersCsv('USERS.CSV')">
@@ -44901,52 +44924,36 @@ window.openHtImportModal = function(initialTab = 'import') {
               <button type="button" class="btn btn-secondary" onclick="openHtUsersSyncModal()">
                 📥 HT担当者CSV取込 (増減同期)
               </button>
-              <button type="button" class="btn btn-secondary" onclick="showUserLoginQrGallery()">
-                📱 担当者ログインQR一覧
-              </button>
-            </div>
-          </div>
-
-          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
-            <h4 style="margin: 0 0 0.4rem 0; color: #0f766e;">② BT-H10W 用 棚卸専用アプリケーション v2.0 (TAC_TANAOROSHI.scp)</h4>
-            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
-              <strong>【v2.0 改良点】</strong><br>
-              ・起動時の<strong>担当者ログイン選択（一覧選択 / QRログイン）</strong>および<strong>HT本体での担当者追加（F2）・削除（F3）</strong>に対応！<br>
-              ・システム発行のQRを読み取り、既にスキャン済みの資材（ダブり）だった場合は<strong>警告ブザー＆「[1]➕追加(合算) / [2]✍️上書き修正 / [3]❌キャンセル」のアラート画面</strong>が表示されます！
-            </p>
-            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-              <a href="bt-w85-app/TAC_INV.zip" download="TAC_INV.zip" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7; text-decoration: none; font-weight: bold;">
-                📦 BT開発・運用ツール 完成プロジェクト一式 (TAC_INV.zip) をダウンロード
-              </a>
-              <button type="button" class="btn btn-primary" onclick="downloadBtH10wAppSource()" style="background: #0f766e; border-color: #0f766e;">
-                💻 BT-H10W アプリ (TAC_TANAOROSHI.scp v2.0) をダウンロード
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="downloadBtH10wMasterIni()">
-                ⚙️ HTMasterFileInfo.ini をダウンロード
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- タブ3: 開発・取込手順書 -->
-      <div id="ht-tab-content-guide" style="display: none; max-height: 440px; overflow-y: auto; padding: 0.75rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.85rem; line-height: 1.65; color: #1e293b;">
-        <h4 style="color: #0369a1; margin-top: 0; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📘 1. 担当者ログイン管理と HT での担当者増減について</h4>
-        <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
-          <li>生産管理システムの「◉ ユーザー管理」に登録されている<strong>ユーザー名（ログインID）</strong>と<strong>表示名</strong>を <code>USERS.CSV</code> として出力し、BT-W85 へ転送できます。</li>
-          <li>BT-W85 起動時に<strong>「担当者ログイン選択」</strong>が表示され、番号キー選択または「担当者ログインQR」をスキャンしてログインします。</li>
-          <li>現場で急遽メンバーが増減した場合は、BT-W85 のログイン画面で <strong><code>[F2] 追加</code> / <code>[F3] 削除</code></strong> を押すことで、ハンディ本体上で直接担当者を増減できます。</li>
-          <li>スキャンしたデータには必ず「誰がスキャンしたか（ユーザー名・表示名）」が記録され、システムの「☑ 棚卸スキャン確認」画面の<strong>スキャン実行者欄</strong>に表示されます。</li>
-        </ul>
+      <div id="ht-tab-content-guide" style="display: none; max-height: 440px; overflow-y: auto; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.86rem; line-height: 1.65; color: #1e293b;">
+        <h4 style="color: #0369a1; margin-top: 0; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">🖥️ STEP 1：Windows PC での初期セットアップとハンディ転送（設定のみ・2クリック）</h4>
+        <ol style="padding-left: 1.25rem; margin-bottom: 1.1rem;">
+          <li>上の「📦 2. Windows用アプリ一式・マスタ出力」タブから <strong><code>TAC_INV_Windows_Setup.zip</code></strong> を Windows PC にダウンロードして解凍します。</li>
+          <li>解凍したフォルダ内の <strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリック</strong>します。<br>
+            → 自動的に Windows の <code>ドキュメント\KEYENCE\BT Application Design Tool\Projects\TAC_INV</code> にアプリ7ファイルが配置され、<strong>KEYENCE「BT開発・運用ツール」が自動起動</strong>します。</li>
+          <li>BT-W85（ハンディ本体）を通信ユニット（BT-H10W）に置き、ツール画面上部の <strong><code>[HTへ転送]</code>（または <code>[端末へ送信]</code>）</strong> をクリックするとハンディにアプリが書き込まれます。続いて <strong><code>[PCアプリケーション起動]</code></strong> をクリックして受信画面を立ち上げておきます。<br>
+            <span style="color: #0369a1; font-weight: bold;">※ツール側での「マスタファイル設定」等の手作業は一切不要です！</span></li>
+        </ol>
 
-        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📗 2. システム発行QRのスキャンと「ダブり（重複）アラート」</h4>
-        <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
-          <li>「商品マスタ」または「棚卸スキャン確認」画面の <strong>「🖨️ QR印刷」</strong> で発行した品名QRコードを BT-W85 でスキャンします。</li>
-          <li>同じ資材を2回スキャン（ダブり）した場合、BT-W85 画面上でピピピッと警告音が鳴り、通常の棚卸スキャンと全く同じように：<br>
-            <strong><code>[1] ➕追加(合算)する</code> / <code>[2] ✍️今回数で上書き修正</code> / <code>[3] ❌登録しない(キャンセル)</code></strong><br>
-            の選択アラートが表示されます。</li>
-          <li>さらに、PCの生産管理システムへCSVを取り込む際にも、複数台のHT間でのダブりや既存の仮登録データとのダブりを自動検知してアラートバナーで知らせます。</li>
-        </ul>
+        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📠 STEP 2：BT-W85（ハンディ本体）での棚卸スキャン操作</h4>
+        <ol style="padding-left: 1.25rem; margin-bottom: 1.1rem;">
+          <li>ハンディ画面の <strong><code>1. 棚卸スキャン</code></strong> を開きます。</li>
+          <li><strong>担当者ログイン（最初の1回のみ）</strong>：1段目の <strong><code>担当</code></strong> 欄で「担当者ログインQR」をスキャン（またはID入力）します。一度入力すると <strong><code>[F1] ログアウト</code> を押すまでずっと同じ担当者が保持・表示</strong>されます（1回ごとに入力する必要はありません）。</li>
+          <li><strong>資材QRスキャン</strong>：2段目の <strong><code>資材QR (資材CD / 品名)</code></strong> 欄で資材QRをスキャンします（品名QRならその場で資材CDと品名が表示され、二度読み防止ブザーも動作します）。</li>
+          <li><strong>数量入力＆自動ループ</strong>：3段目の <strong><code>数量</code></strong> 欄に数字を入れて <strong><code>ENT</code>（または <code>[F4] 確定</code>）</strong> を押すと保存され、担当者は残ったまま次の「資材QR」入力待ち（新規入力画面）に自動で戻ります。</li>
+        </ol>
+
+        <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📥 STEP 3：PCへのデータ送信と生産管理システムへの一括取込</h4>
+        <ol style="padding-left: 1.25rem; margin-bottom: 0;">
+          <li>スキャン終了後、BT-W85 を通信ユニット（BT-H10W）に置き、ハンディの <strong><code>[F2] 送信</code></strong> キーを押します。</li>
+          <li>Windows PC で <strong><code>2_GET_RECORD_CSV.bat</code> をダブルクリック</strong>すると、受信した最新の <code>Record.csv</code> が自動的にデスクトップの <strong><code>TAC_HT棚卸データ</code> フォルダ</strong>に集められて開きます。</li>
+          <li>この画面の「📥 1. HTデータ取り込み」タブでその <code>Record.csv</code> を選択し、<strong>「🚀 棚卸仮登録へ一括反映する」</strong>を押せば完了です！</li>
+        </ol>
       </div>
     </div>
   `;
@@ -46682,7 +46689,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.78.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.79.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -46709,7 +46716,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.78.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.79.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -46796,7 +46803,7 @@ window.printPaoAnalyticsPdf = function() {
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.78.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.79.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -47487,21 +47494,24 @@ window.printPaoAnalyticsPdf = function() {
                         <div style="flex: 1; min-width: 260px;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
                                 <span style="background: #0284c7; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">KEYENCE BT-W85 / BT-H10W 対応</span>
-                                <h3 style="margin: 0; color: #0369a1; font-size: 1.15rem;">📠 ハンディターミナル (HT) 棚卸データ一括取込</h3>
+                                <h3 style="margin: 0; color: #0369a1; font-size: 1.15rem;">📠 ハンディターミナル (HT) 棚卸データ一括取込 ＆ Windows用アプリ出力</h3>
                             </div>
                             <p style="margin: 0; font-size: 0.875rem; color: #475569; line-height: 1.5;">
-                                スキャナ <strong>BT-W85</strong> で読み取った棚卸CSVデータ（<code>INV_LOG.CSV</code> 等）をバッチで一括取り込みし、現在の商品マスタと自動照合して仮登録へ反映します。（※下のスマホQRスキャンや手入力もそのまま併用可能です）
+                                スキャナ <strong>BT-W85</strong> で読み取った棚卸データ（<code>Record.csv</code> 等）を一括取り込みし、商品マスタと自動照合して仮登録へ反映します。別PC（Windows）の <strong>BT開発・運用ツール</strong> 用完成アプリ一式もワンクリックでダウンロードできます。
                             </p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                             <button type="button" class="btn btn-primary" onclick="openHtImportModal('import')" style="background-color: #0284c7; border-color: #0284c7; font-weight: bold; padding: 12px 20px; font-size: 1rem; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
                                 📥 HTデータ取り込み
                             </button>
+                            <a href="bt-w85-app/TAC_INV_Windows_Setup.zip" download="TAC_INV_Windows_Setup.zip" class="btn btn-primary" style="background-color: #0f766e; border-color: #0f766e; font-weight: bold; padding: 10px 16px; font-size: 0.875rem; text-decoration: none;">
+                                📦 Windows用 HTアプリ一式DL (.zip)
+                            </a>
                             <button type="button" class="btn btn-secondary" onclick="openHtImportModal('master')" style="padding: 10px 14px; font-size: 0.875rem;">
-                                📤 HT用マスタ・アプリ出力
+                                📤 マスタ・ログインQR出力
                             </button>
                             <button type="button" class="btn btn-secondary" onclick="openHtImportModal('guide')" style="padding: 10px 14px; font-size: 0.875rem;">
-                                📖 HT開発・取込ガイド
+                                📖 Windows設定ガイド
                             </button>
                         </div>
                     </div>
@@ -48001,7 +48011,7 @@ window.printPaoAnalyticsPdf = function() {
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.78.0
+                    Version: v6.79.0
                 </div>
             </div>
         </div>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>KEYENCE BT開発・運用ツール (BT-W85 / BT-H10W) Windows設定・運用マニュアル</title>
+  <style>
+    body {
+      font-family: "Meiryo", "Yu Gothic", sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 24px;
+      line-height: 1.65;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      padding: 32px;
+    }
+    h1 {
+      margin-top: 0;
+      color: #0369a1;
+      border-bottom: 3px solid #0284c7;
+      padding-bottom: 12px;
+      font-size: 1.55rem;
+    }
+    h2 {
+      color: #0f172a;
+      background: #e0f2fe;
+      border-left: 6px solid #0284c7;
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin-top: 28px;
+      font-size: 1.2rem;
+    }
+    .step-card {
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      background: #f8fafc;
+    }
+    .step-badge {
+      display: inline-block;
+      background: #0284c7;
+      color: #fff;
+      font-weight: bold;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    .highlight {
+      background: #fef08a;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    code {
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-weight: bold;
+      color: #be123c;
+    }
+    .ht-screen {
+      width: 240px;
+      border: 4px solid #334155;
+      border-radius: 10px;
+      background: #fff;
+      margin: 12px 0;
+      overflow: hidden;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .ht-title {
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 4px;
+      font-weight: bold;
+    }
+    .ht-body {
+      padding: 10px;
+    }
+    .ht-row {
+      margin-bottom: 8px;
+    }
+    .ht-box {
+      border: 1px solid #333;
+      padding: 4px 6px;
+      background: #fff;
+      font-weight: bold;
+    }
+    .ht-box.active {
+      background: #a8ffff;
+    }
+    .ht-fkeys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: #cbd5e1;
+      border-top: 1px solid #64748b;
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .ht-fkeys div {
+      padding: 4px 2px;
+      border-right: 1px solid #94a3b8;
+    }
+    .alert-box {
+      background: #eff6ff;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📠 TAC 棚卸業務アプリ (BT-W85 / BT-H10W) Windows かんたん設定・運用マニュアル</h1>
+    <p>
+      本パッケージは <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong> 用に画面設計・データ出力設定を100%作り込み済みの完成パッケージです。<br>
+      お客様側で画面の部品配置やコード作成を行う必要は一切ありません。以下の<strong>3ステップ（設定のみ）</strong>ですぐに運用を開始できます。
+    </p>
+
+    <h2>STEP 1：Windows PC への自動セットアップとハンディへの転送（初回のみ）</h2>
+
+    <div class="step-card">
+      <div class="step-badge">手順 1-1</div>
+      <div>
+        解凍したフォルダ内にある <code>1_SETUP_BT_TOOL.bat</code> を<strong>ダブルクリック</strong>します。<br>
+        <ul>
+          <li>自動的に Windows の <code>ドキュメント\KEYENCE\BT Application Design Tool\Projects\TAC_INV</code> に完成済みアプリ（7ファイル）が配置されます。</li>
+          <li>デスクトップに <code>TAC_HT棚卸データ</code> フォルダが作成され、商品マスタ（<code>MasterFile_1.csv</code>）と担当者マスタ（<code>USERS.CSV</code>）が自動保存されます。</li>
+          <li>そのまま自動的に <strong>KEYENCE「BT開発・運用ツール」</strong> が立ち上がり、完成済みの <code>TAC_INV</code> プロジェクトが開きます。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-badge">手順 1-2</div>
+      <div>
+        <strong>BT-W85（ハンディ本体）</strong>を通信ユニット（<strong>BT-H10W</strong>）に置くか、USBケーブルで Windows PC に接続します。<br>
+        起動した「BT開発・運用ツール」の画面上部（ツールバー）にある以下のボタンを順番にクリックします：
+        <ol>
+          <li><span class="highlight">［HTへ転送］（または［端末へ送信］／ハンディのアイコン）</span> をクリック ➔ ハンディ本体に「棚卸スキャン」アプリが書き込まれます。</li>
+          <li><span class="highlight">［PCアプリケーション起動］（パソコンのアイコン）</span> をクリック ➔ Windows PC 側に「TAC 棚卸データ受信アプリ」のウィンドウが立ち上がります（データ受信待ち状態になります）。</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="alert-box">
+      <strong>💡 よくあるご質問：「マスタファイル設定」の操作は必要ですか？</strong><br>
+      <strong>不要です！</strong> 現在のアプリ設計では、生産管理システムから印刷した「品名QRコード」自体に『資材CD』と『品名』が入っており、スキャンするだけでハンディ画面に資材CDと品名が表示されます。<br>
+      また、従来から棚に貼ってある『資材CDのみ』のQRコードをスキャンした場合も、PCの生産管理システムへCSVを取り込んだ瞬間にシステム内の商品マスタ（1,194件）と自動照合されて品名・単価がすべて自動反映されます。
+    </div>
+
+    <h2>STEP 2：BT-W85（ハンディ本体）での棚卸スキャン操作</h2>
+
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+      <div class="ht-screen">
+        <div class="ht-title">棚卸スキャン</div>
+        <div class="ht-body">
+          <div class="ht-row">
+            <strong>担当</strong> <span class="ht-box" style="display:inline-block; width:150px;">admin (管理者)</span>
+          </div>
+          <div class="ht-row">
+            <strong>資材QR (資材CD / 品名)</strong>
+            <div class="ht-box active" style="height:36px; margin-top:2px;">1121 ﾎﾜｲﾄｱｯｼｭ 24×125</div>
+          </div>
+          <div class="ht-row">
+            <strong>数量</strong> <span class="ht-box" style="display:inline-block; width:150px; text-align:right;">15</span>
+          </div>
+        </div>
+        <div class="ht-fkeys">
+          <div>F1:ログアウト</div>
+          <div>F2:送信</div>
+          <div>F3:履歴</div>
+          <div>F4:確定</div>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-width: 300px;">
+        <ol>
+          <li><strong>メニュー選択</strong>：ハンディ画面の <strong><code>1. 棚卸スキャン</code></strong> を選択します。</li>
+          <li><strong>担当者ログイン（最初の1回のみ）</strong>：1番上の <strong><code>担当</code></strong> 欄にカーソルがあるので、「担当者ログインQR」をスキャン（または担当者IDを入力して <code>ENT</code>）します。<br>
+            ※一度入力すると、<strong><code>[F1] ログアウト</code> を押すまで同じ担当者がずっと保持・表示され続けます</strong>（1回ごとに担当を入力する必要はありません）。</li>
+          <li><strong>資材QRスキャン</strong>：2段目の <strong><code>資材QR (資材CD / 品名)</code></strong> 欄で資材QRをスキャンします。<br>
+            ※同じ資材QRを連続で二度読みすると、警告ブザー＆赤LEDでダブりを防止します。</li>
+          <li><strong>数量入力＆確定ループ</strong>：3段目の <strong><code>数量</code></strong> 欄に実棚数量を入力し、<strong><code>ENT</code> キー（または <code>[F4] 確定</code>）</strong>を押します。<br>
+            ※即座に保存され、<strong>上部の「担当」は残ったまま、自動的に次の「資材QR」入力待ち（新規入力画面）に戻ります！</strong></li>
+          <li><strong>履歴確認・修正</strong>：<strong><code>[F3] 履歴</code></strong> を押すと、ハンディ上でスキャン済みデータの確認・削除ができます。</li>
+        </ol>
+      </div>
+    </div>
+
+    <h2>STEP 3：Windows PC へのデータ送信 ＆ 生産管理システムへの一括取込</h2>
+
+    <div class="step-card">
+      <div class="step-badge">手順 3-1：ハンディからPCへ送信</div>
+      <div>
+        スキャンが終わったら、BT-W85 を通信ユニット（BT-H10W）に置き、ハンディの <strong><code>[F2] 送信</code></strong> キーを押します。<br>
+        PC側の「TAC 棚卸データ受信アプリ」にデータが転送され、<code>Record.csv</code> が保存されます。
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-badge">手順 3-2：Record.csv をデスクトップに集める</div>
+      <div>
+        フォルダ内の <code>2_GET_RECORD_CSV.bat</code> を<strong>ダブルクリック</strong>します。<br>
+        Windows 内に保存された最新の <code>Record.csv</code> を全自動で見つけ出し、<strong>デスクトップの <code>TAC_HT棚卸データ</code> フォルダ</strong>にコピーして開きます。
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-badge">手順 3-3：生産管理システム（Web）へ取り込む</div>
+      <div>
+        <code>3_OPEN_WEB_SYSTEM.bat</code> をダブルクリックして生産管理システムを開き、<strong>「▦ 棚卸スキャン」または「☑ 棚卸スキャン確認」➔「📠 HTデータ取り込み (BT-W85)」</strong>をクリックして、デスクトップの <code>TAC_HT棚卸データ\Record.csv</code> を選択します。<br>
+        <ul>
+          <li><strong>スキャン実行者（担当者）</strong>が自動認識されます。</li>
+          <li><strong>重複（ダブり）スキャン</strong>がある場合は赤い警告バナーが表示され、<strong>「➕ 数量を合算する」または「✍️ 上書き修正する」</strong>を選んでワンクリックで棚卸仮登録へ反映できます！</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

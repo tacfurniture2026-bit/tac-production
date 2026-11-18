@@ -287,7 +287,7 @@ runVerificationSuite(
 );
 
 const mobileBuiltHtml = fs.readFileSync(path.join(rootDir, 'mobile.html'), 'utf8');
-assert(mobileBuiltHtml.includes('v6.78.0'), 'mobile.html should be updated to v6.78.0');
+assert(mobileBuiltHtml.includes('v6.79.0'), 'mobile.html should be updated to v6.79.0');
 assert(mobileBuiltHtml.includes('renderPaoAnalyticsPage'), 'mobile.html should contain inlined renderPaoAnalyticsPage');
 assert(mobileBuiltHtml.includes('exportPaoAnalyticsExcel'), 'mobile.html should contain inlined exportPaoAnalyticsExcel');
 assert(mobileBuiltHtml.includes('printPaoAnalyticsPdf'), 'mobile.html should contain inlined printPaoAnalyticsPdf');
