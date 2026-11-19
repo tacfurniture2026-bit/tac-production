@@ -7292,16 +7292,13 @@ function isInvNonTargetProduct(prod) {
   return false;
 }
 
-// 死蔵品・廃盤・不動品判定ヘルパー（廃盤フラグ==1、または棚卸対象区分4,5,6,8、または不動品チェックON）
+// 月締め・棚卸で表示（集計）する「不動品在庫」判定ヘルパー（棚卸対象コード4のみ集計）
 function isInvDeadOrFixedProduct(prod) {
   if (!prod) return false;
-  if (prod.isFixed || prod.isDeadStock) return true;
-  if (Number(prod.discontinuedFlag) === 1) return true;
   if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
-    const tf = Number(prod.targetFlag);
-    if (tf === 4 || tf === 5 || tf === 6 || tf === 8) return true;
+    return Number(prod.targetFlag) === 4;
   }
-  return false;
+  return !!prod.isFixed;
 }
 
 // 価格更新履歴を記録する共通ヘルパー
@@ -7397,13 +7394,13 @@ function issueDuplicateFreeMasterCodes(categoryCode, productsList) {
 // 在庫スキャナー用
 let invQrScanner = null;
 
-// 現在庫数を取得（ログから集計、ログがない場合は棚卸原簿の初期在庫・前月在庫・死蔵品在庫数を反映）
+// 現在庫数を取得（ログから集計、ログがない場合は棚卸原簿AK列の10月期初期在庫を反映）
 function getCurrentStock(productId) {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const prod = products.find(p => p && (p.id === productId || p.identCode === productId || p.materialCode === productId));
   const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
-  let stock = prod ? safeNum(prod.stock !== undefined ? prod.stock : (prod.prevStock !== undefined ? prod.prevStock : prod.deadStockQty)) : 0;
+  let stock = prod ? safeNum(prod.stock !== undefined ? prod.stock : prod.octStock) : 0;
 
   logs.forEach(log => {
     if (log && (log.productId === productId || (prod && (log.productId === prod.id || log.productId === prod.identCode || log.productId === prod.materialCode)))) {
@@ -8827,10 +8824,10 @@ function saveNewInvProduct() {
   const category = $('#inv-prod-category').value;
   const name = $('#inv-prod-name').value.trim();
   const price = parseFloat($('#inv-prod-price').value) || 0;
-  const targetFlag = parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
+  const targetFlag = $('#inv-prod-fixed').checked ? 4 : parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
   const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
-  const isDeadStock = (discontinuedFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
-  const isFixed = $('#inv-prod-fixed').checked || isDeadStock;
+  const isFixed = (targetFlag === 4);
+  const isDeadStock = (discontinuedFlag === 1) || isFixed;
   const isTarget = !(targetFlag === 0 || targetFlag === 7);
   const materialType = ($('#inv-prod-material-type') || {}).value || '直接資材';
   const colorOther = ($('#inv-prod-color') || {}).value?.trim() || '';
@@ -9001,10 +8998,10 @@ function updateInvProduct(id) {
   const p = products[idx];
   const category = $('#inv-prod-category').value;
   const newPrice = parseFloat($('#inv-prod-price').value) || 0;
-  const targetFlag = parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
+  const targetFlag = $('#inv-prod-fixed').checked ? 4 : parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
   const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
-  const isDeadStock = (discontinuedFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
-  const isFixed = $('#inv-prod-fixed').checked || isDeadStock;
+  const isFixed = (targetFlag === 4);
+  const isDeadStock = (discontinuedFlag === 1) || isFixed;
   const isTarget = !(targetFlag === 0 || targetFlag === 7);
   const today = new Date().toISOString().split('T')[0];
 
@@ -9039,35 +9036,35 @@ function updateInvProduct(id) {
   renderInvProductsTable();
 }
 
-// 棚卸原簿.xlsx をブラウザから直接アップロードしてマスタ入れ替えを実行できるモーダル
+// 棚卸原簿.xlsx をブラウザから直接アップロードしてマスタ入れ替え＆10月期(AK列)初期締めを実行できるモーダル
 window.openGenboExcelImportModal = function() {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const body = `
     <div style="padding: 0.75rem;">
       <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #14532d;">
-        <strong>📗 棚卸原簿.xlsx 基本マスタ一括入れ替え・整合性同期（現在登録: ${products.length}件）：</strong><br>
-        ・<code>棚卸原簿.xlsx</code> の全データ（サイズ・巾・長さ・t/厚み・色/他・構成・単位・資材区分・棚卸対象区分・廃盤フラグ・更新日）を基本マスタとして取り込みます。<br>
-        ・<strong>現在入力されている在庫データ・仮スキャンデータ・現在の不動在庫設定・価格更新履歴はそのまま安全に保持</strong>されます。<br>
-        ・廃盤フラグ（1）の資材は<strong>死蔵品（不動）扱い</strong>となり、棚卸対象外（0, 7）は<strong>QR印刷不要＆締め処理で翌月へ自動転記</strong>されます。
+        <strong>📗 棚卸原簿.xlsx 基本マスタ一括入れ替え ＆ 10月期(AK列)初期締め処理（現在登録: ${products.length}件）：</strong><br>
+        ・<code>棚卸原簿.xlsx</code> の全データ（3,104件）を基本マスタとし、<strong>AK列（10月度棚卸数量）の集計結果を10月期（2026-10）の初期データとして集計・締め処理</strong>を行います（11月期から新規収集開始）。<br>
+        ・月締めで表示（集計）する<strong>不動品在庫は「棚卸対象コード4」のみを集計</strong>します。<br>
+        ・棚卸対象外（0, 7）は<strong>QR印刷不要＆締め処理で翌月へ自動転記</strong>されます。
       </div>
       <div class="form-group">
-        <label style="font-weight: bold;">方法①：標準同梱の最新『棚卸原簿.xlsx』(3,104件) でマスタを即時更新</label>
+        <label style="font-weight: bold;">方法①：標準同梱の最新『棚卸原簿.xlsx』(3,104件) でマスタ更新＆10月期(AK列)初期締めを実行</label>
         <button type="button" class="btn btn-primary btn-full" onclick="executeEmbeddedGenboMasterSync()" style="background: #16a34a; border-color: #16a34a; font-weight: bold; padding: 10px;">
-          🔄 標準搭載の『棚卸原簿.xlsx』マスタデータで今すぐ整合性更新を実行
+          🔄 標準搭載『棚卸原簿.xlsx』でマスタ同期 ＆ 10月期(AK列)初期締め処理を実行
         </button>
       </div>
       <hr style="margin: 1.25rem 0; border: none; border-top: 1px dashed #cbd5e1;">
       <div class="form-group">
-        <label style="font-weight: bold;">方法②：新しい『棚卸原簿.xlsx』ファイルを選択してマスタ入れ替え</label>
+        <label style="font-weight: bold;">方法②：新しい『棚卸原簿.xlsx』ファイルを選択してマスタ入れ替え＆10月期初期締めを実行</label>
         <input type="file" id="genbo-excel-file-input" accept=".xlsx,.xlsm,.xls" class="form-input" style="margin-bottom: 0.75rem;">
         <button type="button" class="btn btn-primary btn-full" onclick="executeUploadedGenboExcelSync()" style="background: #0284c7; border-color: #0284c7; font-weight: bold; padding: 10px;">
-          📥 選択した『棚卸原簿.xlsx』を読み込んでマスタを入れ替える
+          📥 選択した『棚卸原簿.xlsx』を読み込んでマスタ入替 ＆ 10月期(AK列)締め処理を実行
         </button>
       </div>
     </div>
   `;
   const footer = `<button type="button" class="btn btn-secondary" onclick="hideModal()">閉じる</button>`;
-  showModal('📗 棚卸原簿.xlsx 商品マスタ一括入れ替え（既存在庫・不動在庫保持）', body, footer);
+  showModal('📗 棚卸原簿.xlsx マスタ入替 ＆ 10月期(AK列)初期締め処理', body, footer);
 };
 
 window.executeEmbeddedGenboMasterSync = function() {
@@ -9075,7 +9072,8 @@ window.executeEmbeddedGenboMasterSync = function() {
     DB.applyLatestGenboMaster(true);
     hideModal();
     renderInvProductsTable();
-    toast('✅ 棚卸原簿.xlsx (3,104件) のマスタ入れ替え・既存在庫との整合性同期が完了しました', 'success', 5000);
+    if (typeof renderInvMonthlyPage === 'function') renderInvMonthlyPage();
+    toast('✅ 棚卸原簿.xlsx (3,104件) のマスタ入替＆10月期(AK列)初期締め処理が完了しました（11月期より新規収集開始）', 'success', 5000);
   }
 };
 
@@ -9154,14 +9152,15 @@ window.executeUploadedGenboExcelSync = function() {
 
         const targetFlag = r[16] !== '' && r[16] !== undefined ? (Number(r[16]) || 0) : 0;
         const discFlag = r[17] !== '' && r[17] !== undefined ? (Number(r[17]) || 0) : 0;
-        const isDeadStock = (discFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
+        // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ
+        const isFixed = (targetFlag === 4);
+        const isDeadStock = (discFlag === 1) || isFixed;
         const isTarget = !(targetFlag === 0 || targetFlag === 7);
         const deadQty = Number(r[18]) || 0;
         const prevQty = Number(r[19]) || 0;
         const octQty = Number(r[36]) || 0;
         const excelPrice = Number(r[15]) || 0;
         const updatedAt = excelSerialToDate(r[20]);
-        const initialStock = octQty > 0 ? octQty : (prevQty > 0 ? prevQty : (isDeadStock ? deadQty : 0));
 
         const ex = existingByKey.get(mc.toUpperCase()) || existingByKey.get(ic.toUpperCase());
         const item = {
@@ -9175,7 +9174,7 @@ window.executeUploadedGenboExcelSync = function() {
           materialType: String(r[5] || '直接資材').trim(),
           subCategory: String(r[6] || '').trim(),
           note: String(r[7] || '').trim(),
-          name: name,
+          name: name.replace(/[\r\n]+/g, ' ').trim(),
           colorOther: String(r[9] || '').trim(),
           composition: String(r[10] || '').trim(),
           material: String(r[10] || '').trim(),
@@ -9187,13 +9186,14 @@ window.executeUploadedGenboExcelSync = function() {
           targetFlag: targetFlag,
           discontinuedFlag: discFlag,
           isDeadStock: isDeadStock,
-          isFixed: (ex && ex.isFixed) ? true : isDeadStock,
+          isFixed: isFixed,
           isTarget: isTarget,
           deadStockQty: deadQty,
           prevStock: prevQty,
           octStock: octQty,
-          stock: (ex && ex.stock !== undefined && Number(ex.stock) > 0) ? Number(ex.stock) : initialStock,
-          lastStock: (ex && ex.lastStock !== undefined && Number(ex.lastStock) > 0) ? Number(ex.lastStock) : (prevQty > 0 ? prevQty : initialStock),
+          stock: octQty,
+          lastStock: octQty,
+          inventoryDate: octQty > 0 ? '2026-10-31T23:59:59.000Z' : '',
           updatedAt: updatedAt,
           priceUpdatedAt: updatedAt,
           orderProductName: String(r[21] || '').trim(),
@@ -9209,7 +9209,7 @@ window.executeUploadedGenboExcelSync = function() {
             item.priceUpdatedAt = ex.priceUpdatedAt;
             priceUpdatedCount++;
           }
-          if (ex.tempQty !== undefined && ex.tempQty !== null) {
+          if (ex.tempQty !== undefined && ex.tempQty !== null && ex.tempMonth && ex.tempMonth >= '2026-11') {
             item.tempQty = ex.tempQty;
             item.tempWorker = ex.tempWorker;
             item.tempWorkerName = ex.tempWorkerName;
@@ -9223,9 +9223,12 @@ window.executeUploadedGenboExcelSync = function() {
       }
 
       DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(newMasterList)));
+      if (typeof DB.initializeOctoberGenboClosing === 'function') {
+        DB.initializeOctoberGenboClosing(newMasterList);
+      }
       hideModal();
       renderInvProductsTable();
-      toast(`✅ 棚卸原簿Excelから ${newMasterList.length}件 を取り込みました（価格更新履歴記録: ${priceUpdatedCount}件）`, 'success', 5000);
+      toast(`✅ 棚卸原簿Excelから ${newMasterList.length}件 を取り込み、10月期(AK列)の初期締め処理を完了しました`, 'success', 5000);
     } catch (err) {
       console.error('棚卸原簿Excel取込エラー:', err);
       toast('Excelの取り込みに失敗しました: ' + err.message, 'error');
@@ -9330,10 +9333,16 @@ function renderInvAdjustLogs() {
 // ========================================
 
 function renderInvMonthlyPage() {
-  // 当月をデフォルト設定
+  // 最新の締め済み月（初期値: 2026-10 = 10月期）をデフォルト設定し、即座に集計結果を表示する
   const monthInput = $('#inv-closing-month');
+  const monthlyList = DB.get(DB.KEYS.INV_MONTHLY) || [];
   if (monthInput && !monthInput.value) {
-    monthInput.value = new Date().toISOString().substring(0, 7);
+    if (monthlyList.length > 0) {
+      const sorted = [...monthlyList].sort((a, b) => b.month.localeCompare(a.month));
+      monthInput.value = sorted[0].month;
+    } else {
+      monthInput.value = '2026-10';
+    }
   }
 
   // 年度チェック表の年度デフォルト設定
@@ -9355,6 +9364,11 @@ function renderInvMonthlyPage() {
   }
   if ($('#export-inv-annual-btn')) {
     $('#export-inv-annual-btn').onclick = exportInvAnnualExcel;
+  }
+
+  // 初期表示時に自動で集計確認を実行して画面に表示する
+  if (monthInput && monthInput.value) {
+    viewInvMonthlySummary();
   }
 }
 
@@ -9563,16 +9577,21 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
             savedData.total = calculatedTotal;
         }
 
-        // summary の再構築
+        // summary の再構築（月締めで表示・集計する不動品在庫は棚卸対象コード4のみ集計）
         savedData.summary = {};
         let largestCatKey = null;
         let maxCatAmt = -1;
 
         savedData.items.forEach(item => {
-          const catKey = item.isFixed ? 'fixed' : item.category;
+          const mp = products.find(x => x && (x.id === item.productId || x.identCode === item.productId || x.materialCode === item.productId));
+          const isTarget4Fixed = mp
+            ? (Number(mp.targetFlag) === 4)
+            : (item.targetFlag !== undefined ? Number(item.targetFlag) === 4 : !!item.isFixed);
+          item.isFixed = isTarget4Fixed;
+          const catKey = isTarget4Fixed ? 'fixed' : item.category;
           if (!savedData.summary[catKey]) {
             const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[item.category] || `分類${item.category}`) : `分類${item.category}`;
-            savedData.summary[catKey] = { name: item.isFixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
+            savedData.summary[catKey] = { name: isTarget4Fixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
           }
           savedData.summary[catKey].amount += (Number(item.amount) || 0);
           savedData.summary[catKey].prevAmount += (Number(item.prevAmount) || 0);
@@ -9644,9 +9663,10 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     const isNonTarget = masterProduct ? isInvNonTargetProduct(masterProduct) : false;
     const isAutoCarryOver = isFixed || isNonTarget;
 
-    // 前月数量・金額の取得（前月締めデータが無い場合は棚卸原簿のprevStock / stockを参照）
-    const fallbackPrevQty = masterProduct ? safeNum(masterProduct.lastStock !== undefined ? masterProduct.lastStock : (masterProduct.prevStock !== undefined ? masterProduct.prevStock : (isFixed ? masterProduct.deadStockQty : 0))) : 0;
-    const prevQty = prevItem ? safeNum(prevItem.currQty) : fallbackPrevQty;
+    // 前月数量・金額の取得（2026-10は初期月のためprevQty=0、それ以降は前月締めデータまたは棚卸原簿AK列のlastStock/octStockを参照）
+    const isInitialOctMonth = (month === '2026-10');
+    const fallbackPrevQty = isInitialOctMonth ? 0 : (masterProduct ? safeNum(masterProduct.lastStock !== undefined ? masterProduct.lastStock : masterProduct.octStock) : 0);
+    const prevQty = isInitialOctMonth ? 0 : (prevItem ? safeNum(prevItem.currQty) : fallbackPrevQty);
     let prevAmountRaw = 0;
     if (prevItem) {
       if (prevItem.csvAmountWithTax !== undefined && prevItem.csvAmountWithTax !== null) {
@@ -10538,8 +10558,9 @@ window.toggleFixedStatus = function(productId, isFixed) {
   }
   
   products[prodIndex].isFixed = isFixed;
+  products[prodIndex].targetFlag = isFixed ? 4 : (Number(products[prodIndex].targetFlag) === 4 ? 1 : products[prodIndex].targetFlag);
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-  toast(`資材 ${productId} を不動品に${isFixed ? '設定' : '解除'}しました`, 'success');
+  toast(`資材 ${productId} を不動品(棚卸対象コード4)に${isFixed ? '設定' : '解除'}しました`, 'success');
   renderInvCheckPage();
 };
 
@@ -10721,6 +10742,7 @@ function toggleFixedStatus(productId, isFixed) {
   const p = products.find(x => x.id === productId);
   if (p) {
     p.isFixed = isFixed;
+    p.targetFlag = isFixed ? 4 : (Number(p.targetFlag) === 4 ? 1 : p.targetFlag);
     if (isFixed) {
       // 不動品チェックをONにした際、仮スキャンデータをクリアする
       delete p.tempQty;
@@ -10731,7 +10753,7 @@ function toggleFixedStatus(productId, isFixed) {
       delete p.tempId;
     }
     DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-    toast(`商品「${p.name || productId}」の不動品設定を${isFixed ? '有効' : '無効'}にしました`, 'success');
+    toast(`商品「${p.name || productId}」の不動品設定(コード4)を${isFixed ? '有効' : '無効'}にしました`, 'success');
     renderInvCheckPage();
   }
 }
@@ -13046,69 +13068,108 @@ window.showUserLoginQrGallery = function(filterUsername = '') {
 };
 
 // ============================================================================
-// 📥 HTデータ取り込みモーダル (v2.0: 担当者ログイン管理 ＆ ダブり重複アラート搭載)
+// 📥 HTデータ取り込みモーダル & HTプログラム一式ダウンロード (v3.0: 複数ファイル・D&D・コピペ・9列Record.csv完全対応)
 // ============================================================================
 
 window._parsedHtBatchItems = [];
 
+// HTプログラム（Windows用全自動セットアップZIP / プロジェクト単体ZIP）の確実なBlobダウンロード関数
+window.downloadHtProgramZip = async function(packageType = 'setup') {
+  const isSetup = (packageType !== 'project');
+  const filePath = isSetup ? 'bt-w85-app/TAC_INV_Windows_Setup.zip' : 'bt-w85-app/TAC_INV.zip';
+  const fileName = isSetup ? 'TAC_INV_Windows_Setup.zip' : 'TAC_INV.zip';
+  const label = isSetup ? 'Windows用 全自動セットアップ一式 (TAC_INV_Windows_Setup.zip)' : 'プロジェクト単体 (TAC_INV.zip)';
+
+  try {
+    toast(`📦 ${label} を準備しています...`, 'info');
+    const res = await fetch(`${filePath}?v=6.82.0_${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const zipBlob = new Blob([blob], { type: 'application/zip' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast(`✅ ${label} をダウンロードしました！解凍して 1_SETUP_BT_TOOL.bat を実行してください。`, 'success', 6000);
+  } catch (err) {
+    console.warn('Fetch zip fallback to direct link:', err);
+    const a = document.createElement('a');
+    a.href = `${filePath}?v=6.82.0`;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast(`📦 ${label} のダウンロードを開始しました`, 'info');
+  }
+};
+
 window.openHtImportModal = function(initialTab = 'import') {
   const defaultMonth = (typeof getInventoryNextTargetMonth === 'function')
     ? getInventoryNextTargetMonth()
-    : (($('#inv-check-month') && $('#inv-check-month').value) || ($('#inv-scan-month') && $('#inv-scan-month').value) || new Date().toISOString().substring(0, 7));
+    : (($('#inv-check-month') && $('#inv-check-month').value) || ($('#inv-scan-month') && $('#inv-scan-month').value) || '2026-11');
 
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const users = DB.get(DB.KEYS.USERS) || [];
   const currentLoginUser = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || users[0] || { username: 'admin', displayName: '管理者' };
 
   const userOptionsHtml = [
-    `<option value="__CSV_PRIORITY__" selected>📄 CSV内のログイン担当者情報を優先（未記載時は「${currentLoginUser.displayName}」）</option>`,
+    `<option value="__CSV_PRIORITY__" selected>📄 HTデータ内のログイン担当者情報を優先（未記載時は「${currentLoginUser.displayName}」）</option>`,
     ...users.map(u => `<option value="${u.username}">👤 ${u.displayName} (${u.username}) として一括登録</option>`)
   ].join('');
 
   const body = `
     <div style="padding: 0.5rem;">
       <!-- タブナビゲーション -->
-      <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.25rem; flex-wrap: wrap;">
-        <button type="button" id="ht-tab-btn-import" class="btn" onclick="switchHtModalTab('import')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #0284c7; color: white; padding: 10px 16px;">
-          📥 1. HTデータ取り込み (Record.csv)
-        </button>
-        <button type="button" id="ht-tab-btn-master" class="btn" onclick="switchHtModalTab('master')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
-          📦 2. Windows用アプリ一式・マスタ出力
-        </button>
-        <button type="button" id="ht-tab-btn-guide" class="btn" onclick="switchHtModalTab('guide')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
-          📖 3. Windows かんたん設定手順 (3ステップ)
+      <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button type="button" id="ht-tab-btn-import" class="btn" onclick="switchHtModalTab('import')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #0284c7; color: white; padding: 10px 16px;">
+            📥 1. HTデータ取り込み (Record.csv / コピペ対応)
+          </button>
+          <button type="button" id="ht-tab-btn-master" class="btn" onclick="switchHtModalTab('master')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
+            📦 2. HTプログラム一式ダウンロード・マスタ出力
+          </button>
+          <button type="button" id="ht-tab-btn-guide" class="btn" onclick="switchHtModalTab('guide')" style="border-radius: 6px 6px 0 0; font-weight: bold; background: #f1f5f9; color: #475569; padding: 10px 16px;">
+            📖 3. Windows かんたん設定手順 (3ステップ)
+          </button>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" onclick="downloadHtProgramZip('setup')" style="background: #0369a1; border-color: #0369a1; font-weight: bold; margin-bottom: 4px;">
+          📦 HTプログラム一式(.zip)を今すぐDL
         </button>
       </div>
 
       <!-- タブ1: HTデータ取り込み -->
       <div id="ht-tab-content-import" style="display: block;">
-        <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #0c4a6e;">
-          <strong>💡 BT開発・運用ツール (TAC_INV) ＆ 生産管理システム完全連携：</strong><br>
-          BT-W85 から送信された <strong><code>Record.csv</code></strong>（または <code>INV_LOG.CSV</code>）を選択すると、<strong>スキャン実行者（担当者）・資材ID・品名・数量</strong>を自動解析します。<br>
-          同一資材の重複スキャンや既存の仮登録データとの<strong>ダブり（重複）があれば赤い警告バナーで自動通知</strong>し、合算または上書きを選択できます。
+        <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 10px 14px; border-radius: 6px; margin-bottom: 0.85rem; font-size: 0.84rem; color: #0c4a6e;">
+          <strong>💡 BT-W85 (TAC_INV) 棚卸データの取り込みがさらに簡単・確実になりました：</strong><br>
+          ① <strong>ファイル選択／ドラッグ＆ドロップ</strong>（<code>Record.csv</code>・複数ファイル同時選択・Excel <code>.xlsx</code> も対応）または ② <strong>KEYENCE受信画面・Excelからのテキスト直接貼り付け（コピペ）</strong> のどちらでも即座に解析・取り込みできます。<br>
+          ※10月期（2026-10）は棚卸原簿AK列で初期締め済みのため、<strong>11月期（2026-11）の棚卸収集データ</strong>としてそのまま取り込めます。
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; background: var(--color-bg-secondary); padding: 1rem; border-radius: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 0.65rem; margin-bottom: 0.85rem; background: var(--color-bg-secondary); padding: 0.85rem; border-radius: 8px;">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.82rem;">📅 棚卸対象年月</label>
-            <input type="month" id="ht-import-month" class="form-input" value="${defaultMonth}" onchange="parseHtCsvFile()">
+            <label style="font-weight: bold; font-size: 0.8rem;">📅 棚卸対象年月（11月期〜）</label>
+            <input type="month" id="ht-import-month" class="form-input" value="${defaultMonth}" onchange="reparseCurrentHtInput()">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.82rem;">👤 スキャン実行者（担当者）</label>
-            <select id="ht-worker-select" class="form-input" onchange="parseHtCsvFile()">
+            <label style="font-weight: bold; font-size: 0.8rem;">👤 スキャン実行者（担当者）</label>
+            <select id="ht-worker-select" class="form-input" onchange="reparseCurrentHtInput()">
               ${userOptionsHtml}
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.82rem;">🔢 ダブり（重複スキャン）時の計算</label>
-            <select id="ht-duplicate-mode" class="form-input" onchange="parseHtCsvFile()">
+            <label style="font-weight: bold; font-size: 0.8rem;">🔢 HT内ダブり（重複読取）計算</label>
+            <select id="ht-duplicate-mode" class="form-input" onchange="reparseCurrentHtInput()">
               <option value="sum" selected>➕ 数量を追加（合算）する【推奨】</option>
-              <option value="overwrite">✍️ 新しいスキャン数量で上書き修正</option>
+              <option value="overwrite">✍️ 最後尾のスキャン数量で上書き</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: bold; font-size: 0.82rem;">🗂 既存仮登録データとの統合</label>
-            <select id="ht-merge-mode" class="form-input" onchange="parseHtCsvFile()">
+            <label style="font-weight: bold; font-size: 0.8rem;">🗂 既存仮登録データとの統合</label>
+            <select id="ht-merge-mode" class="form-input" onchange="reparseCurrentHtInput()">
               <option value="merge_add" selected>➕ 既存仮登録がある資材は合算する</option>
               <option value="merge_overwrite">✍️ 既存仮登録をHT数量で上書きする</option>
               <option value="replace_all">🧹 当月の既存仮登録を全クリアして反映</option>
@@ -13116,26 +13177,50 @@ window.openHtImportModal = function(initialTab = 'import') {
           </div>
         </div>
 
-        <div style="border: 2px dashed #0284c7; border-radius: 8px; padding: 1rem; text-align: center; background: #f8fafc; margin-bottom: 1rem;">
-          <div style="font-size: 1.15rem; font-weight: bold; color: #0369a1; margin-bottom: 0.25rem;">📂 BT-W85 棚卸データファイル (Record.csv / INV_LOG.CSV) を選択</div>
-          <div style="font-size: 0.8rem; color: #475569; margin-bottom: 0.35rem;">※Windows PC で <code>2_GET_RECORD_CSV.bat</code> を実行すると、デスクトップの <code>TAC_HT棚卸データ\Record.csv</code> に自動回収されます</div>
-          <input type="file" id="ht-csv-file-input" accept=".csv,.txt,.log,.dat" class="form-input" style="max-width: 450px; margin: 0.4rem auto;" onchange="parseHtCsvFile()">
-          <div style="margin-top: 0.4rem;">
-            <button type="button" class="btn btn-sm btn-secondary" onclick="downloadSampleHtCsv()" style="font-size: 0.78rem;">
-              🧪 担当者＆ダブり検証用のサンプルCSVをダウンロードして試す
-            </button>
+        <!-- 2カラム入力エリア: 方法A(ファイル選択/D&D) ＆ 方法B(コピペ直接貼付) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.85rem; margin-bottom: 0.85rem;">
+          <!-- 方法A: ファイル選択 / ドラッグ&ドロップ -->
+          <div id="ht-dropzone"
+               ondragover="event.preventDefault(); this.style.background='#e0f2fe'; this.style.borderColor='#0369a1';"
+               ondragleave="this.style.background='#f8fafc'; this.style.borderColor='#0284c7';"
+               ondrop="handleHtFileDrop(event)"
+               style="border: 2px dashed #0284c7; border-radius: 8px; padding: 0.9rem; text-align: center; background: #f8fafc; transition: all 0.2s;">
+            <div style="font-size: 1rem; font-weight: bold; color: #0369a1; margin-bottom: 0.25rem;">📂 方法A：Record.csv ファイルを選択（またはここへドロップ）</div>
+            <div style="font-size: 0.76rem; color: #475569; margin-bottom: 0.4rem;">※<code>2_GET_RECORD_CSV.bat</code> でデスクトップの <code>TAC_HT棚卸データ\Record.csv</code> に自動回収されます（複数ファイル同時選択・Excel <code>.xlsx</code> も可）</div>
+            <input type="file" id="ht-csv-file-input" accept=".csv,.txt,.log,.dat,.xlsx,.xls" multiple class="form-input" style="max-width: 100%; margin: 0.3rem auto; font-size: 0.82rem;" onchange="parseHtCsvFile()">
+            <div style="margin-top: 0.45rem; display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="loadSampleHtDataDirectly()" style="font-size: 0.76rem; background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; font-weight: bold;">
+                ⚡ サンプルデータをこの画面に即読込して試す
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="downloadSampleHtCsv()" style="font-size: 0.76rem;">
+                🧪 サンプルCSVファイルをDL
+              </button>
+            </div>
+          </div>
+
+          <!-- 方法B: テキスト直接貼り付け (コピペ取込) -->
+          <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.95rem; font-weight: bold; color: #0f172a; margin-bottom: 0.25rem;">📋 方法B：データ直接貼り付け（コピペ取込）</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem;">KEYENCE「PCアプリケーション」の受信一覧やExcel・メモ帳からコピーして貼り付けるだけで自動解析します（例: <code>01-023, 510</code> や <code>Record.csv</code> の行そのまま）</div>
+              <textarea id="ht-paste-textarea" class="form-input" rows="3" placeholder="ここに Record.csv の中身や「資材CD, 数量」を貼り付け (Ctrl+V)..." style="font-size: 0.78rem; font-family: monospace; width: 100%; resize: vertical;" oninput="parseHtTextPaste()"></textarea>
+            </div>
+            <div style="margin-top: 0.4rem; display: flex; justify-content: flex-end; gap: 0.4rem;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="const el=document.getElementById('ht-paste-textarea'); if(el){el.value=''; parseHtTextPaste();}" style="font-size: 0.75rem;">クリア</button>
+              <button type="button" class="btn btn-sm btn-primary" onclick="parseHtTextPaste()" style="font-size: 0.75rem; background: #0284c7; border-color: #0284c7;">🔍 貼り付けテキストを解析</button>
+            </div>
           </div>
         </div>
 
-        <div style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="margin-bottom: 0.65rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
           <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; cursor: pointer;">
               <input type="checkbox" id="ht-auto-register-unknown" checked>
-              マスタ未登録の資材も仮マスタとして登録する
+              マスタ未登録の資材も仮マスタとして自動採番・登録する
             </label>
             <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; cursor: pointer;">
               <input type="checkbox" id="ht-auto-register-user" checked>
-              HTで新規追加された担当者も「ユーザー管理」へ自動追加する
+              HTで新規入力された担当者も「ユーザー管理」へ自動追加する
             </label>
           </div>
           <div id="ht-preview-summary" style="font-size: 0.85rem; font-weight: bold; color: #0369a1;"></div>
@@ -13145,18 +13230,19 @@ window.openHtImportModal = function(initialTab = 'import') {
         <div id="ht-duplicate-alert-banner" style="display: none; margin-bottom: 0.75rem;"></div>
 
         <!-- プレビューテーブル -->
-        <div id="ht-preview-container" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
-          <table class="table" style="font-size: 0.82rem; margin: 0;">
+        <div id="ht-preview-container" style="max-height: 290px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; display: none;">
+          <table class="table" style="font-size: 0.81rem; margin: 0;">
             <thead style="position: sticky; top: 0; background: var(--color-bg-tertiary); z-index: 2;">
               <tr>
-                <th style="width: 42px; text-align: center;">反映</th>
-                <th>資材CD</th>
-                <th>品名（マスタ照合）</th>
+                <th style="width: 40px; text-align: center;">反映</th>
+                <th>資材CD (識別 / 15桁)</th>
+                <th>品名（棚卸原簿マスタ照合）</th>
                 <th>作業者</th>
-                <th style="width: 95px; text-align: right;">最新単価(円)</th>
+                <th style="width: 90px; text-align: right;">最新単価(円)</th>
+                <th style="text-align: center;">10月期(前月)</th>
                 <th style="text-align: center;">既存仮登録</th>
                 <th style="text-align: center;">今回HT読取</th>
-                <th style="width: 100px; text-align: center;">反映後数量</th>
+                <th style="width: 95px; text-align: center;">反映後数量</th>
                 <th>棚卸チェック判定</th>
               </tr>
             </thead>
@@ -13169,19 +13255,22 @@ window.openHtImportModal = function(initialTab = 'import') {
       <div id="ht-tab-content-master" style="display: none;">
         <div style="display: grid; gap: 1rem;">
           <div style="border: 2px solid #0284c7; border-radius: 10px; padding: 1.25rem; background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);">
-            <div style="display: inline-block; background: #0284c7; color: #fff; font-weight: bold; font-size: 0.78rem; padding: 2px 10px; border-radius: 999px; margin-bottom: 6px;">Windows PC 専用・全自動セットアップパッケージ</div>
-            <h4 style="margin: 0 0 0.5rem 0; color: #0369a1; font-size: 1.1rem;">① 【Windows PC用】BT開発・運用ツール 完成アプリ＆自動配置セット</h4>
+            <div style="display: inline-block; background: #0284c7; color: #fff; font-weight: bold; font-size: 0.78rem; padding: 2px 10px; border-radius: 999px; margin-bottom: 6px;">Windows PC 専用・全自動セットアップパッケージ（確認済・最新版）</div>
+            <h4 style="margin: 0 0 0.5rem 0; color: #0369a1; font-size: 1.1rem;">① 【Windows PC用】BT開発・運用ツール 完成アプリ＆自動配置セット（ダウンロード形式）</h4>
             <p style="font-size: 0.86rem; color: #334155; margin-bottom: 0.9rem; line-height: 1.6;">
-              <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong>用の完成済みプロジェクト（<code>TAC_INV</code> 7ファイル）、自動配置バッチ（<code>1_SETUP_BT_TOOL.bat</code>）、受信データ自動回収バッチ（<code>2_GET_RECORD_CSV.bat</code>）、最新マスタ、オフライン図解マニュアルをすべて同梱しています。<br>
-              Windows PC でダウンロード・解凍して <strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリックするだけ</strong>で、フォルダ配置からBT開発・運用ツールの起動まで全自動で完了します！
+              <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong>用の完成済みプロジェクト（<code>TAC_INV</code> 7ファイル：資材CD＋品名表示対応済み）、自動配置バッチ（<code>1_SETUP_BT_TOOL.bat</code>）、受信データ自動回収バッチ（<code>2_GET_RECORD_CSV.bat</code>）、最新棚卸原簿マスタ（3,104件）、オフライン図解マニュアルをすべて1つのZIPに同梱しています。<br>
+              下のボタンを押してダウンロード・解凍し、<strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリックするだけ</strong>で、フォルダ配置からBT開発・運用ツールの起動まで全自動で完了します！
             </p>
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-              <a href="bt-w85-app/TAC_INV_Windows_Setup.zip" download="TAC_INV_Windows_Setup.zip" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7; text-decoration: none; font-weight: bold; padding: 12px 20px; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(2,132,199,0.3);">
+              <button type="button" onclick="downloadHtProgramZip('setup')" class="btn btn-primary" style="background: #0284c7; border-color: #0284c7; font-weight: bold; padding: 12px 20px; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(2,132,199,0.3); cursor: pointer;">
                 📦 Windows用 全自動セットアップ一式 (TAC_INV_Windows_Setup.zip) をダウンロード【推奨】
-              </a>
-              <a href="bt-w85-app/TAC_INV.zip" download="TAC_INV.zip" class="btn btn-secondary" style="text-decoration: none;">
-                📁 プロジェクト単体 (TAC_INV.zip)
-              </a>
+              </button>
+              <button type="button" onclick="downloadHtProgramZip('project')" class="btn btn-secondary" style="cursor: pointer; font-weight: bold;">
+                📁 プロジェクト単体 (TAC_INV.zip) をダウンロード
+              </button>
+              <button type="button" onclick="downloadBtH10wAppSource()" class="btn btn-secondary" style="cursor: pointer;">
+                💻 スクリプト版 (TAC_TANAOROSHI.scp) をDL
+              </button>
               <a href="bt-w85-app/TAC_INV_Windows_Setup/MANUAL_WINDOWS.html" target="_blank" class="btn btn-secondary" style="text-decoration: none;">
                 📖 Windows設定マニュアルを開く
               </a>
@@ -13189,9 +13278,9 @@ window.openHtImportModal = function(initialTab = 'import') {
           </div>
 
           <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
-            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">② 担当者ログインQR一覧 ＆ 最新マスタ個別出力</h4>
+            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">② 担当者ログインQR一覧 ＆ 最新棚卸原簿マスタ個別出力</h4>
             <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
-              現在の商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）のログインQRシートおよび Shift-JIS CSV を出力します。
+              現在の棚卸原簿商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）のログインQRシートおよび Shift-JIS CSV を出力します。
             </p>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-primary" onclick="showUserLoginQrGallery()" style="background: #0369a1; border-color: #0369a1;">
@@ -13218,7 +13307,7 @@ window.openHtImportModal = function(initialTab = 'import') {
       <div id="ht-tab-content-guide" style="display: none; max-height: 440px; overflow-y: auto; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.86rem; line-height: 1.65; color: #1e293b;">
         <h4 style="color: #0369a1; margin-top: 0; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">🖥️ STEP 1：Windows PC での初期セットアップとハンディ転送（設定のみ・2クリック）</h4>
         <ol style="padding-left: 1.25rem; margin-bottom: 1.1rem;">
-          <li>上の「📦 2. Windows用アプリ一式・マスタ出力」タブから <strong><code>TAC_INV_Windows_Setup.zip</code></strong> を Windows PC にダウンロードして解凍します。</li>
+          <li>上の「📦 HTプログラム一式(.zip)を今すぐDL」ボタン（またはタブ2）から <strong><code>TAC_INV_Windows_Setup.zip</code></strong> を Windows PC にダウンロードして解凍します。</li>
           <li>解凍したフォルダ内の <strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリック</strong>します。<br>
             → 自動的に Windows の <code>ドキュメント\KEYENCE\BT Application Design Tool\Projects\TAC_INV</code> にアプリ7ファイルが配置され、<strong>KEYENCE「BT開発・運用ツール」が自動起動</strong>します。</li>
           <li>BT-W85（ハンディ本体）を通信ユニット（BT-H10W）に置き、ツール画面上部の <strong><code>[HTへ転送]</code>（または <code>[端末へ送信]</code>）</strong> をクリックするとハンディにアプリが書き込まれます。続いて <strong><code>[PCアプリケーション起動]</code></strong> をクリックして受信画面を立ち上げておきます。<br>
@@ -13228,16 +13317,16 @@ window.openHtImportModal = function(initialTab = 'import') {
         <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📠 STEP 2：BT-W85（ハンディ本体）での棚卸スキャン操作</h4>
         <ol style="padding-left: 1.25rem; margin-bottom: 1.1rem;">
           <li>ハンディ画面の <strong><code>1. 棚卸スキャン</code></strong> を開きます。</li>
-          <li><strong>担当者ログイン（最初の1回のみ）</strong>：1段目の <strong><code>担当</code></strong> 欄で「担当者ログインQR」をスキャン（またはID入力）します。一度入力すると <strong><code>[F1] ログアウト</code> を押すまでずっと同じ担当者が保持・表示</strong>されます（1回ごとに入力する必要はありません）。</li>
-          <li><strong>資材QRスキャン</strong>：2段目の <strong><code>資材QR (資材CD / 品名)</code></strong> 欄で資材QRをスキャンします（品名QRならその場で資材CDと品名が表示され、二度読み防止ブザーも動作します）。</li>
-          <li><strong>数量入力＆自動ループ</strong>：3段目の <strong><code>数量</code></strong> 欄に数字を入れて <strong><code>ENT</code>（または <code>[F4] 確定</code>）</strong> を押すと保存され、担当者は残ったまま次の「資材QR」入力待ち（新規入力画面）に自動で戻ります。</li>
+          <li><strong>作業者ログイン（最初の1回のみ）</strong>：1段目の <strong><code>作業者</code></strong> 欄で「担当者ログインQR」をスキャン（またはID入力）します。一度入力すると <strong><code>[F1] ログアウト</code> を押すまでずっと同じ作業者が保持・表示</strong>されます。</li>
+          <li><strong>資材QRスキャン</strong>：2段目の <strong><code>資材QR (資材CD / 品名)</code></strong> 欄で資材QRをスキャンします（<code>01-023 LVL 30X14X2430</code> のようにその場で<strong>資材CDと品名が両方表示</strong>され、二度読み防止ブザーも動作します）。</li>
+          <li><strong>数量入力＆自動ループ</strong>：3段目の <strong><code>数量</code></strong> 欄に数字を入れて <strong><code>ENT</code>（または <code>[F4] 確定</code>）</strong> を押すと保存され、作業者は残ったまま次の「資材QR」入力待ちに自動で戻ります。</li>
         </ol>
 
         <h4 style="color: #0369a1; border-bottom: 2px solid #0284c7; padding-bottom: 6px;">📥 STEP 3：PCへのデータ送信と生産管理システムへの一括取込</h4>
         <ol style="padding-left: 1.25rem; margin-bottom: 0;">
           <li>スキャン終了後、BT-W85 を通信ユニット（BT-H10W）に置き、ハンディの <strong><code>[F2] 送信</code></strong> キーを押します。</li>
           <li>Windows PC で <strong><code>2_GET_RECORD_CSV.bat</code> をダブルクリック</strong>すると、受信した最新の <code>Record.csv</code> が自動的にデスクトップの <strong><code>TAC_HT棚卸データ</code> フォルダ</strong>に集められて開きます。</li>
-          <li>この画面の「📥 1. HTデータ取り込み」タブでその <code>Record.csv</code> を選択し、<strong>「🚀 棚卸仮登録へ一括反映する」</strong>を押せば完了です！</li>
+          <li>この画面の「📥 1. HTデータ取り込み」タブでその <code>Record.csv</code> をドラッグ＆ドロップ（またはファイル選択／テキスト貼り付け）し、<strong>「🚀 棚卸仮登録へ一括反映する」</strong>を押せば完了です！</li>
         </ol>
       </div>
     </div>
@@ -13245,20 +13334,24 @@ window.openHtImportModal = function(initialTab = 'import') {
 
   const footer = `
     <button type="button" class="btn btn-secondary" onclick="hideModal()">閉じる</button>
-    <button type="button" class="btn btn-primary" id="ht-execute-import-btn" onclick="executeHtBatchImport()" style="background: #0284c7; border-color: #0284c7; font-weight: bold;" disabled>
+    <button type="button" class="btn btn-primary" id="ht-execute-import-btn" onclick="executeHtBatchImport(false)" style="background: #0284c7; border-color: #0284c7; font-weight: bold;" disabled>
       🚀 棚卸仮登録へ一括反映する
+    </button>
+    <button type="button" class="btn btn-primary" id="ht-execute-import-nav-btn" onclick="executeHtBatchImport(true)" style="background: #16a34a; border-color: #16a34a; font-weight: bold;" disabled>
+      ✅ 反映して「棚卸スキャン確認」画面へ進む
     </button>
   `;
 
-  showModal('📠 ハンディターミナル (BT-W85) 棚卸バッチ取込 & 担当者ログイン管理', body, footer);
+  showModal('📠 ハンディターミナル (BT-W85) 棚卸データ取込 & HTプログラムDL', body, footer);
 
   const modalEl = $('#modal');
   if (modalEl) {
-    modalEl.style.maxWidth = '960px';
-    modalEl.style.width = '95%';
+    modalEl.style.maxWidth = '1020px';
+    modalEl.style.width = '96%';
   }
 
   window._parsedHtBatchItems = [];
+  window._lastHtRawRows = [];
   if (initialTab && initialTab !== 'import') {
     switchHtModalTab(initialTab);
   }
@@ -13281,368 +13374,562 @@ window.switchHtModalTab = function(tabName) {
     }
   });
   const execBtn = document.getElementById('ht-execute-import-btn');
-  if (execBtn) {
-    execBtn.style.display = (tabName === 'import') ? 'inline-block' : 'none';
+  const execNavBtn = document.getElementById('ht-execute-import-nav-btn');
+  if (execBtn) execBtn.style.display = (tabName === 'import') ? 'inline-block' : 'none';
+  if (execNavBtn) execNavBtn.style.display = (tabName === 'import') ? 'inline-block' : 'none';
+};
+
+// ドラッグ＆ドロップされたファイルの処理
+window.handleHtFileDrop = function(evt) {
+  evt.preventDefault();
+  const dz = document.getElementById('ht-dropzone');
+  if (dz) {
+    dz.style.background = '#f8fafc';
+    dz.style.borderColor = '#0284c7';
+  }
+  const files = evt.dataTransfer && evt.dataTransfer.files;
+  if (!files || files.length === 0) return;
+  const fileInput = document.getElementById('ht-csv-file-input');
+  if (fileInput) {
+    try {
+      fileInput.files = files;
+    } catch (e) {}
+  }
+  parseHtCsvFile(files);
+};
+
+// テキスト直接貼り付け（コピペ取込）の解析
+window.parseHtTextPaste = function() {
+  const ta = document.getElementById('ht-paste-textarea');
+  if (!ta) return;
+  const rawText = ta.value.trim();
+  if (!rawText) {
+    window._lastHtRawRows = [];
+    parseHtRowsToBatchItems([]);
+    return;
+  }
+  const rows = parseFlexibleHtTextToRows(rawText);
+  window._lastHtRawRows = rows;
+  parseHtRowsToBatchItems(rows);
+};
+
+// 設定変更時に現在の入力ソース（ファイルまたは貼り付けテキスト）を再解析
+window.reparseCurrentHtInput = function() {
+  if (Array.isArray(window._lastHtRawRows) && window._lastHtRawRows.length > 0) {
+    parseHtRowsToBatchItems(window._lastHtRawRows);
+  } else {
+    const fileInput = document.getElementById('ht-csv-file-input');
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      parseHtCsvFile(fileInput.files);
+    } else {
+      parseHtTextPaste();
+    }
   }
 };
 
-// スマートCSV解析 v2.0: 担当者ログイン情報 + CSV内ダブり + 既存仮登録ダブりを完全解析
-window.parseHtCsvFile = function() {
-  const fileInput = document.getElementById('ht-csv-file-input');
-  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
-
-  const file = fileInput.files[0];
-  const targetMonth = (document.getElementById('ht-import-month') || {}).value || new Date().toISOString().substring(0, 7);
-  const dupMode = (document.getElementById('ht-duplicate-mode') || {}).value || 'sum';
-  const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_add';
-  const selectedWorkerOpt = (document.getElementById('ht-worker-select') || {}).value || '__CSV_PRIORITY__';
-
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const users = DB.get(DB.KEYS.USERS) || [];
-  const currentLoginUser = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || users[0] || { username: 'admin', displayName: '管理者' };
-
-  // 当月の既存仮登録マップを作成 (ダブり検知用)
-  const existingTempScans = (DB.getTempScans() || []).filter(s => s && s.month === targetMonth);
-  const existingTempMap = {};
-  existingTempScans.forEach(s => {
-    if (s && s.productId) {
-      existingTempMap[String(s.productId).toUpperCase()] = s;
+// CSV / TSV（タブ区切り） / スペース区切りテキストを行配列に変換
+function parseFlexibleHtTextToRows(text) {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).filter(l => l && l.trim() !== '');
+  return lines.map(line => {
+    // タブが含まれている場合はタブ区切り（KEYENCE画面やExcelからのコピペ）
+    if (line.includes('\t')) {
+      return line.split('\t').map(c => c.trim().replace(/^"|"$/g, ''));
     }
+    // カンマが含まれている場合はCSVとして解析
+    if (line.includes(',')) {
+      if (typeof parseCsv === 'function') {
+        const parsed = parseCsv(line);
+        if (parsed && parsed[0]) return parsed[0].map(c => String(c || '').trim().replace(/^"|"$/g, ''));
+      }
+      return line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    }
+    // カンマもタブもない場合（例: "01-023 510" のようなスペース区切り2要素）
+    const tokens = line.trim().split(/[\s　]+/);
+    if (tokens.length === 2 && /^-?\d+(\.\d+)?$/.test(tokens[1])) {
+      return [tokens[0], tokens[1]];
+    }
+    return [line.trim()];
   });
+}
 
-  // 商品マスタ照合マップ (id と identCode)
-  const prodMap = {};
-  products.forEach(p => {
-    if (p && p.id) prodMap[String(p.id).trim().toUpperCase()] = p;
-    if (p && p.identCode) prodMap[String(p.identCode).trim().toUpperCase()] = p;
-  });
+// 複数ファイル・Excel(.xlsx)・CSV(.csv) 全対応のファイル読み込み
+window.parseHtCsvFile = async function(filesOverride = null) {
+  const fileInput = document.getElementById('ht-csv-file-input');
+  const fileList = filesOverride || (fileInput && fileInput.files);
+  if (!fileList || fileList.length === 0) return;
 
-  // ユーザー照合マップ (username と displayName)
-  const userMap = {};
-  users.forEach(u => {
-    if (u && u.username) userMap[String(u.username).trim().toLowerCase()] = u;
-    if (u && u.displayName) userMap[String(u.displayName).trim().toLowerCase()] = u;
-  });
+  const allRows = [];
+  for (let fIdx = 0; fIdx < fileList.length; fIdx++) {
+    const file = fileList[fIdx];
+    const buffer = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = (e) => resolve(e.target.result);
+      r.onerror = (e) => reject(e);
+      r.readAsArrayBuffer(file);
+    });
 
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    try {
-      const uint8 = new Uint8Array(evt.target.result);
+    const uint8 = new Uint8Array(buffer);
+    const fname = (file.name || '').toLowerCase();
+    if ((fname.endsWith('.xlsx') || fname.endsWith('.xls')) && typeof XLSX !== 'undefined') {
+      const wb = XLSX.read(uint8, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const excelRows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+      excelRows.forEach(r => allRows.push(r.map(c => String(c || '').trim())));
+    } else {
       const text = (typeof decodeCsvBuffer === 'function')
         ? decodeCsvBuffer(uint8)
         : new TextDecoder('utf-8').decode(uint8);
+      const parsedRows = parseFlexibleHtTextToRows(text);
+      parsedRows.forEach(r => allRows.push(r));
+    }
+  }
 
-      const rows = (typeof parseCsv === 'function')
-        ? parseCsv(text)
-        : text.split(/\r?\n/).map(line => line.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+  window._lastHtRawRows = allRows;
+  parseHtRowsToBatchItems(allRows);
+};
 
-      const aggregated = {};
+// サンプルHTデータをワンクリックで画面に読み込んでテストできる機能
+window.loadSampleHtDataDirectly = function() {
+  const products = (DB.get(DB.KEYS.INV_PRODUCTS) || []).filter(p => p && p.id && !String(p.id).startsWith('TEMP_') && !isInvNonTargetProduct(p));
+  const users = DB.get(DB.KEYS.USERS) || [];
+  const u1 = users[0] || { username: 'admin', displayName: '管理者' };
+  const u2 = users[1] || u1;
+  const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
 
-      rows.forEach((row, idx) => {
-        if (!row || row.length === 0) return;
-        const cleanCols = row.map(c => String(c || '').trim().replace(/^"|"$/g, ''));
-        if (cleanCols.every(c => c === '')) return;
+  const p1 = products.find(p => p.identCode === '01-023') || products[0] || { identCode: '01-023', name: 'LVL 30X14X2430' };
+  const p2 = products.find(p => p.identCode === '01-024') || products[1] || { identCode: '01-024', name: 'LVL 30X17.7X2430' };
+  const p3 = products.find(p => p.identCode === '02-001') || products[2] || { identCode: '02-001', name: "片面化粧MDF t2.5X3'X8' BW" };
 
-        // ヘッダー行スキップ
-        const joinedUpper = cleanCols.join(',').toUpperCase();
-        if (idx === 0 && (
-          joinedUpper.includes('資材ID') ||
-          joinedUpper.includes('商品コード') ||
-          joinedUpper.includes('USERNAME') ||
-          joinedUpper.includes('数量') ||
-          joinedUpper.includes('QTY')
-        )) {
-          return;
-        }
+  const sampleText = [
+    `${today},09:00:00,1,${u1.username},${p1.identCode} ${p1.name},510,09:00:00,09:00:05,00:00:05`,
+    `${today},09:01:10,2,${u1.username},${p2.identCode} ${p2.name},542,09:01:05,09:01:10,00:00:05`,
+    `${today},09:02:20,3,${u2.username},${p3.identCode} ${p3.name},30,09:02:15,09:02:20,00:00:05`,
+    `${today},09:03:30,4,${u1.username},${p1.identCode} ${p1.name},10,09:03:25,09:03:30,00:00:05`
+  ].join('\n');
 
-        let detectedId = '';
-        let detectedQty = null;
-        let csvWorkerId = '';
-        let csvWorkerName = '';
+  const ta = document.getElementById('ht-paste-textarea');
+  if (ta) ta.value = sampleText;
+  parseHtTextPaste();
+  toast('⚡ サンプルHTデータ（Record.csv 9列形式・4行）を読み込みました！', 'success');
+};
 
-        if (cleanCols.length === 1) {
-          detectedId = cleanCols[0].replace(/^INV:/i, "").trim();
-          detectedQty = 1;
-        } else if (cleanCols.length === 2) {
-          detectedId = cleanCols[0].replace(/^INV:/i, "").trim();
-          detectedQty = parseFloat(cleanCols[1].replace(/[^0-9.-]/g, ""));
+// スマートHT行解析エンジン v3.0: 9列Record.csv(ストップウォッチ列除外)・7列INV_LOG.CSV・2列CSV・手入力コード正規化に完全対応
+function parseHtRowsToBatchItems(rows) {
+  try {
+    const targetMonth = (document.getElementById('ht-import-month') || {}).value || '2026-11';
+    const dupMode = (document.getElementById('ht-duplicate-mode') || {}).value || 'sum';
+    const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_add';
+    const selectedWorkerOpt = (document.getElementById('ht-worker-select') || {}).value || '__CSV_PRIORITY__';
+
+    const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    const users = DB.get(DB.KEYS.USERS) || [];
+    const currentLoginUser = window.currentUser || DB.get(DB.KEYS.CURRENT_USER) || users[0] || { username: 'admin', displayName: '管理者' };
+
+    // 当月の既存仮登録マップを作成 (ダブり検知用)
+    const existingTempScans = (DB.getTempScans() || []).filter(s => s && s.month === targetMonth);
+    const existingTempMap = {};
+    existingTempScans.forEach(s => {
+      if (s && s.productId) {
+        existingTempMap[String(s.productId).toUpperCase()] = s;
+      }
+    });
+
+    // 識別コードの正規化ヘルパー (例: "1-23" や "01-23" -> "01-023")
+    const normalizeIdentCode = (codeStr) => {
+      const m = String(codeStr || '').trim().match(/^(\d{1,2})-(\d{1,4})$/);
+      if (m) {
+        return `${m[1].padStart(2, '0')}-${m[2].padStart(3, '0')}`;
+      }
+      return String(codeStr || '').trim().toUpperCase();
+    };
+
+    // 商品マスタ照合マップ (id, materialCode, identCode, 旧12桁Nコード, 正規化識別コードすべてに対応)
+    const prodMap = {};
+    products.forEach(p => {
+      if (!p) return;
+      if (p.id) prodMap[String(p.id).trim().toUpperCase()] = p;
+      if (p.materialCode) prodMap[String(p.materialCode).trim().toUpperCase()] = p;
+      if (p.identCode) {
+        const icUpper = String(p.identCode).trim().toUpperCase();
+        prodMap[icUpper] = p;
+        prodMap[normalizeIdentCode(icUpper)] = p;
+      }
+      // 旧12桁 N + 2桁 + 9桁 コードでも照合できるよう登録
+      if (p.identClass && p.identOrder) {
+        const legacy12 = `N${String(p.identClass).padStart(2, '0')}${String(p.identOrder).padStart(9, '0')}`.toUpperCase();
+        if (!prodMap[legacy12]) prodMap[legacy12] = p;
+      }
+    });
+
+    const lookupProd = (rawStr) => {
+      if (!rawStr) return null;
+      const clean = String(rawStr).replace(/^INV:/i, '').trim();
+      if (!clean) return null;
+      const upper = clean.toUpperCase();
+      if (prodMap[upper]) return prodMap[upper];
+      const norm = normalizeIdentCode(upper);
+      if (prodMap[norm]) return prodMap[norm];
+      const firstToken = upper.split(/[\s　:：]+/)[0];
+      if (firstToken) {
+        if (prodMap[firstToken]) return prodMap[firstToken];
+        const normToken = normalizeIdentCode(firstToken);
+        if (prodMap[normToken]) return prodMap[normToken];
+      }
+      return null;
+    };
+
+    // ユーザー照合マップ (username と displayName)
+    const userMap = {};
+    users.forEach(u => {
+      if (u && u.username) userMap[String(u.username).trim().toLowerCase()] = u;
+      if (u && u.displayName) userMap[String(u.displayName).trim().toLowerCase()] = u;
+    });
+
+    const aggregated = {};
+
+    (rows || []).forEach((row, idx) => {
+      if (!row || row.length === 0) return;
+      const cleanCols = row.map(c => String(c || '').trim().replace(/^"|"$/g, ''));
+      if (cleanCols.every(c => c === '')) return;
+
+      // ヘッダー行スキップ
+      const joinedUpper = cleanCols.join(',').toUpperCase();
+      if (idx === 0 && (
+        joinedUpper.includes('資材ID') ||
+        joinedUpper.includes('資材CD') ||
+        joinedUpper.includes('商品コード') ||
+        joinedUpper.includes('識別コード') ||
+        joinedUpper.includes('USERNAME') ||
+        joinedUpper.includes('数量') ||
+        joinedUpper.includes('QTY')
+      )) {
+        return;
+      }
+
+      let detectedId = '';
+      let detectedQty = null;
+      let csvWorkerId = '';
+      let csvWorkerName = '';
+      let rawQrCellText = '';
+
+      const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
+      const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
+      const isTermCol = (s) => /^(BTW|BT-W|HT\d*|KEYENCE)$/i.test(s);
+      const isNumCol = (s) => /^-?\d+(\.\d+)?$/.test(String(s || '').trim());
+
+      if (cleanCols.length === 1) {
+        rawQrCellText = cleanCols[0].replace(/^INV:/i, '').trim();
+        const mp = lookupProd(rawQrCellText);
+        detectedId = mp ? mp.id : normalizeIdentCode(rawQrCellText.split(/[\s　:：]+/)[0]);
+        detectedQty = 1;
+      } else if (cleanCols.length === 2) {
+        rawQrCellText = cleanCols[0].replace(/^INV:/i, '').trim();
+        const mp = lookupProd(rawQrCellText);
+        detectedId = mp ? mp.id : normalizeIdentCode(rawQrCellText.split(/[\s　:：]+/)[0]);
+        detectedQty = parseFloat(cleanCols[1].replace(/[^0-9.-]/g, ''));
+      } else if (cleanCols.length === 3 && !isDateCol(cleanCols[0])) {
+        // 3列フォーマット: [担当者(0), 資材QR(1), 数量(2)] または [資材CD(0), 品名(1), 数量(2)]
+        const mp0 = lookupProd(cleanCols[0]);
+        const mp1 = lookupProd(cleanCols[1]);
+        if (mp0 && !mp1) {
+          detectedId = mp0.id;
+          rawQrCellText = `${cleanCols[0]} ${cleanCols[1]}`.trim();
+          detectedQty = parseFloat(cleanCols[2].replace(/[^0-9.-]/g, ''));
         } else {
-          // BT開発・運用ツール (BT Application Design Tool) 全列数対応の自動判別
-          const isDateCol = (s) => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{8}$/.test(s);
-          const isTimeCol = (s) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(s);
-          const isTermCol = (s) => /^(BTW|BT-W|HT\d*|KEYENCE)$/i.test(s);
-
-          let prodColIdx = -1;
-          let userColIndices = [];
-
-          // Step A: 商品マスタ(prodMap)と一致する列を最優先で特定 (「資材CD 品名」形式のQRコードにも対応)
-          for (let c = 0; c < cleanCols.length; c++) {
-            const raw = cleanCols[c].replace(/^INV:/i, "").trim();
-            const token = raw.split(/[\s:：]+/)[0];
-            if (raw && (prodMap[raw.toUpperCase()] || (token && prodMap[token.toUpperCase()]))) {
-              const matched = prodMap[raw.toUpperCase()] || prodMap[token.toUpperCase()];
-              detectedId = matched.id;
-              prodColIdx = c;
-              break;
-            }
-          }
-
-          // Step B: ユーザーマスタ(userMap)と一致する列を特定
-          for (let c = 0; c < cleanCols.length; c++) {
-            if (c === prodColIdx) continue;
-            const raw = cleanCols[c].replace(/^USER:/i, "").trim();
-            if (raw && userMap[raw.toLowerCase()]) {
-              const matchedU = userMap[raw.toLowerCase()];
-              csvWorkerId = matchedU.username;
-              csvWorkerName = matchedU.displayName;
-              userColIndices.push(c);
-            }
-          }
-
-          // Step C: 数量列を右端から探索（資材ID列・担当者列・日付・時刻・シリアル番号を除く最初の数値列）
-          let qtyColIdx = -1;
-          for (let c = cleanCols.length - 1; c >= 1; c--) {
-            if (c === prodColIdx || userColIndices.includes(c)) continue;
-            if (c === 2 && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) continue;
-            const val = cleanCols[c];
-            if (!val || isDateCol(val) || isTimeCol(val)) continue;
-            if (/^-?\d+(\.\d+)?$/.test(val)) {
-              detectedQty = parseFloat(val);
-              qtyColIdx = c;
-              break;
-            }
-          }
-
-          // Step D: マスタ未登録資材やHT新規追加ユーザーがある場合の補完
-          if (!detectedId || (!csvWorkerId && cleanCols.length >= 4)) {
-            if ((cleanCols.length === 9 || cleanCols.length === 6) && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) {
-              // TAC_INV (Record.csv) 標準フォーマット: [日付(0), 時刻(1), シリアル番号(2), 担当者(3), 資材ID(4), 数量(5), ...]
-              if (!csvWorkerId && cleanCols[3]) csvWorkerId = cleanCols[3].replace(/^USER:/i, "").trim();
-              if (!detectedId && cleanCols[4]) detectedId = cleanCols[4].replace(/^INV:/i, "").trim().split(/[\s:：]+/)[0];
-              if ((detectedQty === null || isNaN(detectedQty)) && cleanCols[5] && /^-?\d+(\.\d+)?$/.test(cleanCols[5])) {
-                detectedQty = parseFloat(cleanCols[5]);
-              }
-            } else if (cleanCols.length === 7 && !detectedId && prodColIdx === -1) {
-              // 標準7列フォーマット [日付, 時刻, 端末ID, username, displayName, 資材ID, 数量]
-              if (!csvWorkerId) csvWorkerId = cleanCols[3];
-              if (!csvWorkerName) csvWorkerName = cleanCols[4];
-              detectedId = cleanCols[5].replace(/^INV:/i, "").trim().split(/[\s:：]+/)[0];
-            } else {
-              for (let c = 0; c < cleanCols.length; c++) {
-                if (c === prodColIdx || c === qtyColIdx || userColIndices.includes(c)) continue;
-                if (c === 2 && isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1])) continue; // シリアル番号列をスキップ
-                const s = cleanCols[c].replace(/^INV:/i, "").trim();
-                if (!s || isDateCol(s) || isTimeCol(s) || isTermCol(s)) continue;
-                if (!detectedId) {
-                  detectedId = s;
-                } else if (!csvWorkerId) {
-                  csvWorkerId = s;
-                }
-              }
-            }
-          }
+          csvWorkerId = cleanCols[0].replace(/^USER:/i, '').trim();
+          rawQrCellText = cleanCols[1].replace(/^INV:/i, '').trim();
+          detectedId = mp1 ? mp1.id : normalizeIdentCode(rawQrCellText.split(/[\s　:：]+/)[0]);
+          detectedQty = parseFloat(cleanCols[2].replace(/[^0-9.-]/g, ''));
         }
+      } else {
+        // KEYENCE BT-W85 (Record.csv 9列/6列 または INV_LOG.CSV 7列) 自動判別
+        let prodColIdx = -1;
+        let userColIndices = [];
 
-        if (!detectedId) return;
-        if (detectedQty === null || isNaN(detectedQty)) detectedQty = 1;
-
-        // 担当者の決定（プルダウン指定 or CSV内担当者照合）
-        let finalWorkerId = currentLoginUser.username;
-        let finalWorkerName = currentLoginUser.displayName;
-        let isNewHtUser = false;
-
-        if (selectedWorkerOpt !== '__CSV_PRIORITY__') {
-          const forcedUser = userMap[selectedWorkerOpt.toLowerCase()];
-          if (forcedUser) {
-            finalWorkerId = forcedUser.username;
-            finalWorkerName = forcedUser.displayName;
-          }
-        } else if (csvWorkerId || csvWorkerName) {
-          const matchedU = userMap[(csvWorkerId || '').toLowerCase()] || userMap[(csvWorkerName || '').toLowerCase()];
-          if (matchedU) {
-            finalWorkerId = matchedU.username;
-            finalWorkerName = matchedU.displayName;
-          } else {
-            finalWorkerId = csvWorkerId || csvWorkerName;
-            finalWorkerName = csvWorkerName || csvWorkerId;
-            isNewHtUser = true;
-          }
-        }
-
-        // QRコード内の2行目品名（「資材CD    品名」形式）を抽出
-        let qrEmbeddedName = '';
+        // Step A: 商品マスタ(prodMap)と一致する列を特定（「01-023 LVL 30X14X2430」形式にも対応）
         for (let c = 0; c < cleanCols.length; c++) {
-          const rawCell = cleanCols[c].replace(/^INV:/i, "").trim();
-          const parts = rawCell.split(/[\s　]+/);
-          if (parts.length >= 2 && parts[0].toUpperCase() === detectedId.toUpperCase()) {
-            qrEmbeddedName = parts.slice(1).join(' ').trim();
+          const mp = lookupProd(cleanCols[c]);
+          if (mp) {
+            detectedId = mp.id;
+            prodColIdx = c;
+            rawQrCellText = cleanCols[c].replace(/^INV:/i, '').trim();
             break;
           }
         }
 
-        const matchedProd = prodMap[detectedId.toUpperCase()];
-        const finalId = matchedProd ? matchedProd.id : detectedId;
-        const existingScan = (mergeMode !== 'replace_all') ? existingTempMap[finalId.toUpperCase()] : null;
-        const prevTempQty = existingScan ? (Number(existingScan.quantity) || 0) : 0;
-
-        if (!aggregated[finalId]) {
-          const htQty = detectedQty;
-          const resultQty = (existingScan && mergeMode === 'merge_add') ? (prevTempQty + htQty) : htQty;
-          aggregated[finalId] = {
-            enabled: true,
-            productId: finalId,
-            name: matchedProd ? matchedProd.name : (qrEmbeddedName || `未登録資材 (${finalId})`),
-            category: matchedProd ? (matchedProd.category || '99') : '99',
-            price: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
-            originalPrice: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
-            prevTempQty: prevTempQty,
-            hasExistingTemp: !!existingScan,
-            htQuantity: htQty,
-            quantity: resultQty,
-            scanCount: 1,
-            isMatched: !!matchedProd,
-            worker: finalWorkerId,
-            workerName: finalWorkerName,
-            isNewHtUser: isNewHtUser
-          };
-        } else {
-          aggregated[finalId].scanCount += 1;
-          if (dupMode === 'sum') {
-            aggregated[finalId].htQuantity += detectedQty;
-          } else {
-            aggregated[finalId].htQuantity = detectedQty;
+        // Step B: ユーザーマスタ(userMap)と一致する列を特定
+        for (let c = 0; c < cleanCols.length; c++) {
+          if (c === prodColIdx) continue;
+          const raw = cleanCols[c].replace(/^USER:/i, '').trim();
+          if (raw && userMap[raw.toLowerCase()]) {
+            const matchedU = userMap[raw.toLowerCase()];
+            csvWorkerId = matchedU.username;
+            csvWorkerName = matchedU.displayName;
+            userColIndices.push(c);
           }
-          aggregated[finalId].quantity = (aggregated[finalId].hasExistingTemp && mergeMode === 'merge_add')
-            ? (aggregated[finalId].prevTempQty + aggregated[finalId].htQuantity)
-            : aggregated[finalId].htQuantity;
-          aggregated[finalId].worker = finalWorkerId;
-          aggregated[finalId].workerName = finalWorkerName;
         }
-      });
 
-      const items = Object.values(aggregated);
-      window._parsedHtBatchItems = items;
+        // Step C: TAC_INV (Record.csv) 標準フォーマット [日付(0), 時刻(1), シリアル(2), 担当者(3), 資材QR(4), 数量(5), (開始6), (終了7), (経過8)] の直接構造解析
+        const isRecordCsvHeader = isDateCol(cleanCols[0]) && isTimeCol(cleanCols[1]);
+        if (isRecordCsvHeader && cleanCols.length >= 6) {
+          if (!csvWorkerId && cleanCols[3] && !isTermCol(cleanCols[3])) {
+            csvWorkerId = cleanCols[3].replace(/^USER:/i, '').trim();
+          }
+          if (prodColIdx === -1) {
+            // 7列 INV_LOG.CSV [日付(0), 時刻(1), BTW85(2), username(3), displayName(4), 資材ID(5), 数量(6)] の場合
+            if (cleanCols.length === 7 && isTermCol(cleanCols[2])) {
+              if (!csvWorkerId) csvWorkerId = cleanCols[3];
+              if (!csvWorkerName) csvWorkerName = cleanCols[4];
+              prodColIdx = 5;
+              rawQrCellText = cleanCols[5].replace(/^INV:/i, '').trim();
+              const mp5 = lookupProd(rawQrCellText);
+              detectedId = mp5 ? mp5.id : normalizeIdentCode(rawQrCellText.split(/[\s　:：]+/)[0]);
+            } else {
+              // Record.csv (Col 4 が資材QR)
+              prodColIdx = 4;
+              rawQrCellText = cleanCols[4].replace(/^INV:/i, '').trim();
+              const mp4 = lookupProd(rawQrCellText);
+              detectedId = mp4 ? mp4.id : normalizeIdentCode(rawQrCellText.split(/[\s　:：]+/)[0]);
+            }
+          }
+        }
 
-      const container = document.getElementById('ht-preview-container');
-      const tbody = document.getElementById('ht-preview-tbody');
-      const summaryEl = document.getElementById('ht-preview-summary');
-      const dupBannerEl = document.getElementById('ht-duplicate-alert-banner');
-      const execBtn = document.getElementById('ht-execute-import-btn');
+        // Step D: 数量列の特定
+        // 【重要】Record.csv の末尾3列(開始時刻, 終了時刻, 経過時間)に「0」等の数値が入るため、右端からではなく「資材ID列(prodColIdx)の直後」から探す！
+        if (prodColIdx >= 0) {
+          if (prodColIdx + 1 < cleanCols.length && isNumCol(cleanCols[prodColIdx + 1])) {
+            detectedQty = parseFloat(cleanCols[prodColIdx + 1]);
+          } else if (prodColIdx + 2 < cleanCols.length && isNumCol(cleanCols[prodColIdx + 2])) {
+            // 品名内にカンマ「,」が含まれていて資材列が2列に分割された場合 (例: "09-366 丁番金具A,Bｾｯﾄ")
+            rawQrCellText = `${cleanCols[prodColIdx]},${cleanCols[prodColIdx + 1]}`;
+            detectedQty = parseFloat(cleanCols[prodColIdx + 2]);
+          }
+        }
 
-      if (items.length === 0) {
-        if (container) container.style.display = 'none';
-        if (dupBannerEl) dupBannerEl.style.display = 'none';
-        if (summaryEl) summaryEl.innerHTML = '<span style="color:#dc2626;">⚠️ 有効な棚卸データが見つかりませんでした</span>';
-        if (execBtn) execBtn.disabled = true;
-        return;
-      }
-
-      const csvDupItems = items.filter(i => i.scanCount > 1);
-      const existingDupItems = items.filter(i => i.hasExistingTemp);
-      const unknownItems = items.filter(i => !i.isMatched);
-      const zeroPriceItems = items.filter(i => (Number(i.price) || 0) <= 0);
-      const abnormalQtyItems = items.filter(i => (Number(i.quantity) || 0) <= 0 || (Number(i.quantity) || 0) >= 10000);
-      const totalQty = items.reduce((acc, i) => acc + (i.enabled !== false ? i.quantity : 0), 0);
-
-      // 棚卸総合チェック（重複ダブり・未登録マスタ・単価0円・異常数量）アラートバナーの表示
-      if (dupBannerEl) {
-        if (csvDupItems.length > 0 || existingDupItems.length > 0 || unknownItems.length > 0 || zeroPriceItems.length > 0 || abnormalQtyItems.length > 0) {
-          dupBannerEl.style.display = 'block';
-          dupBannerEl.innerHTML = `
-            <div style="background: #fffbeb; border-left: 5px solid #f59e0b; padding: 10px 14px; border-radius: 6px; font-size: 0.84rem; color: #92400e;">
-              <strong>🛡️ 棚卸データ自動チェック結果（ダブり・マスタ・単価・数量）：</strong><br>
-              ${csvDupItems.length > 0 ? `・<strong>[CSV内ダブり]</strong> 同一HTファイル内で複数回スキャンされた資材が <strong>${csvDupItems.length}件</strong> あります（現在「${dupMode === 'sum' ? '➕合算' : '✍️上書き'}」設定）。<br>` : ''}
-              ${existingDupItems.length > 0 ? `・<strong>[既存仮登録ダブり]</strong> 当月既に仮登録済みの資材との重複が <strong>${existingDupItems.length}件</strong> あります（現在「${mergeMode === 'merge_add' ? '➕既存数に加算' : '✍️HT数で上書き'}」設定）。<br>` : ''}
-              ${unknownItems.length > 0 ? `・<strong>[マスタ未登録]</strong> 商品マスタに未登録の資材が <strong>${unknownItems.length}件</strong> あります。<br>` : ''}
-              ${zeroPriceItems.length > 0 ? `・<strong>[単価0円チェック]</strong> 単価が0円（未設定）の資材が <strong>${zeroPriceItems.length}件</strong> あります（表の「最新単価」欄で入力するとマスタ単価も同時更新されます）。<br>` : ''}
-              ${abnormalQtyItems.length > 0 ? `・<strong>[数量異常チェック]</strong> 数量が0以下または10,000以上の要確認データが <strong>${abnormalQtyItems.length}件</strong> あります。<br>` : ''}
-              <span style="display:block; margin-top:3px; color:#b45309;">※左端の「反映」チェックを外すとその行を除外（キャンセル）でき、「最新単価」「反映後数量」も直接修正できます。</span>
-            </div>
-          `;
-        } else {
-          dupBannerEl.style.display = 'block';
-          dupBannerEl.innerHTML = `
-            <div style="background: #f0fdf4; border-left: 5px solid #16a34a; padding: 8px 14px; border-radius: 6px; font-size: 0.84rem; color: #166534;">
-              <strong>✅ 棚卸データチェック完了：</strong> マスタ照合・単価設定・重複（ダブり）・数量範囲すべて問題ありません。
-            </div>
-          `;
+        // フォールバック: まだ数量が見つからない場合のみ、ストップウォッチ末尾3列(cleanCols.length>=9時の6,7,8列)とシリアル番号(2列)を除いて探索
+        if (detectedQty === null || isNaN(detectedQty)) {
+          const maxSearchCol = (isRecordCsvHeader && cleanCols.length >= 9) ? (cleanCols.length - 4) : (cleanCols.length - 1);
+          for (let c = maxSearchCol; c >= 1; c--) {
+            if (c === prodColIdx || userColIndices.includes(c)) continue;
+            if (c === 2 && isRecordCsvHeader) continue;
+            const val = cleanCols[c];
+            if (!val || isDateCol(val) || isTimeCol(val)) continue;
+            if (isNumCol(val)) {
+              detectedQty = parseFloat(val);
+              break;
+            }
+          }
         }
       }
 
-      if (summaryEl) {
-        summaryEl.innerHTML = `対象: <strong>${items.length}件</strong> / 反映後総数: <strong>${totalQty.toLocaleString()}個</strong>`;
+      if (!detectedId) return;
+      if (detectedQty === null || isNaN(detectedQty)) detectedQty = 1;
+
+      // 担当者の決定（プルダウン指定 or CSV内担当者照合）
+      let finalWorkerId = currentLoginUser.username;
+      let finalWorkerName = currentLoginUser.displayName;
+      let isNewHtUser = false;
+
+      if (selectedWorkerOpt !== '__CSV_PRIORITY__') {
+        const forcedUser = userMap[selectedWorkerOpt.toLowerCase()];
+        if (forcedUser) {
+          finalWorkerId = forcedUser.username;
+          finalWorkerName = forcedUser.displayName;
+        }
+      } else if (csvWorkerId || csvWorkerName) {
+        const matchedU = userMap[(csvWorkerId || '').toLowerCase()] || userMap[(csvWorkerName || '').toLowerCase()];
+        if (matchedU) {
+          finalWorkerId = matchedU.username;
+          finalWorkerName = matchedU.displayName;
+        } else {
+          finalWorkerId = csvWorkerId || csvWorkerName;
+          finalWorkerName = csvWorkerName || csvWorkerId;
+          isNewHtUser = true;
+        }
       }
 
-      if (tbody) {
-        tbody.innerHTML = items.map((item, idx) => {
-          const badges = [];
-          if (!item.isMatched) {
-            badges.push('<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ マスタ未登録</span>');
-          }
-          if ((Number(item.price) || 0) <= 0) {
-            badges.push('<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 単価0円</span>');
-          }
-          if (item.scanCount > 1) {
-            badges.push(`<span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">🔄 CSV内重複(${item.scanCount}回)</span>`);
-          }
-          if (item.hasExistingTemp) {
-            badges.push('<span style="background:#fce7f3; color:#9d174d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 既存仮登録あり</span>');
-          }
-          if ((Number(item.quantity) || 0) <= 0 || (Number(item.quantity) || 0) >= 10000) {
-            badges.push('<span style="background:#fef08a; color:#854d0e; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 数量要確認</span>');
-          }
-          if (badges.length === 0) {
-            badges.push('<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">✓ チェックOK</span>');
-          }
-
-          const rowBg = (item.scanCount > 1 || item.hasExistingTemp)
-            ? 'background:#fffbeb;'
-            : ((!item.isMatched || (Number(item.price) || 0) <= 0) ? 'background:#fef2f2;' : '');
-
-          return `
-            <tr style="${rowBg}">
-              <td style="text-align: center;">
-                <input type="checkbox" ${item.enabled !== false ? 'checked' : ''}
-                       onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].enabled = this.checked;">
-              </td>
-              <td><strong>${item.productId}</strong></td>
-              <td>${item.name}</td>
-              <td>
-                <strong>${item.workerName}</strong>
-                <span style="font-size:0.75rem; color:#64748b;">(${item.worker})</span>
-                ${item.isNewHtUser ? '<span style="background:#e0f2fe; color:#0369a1; font-size:0.68rem; padding:1px 4px; border-radius:3px; margin-left:4px;">HT新規</span>' : ''}
-              </td>
-              <td style="text-align: right;">
-                <input type="number" class="form-input" value="${item.price}" min="0"
-                       style="width: 85px; padding: 4px; text-align: right; font-weight: bold; ${Number(item.price) <= 0 ? 'border-color:#ef4444; background:#fff1f2;' : ''}"
-                       onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].price = parseFloat(this.value) || 0;">
-              </td>
-              <td style="text-align: center; color: #64748b;">${item.hasExistingTemp ? item.prevTempQty + '個' : '-'}</td>
-              <td style="text-align: center; font-weight: 600; color: #0284c7;">${item.htQuantity}個</td>
-              <td style="text-align: center;">
-                <input type="number" class="form-input" value="${item.quantity}" min="0"
-                       style="width: 85px; padding: 4px; text-align: center; font-weight: bold;"
-                       onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].quantity = parseFloat(this.value) || 0;">
-              </td>
-              <td>${badges.join(' ')}</td>
-            </tr>
-          `;
-        }).join('');
+      // QRコード内の埋め込み品名（「01-023 LVL 30X14X2430」形式）を抽出
+      let qrEmbeddedName = '';
+      if (rawQrCellText) {
+        const parts = rawQrCellText.split(/[\s　]+/);
+        if (parts.length >= 2) {
+          qrEmbeddedName = parts.slice(1).join(' ').trim();
+        }
       }
 
-      if (container) container.style.display = 'block';
-      if (execBtn) execBtn.disabled = false;
-    } catch (e) {
-      console.error('HT CSV Parse Error:', e);
-      toast('CSVの解析中にエラーが発生しました: ' + e.message, 'error');
+      const matchedProd = lookupProd(detectedId);
+      const finalId = matchedProd ? matchedProd.id : detectedId;
+      const identCode = matchedProd ? (matchedProd.identCode || matchedProd.id) : detectedId;
+      const octPrevStock = matchedProd ? (Number(matchedProd.lastStock !== undefined ? matchedProd.lastStock : matchedProd.octStock) || 0) : 0;
+      const existingScan = (mergeMode !== 'replace_all') ? existingTempMap[finalId.toUpperCase()] : null;
+      const prevTempQty = existingScan ? (Number(existingScan.quantity) || 0) : 0;
+
+      if (!aggregated[finalId]) {
+        const htQty = detectedQty;
+        const resultQty = (existingScan && mergeMode === 'merge_add') ? (prevTempQty + htQty) : htQty;
+        aggregated[finalId] = {
+          enabled: true,
+          productId: finalId,
+          identCode: identCode,
+          name: matchedProd ? matchedProd.name : (qrEmbeddedName || `未登録資材 (${finalId})`),
+          category: matchedProd ? (matchedProd.category || '01') : '01',
+          price: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
+          originalPrice: matchedProd ? (parseFloat(matchedProd.price) || 0) : 0,
+          octPrevStock: octPrevStock,
+          prevTempQty: prevTempQty,
+          hasExistingTemp: !!existingScan,
+          htQuantity: htQty,
+          quantity: resultQty,
+          scanCount: 1,
+          isMatched: !!matchedProd,
+          worker: finalWorkerId,
+          workerName: finalWorkerName,
+          isNewHtUser: isNewHtUser
+        };
+      } else {
+        aggregated[finalId].scanCount += 1;
+        if (dupMode === 'sum') {
+          aggregated[finalId].htQuantity += detectedQty;
+        } else {
+          aggregated[finalId].htQuantity = detectedQty;
+        }
+        aggregated[finalId].quantity = (aggregated[finalId].hasExistingTemp && mergeMode === 'merge_add')
+          ? (aggregated[finalId].prevTempQty + aggregated[finalId].htQuantity)
+          : aggregated[finalId].htQuantity;
+        aggregated[finalId].worker = finalWorkerId;
+        aggregated[finalId].workerName = finalWorkerName;
+      }
+    });
+
+    const items = Object.values(aggregated);
+    window._parsedHtBatchItems = items;
+
+    const container = document.getElementById('ht-preview-container');
+    const tbody = document.getElementById('ht-preview-tbody');
+    const summaryEl = document.getElementById('ht-preview-summary');
+    const dupBannerEl = document.getElementById('ht-duplicate-alert-banner');
+    const execBtn = document.getElementById('ht-execute-import-btn');
+    const execNavBtn = document.getElementById('ht-execute-import-nav-btn');
+
+    if (items.length === 0) {
+      if (container) container.style.display = 'none';
+      if (dupBannerEl) dupBannerEl.style.display = 'none';
+      if (summaryEl) summaryEl.innerHTML = '<span style="color:#64748b;">ファイルを選択するか、テキストを貼り付けてください</span>';
+      if (execBtn) execBtn.disabled = true;
+      if (execNavBtn) execNavBtn.disabled = true;
+      return;
     }
-  };
 
-  reader.readAsArrayBuffer(file);
-};
+    const csvDupItems = items.filter(i => i.scanCount > 1);
+    const existingDupItems = items.filter(i => i.hasExistingTemp);
+    const unknownItems = items.filter(i => !i.isMatched);
+    const zeroPriceItems = items.filter(i => (Number(i.price) || 0) <= 0);
+    const abnormalQtyItems = items.filter(i => (Number(i.quantity) || 0) <= 0 || (Number(i.quantity) || 0) >= 10000);
+    const totalQty = items.reduce((acc, i) => acc + (i.enabled !== false ? i.quantity : 0), 0);
+
+    // 棚卸総合チェック（重複ダブり・未登録マスタ・単価0円・異常数量）アラートバナーの表示
+    if (dupBannerEl) {
+      if (csvDupItems.length > 0 || existingDupItems.length > 0 || unknownItems.length > 0 || zeroPriceItems.length > 0 || abnormalQtyItems.length > 0) {
+        dupBannerEl.style.display = 'block';
+        dupBannerEl.innerHTML = `
+          <div style="background: #fffbeb; border-left: 5px solid #f59e0b; padding: 10px 14px; border-radius: 6px; font-size: 0.84rem; color: #92400e;">
+            <strong>🛡️ 棚卸データ自動チェック結果（ダブり・マスタ・単価・数量）：</strong><br>
+            ${csvDupItems.length > 0 ? `・<strong>[HTデータ内ダブり]</strong> 複数回スキャンされた資材が <strong>${csvDupItems.length}件</strong> あります（現在「${dupMode === 'sum' ? '➕合算' : '✍️上書き'}」設定）。<br>` : ''}
+            ${existingDupItems.length > 0 ? `・<strong>[既存仮登録ダブり]</strong> 当月既に仮登録済みの資材との重複が <strong>${existingDupItems.length}件</strong> あります（現在「${mergeMode === 'merge_add' ? '➕既存数に加算' : '✍️HT数で上書き'}」設定）。<br>` : ''}
+            ${unknownItems.length > 0 ? `・<strong>[マスタ未登録]</strong> 商品マスタに未登録の資材が <strong>${unknownItems.length}件</strong> あります。<br>` : ''}
+            ${zeroPriceItems.length > 0 ? `・<strong>[単価0円チェック]</strong> 単価が0円（未設定）の資材が <strong>${zeroPriceItems.length}件</strong> あります（表の「最新単価」欄で入力するとマスタ単価＆価格履歴も同時更新されます）。<br>` : ''}
+            ${abnormalQtyItems.length > 0 ? `・<strong>[数量異常チェック]</strong> 数量が0以下または10,000以上の要確認データが <strong>${abnormalQtyItems.length}件</strong> あります。<br>` : ''}
+            <span style="display:block; margin-top:3px; color:#b45309;">※左端の「反映」チェックを外すとその行を除外でき、「最新単価」「反映後数量」も直接修正できます。</span>
+          </div>
+        `;
+      } else {
+        dupBannerEl.style.display = 'block';
+        dupBannerEl.innerHTML = `
+          <div style="background: #f0fdf4; border-left: 5px solid #16a34a; padding: 8px 14px; border-radius: 6px; font-size: 0.84rem; color: #166534;">
+            <strong>✅ 棚卸データチェック完了：</strong> マスタ照合・単価設定・重複（ダブり）・数量範囲すべて問題ありません。
+          </div>
+        `;
+      }
+    }
+
+    if (summaryEl) {
+      summaryEl.innerHTML = `解析完了: <strong>${items.length}資材</strong> / 反映後総数: <strong>${totalQty.toLocaleString()}</strong>`;
+    }
+
+    if (tbody) {
+      tbody.innerHTML = items.map((item, idx) => {
+        const badges = [];
+        if (!item.isMatched) {
+          badges.push('<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ マスタ未登録</span>');
+        }
+        if ((Number(item.price) || 0) <= 0) {
+          badges.push('<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 単価0円</span>');
+        }
+        if (item.scanCount > 1) {
+          badges.push(`<span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">🔄 重複(${item.scanCount}回)</span>`);
+        }
+        if (item.hasExistingTemp) {
+          badges.push('<span style="background:#fce7f3; color:#9d174d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 既存仮登録あり</span>');
+        }
+        if ((Number(item.quantity) || 0) <= 0 || (Number(item.quantity) || 0) >= 10000) {
+          badges.push('<span style="background:#fef08a; color:#854d0e; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">⚠️ 数量要確認</span>');
+        }
+        if (badges.length === 0) {
+          badges.push('<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.72rem;">✓ チェックOK</span>');
+        }
+
+        const rowBg = (item.scanCount > 1 || item.hasExistingTemp)
+          ? 'background:#fffbeb;'
+          : ((!item.isMatched || (Number(item.price) || 0) <= 0) ? 'background:#fef2f2;' : '');
+
+        const codeDisplay = (item.identCode && item.identCode !== item.productId)
+          ? `<div><strong style="color:#0284c7;">${item.identCode}</strong></div><div style="font-size:0.7rem; color:#64748b;" class="mono">${item.productId}</div>`
+          : `<strong>${item.productId}</strong>`;
+
+        return `
+          <tr style="${rowBg}">
+            <td style="text-align: center;">
+              <input type="checkbox" ${item.enabled !== false ? 'checked' : ''}
+                     onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].enabled = this.checked;">
+            </td>
+            <td>${codeDisplay}</td>
+            <td><strong>${item.name}</strong></td>
+            <td>
+              <strong>${item.workerName}</strong>
+              <span style="font-size:0.74rem; color:#64748b;">(${item.worker})</span>
+              ${item.isNewHtUser ? '<span style="background:#e0f2fe; color:#0369a1; font-size:0.68rem; padding:1px 4px; border-radius:3px; margin-left:4px;">HT新規</span>' : ''}
+            </td>
+            <td style="text-align: right;">
+              <input type="number" step="0.01" class="form-input" value="${item.price}" min="0"
+                     style="width: 82px; padding: 4px; text-align: right; font-weight: bold; ${Number(item.price) <= 0 ? 'border-color:#ef4444; background:#fff1f2;' : ''}"
+                     onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].price = parseFloat(this.value) || 0;">
+            </td>
+            <td style="text-align: center; color: #475569;" class="num">${item.octPrevStock}</td>
+            <td style="text-align: center; color: #64748b;" class="num">${item.hasExistingTemp ? item.prevTempQty : '-'}</td>
+            <td style="text-align: center; font-weight: 700; color: #0284c7;" class="num">${item.htQuantity}</td>
+            <td style="text-align: center;">
+              <input type="number" class="form-input" value="${item.quantity}" min="0"
+                     style="width: 82px; padding: 4px; text-align: center; font-weight: bold;"
+                     onchange="if(window._parsedHtBatchItems[${idx}]) window._parsedHtBatchItems[${idx}].quantity = parseFloat(this.value) || 0;">
+            </td>
+            <td>${badges.join(' ')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    if (container) container.style.display = 'block';
+    if (execBtn) execBtn.disabled = false;
+    if (execNavBtn) execNavBtn.disabled = false;
+  } catch (e) {
+    console.error('HT Data Parse Error:', e);
+    toast('HTデータの解析中にエラーが発生しました: ' + e.message, 'error');
+  }
+}
 
 // HTデータを棚卸仮登録(INV_PRODUCTS / INV_SCAN_TEMP / INV_LOGS) および ユーザー管理(USERS) へ一括反映
-window.executeHtBatchImport = function() {
+window.executeHtBatchImport = function(navigateToCheck = false) {
   const allItems = window._parsedHtBatchItems || [];
   const items = allItems.filter(i => i && i.enabled !== false);
   if (items.length === 0) {
@@ -13657,7 +13944,7 @@ window.executeHtBatchImport = function() {
     if (!ok) return;
   }
 
-  const targetMonth = (document.getElementById('ht-import-month') || {}).value || new Date().toISOString().substring(0, 7);
+  const targetMonth = (document.getElementById('ht-import-month') || {}).value || '2026-11';
   const mergeMode = (document.getElementById('ht-merge-mode') || {}).value || 'merge_add';
   const autoRegisterUnknown = document.getElementById('ht-auto-register-unknown')
     ? document.getElementById('ht-auto-register-unknown').checked
@@ -13724,30 +14011,36 @@ window.executeHtBatchImport = function() {
   let totalImportedQty = 0;
 
   items.forEach((item, idx) => {
-    let prodIdx = products.findIndex(p => p && (String(p.id).toUpperCase() === String(item.productId).toUpperCase() || (p.identCode && String(p.identCode).toUpperCase() === String(item.productId).toUpperCase()) || (p.materialCode && String(p.materialCode).toUpperCase() === String(item.productId).toUpperCase())));
+    let prodIdx = products.findIndex(p => p && (
+      String(p.id).toUpperCase() === String(item.productId).toUpperCase() ||
+      (p.identCode && String(p.identCode).toUpperCase() === String(item.productId).toUpperCase()) ||
+      (p.materialCode && String(p.materialCode).toUpperCase() === String(item.productId).toUpperCase())
+    ));
 
     if (prodIdx === -1) {
       if (!autoRegisterUnknown) return;
-      const issued = issueDuplicateFreeMasterCodes(item.category && item.category !== '99' ? item.category : '01', products);
+      const guessCat = (item.identCode && item.identCode.includes('-')) ? item.identCode.split('-')[0].padStart(2, '0') : (item.category && item.category !== '99' ? item.category : '01');
+      const issued = issueDuplicateFreeMasterCodes(guessCat, products);
       const today = new Date().toISOString().split('T')[0];
-      const rawCode = String(item.productId || '').trim();
-      const finalMatCode = (rawCode.toUpperCase().startsWith('N') && rawCode.length >= 12) ? rawCode : issued.materialCode;
-      const finalIdentCode = (rawCode.includes('-') && !rawCode.toUpperCase().startsWith('N')) ? rawCode : issued.identCode;
       const newProd = {
-        id: finalMatCode,
-        identCode: finalIdentCode,
+        id: issued.materialCode,
+        identCode: issued.identCode,
         identClass: issued.identClass,
         identOrder: issued.identOrder,
-        materialCode: finalMatCode,
+        materialCode: issued.materialCode,
         materialType: '直接資材',
         name: item.name,
         category: issued.category,
+        categoryName: INV_CATEGORIES[issued.category] || '',
         price: parseFloat(item.price) || 0,
         targetFlag: 1,
         discontinuedFlag: 0,
         isDeadStock: false,
         isFixed: false,
         isTarget: true,
+        stock: 0,
+        lastStock: 0,
+        octStock: 0,
         updatedAt: today,
         priceUpdatedAt: today,
         isCustomAdded: true
@@ -13761,7 +14054,7 @@ window.executeHtBatchImport = function() {
     const finalQty = item.quantity;
     const scanId = Date.now() + '_ht_' + idx + '_' + prod.id;
 
-    // 単価が変更・入力されていればマスタ単価も上書き更新＆価格更新履歴を記録（生産管理の通常棚卸スキャンに準拠）
+    // 単価が変更・入力されていればマスタ単価も上書き更新＆価格更新履歴を記録
     const newPrice = parseFloat(item.price);
     if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== (parseFloat(prod.price) || 0)) {
       recordProductPriceUpdate(prod, newPrice, 'HTバッチ取込時単価更新');
@@ -13769,7 +14062,7 @@ window.executeHtBatchImport = function() {
       priceUpdatedCount++;
     }
 
-    // 1. INV_PRODUCTS 側の仮登録プロパティ更新 (実行者のログインIDと表示名を保存)
+    // 1. INV_PRODUCTS 側の仮登録プロパティ更新
     prod.tempQty = finalQty;
     prod.tempWorker = item.worker || 'admin';
     prod.tempWorkerName = item.workerName || '管理者';
@@ -13822,7 +14115,11 @@ window.executeHtBatchImport = function() {
 
   toast(`✅ HTデータ ${importedCount}件（総数量: ${totalImportedQty.toLocaleString()}）を ${targetMonth} の仮登録に反映しました`, 'success', 5000);
 
-  if (confirm(`✅ BT-W85 棚卸データの取り込みが完了しました！\n\n・反映資材数: ${importedCount} 件\n・総数量: ${totalImportedQty.toLocaleString()} 個${userAddedCount > 0 ? `\n・新規担当者追加: ${userAddedCount} 名` : ''}\n\n続けて「☑ 棚卸スキャン確認」画面を開き、スキャン実行者や未スキャン漏れの確認を行いますか？`)) {
+  if (navigateToCheck) {
+    if (typeof navigateTo === 'function') {
+      navigateTo('inv-check');
+    }
+  } else if (confirm(`✅ BT-W85 棚卸データの取り込みが完了しました！\n\n・対象月: ${targetMonth}\n・反映資材数: ${importedCount} 件\n・総数量: ${totalImportedQty.toLocaleString()} 個${userAddedCount > 0 ? `\n・新規担当者追加: ${userAddedCount} 名` : ''}\n\n続けて「☑ 棚卸スキャン確認」画面を開き、確認・締め処理を行いますか？`)) {
     if (typeof navigateTo === 'function') {
       navigateTo('inv-check');
     }
@@ -13940,43 +14237,36 @@ window.downloadBtH10wAppSource = function() {
   toast('💻 BT-H10W用スクリプト v2.0 (TAC_TANAOROSHI.scp) をダウンロードしました', 'success');
 };
 
-// 動作確認用のサンプルHT出力CSV (担当者ログイン情報＆重複ダブり行つき)
+// 動作確認用のサンプルHT出力CSV (KEYENCE BT-W85 Record.csv 9列形式 ＆ 重複ダブり行つき)
 window.downloadSampleHtCsv = function() {
-  const products = (DB.get(DB.KEYS.INV_PRODUCTS) || []).filter(p => p && p.id && !String(p.id).startsWith('TEMP_'));
+  const products = (DB.get(DB.KEYS.INV_PRODUCTS) || []).filter(p => p && p.id && !String(p.id).startsWith('TEMP_') && !isInvNonTargetProduct(p));
   const users = DB.get(DB.KEYS.USERS) || [];
   const u1 = users[0] || { username: 'admin', displayName: '管理者' };
   const u2 = users[1] || u1;
 
-  const sampleItems = products.slice(0, 4);
+  const p1 = products.find(p => p.identCode === '01-023') || products[0] || { identCode: '01-023', name: 'LVL 30X14X2430' };
+  const p2 = products.find(p => p.identCode === '01-024') || products[1] || { identCode: '01-024', name: 'LVL 30X17.7X2430' };
+  const p3 = products.find(p => p.identCode === '02-001') || products[2] || { identCode: '02-001', name: "片面化粧MDF t2.5X3'X8' BW" };
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
 
-  let lines = [];
-  if (sampleItems.length > 0) {
-    sampleItems.forEach((p, idx) => {
-      const u = (idx % 2 === 0) ? u1 : u2;
-      lines.push(`${today},09:1${idx}:00,BTW85,${u.username},${u.displayName},${p.id},${(idx + 1) * 10}`);
-    });
-    // 1件目の資材を別箇所でもう一度スキャンした（ダブりテスト用）行を追加
-    lines.push(`${today},09:25:00,BTW85,${u1.username},${u1.displayName},${sampleItems[0].id},5`);
-  } else {
-    lines = [
-      `${today},09:10:00,BTW85,${u1.username},${u1.displayName},N01-001,20`,
-      `${today},09:12:30,BTW85,${u2.username},${u2.displayName},N01-002,15`,
-      `${today},09:15:45,BTW85,${u1.username},${u1.displayName},N01-001,5`
-    ];
-  }
+  const lines = [
+    `${today},09:00:00,1,${u1.username},${p1.identCode} ${String(p1.name || '').replace(/,/g, ' ')},510,09:00:00,09:00:05,00:00:05`,
+    `${today},09:01:10,2,${u1.username},${p2.identCode} ${String(p2.name || '').replace(/,/g, ' ')},542,09:01:05,09:01:10,00:00:05`,
+    `${today},09:02:20,3,${u2.username},${p3.identCode} ${String(p3.name || '').replace(/,/g, ' ')},30,09:02:15,09:02:20,00:00:05`,
+    `${today},09:03:30,4,${u1.username},${p1.identCode} ${String(p1.name || '').replace(/,/g, ' ')},10,09:03:25,09:03:30,00:00:05`
+  ];
 
   const csvContent = lines.join('\r\n') + '\r\n';
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'INV_LOG_SAMPLE_V2.CSV';
+  link.download = 'Record_SAMPLE.csv';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  toast('🧪 担当者＆ダブり検証用サンプルCSV (INV_LOG_SAMPLE_V2.CSV) をダウンロードしました！', 'info', 5000);
+  toast('🧪 BT-W85 9列形式サンプルCSV (Record_SAMPLE.csv) をダウンロードしました！', 'info', 5000);
 };
 
 // ============================================================================

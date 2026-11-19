@@ -326,7 +326,7 @@
                 const catName = CATEGORY_NAMES[prod.category] || prod.categoryName || prod.category;
                 const shortCode = String(prod.identCode || prod.id || '').trim();
                 const fullMatCode = String(prod.materialCode || prod.id || '').trim();
-                const namePart = String(prod.name || '').trim();
+                const namePart = String(prod.name || '').replace(/[\r\n]+/g, ' ').replace(/,/g, ' ').trim();
 
                 // QRコードをローカルで生成
                 // ※BT-W85の1行テキスト枠(BtTextBox_ProcessNo)で右端に見切れて品名が消える不具合を完全に防ぐため、

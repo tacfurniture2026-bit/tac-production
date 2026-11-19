@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>生産管理システム</title>
-    <!-- 【強制キャッシュバスティング v6.81.0】 -->
+    <!-- 【強制キャッシュバスティング v6.82.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.81.0';
+            var currentVersion = 'v6.82.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?v=' + currentVersion + window.location.hash;
@@ -26,12 +26,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.81.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.82.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300;400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=v6.81.0">
+    <link rel="stylesheet" href="styles.css?v=v6.82.0">
     <style>
 html, body { 
     width: 100vw; 
@@ -138,8 +138,8 @@ html, body {
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.81.0"></script>
-    <script src="app.js?v=v6.81.0"></script>
+    <script src="data.js?v=v6.82.0"></script>
+    <script src="app.js?v=v6.82.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリアのためのService Worker解除
         if ('serviceWorker' in navigator) {
@@ -208,7 +208,7 @@ html, body {
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.81.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.82.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -1047,9 +1047,9 @@ html, body {
                             <button type="button" class="btn btn-primary" onclick="openHtImportModal('import')" style="background-color: #0284c7; border-color: #0284c7; font-weight: bold; padding: 12px 20px; font-size: 1rem; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
                                 📥 HTデータ取り込み
                             </button>
-                            <a href="bt-w85-app/TAC_INV_Windows_Setup.zip" download="TAC_INV_Windows_Setup.zip" class="btn btn-primary" style="background-color: #0f766e; border-color: #0f766e; font-weight: bold; padding: 10px 16px; font-size: 0.875rem; text-decoration: none;">
+                            <button type="button" onclick="downloadHtProgramZip('setup')" class="btn btn-primary" style="background-color: #0f766e; border-color: #0f766e; font-weight: bold; padding: 10px 16px; font-size: 0.875rem;">
                                 📦 Windows用 HTアプリ一式DL (.zip)
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-secondary" onclick="openHtImportModal('master')" style="padding: 10px 14px; font-size: 0.875rem;">
                                 📤 マスタ・ログインQR出力
                             </button>
@@ -1326,6 +1326,7 @@ html, body {
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="btn btn-primary" onclick="openHtImportModal('import')" style="background-color: #0284c7; border-color: #0284c7; font-weight: bold;">📥 HTデータ取り込み</button>
+                            <button class="btn btn-primary" onclick="downloadHtProgramZip('setup')" style="background-color: #0f766e; border-color: #0f766e; font-weight: bold;">📦 HTプログラムDL (.zip)</button>
                             <button class="btn btn-secondary" onclick="forceReloadMaster()">🔄 マスタ再読込</button>
                             <button class="btn btn-primary" id="confirm-inv-temp-btn">✓ 棚卸確定 (締め処理)</button>
                             <button class="btn btn-danger" id="undo-confirm-inv-temp-btn">⏪ 確定取り消し</button>
@@ -1451,7 +1452,8 @@ html, body {
                             <h1>月次締め</h1>
                             <p>月末在庫の集計・確定</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="executeEmbeddedGenboMasterSync()" title="棚卸原簿.xlsx のAK列から10月期(2026-10)初期締めデータを再生成します">🔄 10月期(AK列)初期締め再実行</button>
                             <button class="btn btn-primary" id="run-inv-closing-btn">🚀 月次締め実行</button>
                             <button class="btn btn-danger" id="undo-inv-closing-btn">⏪ 締め取り消し</button>
                         </div>

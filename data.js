@@ -838,7 +838,7 @@ const DB = {
         }
     },
 
-    // 棚卸原簿.xlsx & 資材コード一覧及び棚卸対象一覧.xlsx マスタ一括移行（既存在庫・不動在庫・価格更新履歴完全保持）
+    // 棚卸原簿.xlsx & 資材コード一覧及び棚卸対象一覧.xlsx マスタ一括移行 ＆ 10月期(AK列)初期締め処理（v6.82.0）
     applyLatestGenboMaster(forceReplace = false) {
         if (typeof getGenboMasterProducts !== 'function') return;
         if (typeof useFirebase !== 'undefined' && useFirebase && !this._loaded[this.KEYS.INV_PRODUCTS]) {
@@ -846,15 +846,15 @@ const DB = {
             return;
         }
         const currentProducts = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const alreadyApplied = localStorage.getItem('pms_genbo_v681_applied') === 'true';
+        const alreadyApplied = localStorage.getItem('pms_genbo_v682_oct_closed') === 'true';
         if (alreadyApplied && !forceReplace && currentProducts.length >= 3000) {
             return;
         }
 
-        console.log('🔄 棚卸原簿.xlsx マスタデータ(3,104件)の移行・整合性更新を実行します...');
+        console.log('🔄 棚卸原簿.xlsx マスタデータ(3,104件)の移行および10月期(AK列)初期締め処理を実行します...');
         const genboProducts = getGenboMasterProducts();
 
-        // 既存データのマップ構築（資材コード・識別コード・IDで照合し、現在入力されている在庫・不動設定・価格履歴を保持）
+        // 既存データのマップ構築（資材コード・識別コード・IDで照合し、価格更新履歴や11月期以降の仮スキャンを保持）
         const existingByKey = new Map();
         currentProducts.forEach(p => {
             if (!p) return;
@@ -869,28 +869,25 @@ const DB = {
                 || existingByKey.get(String(gp.identCode).toUpperCase())
                 || existingByKey.get(String(gp.materialCode).toUpperCase());
 
+            // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ
+            const isTarget4Fixed = (Number(gp.targetFlag) === 4);
+            // 10月期のデータは棚卸原簿AK列(octStock)を活用して初期値とする
+            const octInitialStock = Number(gp.octStock) || 0;
+
             if (ex) {
                 if (ex.id) matchedExistingIds.add(String(ex.id).toUpperCase());
                 if (ex.identCode) matchedExistingIds.add(String(ex.identCode).toUpperCase());
                 if (ex.materialCode) matchedExistingIds.add(String(ex.materialCode).toUpperCase());
 
-                // 現在の不動在庫はそのまま不動として扱う。また廃盤フラグ==1 または 死蔵・不動対象(4,5,6,8)も死蔵/不動扱い
-                const keepFixed = !!ex.isFixed || !!gp.isFixed || !!gp.isDeadStock;
-                const keepStock = (ex.stock !== undefined && ex.stock !== null && Number(ex.stock) > 0)
-                    ? Number(ex.stock)
-                    : gp.stock;
-                const keepLastStock = (ex.lastStock !== undefined && ex.lastStock !== null && Number(ex.lastStock) > 0)
-                    ? Number(ex.lastStock)
-                    : gp.lastStock;
-
                 const merged = Object.assign({}, gp, {
-                    isFixed: keepFixed,
-                    stock: keepStock,
-                    lastStock: keepLastStock
+                    isFixed: isTarget4Fixed,
+                    stock: octInitialStock,
+                    lastStock: octInitialStock,
+                    inventoryDate: octInitialStock > 0 ? '2026-10-31T23:59:59.000Z' : ''
                 });
 
-                // 進行中の仮スキャンデータがあれば保持
-                if (ex.tempQty !== undefined && ex.tempQty !== null) {
+                // 11月期(2026-11)以降の進行中の仮スキャンデータがあれば保持（10月期以前はリセットして11月期から新規収集）
+                if (ex.tempQty !== undefined && ex.tempQty !== null && ex.tempMonth && ex.tempMonth >= '2026-11') {
                     merged.tempQty = ex.tempQty;
                     merged.tempWorker = ex.tempWorker;
                     merged.tempWorkerName = ex.tempWorkerName;
@@ -899,7 +896,6 @@ const DB = {
                     merged.tempId = ex.tempId;
                     if (ex.tempAmountWithTax !== undefined) merged.tempAmountWithTax = ex.tempAmountWithTax;
                 }
-                if (ex.inventoryDate) merged.inventoryDate = ex.inventoryDate;
                 if (Array.isArray(ex.priceHistory) && ex.priceHistory.length > 0) {
                     merged.priceHistory = ex.priceHistory.slice();
                 }
@@ -923,7 +919,7 @@ const DB = {
             return gp;
         });
 
-        // 棚卸原簿に存在しないが、システム上で独自追加され在庫や仮スキャンが入っているカスタム資材があれば末尾に保持（サンプル3件やTEMP_は除外）
+        // 棚卸原簿に存在しないが、システム上で独自追加されたカスタム資材があれば末尾に保持（サンプル3件やTEMP_は除外）
         const sampleIds = new Set(['N01000000001', 'N02000000001', 'N05000000001']);
         currentProducts.forEach(ex => {
             if (!ex || !ex.id) return;
@@ -932,80 +928,149 @@ const DB = {
             const uIdent = ex.identCode ? String(ex.identCode).trim().toUpperCase() : '';
             const uMat = ex.materialCode ? String(ex.materialCode).trim().toUpperCase() : '';
             if (!matchedExistingIds.has(uid) && (!uIdent || !matchedExistingIds.has(uIdent)) && (!uMat || !matchedExistingIds.has(uMat))) {
-                if ((Number(ex.stock) || 0) > 0 || (ex.tempQty !== undefined && ex.tempQty !== null) || ex.isCustomAdded) {
+                if (ex.isCustomAdded) {
+                    ex.isFixed = (Number(ex.targetFlag) === 4);
                     mergedProducts.push(ex);
                 }
             }
         });
 
-        // 既存の仮スキャン(INV_SCAN_TEMP)・棚卸ログ(INV_LOGS)・月次データ(INV_MONTHLY)のproductIdが識別コード(XX-NNN)だった場合、新マスタID(資材コード)に正規化して整合性を統一
-        const identToMatMap = new Map();
-        mergedProducts.forEach(p => {
-            if (p.identCode && p.id) {
-                identToMatMap.set(String(p.identCode).toUpperCase(), p.id);
-            }
-            if (p.materialCode && p.id) {
-                identToMatMap.set(String(p.materialCode).toUpperCase(), p.id);
-            }
-        });
+        this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(mergedProducts)));
+        this.initializeOctoberGenboClosing(mergedProducts);
+        localStorage.setItem('pms_genbo_v681_applied', 'true');
+        localStorage.setItem('pms_genbo_v682_oct_closed', 'true');
+        console.log(`✅ 棚卸原簿マスタ移行＆10月期(2026-10)初期締め完了: 全 ${mergedProducts.length} 件`);
+    },
 
-        const tempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
-        let tempChanged = false;
-        tempScans.forEach(s => {
-            if (s && s.productId) {
-                const mapped = identToMatMap.get(String(s.productId).trim().toUpperCase());
-                if (mapped && mapped !== s.productId) {
-                    s.productId = mapped;
-                    tempChanged = true;
-                }
-            }
-        });
-        if (tempChanged) {
-            this.save(this.KEYS.INV_SCAN_TEMP, tempScans);
-        }
+    // 棚卸原簿.xlsx のAK列（10月度棚卸数量）を活用した10月期(2026-10)の集計・締め処理（在庫管理の初期データ化＆11月期収集開始）
+    initializeOctoberGenboClosing(productsList = null) {
+        const products = productsList || this.get(this.KEYS.INV_PRODUCTS) || [];
+        if (products.length === 0) return null;
 
-        const logs = this.get(this.KEYS.INV_LOGS) || [];
-        let logsChanged = false;
-        logs.forEach(l => {
-            if (l && l.productId) {
-                const mapped = identToMatMap.get(String(l.productId).trim().toUpperCase());
-                if (mapped && mapped !== l.productId) {
-                    l.productId = mapped;
-                    logsChanged = true;
-                }
-            }
-        });
-        if (logsChanged) {
-            this.save(this.KEYS.INV_LOGS, logs);
-        }
+        const GENBO_CAT_NAMES = {
+            '01': '基材', '02': '面材', '03': 'シート', '04': '木口ﾃｰﾌﾟ', '05': '金具',
+            '06': 'ﾀﾞﾝﾎﾞｰﾙ', '07': '接着剤', '08': '仕入備品', '09': 'PAO資材', '10': '工場部材',
+            '11': '仕掛品芯組のみ', '12': '仕掛品カット', '13': '部材完成品', '14': '製品在庫',
+            '15': 'シェルフ製品在庫', '16': 'キャビネット製品在庫', '17': 'ラミテック', '18': '天野木工',
+            '19': 'いろは', '20': 'Real', '21': 'イイダアックス', '22': '下請け預かり品',
+            '23': 'GRID不動品', '24': '仕掛品フラッシュのみ', '25': '仕掛品(Tpics)',
+            '26': '仕掛品(未完成品)', '27': '入荷品'
+        };
 
-        const monthly = this.get(this.KEYS.INV_MONTHLY) || [];
-        let monthlyChanged = false;
-        monthly.forEach(m => {
-            if (m && Array.isArray(m.items)) {
-                m.items.forEach(item => {
-                    if (item && item.productId) {
-                        const mapped = identToMatMap.get(String(item.productId).trim().toUpperCase());
-                        if (mapped && mapped !== item.productId) {
-                            item.productId = mapped;
-                            monthlyChanged = true;
-                        }
-                        const mp = mergedProducts.find(x => x.id === item.productId);
-                        if (mp) {
-                            item.name = mp.name;
-                            item.category = mp.category;
-                        }
-                    }
+        const targetMonth = '2026-10';
+        const octTimestamp = '2026-10-31T23:59:59.000Z';
+        const sortedProducts = [...products].sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
+
+        const octItems = [];
+        const octSummary = {};
+        const octLogs = [];
+        let rawTotal = 0;
+
+        sortedProducts.forEach((p, idx) => {
+            if (!p || !p.id) return;
+            const octQty = Number(p.octStock !== undefined ? p.octStock : p.stock) || 0;
+            const price = Number(p.price) || 0;
+            // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ集計
+            const isFixed = (Number(p.targetFlag) === 4);
+            const rawAmount = octQty * price * 1.01;
+            const amount = Math.round(rawAmount);
+            const cat = String(p.category || '99').padStart(2, '0');
+
+            p.stock = octQty;
+            p.lastStock = octQty;
+            p.isFixed = isFixed;
+
+            octItems.push({
+                productId: p.id,
+                identCode: p.identCode || p.id,
+                name: p.name,
+                category: cat,
+                targetFlag: Number(p.targetFlag) || 0,
+                price: price,
+                prevQty: 0,
+                currQty: octQty,
+                diff: octQty,
+                amount: amount,
+                prevAmount: 0,
+                rawAmount: rawAmount,
+                rawPrevAmount: 0,
+                isFixed: isFixed
+            });
+
+            rawTotal += rawAmount;
+
+            const catKey = isFixed ? 'fixed' : cat;
+            if (!octSummary[catKey]) {
+                const catName = isFixed ? '不動品' : (GENBO_CAT_NAMES[cat] || p.categoryName || `分類${cat}`);
+                octSummary[catKey] = { name: catName, rawAmount: 0, rawPrevAmount: 0, amount: 0, diff: 0, prevAmount: 0 };
+            }
+            octSummary[catKey].rawAmount += rawAmount;
+
+            if (octQty > 0) {
+                octLogs.push({
+                    id: 1730386799000 + idx,
+                    productId: p.id,
+                    quantity: octQty,
+                    type: 'count',
+                    worker: '初期データ(棚卸原簿AK列)',
+                    note: '10月期初期在庫確定(2026-10 棚卸原簿AK列)',
+                    timestamp: octTimestamp
                 });
             }
         });
-        if (monthlyChanged) {
-            this.save(this.KEYS.INV_MONTHLY, monthly);
+
+        const total = Math.round(rawTotal);
+        let largestCatKey = null;
+        let maxCatRawAmt = -1;
+
+        Object.keys(octSummary).forEach(k => {
+            const amt = Math.round(octSummary[k].rawAmount || 0);
+            octSummary[k].amount = amt;
+            octSummary[k].prevAmount = 0;
+            octSummary[k].diff = amt;
+            if ((octSummary[k].rawAmount || 0) > maxCatRawAmt) {
+                maxCatRawAmt = octSummary[k].rawAmount || 0;
+                largestCatKey = k;
+            }
+        });
+
+        const catSum = Object.values(octSummary).reduce((s, c) => s + c.amount, 0);
+        const catDiff = total - catSum;
+        if (catDiff !== 0 && largestCatKey && octSummary[largestCatKey]) {
+            octSummary[largestCatKey].amount += catDiff;
+            octSummary[largestCatKey].diff = octSummary[largestCatKey].amount;
         }
 
-        this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(mergedProducts)));
-        localStorage.setItem('pms_genbo_v681_applied', 'true');
-        console.log(`✅ 棚卸原簿マスタ移行完了: 全 ${mergedProducts.length} 件`);
+        const fixedTotal = (octSummary['fixed'] ? octSummary['fixed'].amount : 0) || 0;
+
+        const octMonthlyData = {
+            month: targetMonth,
+            items: octItems,
+            summary: octSummary,
+            total: total,
+            prevTotal: 0,
+            fixedTotal: fixedTotal,
+            closedAt: octTimestamp,
+            isInitialBaseline: true
+        };
+
+        // 1. INV_MONTHLY: 旧マスタ時代の10月期以前のデータを整理し、2026-10(10月期)を初期締めデータとして保存（2026-11以降があれば維持）
+        const existingMonthly = this.get(this.KEYS.INV_MONTHLY) || [];
+        const futureMonthly = existingMonthly.filter(m => m && m.month && m.month > targetMonth);
+        const newMonthlyList = [octMonthlyData, ...futureMonthly].sort((a, b) => a.month.localeCompare(b.month));
+        this.save(this.KEYS.INV_MONTHLY, JSON.parse(JSON.stringify(newMonthlyList)));
+
+        // 2. INV_LOGS: 2026-10以前の旧ログをクリアし、10月期確定ログ＋2026-11以降のログのみを保持
+        const existingLogs = this.get(this.KEYS.INV_LOGS) || [];
+        const futureLogs = existingLogs.filter(l => l && l.timestamp && l.timestamp >= '2026-11');
+        this.save(this.KEYS.INV_LOGS, JSON.parse(JSON.stringify([...octLogs, ...futureLogs])));
+
+        // 3. INV_SCAN_TEMP: 2026-10以前の仮スキャンをクリアし、2026-11(11月期)からの新規収集状態にする
+        const existingTempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
+        const futureTempScans = existingTempScans.filter(s => s && s.month && s.month >= '2026-11');
+        this.save(this.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(futureTempScans)));
+
+        return octMonthlyData;
     }
 };
 
@@ -31726,12 +31791,15 @@ function getGenboMasterProducts() {
     return MASTER_GENBO_RAW.map(r => {
         const targetFlag = Number(r[16]) || 0;
         const discFlag = Number(r[17]) || 0;
-        const isDeadStock = (discFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
+        // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ
+        const isFixed = (targetFlag === 4);
+        const isDeadStock = (discFlag === 1) || (targetFlag === 4);
         const isTarget = !(targetFlag === 0 || targetFlag === 7);
         const deadQty = Number(r[18]) || 0;
         const prevQty = Number(r[19]) || 0;
+        // AK列には10月期の棚卸集計結果が記載されているため、これを初期値とする
         const octQty = Number(r[36]) || 0;
-        const initialStock = octQty > 0 ? octQty : (prevQty > 0 ? prevQty : (isDeadStock ? deadQty : 0));
+        const cleanName = String(r[8] || "").replace(/[\r\n]+/g, " ").trim();
         return {
             id: r[4],
             identCode: r[0],
@@ -31743,7 +31811,7 @@ function getGenboMasterProducts() {
             materialType: r[5] || "直接資材",
             subCategory: r[6] || "",
             note: r[7] || "",
-            name: r[8],
+            name: cleanName,
             colorOther: r[9] || "",
             composition: r[10] || "",
             material: r[10] || "",
@@ -31755,13 +31823,14 @@ function getGenboMasterProducts() {
             targetFlag: targetFlag,
             discontinuedFlag: discFlag,
             isDeadStock: isDeadStock,
-            isFixed: isDeadStock,
+            isFixed: isFixed,
             isTarget: isTarget,
             deadStockQty: deadQty,
             prevStock: prevQty,
             octStock: octQty,
-            stock: initialStock,
-            lastStock: prevQty > 0 ? prevQty : initialStock,
+            stock: octQty,
+            lastStock: octQty,
+            inventoryDate: octQty > 0 ? "2026-10-31T23:59:59.000Z" : "",
             updatedAt: r[20] || "",
             priceUpdatedAt: r[20] || "",
             orderProductName: r[21] || "",
