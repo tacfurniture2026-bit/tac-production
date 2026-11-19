@@ -1646,8 +1646,8 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <Name>BtLabel_ProcessNo</Name>
-                    <Location>5, 62</Location>
-                    <Size>230, 22</Size>
+                    <Location>5, 54</Location>
+                    <Size>230, 18</Size>
                     <Text>資材QR (資材CD / 品名)</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
@@ -1686,7 +1686,7 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>White</BackColor>
                     <Name>BtLabel_SerialNo</Name>
-                    <Location>5, 148</Location>
+                    <Location>5, 184</Location>
                     <Size>55, 28</Size>
                     <Text>数量</Text>
                     <Alignment>Near</Alignment>
@@ -1761,8 +1761,8 @@
                     <Name>BtTextBox_ProcessNo</Name>
                     <Text>
                     </Text>
-                    <Location>5, 86</Location>
-                    <Size>230, 54</Size>
+                    <Location>5, 74</Location>
+                    <Size>230, 44</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2027,8 +2027,8 @@
                     <Name>BtTextBox_Person</Name>
                     <Text>
                     </Text>
-                    <Location>62, 30</Location>
-                    <Size>173, 26</Size>
+                    <Location>62, 28</Location>
+                    <Size>173, 24</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2258,8 +2258,8 @@
                     <ForeColor>Black</ForeColor>
                     <BackColor>Gainsboro</BackColor>
                     <Name>BtLabel_Person</Name>
-                    <Location>5, 30</Location>
-                    <Size>55, 26</Size>
+                    <Location>5, 28</Location>
+                    <Size>55, 24</Size>
                     <Text>作業者</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
@@ -2333,7 +2333,7 @@
                     <Name>BtTextBox_SerialNo</Name>
                     <Text>
                     </Text>
-                    <Location>62, 148</Location>
+                    <Location>62, 184</Location>
                     <Size>173, 28</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
@@ -2839,13 +2839,135 @@
                       </ToolInstanceKey>
                     </_instanceKey>
                     <Name>BtStopWatch</Name>
-                    <Location>0, 185</Location>
-                    <Size>240, 60</Size>
+                    <Location>0, 218</Location>
+                    <Size>240, 44</Size>
                     <StartDateTimeVisible>False</StartDateTimeVisible>
                     <EndDateTimeVisible>False</EndDateTimeVisible>
                     <ElapsedTimeVisible>False</ElapsedTimeVisible>
                     <ClearButtonVisible>False</ClearButtonVisible>
                   </StopWatchToolSettings>
+                  <GridBoxToolSettings version="0.2.0.0">
+                    <_instanceKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>7a4e91c2-5b83-4d21-9e16-3f8c2a1b4d70</_guid>
+                      </ToolInstanceKey>
+                    </_instanceKey>
+                    <EditingOptions>HideDataSettings|HideColumnCount|HideRowNumber|HideColumnSettings</EditingOptions>
+                    <Name>BtTableView_PrevStock</Name>
+                    <Location>5, 122</Location>
+                    <Size>230, 56</Size>
+                    <StyleSettings>
+                      <GridBoxStyleSettings version="0.2.0.0">
+                        <_rowNumberVisible>False</_rowNumberVisible>
+                        <_columnNameVisible>True</_columnNameVisible>
+                        <_rowNumberHeaderColumn>
+                          <GridBoxColumn version="0.2.0.0">
+                            <_width>40</_width>
+                            <_columnName>
+                            </_columnName>
+                          </GridBoxColumn>
+                        </_rowNumberHeaderColumn>
+                        <_columns>
+                          <GridBoxColumnCollection version="0.2.0.0">
+                            <_items>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>72</_width>
+                                <_columnName>コード</_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>158</_width>
+                                <_columnName>先月在庫(修正不可)</_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>品名</_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>単価</_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>
+                                </_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>
+                                </_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>
+                                </_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>60</_width>
+                                <_columnName>
+                                </_columnName>
+                              </GridBoxColumn>
+                            </_items>
+                          </GridBoxColumnCollection>
+                        </_columns>
+                        <_cellBackColor>LightGray</_cellBackColor>
+                        <_fontSettings>
+                          <TerminalFontSettings version="0.2.0.0">
+                            <BtwPointSize>12</BtwPointSize>
+                            <Bold>True</Bold>
+                            <BthSize>Medium</BthSize>
+                            <BthRatio>Normal</BthRatio>
+                          </TerminalFontSettings>
+                        </_fontSettings>
+                        <ColumnCount>2</ColumnCount>
+                      </GridBoxStyleSettings>
+                    </StyleSettings>
+                    <TargetData>MasterData</TargetData>
+                    <TargetMasterData>
+                      <FileResourceKey version="0.2.0.0">
+                        <_storageDestination>Drive1</_storageDestination>
+                        <_filePath>MasterFile_1.csv</_filePath>
+                      </FileResourceKey>
+                    </TargetMasterData>
+                    <FilterSettings>
+                      <FilterSettings version="0.2.0.0">
+                        <_enabled>True</_enabled>
+                        <_filterDeterminationCount>1</_filterDeterminationCount>
+                        <_determinations>
+                          <FilterDeterminationCollection version="0.2.0.0">
+                            <_items>
+                              <FilterDetermination version="0.2.0.0">
+                                <_inputTextBoxKey>
+                                  <ToolInstanceKey version="0.2.0.0">
+                                    <_guid>cb5da652-6bc5-4c61-b8ca-7a42d92523fb</_guid>
+                                  </ToolInstanceKey>
+                                </_inputTextBoxKey>
+                                <_columnNo>1</_columnNo>
+                              </FilterDetermination>
+                              <FilterDetermination version="0.2.0.0">
+                                <_inputTextBoxKey>
+                                  <ToolInstanceKey version="0.2.0.0">
+                                    <_guid>00000000-0000-0000-0000-000000000000</_guid>
+                                  </ToolInstanceKey>
+                                </_inputTextBoxKey>
+                                <_columnNo>2</_columnNo>
+                              </FilterDetermination>
+                              <FilterDetermination version="0.2.0.0">
+                                <_inputTextBoxKey>
+                                  <ToolInstanceKey version="0.2.0.0">
+                                    <_guid>00000000-0000-0000-0000-000000000000</_guid>
+                                  </ToolInstanceKey>
+                                </_inputTextBoxKey>
+                                <_columnNo>3</_columnNo>
+                              </FilterDetermination>
+                            </_items>
+                          </FilterDeterminationCollection>
+                        </_determinations>
+                        <_determinationMode>All</_determinationMode>
+                      </FilterSettings>
+                    </FilterSettings>
+                    <MaxDataCount>1</MaxDataCount>
+                    <FilteringMatchType>ExactMatch</FilteringMatchType>
+                  </GridBoxToolSettings>
                 </_layoutTools>
                 <_hiddenLayoutTools />
                 <_actionTools>

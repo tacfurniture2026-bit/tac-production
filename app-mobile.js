@@ -11516,7 +11516,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
 
   try {
     toast(`📦 ${label} を準備しています...`, 'info');
-    const res = await fetch(`${filePath}?v=6.83.0_${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${filePath}?v=6.84.0_${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const zipBlob = new Blob([blob], { type: 'application/zip' });
@@ -11532,7 +11532,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
   } catch (err) {
     console.warn('Fetch zip fallback to direct link:', err);
     const a = document.createElement('a');
-    a.href = `${filePath}?v=6.83.0`;
+    a.href = `${filePath}?v=6.84.0`;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
@@ -11692,7 +11692,7 @@ window.openHtImportModal = function(initialTab = 'import') {
             <div style="display: inline-block; background: #0284c7; color: #fff; font-weight: bold; font-size: 0.78rem; padding: 2px 10px; border-radius: 999px; margin-bottom: 6px;">Windows PC 専用・全自動セットアップパッケージ（確認済・最新版）</div>
             <h4 style="margin: 0 0 0.5rem 0; color: #0369a1; font-size: 1.1rem;">① 【Windows PC用】BT開発・運用ツール 完成アプリ＆自動配置セット（ダウンロード形式）</h4>
             <p style="font-size: 0.86rem; color: #334155; margin-bottom: 0.9rem; line-height: 1.6;">
-              <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong>用の完成済みプロジェクト（<code>TAC_INV</code> 7ファイル：資材CD＋品名表示対応済み）、自動配置バッチ（<code>1_SETUP_BT_TOOL.bat</code>）、受信データ自動回収バッチ（<code>2_GET_RECORD_CSV.bat</code>）、最新棚卸原簿マスタ（3,104件）、オフライン図解マニュアルをすべて1つのZIPに同梱しています。<br>
+              <strong>KEYENCE「BT開発・運用ツール (BT Application Design Tool v2.3.3.0)」</strong>用の完成済みプロジェクト（<code>TAC_INV</code> 7ファイル：資材CD＋品名表示＆<strong>先月在庫（修正不可）表示</strong>対応済み）、自動配置バッチ（<code>1_SETUP_BT_TOOL.bat</code>）、受信データ自動回収バッチ（<code>2_GET_RECORD_CSV.bat</code>）、最新棚卸原簿マスタ（3,104件・10月期先月在庫入り）、オフライン図解マニュアルをすべて1つのZIPに同梱しています。<br>
               下のボタンを押してダウンロード・解凍し、<strong><code>1_SETUP_BT_TOOL.bat</code> をダブルクリックするだけ</strong>で、フォルダ配置からBT開発・運用ツールの起動まで全自動で完了します！
             </p>
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
@@ -11712,16 +11712,33 @@ window.openHtImportModal = function(initialTab = 'import') {
           </div>
 
           <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.15rem; background: #fff;">
-            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">② 担当者ログインQR一覧 ＆ 最新棚卸原簿マスタ個別出力</h4>
-            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.85rem; line-height: 1.5;">
-              現在の棚卸原簿商品マスタ（<strong>${products.length}件</strong>）と、ユーザー管理に登録されている担当者（<strong>${users.length}名</strong>）のログインQRシートおよび Shift-JIS CSV を出力します。
+            <h4 style="margin: 0 0 0.4rem 0; color: #0369a1;">② 担当者ログインQR一覧 ＆ 最新棚卸原簿マスタ個別出力（先月在庫つき）</h4>
+            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem; line-height: 1.5;">
+              現在の棚卸原簿商品マスタ（<strong>${products.length}件</strong>）と担当者（<strong>${users.length}名</strong>）を出力します。商品マスタには<strong>対象月の1ヶ月前（先月）の確定在庫</strong>が含まれ、HT画面上で<strong>修正不可の参照値</strong>として表示されます（例：11月期棚卸→10月期在庫、10月期棚卸→9月期在庫）。
             </p>
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.85rem; padding: 0.55rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <label for="ht-master-target-month" style="font-size: 0.84rem; font-weight: bold; color: #334155;">📅 棚卸対象月（先月在庫の基準）:</label>
+              <input type="month" id="ht-master-target-month" class="form-control" style="width: 150px; padding: 4px 8px; font-size: 0.88rem;" value="${(() => {
+                const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+                const closed = monthly.map(m => m.month).filter(Boolean).sort();
+                if (closed.length > 0) {
+                  const [ly, lm] = closed[closed.length - 1].split('-').map(Number);
+                  const d = new Date(ly, lm, 1);
+                  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                }
+                return defaultMonth;
+              })()}" onchange="updateHtMasterPrevMonthHint()">
+              <span id="ht-master-prev-hint" style="font-size: 0.82rem; color: #0369a1; font-weight: bold;"></span>
+            </div>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-primary" onclick="showUserLoginQrGallery()" style="background: #0369a1; border-color: #0369a1;">
                 📱 担当者ログインQR一覧（印刷用）
               </button>
               <button type="button" class="btn btn-primary" onclick="exportHtMasterCsv('MasterFile_1.csv')" style="background: #0284c7; border-color: #0284c7;">
-                📤 商品マスタ (MasterFile_1.csv) 出力
+                📤 商品マスタ (MasterFile_1.csv / 先月在庫入) 出力
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="exportHtMasterCsv('MASTER.CSV')">
+                📤 スクリプト版マスタ (MASTER.CSV) 出力
               </button>
               <button type="button" class="btn btn-secondary" onclick="exportHtUsersCsv('user.txt')">
                 👤 ログイン担当者 (user.txt) 出力
@@ -11786,6 +11803,9 @@ window.openHtImportModal = function(initialTab = 'import') {
 
   window._parsedHtBatchItems = [];
   window._lastHtRawRows = [];
+  if (typeof updateHtMasterPrevMonthHint === 'function') {
+    updateHtMasterPrevMonthHint();
+  }
   if (initialTab && initialTab !== 'import') {
     switchHtModalTab(initialTab);
   }
@@ -12560,8 +12580,84 @@ window.executeHtBatchImport = function(navigateToCheck = false) {
   }
 };
 
-// BT-W85用 商品マスタCSV (MasterFile_1.csv / MASTER.CSV) を Shift-JIS で出力（識別コード・資材コード両対応）
-window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
+// HTマスタ出力用：対象月(YYYY-MM)から1ヶ月前(先月)の確定在庫マップを取得
+window.getPrevMonthStockMapForHt = function(targetMonth) {
+  let baseMonth = targetMonth;
+  if (!baseMonth || !/^\d{4}-\d{2}$/.test(baseMonth)) {
+    const el = document.getElementById('ht-master-target-month') || document.getElementById('ht-target-month') || document.getElementById('inv-check-month');
+    if (el && /^\d{4}-\d{2}$/.test(el.value)) {
+      baseMonth = el.value;
+    } else {
+      const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
+      const closed = monthly.map(m => m.month).filter(Boolean).sort();
+      if (closed.length > 0) {
+        const [ly, lm] = closed[closed.length - 1].split('-').map(Number);
+        const d = new Date(ly, lm, 1);
+        baseMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        baseMonth = '2026-11';
+      }
+    }
+  }
+  const [y, m] = baseMonth.split('-').map(Number);
+  const prevDate = new Date(y, m - 2, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthNum = prevDate.getMonth() + 1;
+  const prevMonthLabel = `${prevMonthNum}月`;
+
+  const stockMap = {};
+  let hasPrevData = false;
+
+  const monthlyList = DB.get(DB.KEYS.INV_MONTHLY) || [];
+  const prevRecord = monthlyList.find(r => r && r.month === prevMonth && Array.isArray(r.items) && r.items.length > 0);
+  if (prevRecord) {
+    hasPrevData = true;
+    prevRecord.items.forEach(item => {
+      if (!item || !item.productId) return;
+      const qty = parseFloat(item.qty);
+      stockMap[item.productId] = Number.isFinite(qty) ? qty : 0;
+    });
+  } else if (prevMonth === '2026-10' && typeof getGenboMasterProducts === 'function') {
+    hasPrevData = true;
+    getGenboMasterProducts().forEach(mp => {
+      if (!mp || !mp.id) return;
+      const qty = parseFloat(mp.octStock);
+      stockMap[mp.id] = Number.isFinite(qty) ? qty : 0;
+    });
+  } else if (typeof calculateInvMonthly === 'function') {
+    const logs = (DB.get(DB.KEYS.INV_LOGS) || []).filter(l => l && l.month === prevMonth && l.type === 'count');
+    if (logs.length > 0) {
+      hasPrevData = true;
+      const calc = calculateInvMonthly(prevMonth);
+      (calc.items || []).forEach(item => {
+        if (!item || !item.productId) return;
+        const qty = parseFloat(item.qty);
+        stockMap[item.productId] = Number.isFinite(qty) ? qty : 0;
+      });
+    }
+  }
+
+  return { targetMonth: baseMonth, prevMonth, prevMonthLabel, hasPrevData, stockMap };
+};
+
+window.updateHtMasterPrevMonthHint = function() {
+  const hintEl = document.getElementById('ht-master-prev-hint');
+  const monthEl = document.getElementById('ht-master-target-month');
+  if (!hintEl || !monthEl) return;
+  const info = getPrevMonthStockMapForHt(monthEl.value);
+  const nonZeroCount = Object.values(info.stockMap).filter(v => v > 0).length;
+  if (info.hasPrevData) {
+    hintEl.style.color = '#0369a1';
+    hintEl.textContent = `→ HTには「${info.prevMonth}（${info.prevMonthLabel}期）」の在庫データ（在庫あり ${nonZeroCount}品目）を修正不可で表示します`;
+  } else {
+    hintEl.style.color = '#b45309';
+    hintEl.textContent = `→ 先月「${info.prevMonth}（${info.prevMonthLabel}期）」のデータは未登録のため「0 (${info.prevMonthLabel})」で出力されます`;
+  }
+};
+
+// BT-W85用 商品マスタCSV (MasterFile_1.csv / MASTER.CSV) を Shift-JIS で出力
+// 4列構成: 1列目=検索キー(新QR文字列/識別CD/資材CD), 2列目=先月在庫(修正不可表示用), 3列目=品名, 4列目=単価
+window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv", targetMonthOverride = null) {
   let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   if (products.length === 0 && typeof getGenboMasterProducts === "function") {
     products = getGenboMasterProducts();
@@ -12571,22 +12667,44 @@ window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
     return;
   }
 
+  const prevInfo = getPrevMonthStockMapForHt(targetMonthOverride);
   const lines = [];
   const addedKeys = new Set();
+
+  const pushMasterRow = (keyStr, prevStockStr, nameStr, priceVal) => {
+    const cleanKey = String(keyStr || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").trim();
+    if (!cleanKey) return;
+    const upper = cleanKey.toUpperCase();
+    if (addedKeys.has(upper)) return;
+    addedKeys.add(upper);
+    lines.push(`"${cleanKey}","${prevStockStr}","${nameStr}","${priceVal}"`);
+  };
+
   products
     .filter(p => p && p.id && !String(p.id).startsWith("TEMP_"))
     .forEach(p => {
-      const name = String(p.name || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").trim();
+      const name = String(p.name || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").replace(/,/g, " ").trim();
       const price = parseFloat(p.price) || 0;
       const ident = String(p.identCode || "").replace(/"/g, '""').trim();
       const matCode = String(p.materialCode || p.id || "").replace(/"/g, '""').trim();
-      if (ident && !addedKeys.has(ident.toUpperCase())) {
-        lines.push(`"${ident}","${name}","${price}"`);
-        addedKeys.add(ident.toUpperCase());
+      const prevQtyRaw = prevInfo.stockMap[p.id] !== undefined
+        ? prevInfo.stockMap[p.id]
+        : (prevInfo.stockMap[matCode] !== undefined ? prevInfo.stockMap[matCode] : 0);
+      const prevQtyNum = Number.isFinite(prevQtyRaw) ? prevQtyRaw : 0;
+      const prevStockDisplay = `${prevQtyNum} (${prevInfo.prevMonthLabel})`;
+
+      // 1) 新QRコードそのままの文字列 ("01-023 品名")
+      const shortCode = ident || matCode;
+      if (shortCode && name) {
+        pushMasterRow(`${shortCode} ${name}`, prevStockDisplay, name, price);
       }
-      if (matCode && !addedKeys.has(matCode.toUpperCase())) {
-        lines.push(`"${matCode}","${name}","${price}"`);
-        addedKeys.add(matCode.toUpperCase());
+      // 2) 短い識別コード ("01-023")
+      if (ident) {
+        pushMasterRow(ident, prevStockDisplay, name, price);
+      }
+      // 3) 資材コード ("N01000000000023")
+      if (matCode) {
+        pushMasterRow(matCode, prevStockDisplay, name, price);
       }
     });
 
@@ -12610,24 +12728,26 @@ window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  toast(`📤 BT開発・運用ツール用 商品マスタ (${targetFileName}) をダウンロードしました`, "success");
+  toast(`📤 商品マスタ (${targetFileName} / 先月=${prevInfo.prevMonth}在庫入り) をダウンロードしました`, "success");
 };
 
-// BT-H10W マスタ転送設定ファイル (HTMasterFileInfo.ini: MASTER.CSV + USERS.CSV)
+// BT-H10W マスタ転送設定ファイル (HTMasterFileInfo.ini: MASTER.CSV 4列 + USERS.CSV)
 window.downloadBtH10wMasterIni = function() {
   const iniContent = [
     '[MasterFile1]',
     'FileName=MASTER.CSV',
-    'FieldCount=3',
+    'FieldCount=4',
     'KeyField1=1',
     'Field1Type=STRING',
-    'Field1Length=32',
+    'Field1Length=80',
     'Field2Type=STRING',
-    'Field2Length=64',
-    'Field3Type=NUMERIC',
-    'Field3Length=12',
+    'Field2Length=32',
+    'Field3Type=STRING',
+    'Field3Length=64',
+    'Field4Type=NUMERIC',
+    'Field4Length=12',
     'Delimiter=COMMA',
-    'Quote=NONE',
+    'Quote=DOUBLE',
     '',
     '[MasterFile2]',
     'FileName=USERS.CSV',
@@ -12656,19 +12776,34 @@ window.downloadBtH10wMasterIni = function() {
   toast('⚙️ HTMasterFileInfo.ini をダウンロードしました', 'success');
 };
 
-// BT-H10W スクリプトソースコード v2.0 (TAC_TANAOROSHI.scp) ダウンロード
-window.downloadBtH10wAppSource = function() {
-  const scpContent = "' ====================================================================\n' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション (v2.0)\n' ファイル名: TAC_TANAOROSHI.scp\n' 対象機種  : KEYENCE BT-W85 (BT-W80 / BT-W70 / BT-1000 シリーズ共通)\n' 開発環境  : KEYENCE BT-H10W (BT-Navigator / スクリプト開発環境)\n' 機能概要  :\n'   1. 担当者ログイン管理 (USERS.CSV 連携: 一覧選択・QRログイン)\n'   2. HT本体での担当者の追加・削除機能 (USERS.CSV 直接編集・保存)\n'   3. システム発行の品名QRコード読取 & 商品マスタ(MASTER.CSV)照合\n'   4. 重複スキャン(ダブり)検知時の警告ブザー＆アラート画面\n'      ([1]加算する / [2]上書き修正 / [3]キャンセル)\n'   5. 実行者(ユーザー名・表示名)付きCSV出力 (INV_LOG.CSV)\n' ====================================================================\n\nInclude \"BT_Lib.inc\"\n\n' --- グローバル変数定義 ---\nDim g_strTerminalId As String\nDim g_strLogFile As String\nDim g_strMasterFile As String\nDim g_strUsersFile As String\n\n' 現在ログイン中の担当者情報\nDim g_strCurrentUsername As String\nDim g_strCurrentDisplayName As String\n\n' ====================================================================\n' メインエントリポイント (端末起動時に自動実行)\n' ====================================================================\nSub Main()\n    Dim key As String\n\n    ' 初期設定\n    g_strTerminalId = \"BTW85\"\n    g_strLogFile = \"INV_LOG.CSV\"\n    g_strMasterFile = \"MASTER.CSV\"\n    g_strUsersFile = \"USERS.CSV\"\n\n    g_strCurrentUsername = \"\"\n    g_strCurrentDisplayName = \"\"\n\n    ' 担当者マスタ(USERS.CSV)が無い場合は初期ユーザーを作成\n    Call EnsureDefaultUsersFile()\n\n    ' 起動時に必ず担当者ログインを実行\n    Call DoWorkerLogin()\n\n    ' メインメニューループ（棚卸スキャン特化メニュー）\n    While (1)\n        LcdClear()\n        LcdPrint(1, 1, \"=== TAC 棚卸システム ===\")\n        LcdPrint(2, 1, \"担当:\" & Left(g_strCurrentDisplayName, 10) & \"(\" & g_strCurrentUsername & \")\")\n        LcdPrint(3, 1, \"------------------------\")\n        LcdPrint(4, 1, \"[1] 棚卸スキャン開始\")\n        LcdPrint(5, 1, \"[2] 担当者切替・増減管理\")\n        LcdPrint(6, 1, \"[3] PCへデータ送信(CSV)\")\n        LcdPrint(7, 1, \"[4] 履歴確認・データ消去\")\n        LcdPrint(9, 1, \"[1]またはENTでスキャンへ\")\n\n        key = KeyWait()\n\n        If key = \"1\" Or key = \"ENT\" Or key = \"TRG\" Then\n            Call DoInventoryScan()\n        ElseIf key = \"2\" Then\n            Call DoWorkerLogin()\n        ElseIf key = \"3\" Then\n            Call DoSendData()\n        ElseIf key = \"4\" Then\n            Call DoManageLog()\n        End If\n    Wend\nEnd Sub\n\n' ====================================================================\n' 初期 USERS.CSV の自動生成（ファイル未転送時でも動作可能にする）\n' フォーマット: ユーザー名(username),表示名(displayName),部門(department)\n' ====================================================================\nSub EnsureDefaultUsersFile()\n    If FileExists(g_strUsersFile) = 0 Then\n        Call AppendCsvLine(g_strUsersFile, \"admin,管理者,管理部\")\n        Call AppendCsvLine(g_strUsersFile, \"worker,作業者A,製造部\")\n    End If\nEnd Sub\n\n' ====================================================================\n' 担当者ログイン ＆ 担当者増減（追加・削除）画面\n' ====================================================================\nSub DoWorkerLogin()\n    Dim key As String\n    Dim strInput As String\n    Dim uName As String\n    Dim dName As String\n    Dim page As Integer\n    Dim totalUsers As Integer\n\n    page = 0\n\n    While (1)\n        LcdClear()\n        LcdPrint(1, 1, \"【担当者ログイン選択】\")\n        If g_strCurrentUsername <> \"\" Then\n            LcdPrint(2, 1, \"現在:\" & Left(g_strCurrentDisplayName, 10) & \"(\" & g_strCurrentUsername & \")\")\n        Else\n            LcdPrint(2, 1, \"担当者を選択/QR読取:\")\n        End If\n\n        ' USERS.CSV から一覧表示 (1ページ3名表示)\n        totalUsers = DisplayUsersList(page)\n\n        LcdPrint(7, 1, \"[1-3]:選択 [QR]:ID読取\")\n        LcdPrint(8, 1, \"[F2]:追加 [F3]:削除\")\n        LcdPrint(9, 1, \"[▲/▼]:次頁 [CLR]:戻る\")\n\n        ' QRスキャン（担当者QR）またはキー押下待ち\n        strInput = ScanOrKeyWait()\n\n        If strInput = \"F2\" Then\n            ' 担当者の新規追加 (HT単体で追加可能)\n            Call DoAddWorkerOnHt()\n        ElseIf strInput = \"F3\" Then\n            ' 担当者の削除 (HT単体で削除可能)\n            Call DoDeleteWorkerOnHt()\n        ElseIf strInput = \"UP\" Then\n            If page > 0 Then page = page - 1\n        ElseIf strInput = \"DOWN\" Then\n            If (page + 1) * 3 < totalUsers Then page = page + 1\n        ElseIf strInput = \"CLR\" Or strInput = \"ESC\" Then\n            If g_strCurrentUsername <> \"\" Then\n                Exit Sub\n            Else\n                Buzzer(2, 80) ' 未ログイン時は選択必須\n            End If\n        ElseIf strInput = \"1\" Or strInput = \"2\" Or strInput = \"3\" Then\n            ' 番号選択でログイン\n            If GetUserByIndex(page * 3 + Val(strInput), uName, dName) = 1 Then\n                g_strCurrentUsername = uName\n                g_strCurrentDisplayName = dName\n                Buzzer(1, 100)\n                Led(1, 200)\n                LcdClear()\n                LcdPrint(3, 1, \"ログイン完了！\")\n                LcdPrint(5, 1, \"担当: \" & g_strCurrentDisplayName)\n                LcdPrint(6, 1, \"ID  : \" & g_strCurrentUsername)\n                Wait(500)\n                Exit Sub\n            End If\n        Else\n            ' QRコード等でユーザーIDまたは「USER:username」をスキャンした場合\n            Call ParseUserQrCode(strInput, uName, dName)\n            If uName <> \"\" Then\n                g_strCurrentUsername = uName\n                g_strCurrentDisplayName = dName\n                Buzzer(1, 100)\n                Led(1, 200)\n                Exit Sub\n            End If\n        End If\n    Wend\nEnd Sub\n\n' ====================================================================\n' HT本体での担当者新規追加 (USERS.CSV へ追記)\n' ====================================================================\nSub DoAddWorkerOnHt()\n    Dim newId As String\n    Dim newName As String\n\n    LcdClear()\n    LcdPrint(1, 1, \"【担当者の新規追加】\")\n    LcdPrint(3, 1, \"ログインID(英数)を入力\")\n    LcdPrint(4, 1, \"(QRスキャンも可):\")\n    newId = ScanOrInput(5, 1)\n    If newId = \"\" Or newId = \"ESC\" Then Exit Sub\n\n    LcdPrint(6, 1, \"表示名(または番号)入力:\")\n    newName = KeyInputString(7, 1, newId)\n    If newName = \"\" Or newName = \"ESC\" Then newName = newId\n\n    ' USERS.CSV に保存\n    Call AppendCsvLine(g_strUsersFile, newId & \",\" & newName & \",製造部\")\n\n    g_strCurrentUsername = newId\n    g_strCurrentDisplayName = newName\n\n    Buzzer(1, 150)\n    LcdPrint(9, 1, \"=> 担当者を追加しました!\")\n    Wait(700)\nEnd Sub\n\n' ====================================================================\n' HT本体での担当者削除 (USERS.CSV から削除)\n' ====================================================================\nSub DoDeleteWorkerOnHt()\n    Dim targetId As String\n    Dim confirmKey As String\n\n    LcdClear()\n    LcdPrint(1, 1, \"【担当者の削除】\")\n    LcdPrint(3, 1, \"削除するログインIDを入力\")\n    LcdPrint(4, 1, \"またはQRをスキャン:\")\n    targetId = ScanOrInput(5, 1)\n    If targetId = \"\" Or targetId = \"ESC\" Then Exit Sub\n\n    If targetId = \"admin\" Then\n        Buzzer(3, 200)\n        LcdPrint(7, 1, \"※adminは削除できません\")\n        Wait(1000)\n        Exit Sub\n    End If\n\n    LcdPrint(7, 1, \"ID:\" & targetId & \" を削除?\")\n    LcdPrint(9, 1, \"[ENT]:削除実行 [CLR]:戻\")\n    confirmKey = KeyWait()\n    If confirmKey = \"ENT\" Then\n        Call RemoveCsvRecordByKey(g_strUsersFile, 1, targetId)\n        Buzzer(1, 150)\n        LcdPrint(8, 1, \"=> 削除しました\")\n        Wait(700)\n    End If\nEnd Sub\n\n' ====================================================================\n' [1] 棚卸スキャン業務（システムQR読取 ＆ 重複ダブりアラート搭載）\n' ====================================================================\nSub DoInventoryScan()\n    Dim strCode As String\n    Dim strName As String\n    Dim strPrice As String\n    Dim strQty As String\n    Dim strExistingQty As String\n    Dim strExistingWorker As String\n    Dim nExistingLine As Integer\n    Dim dupChoice As String\n    Dim nNewQty As Long\n    Dim nPrevQty As Long\n    Dim nTotalQty As Long\n    Dim strDate As String\n    Dim strTime As String\n    Dim strRecord As String\n    Dim nCount As Integer\n    Dim unregKey As String\n\n    If g_strCurrentUsername = \"\" Then\n        Call DoWorkerLogin()\n    End If\n\n    While (1)\n        LcdClear()\n        nCount = GetLogCount(g_strLogFile)\n        LcdPrint(1, 1, \"【棚卸】件数:\" & nCount & \" 担:\" & Left(g_strCurrentDisplayName, 6))\n        LcdPrint(2, 1, \"------------------------\")\n        LcdPrint(3, 1, \"システム発行のQRをスキャン\")\n        LcdPrint(4, 1, \"資材ID:\")\n        LcdPrint(9, 1, \"[F1/CLR]:メニューへ戻る\")\n\n        ' 1. QRコード / バーコード読取\n        strCode = ScanOrInput(4, 9)\n        If strCode = \"ESC\" Or strCode = \"F1\" Or strCode = \"CLR\" Or strCode = \"\" Then\n            Exit Sub\n        End If\n\n        ' 2. 商品マスタ(MASTER.CSV)照合\n        strName = \"\"\n        strPrice = \"0\"\n        If LookupMaster(strCode, strName, strPrice) = 0 Then\n            ' マスタ未登録品のアラート確認（通常の棚卸スキャンと同じ挙動）\n            Buzzer(2, 150)\n            Led(2, 300)\n            LcdClear()\n            LcdPrint(1, 1, \"⚠️ マスタ未登録のQRです\")\n            LcdPrint(3, 1, \"ID: \" & strCode)\n            LcdPrint(5, 1, \"このまま数量登録しますか?\")\n            LcdPrint(8, 1, \"[ENT]:仮登録を続ける\")\n            LcdPrint(9, 1, \"[CLR]:キャンセル\")\n            unregKey = KeyWait()\n            If unregKey <> \"ENT\" Then\n                GoTo NextScanLoop\n            End If\n            strName = \"未登録(\" & strCode & \")\"\n            strPrice = \"0\"\n            LcdClear()\n            LcdPrint(1, 1, \"【棚卸(未登録品)】\")\n            LcdPrint(4, 1, \"資材ID:\" & strCode)\n        End If\n\n        ' 品名・単価を表示\n        LcdPrint(5, 1, \"品名:\" & Left(strName, 18))\n        LcdPrint(6, 1, \"単価:¥\" & strPrice)\n\n        ' 3. 実棚数量の入力\n        LcdPrint(7, 1, \"実棚数量を入力[ENT]:\")\n        strQty = InputQuantity(8, 1, \"\")\n        If strQty = \"ESC\" Or strQty = \"CLR\" Or strQty = \"\" Then\n            Buzzer(2, 50)\n            GoTo NextScanLoop\n        End If\n\n        nNewQty = Val(strQty)\n        strDate = GetDateStr()\n        strTime = GetTimeStr()\n\n        ' 4. 重複スキャン（ダブり）チェック！\n        ' INV_LOG.CSV 内に同じ資材ID(6列目)が既に存在するか検索\n        nExistingLine = FindExistingScanInLog(g_strLogFile, strCode, strExistingQty, strExistingWorker)\n\n        If nExistingLine > 0 Then\n            ' ====================================================\n            ' ⚠️ ダブり（重複スキャン）検知時のアラート画面！\n            ' （Webアプリの showDuplicateScanModal と完全同一仕様）\n            ' ====================================================\n            nPrevQty = Val(strExistingQty)\n            nTotalQty = nPrevQty + nNewQty\n\n            Buzzer(3, 150) ' 警告音（ピピピッ）\n            Led(2, 400)    ' 橙/赤LED点灯\n\n            LcdClear()\n            LcdPrint(1, 1, \"⚠️ スキャン重複(ダブり)!\")\n            LcdPrint(2, 1, Left(strName, 22))\n            LcdPrint(3, 1, \"現在保存数: \" & nPrevQty & \" 個\")\n            LcdPrint(4, 1, \"今回入力数: \" & nNewQty & \" 個\")\n            LcdPrint(5, 1, \"------------------------\")\n            LcdPrint(6, 1, \"[1] ➕追加 (\" & nPrevQty & \"+\" & nNewQty & \"=\" & nTotalQty & \")\")\n            LcdPrint(7, 1, \"[2] ✍️上書き修正 (\" & nNewQty & \"個)\")\n            LcdPrint(8, 1, \"[3] ❌登録しない(キャンセル)\")\n\n            While (1)\n                dupChoice = KeyWait()\n                If dupChoice = \"1\" Or dupChoice = \"ENT\" Then\n                    ' [1] 追加（合算）して既存行を更新\n                    strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nTotalQty)\n                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)\n                    Buzzer(1, 100)\n                    Led(1, 200)\n                    LcdPrint(9, 1, \"=> 合算(\" & nTotalQty & \"個)で更新!\")\n                    Wait(500)\n                    Exit While\n                ElseIf dupChoice = \"2\" Then\n                    ' [2] 今回の数量で上書き修正\n                    strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nNewQty)\n                    Call UpdateCsvLine(g_strLogFile, nExistingLine, strRecord)\n                    Buzzer(1, 100)\n                    Led(1, 200)\n                    LcdPrint(9, 1, \"=> 上書き(\" & nNewQty & \"個)完了!\")\n                    Wait(500)\n                    Exit While\n                ElseIf dupChoice = \"3\" Or dupChoice = \"CLR\" Or dupChoice = \"ESC\" Then\n                    ' [3] キャンセル\n                    Buzzer(2, 80)\n                    LcdPrint(9, 1, \"=> キャンセルしました\")\n                    Wait(400)\n                    Exit While\n                End If\n            Wend\n        Else\n            ' 初回スキャンの場合：そのまま追記保存\n            ' CSVフォーマット: 日付,時刻,端末ID,ユーザー名(username),表示名(displayName),資材ID,数量\n            strRecord = strDate & \",\" & strTime & \",\" & g_strTerminalId & \",\" & g_strCurrentUsername & \",\" & g_strCurrentDisplayName & \",\" & strCode & \",\" & Str(nNewQty)\n            Call AppendCsvLine(g_strLogFile, strRecord)\n\n            Buzzer(1, 100)\n            Led(1, 200)\n            LcdPrint(9, 1, \"=> 登録OK! (\" & nNewQty & \"個)   \")\n            Wait(300)\n        End If\n\nNextScanLoop:\n    Wend\nEnd Sub\n\n' ====================================================================\n' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID, 2列目=品名, 3列目=単価)\n' 戻り値: 1=一致あり, 0=未登録(ただしマスタファイル自体が無い場合は1扱い)\n' ====================================================================\nFunction LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String) As Integer\n    Dim fp As Integer\n    Dim lineStr As String\n    Dim col1 As String\n\n    If FileExists(g_strMasterFile) = 0 Then\n        outName = \"資材(\" & targetId & \")\"\n        outPrice = \"-\"\n        LookupMaster = 1\n        Exit Function\n    End If\n\n    fp = FileOpen(g_strMasterFile, \"R\")\n    If fp < 0 Then\n        LookupMaster = 1\n        Exit Function\n    End If\n\n    While (FileEof(fp) = 0)\n        lineStr = FileReadLine(fp)\n        col1 = GetCsvCol(lineStr, 1)\n        If UCase(col1) = UCase(targetId) Then\n            outName = GetCsvCol(lineStr, 2)\n            outPrice = GetCsvCol(lineStr, 3)\n            FileClose(fp)\n            LookupMaster = 1\n            Exit Function\n        End If\n    Wend\n\n    FileClose(fp)\n    LookupMaster = 0\nEnd Function\n\n' ====================================================================\n' ログファイル内の重複スキャン検索 (6列目=資材ID または 4列目=資材ID)\n' 戻り値: 見つかった行番号 (なければ 0)\n' ====================================================================\nFunction FindExistingScanInLog(ByVal logFile As String, ByVal targetCode As String, ByRef outPrevQty As String, ByRef outPrevWorker As String) As Integer\n    Dim fp As Integer\n    Dim lineStr As String\n    Dim lineNo As Integer\n    Dim cCode As String\n\n    FindExistingScanInLog = 0\n    If FileExists(logFile) = 0 Then Exit Function\n\n    fp = FileOpen(logFile, \"R\")\n    If fp < 0 Then Exit Function\n\n    lineNo = 0\n    While (FileEof(fp) = 0)\n        lineNo = lineNo + 1\n        lineStr = FileReadLine(fp)\n        cCode = GetCsvCol(lineStr, 6)\n        If UCase(cCode) = UCase(targetCode) Then\n            outPrevWorker = GetCsvCol(lineStr, 5)\n            outPrevQty = GetCsvCol(lineStr, 7)\n            FileClose(fp)\n            FindExistingScanInLog = lineNo\n            Exit Function\n        End If\n    Wend\n\n    FileClose(fp)\nEnd Function\n\n' ====================================================================\n' [3] PCへデータ送信（INV_LOG.CSV および USERS.CSV の送信）\n' ====================================================================\nSub DoSendData()\n    Dim key As String\n    LcdClear()\n    LcdPrint(1, 1, \"=== PCへデータ送信 ===\")\n    LcdPrint(3, 1, \"[1] 棚卸データ送信(INV_LOG)\")\n    LcdPrint(5, 1, \"[2] 担当者リスト送信(USERS)\")\n    LcdPrint(7, 1, \"クレードルに置いて選択:\")\n    LcdPrint(9, 1, \"[1/ENT]:棚卸送信 [CLR]:戻\")\n\n    key = KeyWait()\n    If key = \"1\" Or key = \"ENT\" Then\n        LcdPrint(8, 1, \"INV_LOG.CSV 送信中...\")\n        CommSendFile(g_strLogFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"送信完了しました！    \")\n        Wait(1000)\n    ElseIf key = \"2\" Then\n        LcdPrint(8, 1, \"USERS.CSV 送信中...\")\n        CommSendFile(g_strUsersFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"担当者送信完了！      \")\n        Wait(1000)\n    End If\nEnd Sub\n\n' ====================================================================\n' [4] ログ件数確認・データ消去\n' ====================================================================\nSub DoManageLog()\n    Dim key As String\n    Dim cnt As Integer\n\n    LcdClear()\n    cnt = GetLogCount(g_strLogFile)\n    LcdPrint(1, 1, \"=== 棚卸データ管理 ===\")\n    LcdPrint(3, 1, \"現在の保存件数: \" & cnt & \" 件\")\n    LcdPrint(4, 1, \"ログイン担当: \" & g_strCurrentDisplayName)\n    LcdPrint(6, 1, \"※PC取込後に全消去下さい\")\n    LcdPrint(9, 1, \"[F4]:全消去  [CLR]:戻る\")\n\n    key = KeyWait()\n    If key = \"F4\" Then\n        FileDelete(g_strLogFile)\n        Buzzer(1, 200)\n        LcdPrint(8, 1, \"全データを消去しました\")\n        Wait(1000)\n    End If\nEnd Sub\n";
-  const blob = new Blob([scpContent], { type: 'text/plain;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'TAC_TANAOROSHI.scp';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  toast('💻 BT-H10W用スクリプト v2.0 (TAC_TANAOROSHI.scp) をダウンロードしました', 'success');
+// BT-H10W スクリプトソースコード v2.1 (TAC_TANAOROSHI.scp / 先月在庫修正不可表示対応) ダウンロード
+window.downloadBtH10wAppSource = async function() {
+  try {
+    const res = await fetch('bt-w85-app/TAC_TANAOROSHI.scp?v=' + Date.now(), { cache: 'no-store' });
+    if (res.ok) {
+      const scpText = await res.text();
+      const blob = new Blob([scpText], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'TAC_TANAOROSHI.scp';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast('💻 BT-H10W用スクリプト v2.1 (TAC_TANAOROSHI.scp / 先月在庫表示対応) をダウンロードしました', 'success');
+      return;
+    }
+  } catch (e) {
+    console.warn('TAC_TANAOROSHI.scp fetch fallback:', e);
+  }
+  const a = document.createElement('a');
+  a.href = 'bt-w85-app/TAC_TANAOROSHI.scp';
+  a.download = 'TAC_TANAOROSHI.scp';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('💻 BT-H10W用スクリプト v2.1 (TAC_TANAOROSHI.scp) のダウンロードを開始しました', 'success');
 };
 
 // 動作確認用のサンプルHT出力CSV (KEYENCE BT-W85 Record.csv 9列形式 ＆ 重複ダブり行つき)

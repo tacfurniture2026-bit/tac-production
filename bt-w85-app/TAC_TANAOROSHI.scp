@@ -1,5 +1,5 @@
 ' ====================================================================
-' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション (v2.0)
+' KEYENCE BT-W85 / BT-H10W 用 棚卸スキャン専用アプリケーション (v2.1)
 ' ファイル名: TAC_TANAOROSHI.scp
 ' 対象機種  : KEYENCE BT-W85 (BT-W80 / BT-W70 / BT-1000 シリーズ共通)
 ' 開発環境  : KEYENCE BT-H10W (BT-Navigator / スクリプト開発環境)
@@ -7,6 +7,7 @@
 '   1. 担当者ログイン管理 (USERS.CSV 連携: 一覧選択・QRログイン)
 '   2. HT本体での担当者の追加・削除機能 (USERS.CSV 直接編集・保存)
 '   3. システム発行の品名QRコード読取 & 商品マスタ(MASTER.CSV)照合
+'      ★先月在庫（前月確定値）を読み取り専用（修正不可）で表示
 '   4. 重複スキャン(ダブり)検知時の警告ブザー＆アラート画面
 '      ([1]加算する / [2]上書き修正 / [3]キャンセル)
 '   5. 実行者(ユーザー名・表示名)付きCSV出力 (INV_LOG.CSV)
@@ -224,6 +225,7 @@ End Sub
 ' ====================================================================
 Sub DoInventoryScan()
     Dim strCode As String
+    Dim strPrevStock As String
     Dim strName As String
     Dim strPrice As String
     Dim strQty As String
@@ -259,10 +261,11 @@ Sub DoInventoryScan()
             Exit Sub
         End If
 
-        ' 2. 商品マスタ(MASTER.CSV)照合
+        ' 2. 商品マスタ(MASTER.CSV)照合（先月在庫・品名・単価を取得）
+        strPrevStock = "-"
         strName = ""
         strPrice = "0"
-        If LookupMaster(strCode, strName, strPrice) = 0 Then
+        If LookupMaster(strCode, strPrevStock, strName, strPrice) = 0 Then
             ' マスタ未登録品のアラート確認（通常の棚卸スキャンと同じ挙動）
             Buzzer(2, 150)
             Led(2, 300)
@@ -276,6 +279,7 @@ Sub DoInventoryScan()
             If unregKey <> "ENT" Then
                 GoTo NextScanLoop
             End If
+            strPrevStock = "未登録"
             strName = "未登録(" & strCode & ")"
             strPrice = "0"
             LcdClear()
@@ -283,9 +287,9 @@ Sub DoInventoryScan()
             LcdPrint(4, 1, "資材ID:" & strCode)
         End If
 
-        ' 品名・単価を表示
+        ' 品名・先月在庫（修正不可・参照専用）を表示
         LcdPrint(5, 1, "品名:" & Left(strName, 18))
-        LcdPrint(6, 1, "単価:¥" & strPrice)
+        LcdPrint(6, 1, "先月:" & Left(strPrevStock, 15) & " [不可]")
 
         ' 3. 実棚数量の入力
         LcdPrint(7, 1, "実棚数量を入力[ENT]:")
@@ -369,19 +373,32 @@ NextScanLoop:
 End Sub
 
 ' ====================================================================
-' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID, 2列目=品名, 3列目=単価)
+' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID/QRキー, 2列目=先月在庫, 3列目=品名, 4列目=単価)
 ' 戻り値: 1=一致あり, 0=未登録(ただしマスタファイル自体が無い場合は1扱い)
 ' ====================================================================
-Function LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef outPrice As String) As Integer
+Function LookupMaster(ByVal targetId As String, ByRef outPrevStock As String, ByRef outName As String, ByRef outPrice As String) As Integer
     Dim fp As Integer
     Dim lineStr As String
     Dim col1 As String
+    Dim col2 As String
+    Dim col3 As String
+    Dim col4 As String
+    Dim shortKey As String
+    Dim spPos As Integer
 
     If FileExists(g_strMasterFile) = 0 Then
+        outPrevStock = "-"
         outName = "資材(" & targetId & ")"
         outPrice = "-"
         LookupMaster = 1
         Exit Function
+    End If
+
+    ' 新QR形式 ("01-023 品名") の場合は先頭トークンも照合キーとして抽出
+    shortKey = targetId
+    spPos = InStr(1, targetId, " ")
+    If spPos > 1 Then
+        shortKey = Left(targetId, spPos - 1)
     End If
 
     fp = FileOpen(g_strMasterFile, "R")
@@ -393,9 +410,20 @@ Function LookupMaster(ByVal targetId As String, ByRef outName As String, ByRef o
     While (FileEof(fp) = 0)
         lineStr = FileReadLine(fp)
         col1 = GetCsvCol(lineStr, 1)
-        If UCase(col1) = UCase(targetId) Then
-            outName = GetCsvCol(lineStr, 2)
-            outPrice = GetCsvCol(lineStr, 3)
+        If UCase(col1) = UCase(targetId) Or UCase(col1) = UCase(shortKey) Then
+            col2 = GetCsvCol(lineStr, 2)
+            col3 = GetCsvCol(lineStr, 3)
+            col4 = GetCsvCol(lineStr, 4)
+            If col4 <> "" Then
+                outPrevStock = col2
+                outName = col3
+                outPrice = col4
+            Else
+                ' 旧3列フォーマット後方互換
+                outPrevStock = "-"
+                outName = col2
+                outPrice = col3
+            End If
             FileClose(fp)
             LookupMaster = 1
             Exit Function
