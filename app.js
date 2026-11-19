@@ -7304,13 +7304,15 @@ function isInvDeadOrFixedProduct(prod) {
   return !!prod.isFixed;
 }
 
-// 在庫金額の集計除外判定ヘルパー（棚卸対象コード0は在庫金額を集計しない）
+// 在庫金額の集計除外判定ヘルパー（棚卸対象コード0 および 廃盤フラグ1 は在庫金額を集計しない）
 function isInvAmountExcludedProduct(prod, item = null) {
-  if (prod && prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
-    return Number(prod.targetFlag) === 0;
+  if (prod) {
+    if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '' && Number(prod.targetFlag) === 0) return true;
+    if (prod.discontinuedFlag !== undefined && prod.discontinuedFlag !== null && prod.discontinuedFlag !== '' && Number(prod.discontinuedFlag) === 1) return true;
   }
-  if (item && item.targetFlag !== undefined && item.targetFlag !== null && item.targetFlag !== '') {
-    return Number(item.targetFlag) === 0;
+  if (item) {
+    if (item.targetFlag !== undefined && item.targetFlag !== null && item.targetFlag !== '' && Number(item.targetFlag) === 0) return true;
+    if (item.discontinuedFlag !== undefined && item.discontinuedFlag !== null && item.discontinuedFlag !== '' && Number(item.discontinuedFlag) === 1) return true;
   }
   return false;
 }
@@ -9560,6 +9562,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
           const isTargetZero = isInvAmountExcludedProduct(mp, item);
           item.isAmountExcluded = isTargetZero;
           if (mp && mp.targetFlag !== undefined) item.targetFlag = Number(mp.targetFlag);
+          if (mp && mp.discontinuedFlag !== undefined) item.discontinuedFlag = Number(mp.discontinuedFlag);
 
           if (isTargetZero) {
             item.amount = 0;
@@ -9787,6 +9790,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       name: name,
       category: category,
       targetFlag: masterProduct ? (Number(masterProduct.targetFlag) || 0) : (prevItem && prevItem.targetFlag !== undefined ? Number(prevItem.targetFlag) : 1),
+      discontinuedFlag: masterProduct ? (Number(masterProduct.discontinuedFlag) || 0) : (prevItem && prevItem.discontinuedFlag !== undefined ? Number(prevItem.discontinuedFlag) : 0),
       isAmountExcluded: isAmountExcluded,
       price: price,
       prevQty: prevQty,
@@ -13136,7 +13140,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
 
   try {
     toast(`📦 ${label} を準備しています...`, 'info');
-    const res = await fetch(`${filePath}?v=6.85.0_${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${filePath}?v=6.86.0_${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const zipBlob = new Blob([blob], { type: 'application/zip' });
@@ -13152,7 +13156,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
   } catch (err) {
     console.warn('Fetch zip fallback to direct link:', err);
     const a = document.createElement('a');
-    a.href = `${filePath}?v=6.85.0`;
+    a.href = `${filePath}?v=6.86.0`;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
@@ -14276,7 +14280,7 @@ window.updateHtMasterPrevMonthHint = function() {
 };
 
 // BT-W85用 商品マスタCSV (MasterFile_1.csv / MASTER.CSV) を Shift-JIS で出力
-// 4列構成: 1列目=検索キー(新QR文字列/識別CD/資材CD), 2列目=先月在庫(修正不可表示用), 3列目=品名, 4列目=単価
+// 4列構成: 1列目=検索キー(識別CD/資材CD/旧QR文字列), 2列目=品名(Shift-JIS文字化けなし), 3列目=先月在庫(修正不可表示用), 4列目=単価
 window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv", targetMonthOverride = null) {
   let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   if (products.length === 0 && typeof getGenboMasterProducts === "function") {
@@ -14291,13 +14295,13 @@ window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv", targetM
   const lines = [];
   const addedKeys = new Set();
 
-  const pushMasterRow = (keyStr, prevStockStr, nameStr, priceVal) => {
+  const pushMasterRow = (keyStr, nameStr, prevStockStr, priceVal) => {
     const cleanKey = String(keyStr || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").trim();
     if (!cleanKey) return;
     const upper = cleanKey.toUpperCase();
     if (addedKeys.has(upper)) return;
     addedKeys.add(upper);
-    lines.push(`"${cleanKey}","${prevStockStr}","${nameStr}","${priceVal}"`);
+    lines.push(`"${cleanKey}","${nameStr}","${prevStockStr}","${priceVal}"`);
   };
 
   products
@@ -14311,20 +14315,20 @@ window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv", targetM
         ? prevInfo.stockMap[p.id]
         : (prevInfo.stockMap[matCode] !== undefined ? prevInfo.stockMap[matCode] : 0);
       const prevQtyNum = Number.isFinite(prevQtyRaw) ? prevQtyRaw : 0;
-      const prevStockDisplay = `${prevQtyNum} (${prevInfo.prevMonthLabel})`;
+      const prevStockDisplay = `${prevQtyNum}(${prevInfo.prevMonthLabel})`;
 
-      // 1) 新QRコードそのままの文字列 ("01-023 品名")
+      // 1) 純粋ASCII 短い識別コード ("01-023") ← 新QRコード標準（文字化け0%）
+      if (ident) {
+        pushMasterRow(ident, name, prevStockDisplay, price);
+      }
+      // 2) 純粋ASCII 資材コード ("N01000000000023")
+      if (matCode) {
+        pushMasterRow(matCode, name, prevStockDisplay, price);
+      }
+      // 3) 旧QR形式互換 ("01-023 品名")
       const shortCode = ident || matCode;
       if (shortCode && name) {
-        pushMasterRow(`${shortCode} ${name}`, prevStockDisplay, name, price);
-      }
-      // 2) 短い識別コード ("01-023")
-      if (ident) {
-        pushMasterRow(ident, prevStockDisplay, name, price);
-      }
-      // 3) 資材コード ("N01000000000023")
-      if (matCode) {
-        pushMasterRow(matCode, prevStockDisplay, name, price);
+        pushMasterRow(`${shortCode} ${name}`, name, prevStockDisplay, price);
       }
     });
 
@@ -14361,9 +14365,9 @@ window.downloadBtH10wMasterIni = function() {
     'Field1Type=STRING',
     'Field1Length=80',
     'Field2Type=STRING',
-    'Field2Length=32',
+    'Field2Length=64',
     'Field3Type=STRING',
-    'Field3Length=64',
+    'Field3Length=32',
     'Field4Type=NUMERIC',
     'Field4Length=12',
     'Delimiter=COMMA',

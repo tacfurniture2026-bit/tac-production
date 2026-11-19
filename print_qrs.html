@@ -329,14 +329,15 @@
                 const namePart = String(prod.name || '').replace(/[\r\n]+/g, ' ').replace(/,/g, ' ').trim();
 
                 // QRコードをローカルで生成
-                // ※BT-W85の1行テキスト枠(BtTextBox_ProcessNo)で右端に見切れて品名が消える不具合を完全に防ぐため、
-                // 空白24文字パディングを廃止し、短い識別コード(例: 01-023)＋半角スペース1個＋品名(例: 01-023 LVL 30X14X2430)で格納。
-                // これによりBT-W85画面内に「資材CD」と「品名」の両方が100%確実に同時表示されます。
+                // ※KEYENCE BT-W85はQRバイトモードのUTF-8日本語をShift-JIS解釈して文字化けするため、
+                // QRコード中身は純粋ASCIIの短い識別コード(例: 01-023)のみを格納します。
+                // これによりBT-W85/スマホ/PC全端末で文字化け0%＆読取速度向上を実現し、
+                // 品名と先月在庫(修正不可)はBT-W85側でShift-JISマスタ(MasterFile_1.csv)から自動表示します。
                 let qrDataUrl = '';
                 try {
                     const qr = qrcode(0, 'L');
-                    const qrPayload = namePart ? `${shortCode} ${namePart}` : shortCode;
-                    qr.addData(unescape(encodeURIComponent(qrPayload)));
+                    const qrPayload = shortCode || fullMatCode;
+                    qr.addData(qrPayload);
                     qr.make();
                     qrDataUrl = qr.createDataURL(4, 0);
                 } catch (e) {

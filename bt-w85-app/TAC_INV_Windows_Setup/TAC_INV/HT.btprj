@@ -1648,7 +1648,7 @@
                     <Name>BtLabel_ProcessNo</Name>
                     <Location>5, 54</Location>
                     <Size>230, 18</Size>
-                    <Text>資材QR (資材CD / 品名)</Text>
+                    <Text>資材QRスキャン (資材CD)</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>
@@ -1762,7 +1762,7 @@
                     <Text>
                     </Text>
                     <Location>5, 74</Location>
-                    <Size>230, 44</Size>
+                    <Size>230, 26</Size>
                     <BorderStyle>FixedSingle</BorderStyle>
                     <Alignment>Near</Alignment>
                     <ForeColor>Black</ForeColor>
@@ -2854,8 +2854,8 @@
                     </_instanceKey>
                     <EditingOptions>HideDataSettings|HideColumnCount|HideRowNumber|HideColumnSettings</EditingOptions>
                     <Name>BtTableView_PrevStock</Name>
-                    <Location>5, 122</Location>
-                    <Size>230, 56</Size>
+                    <Location>5, 104</Location>
+                    <Size>230, 74</Size>
                     <StyleSettings>
                       <GridBoxStyleSettings version="0.2.0.0">
                         <_rowNumberVisible>False</_rowNumberVisible>
@@ -2871,16 +2871,16 @@
                           <GridBoxColumnCollection version="0.2.0.0">
                             <_items>
                               <GridBoxColumn version="0.2.0.0">
-                                <_width>72</_width>
-                                <_columnName>コード</_columnName>
+                                <_width>46</_width>
+                                <_columnName>CD</_columnName>
                               </GridBoxColumn>
                               <GridBoxColumn version="0.2.0.0">
-                                <_width>158</_width>
-                                <_columnName>先月在庫(修正不可)</_columnName>
-                              </GridBoxColumn>
-                              <GridBoxColumn version="0.2.0.0">
-                                <_width>60</_width>
+                                <_width>114</_width>
                                 <_columnName>品名</_columnName>
+                              </GridBoxColumn>
+                              <GridBoxColumn version="0.2.0.0">
+                                <_width>70</_width>
+                                <_columnName>先月在庫</_columnName>
                               </GridBoxColumn>
                               <GridBoxColumn version="0.2.0.0">
                                 <_width>60</_width>
@@ -2912,13 +2912,13 @@
                         <_cellBackColor>LightGray</_cellBackColor>
                         <_fontSettings>
                           <TerminalFontSettings version="0.2.0.0">
-                            <BtwPointSize>12</BtwPointSize>
-                            <Bold>True</Bold>
+                            <BtwPointSize>11</BtwPointSize>
+                            <Bold>False</Bold>
                             <BthSize>Medium</BthSize>
                             <BthRatio>Normal</BthRatio>
                           </TerminalFontSettings>
                         </_fontSettings>
-                        <ColumnCount>2</ColumnCount>
+                        <ColumnCount>3</ColumnCount>
                       </GridBoxStyleSettings>
                     </StyleSettings>
                     <TargetData>MasterData</TargetData>
@@ -2997,6 +2997,32 @@
                   </ToolInstanceKey>
                 </_instanceKey>
                 <_focusOrderSettings>
+                  <FocusOrderItem version="0.2.0.0">
+                    <SourceKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>dfad0ea7-a767-4a23-b64a-5dbbb4ed0225</_guid>
+                      </ToolInstanceKey>
+                    </SourceKey>
+                    <DestinationKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>cb5da652-6bc5-4c61-b8ca-7a42d92523fb</_guid>
+                      </ToolInstanceKey>
+                    </DestinationKey>
+                    <Count>0</Count>
+                  </FocusOrderItem>
+                  <FocusOrderItem version="0.2.0.0">
+                    <SourceKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>cb5da652-6bc5-4c61-b8ca-7a42d92523fb</_guid>
+                      </ToolInstanceKey>
+                    </SourceKey>
+                    <DestinationKey>
+                      <ToolInstanceKey version="0.2.0.0">
+                        <_guid>24df4e27-6dcd-4303-a2aa-e633836278fd</_guid>
+                      </ToolInstanceKey>
+                    </DestinationKey>
+                    <Count>0</Count>
+                  </FocusOrderItem>
                   <FocusOrderItem version="0.2.0.0">
                     <SourceKey>
                       <ToolInstanceKey version="0.2.0.0">

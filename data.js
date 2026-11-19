@@ -855,15 +855,15 @@ const DB = {
         const currentMonthly = this.get(this.KEYS.INV_MONTHLY) || [];
         const octRecord = currentMonthly.find(m => m && m.month === '2026-10');
         const fixedCount = currentProducts.filter(p => p && p.isFixed).length;
-        const alreadyApplied = localStorage.getItem('pms_genbo_v685_oct_excl0') === 'true';
+        const alreadyApplied = localStorage.getItem('pms_genbo_v686_oct_excl0_d1') === 'true';
 
-        // 実際に10月期締めデータが存在し、不動品数が正常(コード4のみ=74件付近)かつ対象コード0除外済みである場合のみスキップ
+        // 実際に10月期締めデータが存在し、不動品数が正常(コード4のみ)かつ対象コード0＆廃盤フラグ1除外済みである場合のみスキップ
         const isDataHealthy = (
             currentProducts.length >= 3000 &&
             fixedCount <= 120 &&
             !!octRecord &&
             octRecord.isInitialBaseline === true &&
-            octRecord.excludeTargetZeroVersion === true &&
+            octRecord.excludeTargetZeroAndDisc1Version === true &&
             Number(octRecord.total) > 0 &&
             Number(octRecord.fixedTotal) < Number(octRecord.total) * 0.2
         );
@@ -969,7 +969,8 @@ const DB = {
             localStorage.setItem('pms_genbo_v682_oct_closed', 'true');
             localStorage.setItem('pms_genbo_v683_oct_closed', 'true');
             localStorage.setItem('pms_genbo_v685_oct_excl0', 'true');
-            console.log(`✅ 棚卸原簿マスタ移行＆10月期(2026-10)初期締め保存完了(対象コード0金額除外): 全 ${mergedProducts.length} 件`);
+            localStorage.setItem('pms_genbo_v686_oct_excl0_d1', 'true');
+            console.log(`✅ 棚卸原簿マスタ移行＆10月期(2026-10)初期締め保存完了(対象コード0・廃盤1除外): 全 ${mergedProducts.length} 件`);
             if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
         }).catch(err => {
             console.error('❌ 棚卸原簿マスタ移行エラー:', err);
@@ -1005,12 +1006,13 @@ const DB = {
             const octQty = Number(p.octStock !== undefined ? p.octStock : p.stock) || 0;
             const price = Number(p.price) || 0;
             const targetFlag = Number(p.targetFlag) || 0;
-            // 棚卸対象コード0は在庫金額を集計しない（数量は保持、金額は0円扱い）
-            const isTargetZero = (targetFlag === 0);
-            // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ集計
+            const discontinuedFlag = Number(p.discontinuedFlag) || 0;
+            // 棚卸対象コード0 または 廃盤フラグ1 は在庫金額を集計しない（数量は保持、金額は0円扱い）
+            const isAmountExcluded = (targetFlag === 0) || (discontinuedFlag === 1);
+            // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ集計（廃盤1は除外）
             const isFixed = (targetFlag === 4);
-            const rawAmount = isTargetZero ? 0 : (octQty * price * 1.01);
-            const amount = isTargetZero ? 0 : Math.round(rawAmount);
+            const rawAmount = isAmountExcluded ? 0 : (octQty * price * 1.01);
+            const amount = isAmountExcluded ? 0 : Math.round(rawAmount);
             const cat = String(p.category || '99').padStart(2, '0');
 
             p.stock = octQty;
@@ -1023,7 +1025,8 @@ const DB = {
                 name: p.name,
                 category: cat,
                 targetFlag: targetFlag,
-                isAmountExcluded: isTargetZero,
+                discontinuedFlag: discontinuedFlag,
+                isAmountExcluded: isAmountExcluded,
                 price: price,
                 prevQty: 0,
                 currQty: octQty,
@@ -1035,7 +1038,7 @@ const DB = {
                 isFixed: isFixed
             });
 
-            if (!isTargetZero) {
+            if (!isAmountExcluded) {
                 rawTotal += amount;
 
                 const catKey = isFixed ? 'fixed' : cat;
@@ -1092,7 +1095,8 @@ const DB = {
             fixedTotal: fixedTotal,
             closedAt: octTimestamp,
             isInitialBaseline: true,
-            excludeTargetZeroVersion: true
+            excludeTargetZeroVersion: true,
+            excludeTargetZeroAndDisc1Version: true
         };
 
         // 1. INV_MONTHLY: 旧マスタ時代の10月期以前のデータを整理し、2026-10(10月期)を初期締めデータとして保存（2026-11以降があれば維持）

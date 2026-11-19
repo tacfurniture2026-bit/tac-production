@@ -373,7 +373,7 @@ NextScanLoop:
 End Sub
 
 ' ====================================================================
-' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID/QRキー, 2列目=先月在庫, 3列目=品名, 4列目=単価)
+' 商品マスタ検索 (MASTER.CSV: 1列目=資材ID/QRキー, 2列目=品名, 3列目=先月在庫, 4列目=単価)
 ' 戻り値: 1=一致あり, 0=未登録(ただしマスタファイル自体が無い場合は1扱い)
 ' ====================================================================
 Function LookupMaster(ByVal targetId As String, ByRef outPrevStock As String, ByRef outName As String, ByRef outPrice As String) As Integer
@@ -394,7 +394,7 @@ Function LookupMaster(ByVal targetId As String, ByRef outPrevStock As String, By
         Exit Function
     End If
 
-    ' 新QR形式 ("01-023 品名") の場合は先頭トークンも照合キーとして抽出
+    ' 旧QR形式 ("01-023 品名") の場合は先頭トークンも照合キーとして抽出
     shortKey = targetId
     spPos = InStr(1, targetId, " ")
     If spPos > 1 Then
@@ -415,13 +415,13 @@ Function LookupMaster(ByVal targetId As String, ByRef outPrevStock As String, By
             col3 = GetCsvCol(lineStr, 3)
             col4 = GetCsvCol(lineStr, 4)
             If col4 <> "" Then
-                outPrevStock = col2
-                outName = col3
+                outName = col2
+                outPrevStock = col3
                 outPrice = col4
             Else
                 ' 旧3列フォーマット後方互換
-                outPrevStock = "-"
                 outName = col2
+                outPrevStock = "-"
                 outPrice = col3
             End If
             FileClose(fp)
