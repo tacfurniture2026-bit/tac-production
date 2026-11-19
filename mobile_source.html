@@ -8,10 +8,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>TAC生産管理</title>
-    <!-- 【強制キャッシュバスティング v6.80.0】 -->
+    <!-- 【強制キャッシュバスティング v6.81.0】 -->
     <script>
         (function() {
-            var currentVersion = 'v6.80.0';
+            var currentVersion = 'v6.81.0';
             var urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('v') !== currentVersion) {
                 // キャッシュ回避のため、バージョンパラメーターをつけて強制リダイレクト
@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TAC生産管理">
-    <link rel="apple-touch-icon" href="icon-192.png?v=v6.80.0">
+    <link rel="apple-touch-icon" href="icon-192.png?v=v6.81.0">
     <link rel="manifest" href="manifest.json">
     <script>
         // モバイル版: インラインマニフェスト（mobile.htmlがスタンドアロンで配信される場合の対応）
@@ -52,7 +52,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300;400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="styles-mobile.css?v=v6.80.0">
+    <link rel="stylesheet" href="styles-mobile.css?v=v6.81.0">
     <style>
         /* 緊急パッチ: CSSキャッシュ対策 */
         .matrix-cell.status-todo::after,
@@ -221,8 +221,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- アプリケーションロジック -->
     <script src="firebase-config.js"></script>
-    <script src="data.js?v=v6.80.0"></script>
-    <script src="app-mobile.js?v=v6.80.0"></script>
+    <script src="data.js?v=v6.81.0"></script>
+    <script src="app-mobile.js?v=v6.81.0"></script>
     <script>
         // 【緊急】キャッシュ強制クリア & Service Worker解除
         if ('serviceWorker' in navigator) {
@@ -280,7 +280,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.80.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.81.0</span>
                     <p>Production Management System</p>
                 </div>
                 <form id="login-form">
@@ -307,7 +307,7 @@
                     <span class="logo-icon">🏭</span>
                     <span class="logo-text">TAC製造部</span>
                 </div>
-                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.80.0</span>
+                <span class="app-version" style="font-size: 0.75rem; color: #a1a1aa; margin-top: 4px; margin-left: 2rem;">v6.81.0</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -394,7 +394,7 @@
             <!-- ダッシュボード -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.80.0</span></h1>
+                    <h1>▣ ダッシュボード <span style="font-size: 0.6em; color: #a1a1aa; vertical-align: middle; margin-left: 8px;">v6.81.0</span></h1>
                     <p>生産状況の概要</p>
                 </div>
                 
@@ -1237,6 +1237,7 @@
                             <p>商品の登録・編集・削除</p>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="openGenboExcelImportModal()" style="background-color: #16a34a; color: white; border-color: #16a34a;">📗 棚卸原簿Excel入替</button>
                             <button class="btn btn-secondary" id="export-inv-csv-btn">📤 CSV出力</button>
                             <button class="btn btn-secondary" onclick="exportHtMasterCsv()" style="background-color: #0284c7; color: white; border-color: #0284c7;">📠 HT用マスタ出力</button>
                             <button class="btn btn-primary" id="add-inv-product-btn">+ 新規登録</button>
@@ -1245,15 +1246,28 @@
                 </div>
                 <div class="card" style="margin-bottom: 1.5rem;">
                     <div class="card-body">
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                             <select id="inv-products-category-filter" class="form-input" style="width: auto;">
-                                <option value="">全分類</option>
+                                <option value="">全分類 (01〜27)</option>
                             </select>
-                            <input type="text" id="inv-products-search" class="form-input" placeholder="検索..."
-                                style="flex: 1; min-width: 200px;">
+                            <select id="inv-products-material-type-filter" class="form-input" style="width: auto;">
+                                <option value="">全資材区分</option>
+                                <option value="直接資材">直接資材</option>
+                                <option value="間接資材">間接資材</option>
+                                <option value="仕掛品">仕掛品</option>
+                                <option value="製品">製品</option>
+                            </select>
+                            <select id="inv-products-target-filter" class="form-input" style="width: auto;">
+                                <option value="">全棚卸区分</option>
+                                <option value="target_only">✓ 棚卸対象のみ</option>
+                                <option value="non_target">⏭ 棚卸対象外のみ</option>
+                                <option value="dead_stock">⚠ 死蔵・廃盤・不動のみ</option>
+                            </select>
+                            <input type="text" id="inv-products-search" class="form-input" placeholder="識別コード・資材CD・品名で検索..."
+                                style="flex: 1; min-width: 180px;">
                             <label style="display: flex; align-items: center; gap: 0.5rem;">
                                 <input type="checkbox" id="inv-products-fixed-only">
-                                不動品のみ
+                                不動・死蔵のみ
                             </label>
                         </div>
                     </div>
@@ -1361,8 +1375,10 @@
                                         <option value="all">すべて</option>
                                         <option value="scanned">✓ 仮登録済</option>
                                         <option value="missing">⚠️ 未スキャン(漏れ)</option>
+                                        <option value="zerocheck">⚠️ 0のまま未確認</option>
                                         <option value="unpriced">⚠️ 単価未登録</option>
-                                        <option value="fixed">不動品</option>
+                                        <option value="nontarget">⏭ 棚卸対象外(翌月自動転記)</option>
+                                        <option value="fixed">⚠ 不動品・死蔵品(廃盤含)</option>
                                     </select>
                                 </div>
                                 <button type="button" class="btn btn-secondary" id="export-inv-check-btn" style="margin-top: 1.25rem;">⬇ CSV出力</button>
@@ -1602,7 +1618,7 @@
                     <span>ログアウト</span>
                 </button>
                 <div style="text-align: center; color: #a1a1aa; font-size: 0.8rem; margin-top: 1.5rem; padding-bottom: 1rem;">
-                    Version: v6.80.0
+                    Version: v6.81.0
                 </div>
             </div>
         </div>

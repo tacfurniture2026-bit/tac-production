@@ -1648,7 +1648,7 @@
                     <Name>BtLabel_ProcessNo</Name>
                     <Location>5, 62</Location>
                     <Size>230, 22</Size>
-                    <Text>資材QR (1行目:CD / 2行目:品名)</Text>
+                    <Text>資材QR (資材CD / 品名)</Text>
                     <Alignment>Near</Alignment>
                     <BorderStyle>None</BorderStyle>
                   </LabelToolSettings>

@@ -7224,7 +7224,7 @@ function hideMoreMenu() {
 // 在庫管理
 // ========================================
 
-// 資材分類
+// 資材分類 (資材コード一覧及び棚卸対象一覧.xlsx 完全準拠: 01〜27)
 const INV_CATEGORIES = {
   '01': '基材',
   '02': '面材',
@@ -7250,19 +7250,163 @@ const INV_CATEGORIES = {
   '22': '下請け預かり品',
   '23': 'GRID不動品',
   '24': '仕掛品フラッシュのみ',
-  '26': '仕掛品(未完成品)'
+  '25': '仕掛品(Tpics)',
+  '26': '仕掛品(未完成品)',
+  '27': '入荷品'
 };
+
+// 資材分類ごとの集計コード (資材コード一覧及び棚卸対象一覧.xlsx 準拠)
+const INV_CATEGORY_AGGREGATION = {
+  '01': 1, '02': 2, '03': 3, '04': 4, '05': 5, '06': 6, '07': 7, '08': 8, '09': 9,
+  '10': 11, '11': 16, '12': 16, '13': 10, '14': 10, '15': 12, '16': 13,
+  '17': 15, '18': 15, '19': 15, '20': 15, '21': 15, '22': 15,
+  '23': 14, '24': 16, '25': 16, '26': 16, '27': 10
+};
+
+// 棚卸対象区分 (資材コード一覧及び棚卸対象一覧.xlsx 完全準拠: 0〜10)
+const INV_TARGET_TYPES = {
+  0: { name: '対象外', isTarget: false, isDeadStock: false },
+  1: { name: '対象(通常品)', isTarget: true, isDeadStock: false },
+  2: { name: '対象(仕掛品)', isTarget: true, isDeadStock: false },
+  3: { name: '対象(外注品)', isTarget: true, isDeadStock: false },
+  4: { name: '対象(死蔵品)', isTarget: true, isDeadStock: true },
+  5: { name: '対象(次回より死蔵品)', isTarget: true, isDeadStock: true },
+  6: { name: '対象(不動品)', isTarget: true, isDeadStock: true },
+  7: { name: '対象外(仕掛品)', isTarget: false, isDeadStock: false },
+  8: { name: '対象(売却予定)', isTarget: true, isDeadStock: true },
+  9: { name: '対象(外注先売却予定)', isTarget: true, isDeadStock: false },
+  10: { name: '対象(仕掛品今回のみ)', isTarget: true, isDeadStock: false }
+};
+
+// 資材区分一覧
+const INV_MATERIAL_DIVISIONS = ['直接資材', '間接資材', '仕掛品', '製品'];
+
+// 棚卸対象外判定ヘルパー（対象外=0, 対象外(仕掛品)=7 はQR印刷不要＆翌月へそのまま在庫転記）
+function isInvNonTargetProduct(prod) {
+  if (!prod) return false;
+  if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
+    const tf = Number(prod.targetFlag);
+    if (tf === 0 || tf === 7) return true;
+  }
+  if (prod.isTarget === false) return true;
+  return false;
+}
+
+// 死蔵品・廃盤・不動品判定ヘルパー（廃盤フラグ==1、または棚卸対象区分4,5,6,8、または不動品チェックON）
+function isInvDeadOrFixedProduct(prod) {
+  if (!prod) return false;
+  if (prod.isFixed || prod.isDeadStock) return true;
+  if (Number(prod.discontinuedFlag) === 1) return true;
+  if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
+    const tf = Number(prod.targetFlag);
+    if (tf === 4 || tf === 5 || tf === 6 || tf === 8) return true;
+  }
+  return false;
+}
+
+// 価格更新履歴を記録する共通ヘルパー
+function recordProductPriceUpdate(prod, newPrice, reason = '単価更新') {
+  if (!prod) return false;
+  const oldPrice = Number(prod.price) || 0;
+  const parsedNew = Number(newPrice);
+  if (isNaN(parsedNew)) return false;
+  const today = new Date().toISOString().split('T')[0];
+  const userObj = (typeof window !== 'undefined' && window.currentUser) || (typeof DB !== 'undefined' && DB.get(DB.KEYS.CURRENT_USER)) || {};
+  const userName = userObj.displayName || userObj.username || '管理者';
+
+  if (oldPrice !== parsedNew) {
+    if (!Array.isArray(prod.priceHistory)) prod.priceHistory = [];
+    prod.priceHistory.unshift({
+      date: today,
+      timestamp: new Date().toISOString(),
+      oldPrice: oldPrice,
+      newPrice: parsedNew,
+      updatedBy: userName,
+      reason: reason
+    });
+    // 履歴は最大30件保持
+    if (prod.priceHistory.length > 30) prod.priceHistory = prod.priceHistory.slice(0, 30);
+    prod.price = parsedNew;
+    prod.priceUpdatedAt = today;
+    prod.updatedAt = today;
+    return true;
+  }
+  return false;
+}
+
+// 新規マスタ生成時のダブりなし発番ヘルパー（資材コード一覧の識別に則り付与）
+function issueDuplicateFreeMasterCodes(categoryCode, productsList) {
+  const cat = String(categoryCode || '01').trim().padStart(2, '0');
+  const products = productsList || (typeof DB !== 'undefined' ? DB.get(DB.KEYS.INV_PRODUCTS) : []) || [];
+  const usedIdents = new Set();
+  const usedMatCodes = new Set();
+  let maxSeq = 0;
+
+  products.forEach(p => {
+    if (!p) return;
+    if (p.id) {
+      usedIdents.add(String(p.id).trim().toUpperCase());
+      usedMatCodes.add(String(p.id).trim().toUpperCase());
+    }
+    if (p.identCode) usedIdents.add(String(p.identCode).trim().toUpperCase());
+    if (p.materialCode) usedMatCodes.add(String(p.materialCode).trim().toUpperCase());
+
+    const pCat = String(p.identClass || p.category || '').trim().padStart(2, '0');
+    if (pCat === cat) {
+      if (p.identOrder) {
+        const n = parseInt(String(p.identOrder), 10);
+        if (!isNaN(n) && n > maxSeq) maxSeq = n;
+      }
+      const ic = String(p.identCode || p.id || '');
+      if (ic.startsWith(cat + '-')) {
+        const n = parseInt(ic.split('-')[1], 10);
+        if (!isNaN(n) && n > maxSeq) maxSeq = n;
+      }
+      const mc = String(p.materialCode || p.id || '');
+      if (mc.toUpperCase().startsWith('N' + cat) && mc.length >= 15) {
+        const n = parseInt(mc.substring(3), 10);
+        if (!isNaN(n) && n > maxSeq) maxSeq = n;
+      }
+    }
+  });
+
+  let nextSeq = maxSeq + 1;
+  let identCode = '';
+  let materialCode = '';
+  while (true) {
+    const seqPad3 = String(nextSeq).padStart(3, '0');
+    const seqPad12 = String(nextSeq).padStart(12, '0');
+    identCode = `${cat}-${seqPad3}`;
+    materialCode = `N${cat}${seqPad12}`; // N + 2桁分類 + 12桁ゼロ埋め連番 = 15桁 (例: N01000000000149)
+    if (!usedIdents.has(identCode.toUpperCase()) && !usedMatCodes.has(materialCode.toUpperCase())) {
+      break;
+    }
+    nextSeq++;
+  }
+
+  return {
+    id: materialCode,
+    category: cat,
+    identClass: cat,
+    identOrder: String(nextSeq),
+    identCode: identCode,
+    materialCode: materialCode
+  };
+}
 
 // 在庫スキャナー用
 let invQrScanner = null;
 
-// 現在庫数を取得（ログから集計）
+// 現在庫数を取得（ログから集計、ログがない場合は棚卸原簿の初期在庫・前月在庫・死蔵品在庫数を反映）
 function getCurrentStock(productId) {
   const logs = DB.get(DB.KEYS.INV_LOGS) || [];
-  let stock = 0;
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const prod = products.find(p => p && (p.id === productId || p.identCode === productId || p.materialCode === productId));
   const safeNum = (val) => { const n = Number(val); return isNaN(n) ? 0 : n; };
+  let stock = prod ? safeNum(prod.stock !== undefined ? prod.stock : (prod.prevStock !== undefined ? prod.prevStock : prod.deadStockQty)) : 0;
+
   logs.forEach(log => {
-    if (log.productId === productId) {
+    if (log && (log.productId === productId || (prod && (log.productId === prod.id || log.productId === prod.identCode || log.productId === prod.materialCode)))) {
       const q = safeNum(log.quantity);
       if (log.type === 'count') {
         stock = q; // 棚卸の場合は上書き
@@ -7646,6 +7790,7 @@ function setupInvExcelImport() {
             const existingIdx = products.findIndex(p => p.id === pData.id || (pData.name && p.name === pData.name));
             
             if (existingIdx >= 0) {
+              recordProductPriceUpdate(products[existingIdx], item.unitPrice, '棚卸Excel取込');
               products[existingIdx].price = item.unitPrice;
               masterUpdateCount++;
             } else {
@@ -7888,6 +8033,7 @@ function setupInitialDataImport() {
             
             // エクセルに記載がある商品については、単価が0円でも強制的にシステムの単価を上書きする
             if (qtyData) {
+              recordProductPriceUpdate(p, qtyData.unitPrice, '初期在庫データ取込');
               p.price = qtyData.unitPrice;
             }
             
@@ -8100,7 +8246,10 @@ function syncInventoryToMaster(month) {
     const existing = products.find(p => p.id === log.productId || (log.productName && p.name === log.productName));
     
     if (existing) {
-      // 金額は上書き
+      // 金額は上書き（価格更新履歴を記録）
+      if (log.unitPrice !== undefined && log.unitPrice !== null) {
+        recordProductPriceUpdate(existing, log.unitPrice, '月次ログマスタ同期');
+      }
       existing.price = log.unitPrice || existing.price;
       updateCount++;
     } else {
@@ -8251,14 +8400,15 @@ function submitInventoryCount() {
     return;
   }
 
-  // スキャン画面からのマスタ単価更新（金額差異チェック）
+  // スキャン画面からのマスタ単価更新（金額差異チェック＆価格更新履歴記録）
   const newPriceInput = $('#inv-scan-unit-price');
   if (newPriceInput && newPriceInput.value !== '') {
     const newPrice = parseFloat(newPriceInput.value);
     if (!isNaN(newPrice) && product.price !== newPrice) {
+      recordProductPriceUpdate(product, newPrice, '棚卸スキャン時単価変更');
       product.price = newPrice;
       DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-      toast(`マスタの単価を ¥${newPrice} に上書き更新しました`, 'success');
+      toast(`マスタの単価を ¥${newPrice} に上書き更新し、更新日を記録しました`, 'success');
     }
   }
 
@@ -8354,8 +8504,12 @@ function executeInvSearch() {
   let filtered = products;
   if (keyword) {
     filtered = products.filter(p =>
-      p.id.toLowerCase().includes(keyword) ||
-      p.name.toLowerCase().includes(keyword) ||
+      String(p.id || '').toLowerCase().includes(keyword) ||
+      String(p.identCode || '').toLowerCase().includes(keyword) ||
+      String(p.materialCode || '').toLowerCase().includes(keyword) ||
+      String(p.name || '').toLowerCase().includes(keyword) ||
+      String(p.colorOther || '').toLowerCase().includes(keyword) ||
+      String(p.materialType || '').toLowerCase().includes(keyword) ||
       (INV_CATEGORIES[p.category] || '').toLowerCase().includes(keyword)
     );
   }
@@ -8363,13 +8517,16 @@ function executeInvSearch() {
   tbody.innerHTML = filtered.map(p => {
     const stock = getCurrentStock(p.id);
     const safePrice = isNaN(Number(p.price)) ? 0 : Number(p.price);
-    const amount = stock * safePrice;
+    const amount = Math.round(stock * safePrice);
+    const dispCode = p.identCode && p.identCode !== p.id
+      ? `<strong>${p.identCode}</strong><br><span style="font-size: 0.72rem; color: #64748b; font-family: monospace;">${p.id}</span>`
+      : `<strong>${p.id}</strong>`;
     return `
       <tr>
-        <td>${p.id}</td>
+        <td>${dispCode}</td>
         <td>${INV_CATEGORIES[p.category] || p.category}</td>
         <td>${p.name}</td>
-        <td>${stock}</td>
+        <td>${stock.toLocaleString()} ${p.unit || ''}</td>
         <td>¥${safePrice.toLocaleString()}</td>
         <td>¥${amount.toLocaleString()}</td>
       </tr>
@@ -8384,24 +8541,32 @@ function executeInvSearch() {
 function renderInvProductsPage() {
   // カテゴリフィルタ初期化
   const categoryFilter = $('#inv-products-category-filter');
-  categoryFilter.innerHTML = '<option value="">全分類</option>' +
-    Object.entries(INV_CATEGORIES).map(([code, name]) =>
-      `<option value="${code}">${code}: ${name}</option>`
-    ).join('');
+  if (categoryFilter) {
+    categoryFilter.innerHTML = '<option value="">全分類 (01〜27)</option>' +
+      Object.entries(INV_CATEGORIES).map(([code, name]) =>
+        `<option value="${code}">${code}: ${name}</option>`
+      ).join('');
+    categoryFilter.onchange = renderInvProductsTable;
+  }
+
+  const matTypeFilter = $('#inv-products-material-type-filter');
+  if (matTypeFilter) matTypeFilter.onchange = renderInvProductsTable;
+
+  const targetFilter = $('#inv-products-target-filter');
+  if (targetFilter) targetFilter.onchange = renderInvProductsTable;
 
   // イベント設定
-  categoryFilter.onchange = renderInvProductsTable;
-  $('#inv-products-search').oninput = renderInvProductsTable;
-  $('#inv-products-fixed-only').onchange = renderInvProductsTable;
-  $('#add-inv-product-btn').onclick = showAddInvProductModal;
+  if ($('#inv-products-search')) $('#inv-products-search').oninput = renderInvProductsTable;
+  if ($('#inv-products-fixed-only')) $('#inv-products-fixed-only').onchange = renderInvProductsTable;
+  if ($('#add-inv-product-btn')) $('#add-inv-product-btn').onclick = showAddInvProductModal;
 
   // CSV取り込み・エクスポート
-  $('#import-inv-csv-btn').onclick = showCsvImportArea;
-  $('#export-inv-csv-btn').onclick = exportInvProductsCsv;
-  $('#print-inv-qrs-btn').onclick = printInvProductsQrs;
-  $('#execute-csv-import-btn').onclick = executeInvCsvImport;
-  $('#cancel-csv-import-btn').onclick = hideCsvImportArea;
-  $('#csv-file-input').onchange = previewCsvFile;
+  if ($('#import-inv-csv-btn')) $('#import-inv-csv-btn').onclick = showCsvImportArea;
+  if ($('#export-inv-csv-btn')) $('#export-inv-csv-btn').onclick = exportInvProductsCsv;
+  if ($('#print-inv-qrs-btn')) $('#print-inv-qrs-btn').onclick = printInvProductsQrs;
+  if ($('#execute-csv-import-btn')) $('#execute-csv-import-btn').onclick = executeInvCsvImport;
+  if ($('#cancel-csv-import-btn')) $('#cancel-csv-import-btn').onclick = hideCsvImportArea;
+  if ($('#csv-file-input')) $('#csv-file-input').onchange = previewCsvFile;
 
   // テーブル描画
   renderInvProductsTable();
@@ -8409,38 +8574,118 @@ function renderInvProductsPage() {
 
 function renderInvProductsTable() {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const categoryFilter = $('#inv-products-category-filter').value;
-  const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
-  const fixedOnly = $('#inv-products-fixed-only').checked;
+  const categoryFilter = ($('#inv-products-category-filter') || {}).value || '';
+  const matTypeFilter = ($('#inv-products-material-type-filter') || {}).value || '';
+  const targetFilter = ($('#inv-products-target-filter') || {}).value || '';
+  const searchKeyword = (($('#inv-products-search') || {}).value || '').toLowerCase().trim();
+  const fixedOnly = ($('#inv-products-fixed-only') || {}).checked || false;
 
   let filtered = products.filter(p => {
+    if (!p) return false;
     if (categoryFilter && p.category !== categoryFilter) return false;
-    if (fixedOnly && !p.isFixed) return false;
-    if (searchKeyword && !p.id.toLowerCase().includes(searchKeyword) && !p.name.toLowerCase().includes(searchKeyword)) return false;
+    if (matTypeFilter && (p.materialType || '直接資材') !== matTypeFilter) return false;
+    const isNonTarget = isInvNonTargetProduct(p);
+    const isDeadFixed = isInvDeadOrFixedProduct(p);
+    if (targetFilter === 'target_only' && isNonTarget) return false;
+    if (targetFilter === 'non_target' && !isNonTarget) return false;
+    if (targetFilter === 'dead_stock' && !isDeadFixed) return false;
+    if (fixedOnly && !isDeadFixed) return false;
+    if (searchKeyword) {
+      const hay = [
+        p.id, p.identCode, p.materialCode, p.name, p.colorOther, p.composition, p.material,
+        p.width, p.length, p.thickness, p.materialType, p.supplier, p.note,
+        INV_CATEGORIES[p.category] || ''
+      ].join(' ').toLowerCase();
+      if (!hay.includes(searchKeyword)) return false;
+    }
     return true;
   });
 
   const tbody = $('#inv-products-body');
+  if (!tbody) return;
   const usageStats = calculateUsageStats(); // 基準在庫算出用データ取得
 
-  $('#inv-products-count').textContent = products.length; // 登録件数表示
+  if ($('#inv-products-count')) {
+    $('#inv-products-count').textContent = `${filtered.length} / ${products.length}`;
+  }
+
+  const isMobileTable = !document.getElementById('import-inv-csv-btn');
 
   tbody.innerHTML = filtered.map(p => {
-    // 基準在庫（参考値）の取得
     const stat = usageStats[p.id];
-    const suggested = stat ? Math.ceil((stat.totalUsage / stat.months) * 1.5) : '-';
+    const suggested = stat ? Math.ceil((stat.totalUsage / stat.months) * 1.5) : (p.prevStock !== undefined && p.prevStock > 0 ? p.prevStock : '-');
+    const isDeadFixed = isInvDeadOrFixedProduct(p);
+    const isNonTarget = isInvNonTargetProduct(p);
+    const tfNum = (p.targetFlag !== undefined && p.targetFlag !== '') ? Number(p.targetFlag) : (isNonTarget ? 0 : 1);
+    const tfInfo = INV_TARGET_TYPES[tfNum] || { name: isNonTarget ? '対象外' : '対象' };
+
+    const codeCellHtml = p.identCode && p.identCode !== p.id
+      ? `<div><strong>${p.identCode}</strong></div><div style="font-size: 0.72rem; color: #64748b; font-family: monospace;">${p.materialCode || p.id}</div>`
+      : `<div><strong>${p.id}</strong></div>`;
+
+    const matTypeBadge = p.materialType
+      ? `<div style="margin-top: 2px;"><span style="display:inline-block; background:#e0f2fe; color:#0369a1; font-size:0.7rem; padding:1px 6px; border-radius:4px; font-weight:600;">${p.materialType}</span></div>`
+      : '';
+
+    const sizeParts = [];
+    if (p.width) sizeParts.push(`W:${p.width}`);
+    if (p.length) sizeParts.push(`L:${p.length}`);
+    if (p.thickness) sizeParts.push(`t:${p.thickness}`);
+    if (p.colorOther) sizeParts.push(`色:${p.colorOther}`);
+    if (p.composition || p.material) sizeParts.push(`構成:${p.composition || p.material}`);
+    if (p.unit) sizeParts.push(`単位:${p.unit}`);
+    const specLineHtml = sizeParts.length > 0
+      ? `<div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">${sizeParts.join(' / ')}</div>`
+      : '';
+
+    const priceDateStr = p.priceUpdatedAt || p.updatedAt || '';
+    const historyCount = Array.isArray(p.priceHistory) ? p.priceHistory.length : 0;
+    const priceDateHtml = priceDateStr
+      ? `<div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">更新: ${priceDateStr}${historyCount > 0 ? ` <span style="color:#0284c7; font-weight:600;">(履歴${historyCount}件)</span>` : ''}</div>`
+      : '';
+
+    const targetBadges = [];
+    if (isNonTarget) {
+      targetBadges.push(`<span style="display:inline-block; background:#e2e8f0; color:#475569; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold;" title="棚卸対象外: QR印刷不要・締め処理で在庫をそのまま翌月へ転記">⏭ ${tfInfo.name}</span>`);
+    } else {
+      targetBadges.push(`<span style="display:inline-block; background:#dcfce7; color:#15803d; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold;">✓ ${tfInfo.name}</span>`);
+    }
+    if (Number(p.discontinuedFlag) === 1) {
+      targetBadges.push(`<span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">廃盤(死蔵品扱)</span>`);
+    } else if (isDeadFixed) {
+      targetBadges.push(`<span style="display:inline-block; background:#fef3c7; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">死蔵/不動</span>`);
+    }
+
+    const safePrice = Number(p.price) || 0;
+    const safeIdEsc = String(p.id).replace(/'/g, "\\'");
+
+    if (isMobileTable) {
+      return `
+      <tr class="${isDeadFixed ? 'fixed-product-row' : ''}">
+        <td>${codeCellHtml}</td>
+        <td>${p.category}: ${INV_CATEGORIES[p.category] || p.category}${matTypeBadge}</td>
+        <td><div><strong>${p.name}</strong></div>${specLineHtml}</td>
+        <td><div class="num">¥${safePrice.toLocaleString()}</div>${priceDateHtml}</td>
+        <td>${targetBadges.join('<br>')}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${safeIdEsc}')">編集</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${safeIdEsc}')">削除</button>
+        </td>
+      </tr>
+      `;
+    }
 
     return `
-    <tr class="${p.isFixed ? 'fixed-product-row' : ''}">
-      <td>${p.identCode || p.id}</td>
-      <td>${INV_CATEGORIES[p.category] || p.category}</td>
-      <td>${p.name}</td>
-      <td>¥${p.price.toLocaleString()}</td>
-      <td>${suggested.toLocaleString()}</td>
-      <td>${p.isFixed ? '✓' : ''}</td>
+    <tr class="${isDeadFixed ? 'fixed-product-row' : ''}">
+      <td>${codeCellHtml}</td>
+      <td>${p.category}: ${INV_CATEGORIES[p.category] || p.category}${matTypeBadge}</td>
+      <td><div><strong>${p.name}</strong></div>${specLineHtml}</td>
+      <td><div class="num">¥${safePrice.toLocaleString()}</div>${priceDateHtml}</td>
+      <td>${typeof suggested === 'number' ? suggested.toLocaleString() : suggested}</td>
+      <td>${targetBadges.join('<br>')}</td>
       <td>
-        <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${p.id}')">編集</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${p.id}')">削除</button>
+        <button class="btn btn-sm btn-secondary" onclick="editInvProduct('${safeIdEsc}')">編集</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteInvProduct('${safeIdEsc}')">削除</button>
       </td>
     </tr>
   `;
@@ -8487,48 +8732,83 @@ function calculateUsageStats() {
   return stats;
 }
 
+window.previewNextProductCodes = function() {
+  const catEl = document.getElementById('inv-prod-category');
+  const previewEl = document.getElementById('inv-prod-code-preview');
+  if (!catEl || !previewEl) return;
+  const issued = issueDuplicateFreeMasterCodes(catEl.value);
+  previewEl.innerHTML = `自動採番予定: 識別コード <strong>${issued.identCode}</strong> ／ 資材CD <code>${issued.materialCode}</code> （重複なしチェック済）`;
+};
+
 function showAddInvProductModal() {
-  $('#modal-title').textContent = '商品登録';
+  const defaultIssued = issueDuplicateFreeMasterCodes('01');
+  $('#modal-title').textContent = '新規商品マスタ登録（ダブりなし自動採番）';
   $('#modal-body').innerHTML = `
-    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+      <div class="form-group" style="grid-column: span 2; background: #f0f9ff; border-left: 4px solid #0284c7; padding: 8px 12px; border-radius: 6px; margin-bottom: 0;">
+        <div id="inv-prod-code-preview" style="font-size: 0.85rem; color: #0369a1;">
+          自動採番予定: 識別コード <strong>${defaultIssued.identCode}</strong> ／ 資材CD <code>${defaultIssued.materialCode}</code> （重複なしチェック済）
+        </div>
+      </div>
       <div class="form-group">
-        <label>識別コード分類(必須)</label>
-        <select id="inv-prod-category" class="form-input" required>
+        <label>資材分類 (01〜27・必須)</label>
+        <select id="inv-prod-category" class="form-input" required onchange="previewNextProductCodes()">
           ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
     `<option value="${code}">${code}: ${name}</option>`
   ).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label>品名(必須)</label>
-        <input type="text" id="inv-prod-name" class="form-input" required>
-      </div>
-      <div class="form-group">
         <label>資材区分</label>
-        <input type="text" id="inv-prod-material-type" class="form-input">
+        <select id="inv-prod-material-type" class="form-input">
+          ${INV_MATERIAL_DIVISIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>品名 (必須)</label>
+        <input type="text" id="inv-prod-name" class="form-input" required placeholder="例: LVL 30X14X2430">
       </div>
       <div class="form-group">
-        <label>単価</label>
-        <input type="number" id="inv-prod-price" class="form-input" min="0" required value="0">
+        <label>単価 (円)</label>
+        <input type="number" step="0.01" id="inv-prod-price" class="form-input" min="0" required value="0">
+      </div>
+      <div class="form-group">
+        <label>単位</label>
+        <input type="text" id="inv-prod-unit" class="form-input" placeholder="例: 枚, 本, 個, ヶ, m, 式">
+      </div>
+      <div class="form-group">
+        <label>棚卸対象区分</label>
+        <select id="inv-prod-target-flag" class="form-input">
+          ${Object.entries(INV_TARGET_TYPES).map(([k, info]) =>
+            `<option value="${k}" ${Number(k) === 1 ? 'selected' : ''}>${k}: ${info.name}${!info.isTarget ? ' (QR印刷不要・翌月自動転記)' : ''}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>廃盤フラグ（死蔵品扱い）</label>
+        <select id="inv-prod-discontinued-flag" class="form-input">
+          <option value="0" selected>0: 通常（現役）</option>
+          <option value="1">1: 廃盤（死蔵品として扱う）</option>
+        </select>
       </div>
       <div class="form-group">
         <label>色/他</label>
         <input type="text" id="inv-prod-color" class="form-input">
       </div>
       <div class="form-group">
-        <label>寸法 (巾/長さ/t厚み)</label>
-        <div style="display: flex; gap: 4px;">
-          <input type="text" id="inv-prod-width" class="form-input" placeholder="巾">
-          <input type="text" id="inv-prod-length" class="form-input" placeholder="長さ">
-          <input type="text" id="inv-prod-thickness" class="form-input" placeholder="t厚み">
+        <label>構成</label>
+        <input type="text" id="inv-prod-composition" class="form-input">
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>寸法 (巾 / 長さ / t厚み)</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="inv-prod-width" class="form-input" placeholder="巾 (W)">
+          <input type="text" id="inv-prod-length" class="form-input" placeholder="長さ (L)">
+          <input type="text" id="inv-prod-thickness" class="form-input" placeholder="t/厚み">
         </div>
       </div>
-      <div class="form-group">
-        <label>単位</label>
-        <input type="text" id="inv-prod-unit" class="form-input">
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" id="inv-prod-fixed"> 不動品（変動なし）</label>
+      <div class="form-group" style="grid-column: span 2;">
+        <label><input type="checkbox" id="inv-prod-fixed"> 不動品・死蔵品（変動なし・前月在庫を自動維持）</label>
       </div>
     </form>
   `;
@@ -8547,13 +8827,18 @@ function saveNewInvProduct() {
   const category = $('#inv-prod-category').value;
   const name = $('#inv-prod-name').value.trim();
   const price = parseFloat($('#inv-prod-price').value) || 0;
-  const isFixed = $('#inv-prod-fixed').checked;
-  const materialType = $('#inv-prod-material-type').value.trim();
-  const colorOther = $('#inv-prod-color').value.trim();
-  const width = $('#inv-prod-width').value.trim();
-  const length = $('#inv-prod-length').value.trim();
-  const thickness = $('#inv-prod-thickness').value.trim();
-  const unit = $('#inv-prod-unit').value.trim();
+  const targetFlag = parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
+  const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
+  const isDeadStock = (discontinuedFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
+  const isFixed = $('#inv-prod-fixed').checked || isDeadStock;
+  const isTarget = !(targetFlag === 0 || targetFlag === 7);
+  const materialType = ($('#inv-prod-material-type') || {}).value || '直接資材';
+  const colorOther = ($('#inv-prod-color') || {}).value?.trim() || '';
+  const composition = ($('#inv-prod-composition') || {}).value?.trim() || '';
+  const width = ($('#inv-prod-width') || {}).value?.trim() || '';
+  const length = ($('#inv-prod-length') || {}).value?.trim() || '';
+  const thickness = ($('#inv-prod-thickness') || {}).value?.trim() || '';
+  const unit = ($('#inv-prod-unit') || {}).value?.trim() || '';
 
   if (!name) {
     toast('品名を入力してください', 'error');
@@ -8561,56 +8846,78 @@ function saveNewInvProduct() {
   }
 
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-
-  // ID自動採番
-  const existingNums = products
-    .filter(p => p.identClass === category || p.category === category || p.id.startsWith(category + '-'))
-    .map(p => parseInt(p.id.split('-')[1]) || 0);
-  const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
-  const newIdentCode = `${category}-${nextNum}`;
-  const newMaterialCode = `N${category}${String(nextNum).padStart(13, '0')}`;
+  const issued = issueDuplicateFreeMasterCodes(category, products);
+  const today = new Date().toISOString().split('T')[0];
 
   products.push({
-    id: newIdentCode,
-    name: name,
-    category: category,
-    price: price,
-    isFixed: isFixed,
-    materialCode: newMaterialCode,
+    id: issued.materialCode,
+    identCode: issued.identCode,
+    identClass: issued.identClass,
+    identOrder: issued.identOrder,
+    category: issued.category,
+    categoryName: INV_CATEGORIES[issued.category] || '',
+    materialCode: issued.materialCode,
     materialType: materialType,
-    identClass: category,
-    identOrder: nextNum.toString(),
+    name: name,
+    price: price,
+    targetFlag: targetFlag,
+    discontinuedFlag: discontinuedFlag,
+    isDeadStock: isDeadStock,
+    isFixed: isFixed,
+    isTarget: isTarget,
     colorOther: colorOther,
+    composition: composition,
+    material: composition,
     width: width,
     length: length,
     thickness: thickness,
-    unit: unit
+    unit: unit,
+    updatedAt: today,
+    priceUpdatedAt: today,
+    priceHistory: [{
+      date: today,
+      timestamp: new Date().toISOString(),
+      oldPrice: 0,
+      newPrice: price,
+      updatedBy: (window.currentUser && window.currentUser.displayName) || '管理者',
+      reason: '新規マスタ登録'
+    }],
+    isCustomAdded: true
   });
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
 
-  toast(`${name}を登録しました（${newId}）`, 'success');
+  toast(`${name} を登録しました（識別: ${issued.identCode} / 資材CD: ${issued.materialCode}）`, 'success');
   hideModal();
   renderInvProductsTable();
 }
 
 function editInvProduct(id) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const product = products.find(p => p.id === id);
+  const product = products.find(p => p && (p.id === id || p.identCode === id || p.materialCode === id));
   if (!product) return;
 
-  $('#modal-title').textContent = '商品編集';
+  const tfVal = (product.targetFlag !== undefined && product.targetFlag !== '') ? Number(product.targetFlag) : (product.isTarget === false ? 0 : 1);
+  const discVal = Number(product.discontinuedFlag) || 0;
+  const historyList = Array.isArray(product.priceHistory) ? product.priceHistory : [];
+  const historyHtml = historyList.length > 0
+    ? `<div style="max-height: 110px; overflow-y: auto; font-size: 0.78rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; margin-top: 4px;">
+        ${historyList.map(h => `<div>📅 <strong>${h.date}</strong>: ¥${Number(h.oldPrice || 0).toLocaleString()} → <strong style="color:#0284c7;">¥${Number(h.newPrice || 0).toLocaleString()}</strong> <span style="color:#64748b;">(${h.updatedBy || '-'} / ${h.reason || '更新'})</span></div>`).join('')}
+       </div>`
+    : `<div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">最終価格更新日: <strong>${product.priceUpdatedAt || product.updatedAt || '未記録'}</strong>（変更時に履歴が自動記録されます）</div>`;
+
+  $('#modal-title').textContent = '商品マスタ編集（価格更新履歴・区分管理）';
   $('#modal-body').innerHTML = `
-    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+    <form id="inv-product-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
       <div class="form-group">
-        <label>資材ID(システム内コード)</label>
-        <input type="text" class="form-input" value="${product.id}" disabled>
+        <label>資材コード (15桁ID)</label>
+        <input type="text" class="form-input" value="${product.materialCode || product.id}" disabled>
       </div>
       <div class="form-group">
-        <label>識別コード(QR表示用)</label>
+        <label>識別コード (QR・原簿コード)</label>
         <input type="text" id="inv-prod-ident-code" class="form-input" value="${product.identCode || product.id}">
       </div>
       <div class="form-group">
-        <label>識別コード分類(必須)</label>
+        <label>資材分類 (01〜27・必須)</label>
         <select id="inv-prod-category" class="form-input" required>
           ${Object.entries(INV_CATEGORIES).map(([code, name]) =>
     `<option value="${code}" ${product.identClass === code || product.category === code ? 'selected' : ''}>${code}: ${name}</option>`
@@ -8618,35 +8925,60 @@ function editInvProduct(id) {
         </select>
       </div>
       <div class="form-group">
-        <label>品名(必須)</label>
-        <input type="text" id="inv-prod-name" class="form-input" value="${product.name}" required>
-      </div>
-      <div class="form-group">
         <label>資材区分</label>
-        <input type="text" id="inv-prod-material-type" class="form-input" value="${product.materialType || ''}">
+        <select id="inv-prod-material-type" class="form-input">
+          ${INV_MATERIAL_DIVISIONS.map(d => `<option value="${d}" ${(product.materialType || '直接資材') === d ? 'selected' : ''}>${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>品名 (必須)</label>
+        <input type="text" id="inv-prod-name" class="form-input" value="${String(product.name || '').replace(/"/g, '&quot;')}" required>
       </div>
       <div class="form-group">
-        <label>単価</label>
-        <input type="number" id="inv-prod-price" class="form-input" value="${product.price}" min="0" required>
+        <label>単価 (円) <span style="font-size:0.75rem; color:#0284c7;">※変更時に更新年月日を自動記録</span></label>
+        <input type="number" step="0.01" id="inv-prod-price" class="form-input" value="${product.price}" min="0" required>
+      </div>
+      <div class="form-group">
+        <label>単位</label>
+        <input type="text" id="inv-prod-unit" class="form-input" value="${product.unit || ''}" placeholder="例: 枚, 本, 個, ヶ, 式">
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>🕒 価格更新履歴（最終更新日: ${product.priceUpdatedAt || product.updatedAt || '-'}）</label>
+        ${historyHtml}
+      </div>
+      <div class="form-group">
+        <label>棚卸対象区分</label>
+        <select id="inv-prod-target-flag" class="form-input">
+          ${Object.entries(INV_TARGET_TYPES).map(([k, info]) =>
+            `<option value="${k}" ${Number(k) === tfVal ? 'selected' : ''}>${k}: ${info.name}${!info.isTarget ? ' (QR不要・翌月転記)' : ''}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>廃盤フラグ（死蔵品扱い）</label>
+        <select id="inv-prod-discontinued-flag" class="form-input">
+          <option value="0" ${discVal === 0 ? 'selected' : ''}>0: 通常（現役）</option>
+          <option value="1" ${discVal === 1 ? 'selected' : ''}>1: 廃盤（死蔵品として扱う）</option>
+        </select>
       </div>
       <div class="form-group">
         <label>色/他</label>
         <input type="text" id="inv-prod-color" class="form-input" value="${product.colorOther || ''}">
       </div>
       <div class="form-group">
-        <label>寸法 (巾/長さ/t厚み)</label>
-        <div style="display: flex; gap: 4px;">
+        <label>構成</label>
+        <input type="text" id="inv-prod-composition" class="form-input" value="${product.composition || product.material || ''}">
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label>寸法 (巾 / 長さ / t厚み)</label>
+        <div style="display: flex; gap: 6px;">
           <input type="text" id="inv-prod-width" class="form-input" value="${product.width || ''}" placeholder="巾">
           <input type="text" id="inv-prod-length" class="form-input" value="${product.length || ''}" placeholder="長さ">
           <input type="text" id="inv-prod-thickness" class="form-input" value="${product.thickness || ''}" placeholder="t厚み">
         </div>
       </div>
-      <div class="form-group">
-        <label>単位</label>
-        <input type="text" id="inv-prod-unit" class="form-input" value="${product.unit || ''}" placeholder="例: 枚, 個, ヶ, 式">
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" id="inv-prod-fixed" ${product.isFixed ? 'checked' : ''}> 不動品（変動なし）</label>
+      <div class="form-group" style="grid-column: span 2;">
+        <label><input type="checkbox" id="inv-prod-fixed" ${isInvDeadOrFixedProduct(product) ? 'checked' : ''}> 不動品・死蔵品（変動なし・締め処理で在庫をそのまま維持）</label>
       </div>
     </form>
   `;
@@ -8658,33 +8990,249 @@ function editInvProduct(id) {
 
   $('#modal-cancel').onclick = hideModal;
   $('#modal-close').onclick = hideModal;
-  $('#modal-save').onclick = () => updateInvProduct(id);
+  $('#modal-save').onclick = () => updateInvProduct(product.id);
 }
 
 function updateInvProduct(id) {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const idx = products.findIndex(p => p.id === id);
+  const idx = products.findIndex(p => p && (p.id === id || p.identCode === id || p.materialCode === id));
   if (idx === -1) return;
 
+  const p = products[idx];
   const category = $('#inv-prod-category').value;
-  products[idx].identClass = category;
-  products[idx].category = category;
-  products[idx].identCode = $('#inv-prod-ident-code').value.trim();
-  products[idx].name = $('#inv-prod-name').value.trim();
-  products[idx].price = parseFloat($('#inv-prod-price').value) || 0;
-  products[idx].isFixed = $('#inv-prod-fixed').checked;
-  products[idx].materialType = $('#inv-prod-material-type').value.trim();
-  products[idx].colorOther = $('#inv-prod-color').value.trim();
-  products[idx].width = $('#inv-prod-width').value.trim();
-  products[idx].length = $('#inv-prod-length').value.trim();
-  products[idx].thickness = $('#inv-prod-thickness').value.trim();
-  products[idx].unit = $('#inv-prod-unit').value.trim();
+  const newPrice = parseFloat($('#inv-prod-price').value) || 0;
+  const targetFlag = parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
+  const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
+  const isDeadStock = (discontinuedFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
+  const isFixed = $('#inv-prod-fixed').checked || isDeadStock;
+  const isTarget = !(targetFlag === 0 || targetFlag === 7);
+  const today = new Date().toISOString().split('T')[0];
+
+  // 価格変更がある場合は価格更新履歴に記録
+  const priceChanged = recordProductPriceUpdate(p, newPrice, '商品マスタ編集');
+
+  p.identClass = category;
+  p.category = category;
+  p.categoryName = INV_CATEGORIES[category] || p.categoryName || '';
+  p.identCode = $('#inv-prod-ident-code').value.trim() || p.identCode || p.id;
+  p.name = $('#inv-prod-name').value.trim();
+  p.price = newPrice;
+  p.targetFlag = targetFlag;
+  p.discontinuedFlag = discontinuedFlag;
+  p.isDeadStock = isDeadStock;
+  p.isFixed = isFixed;
+  p.isTarget = isTarget;
+  p.materialType = ($('#inv-prod-material-type') || {}).value || p.materialType || '直接資材';
+  p.colorOther = ($('#inv-prod-color') || {}).value?.trim() || '';
+  const compVal = ($('#inv-prod-composition') || {}).value?.trim() || '';
+  p.composition = compVal;
+  p.material = compVal;
+  p.width = ($('#inv-prod-width') || {}).value?.trim() || '';
+  p.length = ($('#inv-prod-length') || {}).value?.trim() || '';
+  p.thickness = ($('#inv-prod-thickness') || {}).value?.trim() || '';
+  p.unit = ($('#inv-prod-unit') || {}).value?.trim() || '';
+  p.updatedAt = today;
 
   DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-  toast('更新しました', 'success');
+  toast(priceChanged ? `商品マスタと価格更新履歴（${today}）を保存しました` : '商品マスタを更新しました', 'success');
   hideModal();
   renderInvProductsTable();
 }
+
+// 棚卸原簿.xlsx をブラウザから直接アップロードしてマスタ入れ替えを実行できるモーダル
+window.openGenboExcelImportModal = function() {
+  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  const body = `
+    <div style="padding: 0.75rem;">
+      <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #14532d;">
+        <strong>📗 棚卸原簿.xlsx 基本マスタ一括入れ替え・整合性同期（現在登録: ${products.length}件）：</strong><br>
+        ・<code>棚卸原簿.xlsx</code> の全データ（サイズ・巾・長さ・t/厚み・色/他・構成・単位・資材区分・棚卸対象区分・廃盤フラグ・更新日）を基本マスタとして取り込みます。<br>
+        ・<strong>現在入力されている在庫データ・仮スキャンデータ・現在の不動在庫設定・価格更新履歴はそのまま安全に保持</strong>されます。<br>
+        ・廃盤フラグ（1）の資材は<strong>死蔵品（不動）扱い</strong>となり、棚卸対象外（0, 7）は<strong>QR印刷不要＆締め処理で翌月へ自動転記</strong>されます。
+      </div>
+      <div class="form-group">
+        <label style="font-weight: bold;">方法①：標準同梱の最新『棚卸原簿.xlsx』(3,104件) でマスタを即時更新</label>
+        <button type="button" class="btn btn-primary btn-full" onclick="executeEmbeddedGenboMasterSync()" style="background: #16a34a; border-color: #16a34a; font-weight: bold; padding: 10px;">
+          🔄 標準搭載の『棚卸原簿.xlsx』マスタデータで今すぐ整合性更新を実行
+        </button>
+      </div>
+      <hr style="margin: 1.25rem 0; border: none; border-top: 1px dashed #cbd5e1;">
+      <div class="form-group">
+        <label style="font-weight: bold;">方法②：新しい『棚卸原簿.xlsx』ファイルを選択してマスタ入れ替え</label>
+        <input type="file" id="genbo-excel-file-input" accept=".xlsx,.xlsm,.xls" class="form-input" style="margin-bottom: 0.75rem;">
+        <button type="button" class="btn btn-primary btn-full" onclick="executeUploadedGenboExcelSync()" style="background: #0284c7; border-color: #0284c7; font-weight: bold; padding: 10px;">
+          📥 選択した『棚卸原簿.xlsx』を読み込んでマスタを入れ替える
+        </button>
+      </div>
+    </div>
+  `;
+  const footer = `<button type="button" class="btn btn-secondary" onclick="hideModal()">閉じる</button>`;
+  showModal('📗 棚卸原簿.xlsx 商品マスタ一括入れ替え（既存在庫・不動在庫保持）', body, footer);
+};
+
+window.executeEmbeddedGenboMasterSync = function() {
+  if (typeof DB !== 'undefined' && typeof DB.applyLatestGenboMaster === 'function') {
+    DB.applyLatestGenboMaster(true);
+    hideModal();
+    renderInvProductsTable();
+    toast('✅ 棚卸原簿.xlsx (3,104件) のマスタ入れ替え・既存在庫との整合性同期が完了しました', 'success', 5000);
+  }
+};
+
+window.executeUploadedGenboExcelSync = function() {
+  const fileInput = document.getElementById('genbo-excel-file-input');
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+    toast('棚卸原簿.xlsx ファイルを選択してください', 'error');
+    return;
+  }
+  if (typeof XLSX === 'undefined') {
+    toast('Excel解析ライブラリが読み込まれていません', 'error');
+    return;
+  }
+  const file = fileInput.files[0];
+  toast('棚卸原簿.xlsx を解析しています...', 'info');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheetName = wb.SheetNames.find(n => n.includes('棚卸原簿') || n.includes('原簿')) || wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+
+      if (rows.length < 2) {
+        toast('有効なデータ行が見つかりませんでした', 'error');
+        return;
+      }
+
+      const currentProducts = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+      const existingByKey = new Map();
+      currentProducts.forEach(p => {
+        if (!p) return;
+        if (p.id) existingByKey.set(String(p.id).trim().toUpperCase(), p);
+        if (p.identCode) existingByKey.set(String(p.identCode).trim().toUpperCase(), p);
+        if (p.materialCode) existingByKey.set(String(p.materialCode).trim().toUpperCase(), p);
+      });
+
+      const excelSerialToDate = (v) => {
+        const n = Number(v);
+        if (!isNaN(n) && n > 20000 && n < 80000) {
+          const dt = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+          return dt.toISOString().split('T')[0];
+        }
+        return String(v || '').trim();
+      };
+
+      const seenIdents = new Set();
+      const seenMats = new Set();
+      const newMasterList = [];
+      let priceUpdatedCount = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length === 0) continue;
+        let ic = String(r[0] || '').trim();
+        let mc = String(r[4] || '').trim();
+        let name = String(r[8] || '').trim();
+        if (ic === '-' && !mc && !name) continue;
+        if (!mc && !name) continue;
+
+        const cat = String(r[1] || (ic.includes('-') ? ic.split('-')[0] : '99')).trim().padStart(2, '0');
+        let ord = parseInt(String(r[2] || (ic.includes('-') ? ic.split('-')[1] : '1')), 10) || 1;
+
+        if (seenIdents.has(ic.toUpperCase()) || seenMats.has(mc.toUpperCase())) {
+          const issued = issueDuplicateFreeMasterCodes(cat, newMasterList);
+          ic = issued.identCode;
+          mc = issued.materialCode;
+          ord = parseInt(issued.identOrder, 10) || ord;
+        }
+        seenIdents.add(ic.toUpperCase());
+        seenMats.add(mc.toUpperCase());
+
+        if (!name) name = `${String(r[3] || '資材').trim()} (${ic})`;
+
+        const targetFlag = r[16] !== '' && r[16] !== undefined ? (Number(r[16]) || 0) : 0;
+        const discFlag = r[17] !== '' && r[17] !== undefined ? (Number(r[17]) || 0) : 0;
+        const isDeadStock = (discFlag === 1) || (targetFlag === 4 || targetFlag === 5 || targetFlag === 6 || targetFlag === 8);
+        const isTarget = !(targetFlag === 0 || targetFlag === 7);
+        const deadQty = Number(r[18]) || 0;
+        const prevQty = Number(r[19]) || 0;
+        const octQty = Number(r[36]) || 0;
+        const excelPrice = Number(r[15]) || 0;
+        const updatedAt = excelSerialToDate(r[20]);
+        const initialStock = octQty > 0 ? octQty : (prevQty > 0 ? prevQty : (isDeadStock ? deadQty : 0));
+
+        const ex = existingByKey.get(mc.toUpperCase()) || existingByKey.get(ic.toUpperCase());
+        const item = {
+          id: mc,
+          identCode: ic,
+          identClass: cat,
+          identOrder: String(ord),
+          category: cat,
+          categoryName: String(r[3] || INV_CATEGORIES[cat] || '').trim(),
+          materialCode: mc,
+          materialType: String(r[5] || '直接資材').trim(),
+          subCategory: String(r[6] || '').trim(),
+          note: String(r[7] || '').trim(),
+          name: name,
+          colorOther: String(r[9] || '').trim(),
+          composition: String(r[10] || '').trim(),
+          material: String(r[10] || '').trim(),
+          width: String(r[11] || '').trim(),
+          length: String(r[12] || '').trim(),
+          thickness: String(r[13] || '').trim(),
+          unit: String(r[14] || '').trim(),
+          price: excelPrice,
+          targetFlag: targetFlag,
+          discontinuedFlag: discFlag,
+          isDeadStock: isDeadStock,
+          isFixed: (ex && ex.isFixed) ? true : isDeadStock,
+          isTarget: isTarget,
+          deadStockQty: deadQty,
+          prevStock: prevQty,
+          octStock: octQty,
+          stock: (ex && ex.stock !== undefined && Number(ex.stock) > 0) ? Number(ex.stock) : initialStock,
+          lastStock: (ex && ex.lastStock !== undefined && Number(ex.lastStock) > 0) ? Number(ex.lastStock) : (prevQty > 0 ? prevQty : initialStock),
+          updatedAt: updatedAt,
+          priceUpdatedAt: updatedAt,
+          orderProductName: String(r[21] || '').trim(),
+          supplier: String(r[22] || '').trim(),
+          supplierCode: String(r[23] || '').trim()
+        };
+
+        if (ex) {
+          if (Array.isArray(ex.priceHistory)) item.priceHistory = [...ex.priceHistory];
+          if (Number(ex.price) !== excelPrice) {
+            recordProductPriceUpdate(ex, excelPrice, '棚卸原簿Excel取込');
+            item.priceHistory = ex.priceHistory;
+            item.priceUpdatedAt = ex.priceUpdatedAt;
+            priceUpdatedCount++;
+          }
+          if (ex.tempQty !== undefined && ex.tempQty !== null) {
+            item.tempQty = ex.tempQty;
+            item.tempWorker = ex.tempWorker;
+            item.tempWorkerName = ex.tempWorkerName;
+            item.tempTimestamp = ex.tempTimestamp;
+            item.tempMonth = ex.tempMonth;
+            item.tempId = ex.tempId;
+          }
+        }
+
+        newMasterList.push(item);
+      }
+
+      DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(newMasterList)));
+      hideModal();
+      renderInvProductsTable();
+      toast(`✅ 棚卸原簿Excelから ${newMasterList.length}件 を取り込みました（価格更新履歴記録: ${priceUpdatedCount}件）`, 'success', 5000);
+    } catch (err) {
+      console.error('棚卸原簿Excel取込エラー:', err);
+      toast('Excelの取り込みに失敗しました: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
 
 function deleteInvProduct(id) {
   if (!confirm('この商品を削除しますか？')) return;
@@ -9086,16 +9634,19 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
   sortedProductIds.forEach(pid => {
     
 
-    const masterProduct = products.find(x => x.id === pid);
-    const prevItem = prevData && prevData.items ? prevData.items.find(i => i.productId === pid) : null;
+    const masterProduct = products.find(x => x.id === pid || x.identCode === pid || x.materialCode === pid);
+    const prevItem = prevData && prevData.items ? prevData.items.find(i => i.productId === pid || (masterProduct && (i.productId === masterProduct.id || i.productId === masterProduct.identCode))) : null;
 
     const name = masterProduct ? masterProduct.name : (prevItem ? prevItem.name : pid);
     const category = masterProduct ? masterProduct.category : (prevItem ? prevItem.category : (pid.includes('-') ? pid.split('-')[0] : ((pid.startsWith('N') && pid.length > 3) ? pid.substring(1, 3) : '99')));
     const price = masterProduct ? safeNum(masterProduct.price) : (prevItem ? safeNum(prevItem.price) : 0);
-    const isFixed = masterProduct ? !!masterProduct.isFixed : (prevItem ? !!prevItem.isFixed : false);
+    const isFixed = masterProduct ? isInvDeadOrFixedProduct(masterProduct) : (prevItem ? !!prevItem.isFixed : false);
+    const isNonTarget = masterProduct ? isInvNonTargetProduct(masterProduct) : false;
+    const isAutoCarryOver = isFixed || isNonTarget;
 
-    // 前月数量・金額の取得（生精度小数の保持）
-    const prevQty = prevItem ? safeNum(prevItem.currQty) : 0;
+    // 前月数量・金額の取得（前月締めデータが無い場合は棚卸原簿のprevStock / stockを参照）
+    const fallbackPrevQty = masterProduct ? safeNum(masterProduct.lastStock !== undefined ? masterProduct.lastStock : (masterProduct.prevStock !== undefined ? masterProduct.prevStock : (isFixed ? masterProduct.deadStockQty : 0))) : 0;
+    const prevQty = prevItem ? safeNum(prevItem.currQty) : fallbackPrevQty;
     let prevAmountRaw = 0;
     if (prevItem) {
       if (prevItem.csvAmountWithTax !== undefined && prevItem.csvAmountWithTax !== null) {
@@ -9107,6 +9658,8 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       } else {
         prevAmountRaw = prevQty * price * 1.01;
       }
+    } else if (prevQty > 0) {
+      prevAmountRaw = prevQty * price * 1.01;
     }
     const prevAmount = Math.round(prevAmountRaw);
 
@@ -9114,10 +9667,10 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     let currQty = 0;
     let csvAmountWithTax = 0;
     let hasCountLog = false;
-    const productLogs = monthLogs.filter(l => l.productId === pid);
+    const productLogs = monthLogs.filter(l => l.productId === pid || (masterProduct && (l.productId === masterProduct.id || l.productId === masterProduct.identCode)));
 
     if (!isClosed && monthLogs.length === 0 && !hasCsvImport) {
-      currQty = isFixed ? prevQty : 0;
+      currQty = isAutoCarryOver ? prevQty : 0;
     } else {
       const countLogs = productLogs.filter(l => l.type === 'count');
       const inOutLogs = productLogs.filter(l => l.type === 'in' || l.type === 'out');
@@ -9140,8 +9693,8 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
         if (!hasValidCsvAmount && hasCsvImport) {
             csvAmountWithTax = 0;
         }
-      } else if (isFixed && !hasCsvImport) {
-        // CSV取込が行われていない月のみ、棚卸カウントログがない不動品は前月数量を自動引き継ぎ
+      } else if (isAutoCarryOver) {
+        // 棚卸対象外(0,7)および死蔵品・廃盤・不動品は、実棚カウントが無い場合も在庫をそのまま翌月へ転記
         currQty = prevQty;
       } else {
         currQty = 0;
@@ -9732,12 +10285,18 @@ function renderInvCheckPage() {
   const tempScans = DB.getTempScans() || [];
   const monthly = DB.get(DB.KEYS.INV_MONTHLY) || [];
 
-  // Get previous month closing data
+  // Get previous month closing data (if no previous closing, use product master prevStock/stock)
   const prevClosing = monthly.find(m => m.month === prevMonthKey);
   const prevStockMap = {};
   if (prevClosing && prevClosing.items) {
     prevClosing.items.forEach(item => {
       prevStockMap[item.productId] = item.currQty || 0;
+    });
+  } else {
+    products.forEach(p => {
+      if (!p || !p.id) return;
+      const basePrev = Number(p.lastStock !== undefined ? p.lastStock : (p.prevStock !== undefined ? p.prevStock : (isInvDeadOrFixedProduct(p) ? p.deadStockQty : p.stock))) || 0;
+      if (basePrev > 0) prevStockMap[p.id] = basePrev;
     });
   }
 
@@ -9765,48 +10324,57 @@ function renderInvCheckPage() {
   });
 
   const listItems = Array.from(renderedProductIds).map(pid => {
-    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
-    const scan = tempScanMap[pid];
-    const prevQty = prevStockMap[pid] || 0;
-    const isFixed = !!prod.isFixed;
+    const prod = products.find(p => p.id === pid || p.identCode === pid || p.materialCode === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
+    const scan = tempScanMap[pid] || (prod.identCode ? tempScanMap[prod.identCode] : null);
+    const prevQty = prevStockMap[pid] !== undefined ? prevStockMap[pid] : (prod.identCode && prevStockMap[prod.identCode] !== undefined ? prevStockMap[prod.identCode] : 0);
+    const isFixed = isInvDeadOrFixedProduct(prod);
+    const isNonTarget = isInvNonTargetProduct(prod);
     
     let isAutoFixed = false;
-    if (!scan && isFixed) {
-      isAutoFixed = true;
+    let isAutoNonTarget = false;
+    if (!scan) {
+      if (isFixed) isAutoFixed = true;
+      else if (isNonTarget) isAutoNonTarget = true;
     }
 
-    const currQty = scan ? scan.quantity : (isAutoFixed ? prevQty : 0);
+    const isAutoCarried = isAutoFixed || isAutoNonTarget;
+    const currQty = scan ? scan.quantity : (isAutoCarried ? prevQty : 0);
     const diff = currQty - prevQty;
-    const isScanned = !!scan || isAutoFixed; // 不動品は自動的にスキャン済扱い
+    const isScanned = !!scan || isAutoCarried; // 不動品・死蔵品・棚卸対象外は自動的に在庫転記済扱い
 
     return {
-      productId: pid,
-      category: prod.category,
+      productId: prod.id || pid,
+      identCode: prod.identCode || prod.id || pid,
+      category: prod.category || '99',
       name: prod.name,
       price: prod.price || 0,
       quantity: currQty,
       prevQty: prevQty,
       diff: diff,
-      worker: scan ? (scan.workerName || scan.worker || '-') : (isAutoFixed ? '自動(不動品)' : '-'),
-      workerId: scan ? (scan.worker || '-') : (isAutoFixed ? 'SYSTEM' : '-'),
+      worker: scan ? (scan.workerName || scan.worker || '-') : (isAutoFixed ? '自動(不動/死蔵)' : (isAutoNonTarget ? '自動転記(対象外)' : '-')),
+      workerId: scan ? (scan.worker || '-') : (isAutoCarried ? 'SYSTEM' : '-'),
       isScanned: isScanned,
       isAutoFixed: isAutoFixed,
+      isAutoNonTarget: isAutoNonTarget,
       isFixed: isFixed,
+      isNonTarget: isNonTarget,
       hasPrevQty: prevQty > 0,
       isZeroCheck: (prevQty === 0 && !isScanned)
     };
   });
 
-  // Sort listItems by category, then by ID
-  listItems.sort((a, b) => a.category.localeCompare(b.category) || a.productId.localeCompare(b.productId));
+  // Sort listItems by category, then by identCode/ID
+  listItems.sort((a, b) => a.category.localeCompare(b.category) || String(a.identCode).localeCompare(String(b.identCode)));
 
   // Filter based on selected status
   const filterStatus = (statusFilter ? statusFilter.value : 'all') || 'all';
   let filteredItems = listItems;
   if (filterStatus === 'scanned') {
-    filteredItems = listItems.filter(item => item.isScanned && !item.isAutoFixed);
+    filteredItems = listItems.filter(item => item.isScanned && !item.isAutoFixed && !item.isAutoNonTarget);
   } else if (filterStatus === 'fixed') {
     filteredItems = listItems.filter(item => item.isFixed);
+  } else if (filterStatus === 'nontarget') {
+    filteredItems = listItems.filter(item => item.isNonTarget);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
   } else if (filterStatus === 'zerocheck') {
@@ -9870,7 +10438,9 @@ function renderInvCheckPage() {
         const badgeStyle = 'display: inline-block; min-width: 110px; text-align: center; padding: 4px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white;';
         let statusBadge = '';
         if (item.isAutoFixed) {
-          statusBadge = `<span style="background: #0ea5e9; ${badgeStyle}">✓ 不動品の為</span>`;
+          statusBadge = `<span style="background: #0ea5e9; ${badgeStyle}">✓ 不動/死蔵品</span>`;
+        } else if (item.isAutoNonTarget) {
+          statusBadge = `<span style="background: #64748b; ${badgeStyle}">⏭ 対象外(自動転記)</span>`;
         } else if (item.isScanned) {
           statusBadge = `<span style="background: #16a34a; ${badgeStyle}">✓ 仮登録済</span>`;
         } else if (item.hasPrevQty) {
@@ -9883,9 +10453,13 @@ function renderInvCheckPage() {
           statusBadge += ` <div style="margin-top: 4px;"><span style="background: #d97706; ${badgeStyle}">⚠️ 単価未登録</span></div>`;
         }
 
+        const codeCell = (item.identCode && item.identCode !== item.productId)
+          ? `<strong>${item.identCode}</strong><br><span style="font-size:11px; color:#64748b; font-family:monospace;">${item.productId}</span>`
+          : `<strong>${item.productId}</strong>`;
+
         return `
           <tr ${rowClass}>
-            <td><strong>${item.productId}</strong></td>
+            <td>${codeCell}</td>
             <td>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
                 <span>${INV_CATEGORIES[item.category] || item.category}</span>
@@ -10122,10 +10696,11 @@ function showPriceRegisterModal(unpricedItems, onSaveCallback) {
         }
       }
 
-      // マスタ（INV_PRODUCTS）更新
+      // マスタ（INV_PRODUCTS）更新（価格更新履歴を記録）
       const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
       products.forEach(p => {
         if (priceUpdates[p.id] !== undefined) {
+          recordProductPriceUpdate(p, priceUpdates[p.id], '締め処理前単価設定');
           p.price = priceUpdates[p.id];
           p.category = categoryUpdates[p.id] || p.category;
         }
@@ -10284,6 +10859,13 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
     prevClosing.items.forEach(item => {
       prevStockMap[item.productId] = item.currQty || 0;
     });
+  } else {
+    const allProdsForPrev = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+    allProdsForPrev.forEach(p => {
+      if (!p || !p.id) return;
+      const basePrev = Number(p.lastStock !== undefined ? p.lastStock : (p.prevStock !== undefined ? p.prevStock : (isInvDeadOrFixedProduct(p) ? p.deadStockQty : p.stock))) || 0;
+      if (basePrev > 0) prevStockMap[p.id] = basePrev;
+    });
   }
 
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
@@ -10303,19 +10885,20 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
 
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const unpricedItems = Array.from(checkProductIds).map(pid => {
-    const prod = products.find(p => p.id === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0, isFixed: false };
+    const prod = products.find(p => p.id === pid || p.identCode === pid || p.materialCode === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0, isFixed: false };
     const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[prod.category] || prod.category) : prod.category;
     return {
-      productId: pid,
+      productId: prod.id || pid,
       name: prod.name,
       price: prod.price || 0,
       category: prod.category || '99',
       categoryName: catName,
-      isFixed: !!prod.isFixed
+      isFixed: isInvDeadOrFixedProduct(prod),
+      isNonTarget: isInvNonTargetProduct(prod)
     };
   }).filter(item => {
     if (item.price > 0) return false;
-    const isAllowedZero = /(仕掛品|不動|死蔵)/.test(item.categoryName) || /(仕掛品|不動|死蔵)/.test(item.name) || item.isFixed;
+    const isAllowedZero = /(仕掛品|不動|死蔵)/.test(item.categoryName) || /(仕掛品|不動|死蔵)/.test(item.name) || item.isFixed || item.isNonTarget;
     return !isAllowedZero;
   });
 
@@ -10328,15 +10911,15 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
 
   const missingCount = Object.keys(prevStockMap).filter(pid => {
     if (prevStockMap[pid] <= 0) return false;
-    if (currentTempScans.some(s => s.productId === pid)) return false;
-    const prod = products.find(p => p.id === pid);
-    if (prod && prod.isFixed) return false; // 不動品は自動セットされるため漏れに含めない
+    const prod = products.find(p => p.id === pid || p.identCode === pid || p.materialCode === pid);
+    if (currentTempScans.some(s => s.productId === pid || (prod && (s.productId === prod.id || s.productId === prod.identCode)))) return false;
+    if (prod && (isInvDeadOrFixedProduct(prod) || isInvNonTargetProduct(prod))) return false; // 不動品・死蔵品・対象外は自動転記されるため漏れに含めない
     return true;
   }).length;
 
-  let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、月次報告に表示されます）`;
+  let confirmMsg = `${selectedMonth} の棚卸データを確定して締め処理を実行しますか？\n（確定後、正式な在庫情報として反映され、棚卸対象外・死蔵品・不動品の在庫も自動転記されて月次報告に表示されます）`;
   if (missingCount > 0) {
-    confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
+    confirmMsg = `⚠️ 警告 ⚠️\n前月に在庫があった棚卸対象商品で、今月まだ棚卸登録されていない商品が ${missingCount} 件あります。\nこれらは【実棚数量 0個】として登録されますが、このまま確定してよろしいですか？`;
   }
 
   if (!skipNormalConfirm || missingCount > 0) {
@@ -10353,7 +10936,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
   });
 
   // 2. Commit all listItems as official count logs
-  // (We'll generate counts for ALL items scanned, with previous stocks, or fixed products)
+  // (We'll generate counts for ALL items scanned, with previous stocks, fixed/dead-stock products, or non-target products)
   const renderedProductIds = new Set();
   currentTempScans.forEach(s => {
     if (!s.productId.startsWith('TEMP_') && s.productId !== 'META_F1_TOTAL') { renderedProductIds.add(s.productId); }
@@ -10364,7 +10947,7 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
     }
   });
   products.forEach(p => {
-    if (p.isFixed && !p.id.startsWith('TEMP_')) {
+    if ((isInvDeadOrFixedProduct(p) || isInvNonTargetProduct(p)) && !p.id.startsWith('TEMP_')) {
       renderedProductIds.add(p.id);
     }
   });
@@ -10372,10 +10955,12 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
   const timestamp = new Date(year, month, 0, 23, 59, 59).toISOString(); // End of target month
 
   Array.from(renderedProductIds).forEach((pid, index) => {
-    const tempScan = currentTempScans.find(s => s.productId === pid);
-    const prod = products.find(p => p.id === pid);
-    const isFixed = prod && prod.isFixed;
-    const prevQty = prevStockMap[pid] || 0;
+    const prod = products.find(p => p.id === pid || p.identCode === pid || p.materialCode === pid);
+    const canonicalId = prod ? prod.id : pid;
+    const tempScan = currentTempScans.find(s => s.productId === pid || s.productId === canonicalId || (prod && s.productId === prod.identCode));
+    const isFixed = prod && isInvDeadOrFixedProduct(prod);
+    const isNonTarget = prod && isInvNonTargetProduct(prod);
+    const prevQty = prevStockMap[canonicalId] !== undefined ? prevStockMap[canonicalId] : (prevStockMap[pid] || 0);
     
     let qty = 0;
     let worker = 'システム自動';
@@ -10387,14 +10972,25 @@ function confirmInvTempData(overrideMonth = null, skipNormalConfirm = false, ski
       if (tempScan.amountWithTax !== undefined) amountWithTax = tempScan.amountWithTax;
     } else if (isFixed) {
       qty = prevQty;
-      worker = '自動(不動品)';
+      worker = '自動(不動/死蔵)';
+    } else if (isNonTarget) {
+      qty = prevQty;
+      worker = '自動転記(対象外)';
     }
     
+    // 商品マスタの現在庫・前月在庫も締め処理結果で同期更新（翌月へ自動転記されるようにする）
+    if (prod) {
+      prod.lastStock = prevQty;
+      prod.prevStock = prevQty;
+      prod.stock = qty;
+      prod.inventoryDate = timestamp;
+    }
+
     // unitPriceをマスタから取得してログに保存（後続の計算で参照できるようにする）
     const logUnitPrice = prod ? (prod.price || 0) : 0;
     const logData = {
       id: Date.now() + index,
-      productId: pid,
+      productId: canonicalId,
       quantity: qty,
       unitPrice: logUnitPrice,
       type: 'count',
@@ -10706,9 +11302,13 @@ function executeInvCsvImport() {
       };
 
       if (existingIdx >= 0) {
+        recordProductPriceUpdate(products[existingIdx], price, 'CSV一括取込');
         products[existingIdx] = { ...products[existingIdx], ...productData };
         updateCount++;
       } else {
+        const today = new Date().toISOString().split('T')[0];
+        productData.updatedAt = today;
+        productData.priceUpdatedAt = today;
         products.push(productData);
         addCount++;
       }
@@ -11224,7 +11824,7 @@ function showQuickProductRegisterModal(productId, quantity = 0, isMobile = false
 window.submitQuickProductRegister = function(productId, isMobile) {
   const name = $('#quick-prod-name').value.trim();
   const category = $('#quick-prod-category').value;
-  const price = parseInt($('#quick-prod-price').value) || 0;
+  const price = parseFloat($('#quick-prod-price').value) || 0;
   const qty = parseInt($('#quick-prod-qty').value) || 0;
 
   if (!name) {
@@ -11232,24 +11832,42 @@ window.submitQuickProductRegister = function(productId, isMobile) {
     return;
   }
 
-  // 1. Add to product master
+  // 1. Add to product master (ダブりなし発番ルールに準拠)
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  
-  // Calculate max numeric ID
-  let maxId = 0;
-  products.forEach(p => {
-    const numId = parseInt(p.idStr || p.id, 10);
-    if (!isNaN(numId) && numId > maxId) maxId = numId;
-  });
-  const newIdNum = maxId + 1;
+  const issued = issueDuplicateFreeMasterCodes(category, products);
+  const today = new Date().toISOString().split('T')[0];
+  const rawCode = String(productId || '').trim();
+  const finalMatCode = (rawCode.toUpperCase().startsWith('N') && rawCode.length >= 12) ? rawCode : issued.materialCode;
+  const finalIdentCode = (rawCode.includes('-') && !rawCode.toUpperCase().startsWith('N')) ? rawCode : issued.identCode;
 
   const newProduct = {
-    id: productId,
+    id: finalMatCode,
+    identCode: finalIdentCode,
+    identClass: issued.identClass,
+    identOrder: issued.identOrder,
+    materialCode: finalMatCode,
+    materialType: '直接資材',
     name: name,
     category: category,
+    categoryName: INV_CATEGORIES[category] || '',
     price: price,
-    unit: '本',
-    idStr: String(newIdNum)
+    targetFlag: 1,
+    discontinuedFlag: 0,
+    isDeadStock: false,
+    isFixed: false,
+    isTarget: true,
+    unit: '個',
+    updatedAt: today,
+    priceUpdatedAt: today,
+    priceHistory: [{
+      date: today,
+      timestamp: new Date().toISOString(),
+      oldPrice: 0,
+      newPrice: price,
+      updatedBy: (window.currentUser && window.currentUser.displayName) || '管理者',
+      reason: 'スキャン時クイック登録'
+    }],
+    isCustomAdded: true
   };
 
   products.push(newProduct);
@@ -11266,9 +11884,9 @@ window.submitQuickProductRegister = function(productId, isMobile) {
     targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
 
-  DB.saveTempScan(productId, qty, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
+  DB.saveTempScan(newProduct.id, qty, currentUser.username, currentUser.displayName, targetTimestamp, targetMonth);
 
-  toast(`新資材「${name}」をマスタ登録し、棚卸に ${qty}個 仮登録しました！`, 'success');
+  toast(`新資材「${name}」（識別:${newProduct.identCode} / 資材CD:${newProduct.id}）をマスタ登録し、棚卸に ${qty}個 仮登録しました！`, 'success');
   hideModal();
 
   // Reset inputs and refresh history logs
@@ -11299,23 +11917,48 @@ window.submitQuickProductRegister = function(productId, isMobile) {
 
 function printInvProductsQrs() {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
-  const categoryFilter = $('#inv-products-category-filter').value;
-  const searchKeyword = ($('#inv-products-search').value || '').toLowerCase();
-  const fixedOnly = $('#inv-products-fixed-only').checked;
+  const categoryFilter = ($('#inv-products-category-filter') || {}).value || '';
+  const matTypeFilter = ($('#inv-products-material-type-filter') || {}).value || '';
+  const targetFilter = ($('#inv-products-target-filter') || {}).value || '';
+  const searchKeyword = (($('#inv-products-search') || {}).value || '').toLowerCase().trim();
+  const fixedOnly = ($('#inv-products-fixed-only') || {}).checked || false;
 
   let filtered = products.filter(p => {
+    if (!p) return false;
     if (categoryFilter && p.category !== categoryFilter) return false;
-    if (fixedOnly && !p.isFixed) return false;
-    if (searchKeyword && !p.id.toLowerCase().includes(searchKeyword) && !p.name.toLowerCase().includes(searchKeyword)) return false;
+    if (matTypeFilter && (p.materialType || '直接資材') !== matTypeFilter) return false;
+    const isNonTarget = isInvNonTargetProduct(p);
+    const isDeadFixed = isInvDeadOrFixedProduct(p);
+    if (targetFilter === 'target_only' && isNonTarget) return false;
+    if (targetFilter === 'non_target' && !isNonTarget) return false;
+    if (targetFilter === 'dead_stock' && !isDeadFixed) return false;
+    if (fixedOnly && !isDeadFixed) return false;
+    if (searchKeyword) {
+      const hay = [
+        p.id, p.identCode, p.materialCode, p.name, p.colorOther, p.composition, p.material,
+        p.width, p.length, p.thickness, p.materialType, INV_CATEGORIES[p.category] || ''
+      ].join(' ').toLowerCase();
+      if (!hay.includes(searchKeyword)) return false;
+    }
     return true;
   });
 
-  if (filtered.length === 0) {
-    toast('印刷対象の資材がありません', 'warning');
+  // 棚卸対象外（targetFlag === 0 または 7）の商品はQR印刷不要のため自動除外
+  const nonTargetExcludedCount = filtered.filter(p => isInvNonTargetProduct(p)).length;
+  const printableProducts = filtered.filter(p => !isInvNonTargetProduct(p));
+
+  if (printableProducts.length === 0) {
+    toast(nonTargetExcludedCount > 0
+      ? `選択された資材（${nonTargetExcludedCount}件）はすべて「棚卸対象外」のためQR印刷不要です`
+      : '印刷対象の資材がありません', 'warning');
     return;
   }
 
-  const ids = filtered.map(p => p.id);
+  if (nonTargetExcludedCount > 0) {
+    toast(`棚卸対象 ${printableProducts.length}件 のQRを発行します（棚卸対象外 ${nonTargetExcludedCount}件 は印刷不要のため自動除外）`, 'info', 4500);
+  }
+
+  const ids = printableProducts.map(p => p.id);
   sessionStorage.setItem('print_qr_ids', JSON.stringify(ids));
   window.open('print_qrs.html', '_blank');
 }
@@ -11340,6 +11983,12 @@ function printInvCheckQrs() {
     prevClosing.items.forEach(item => {
       prevStockMap[item.productId] = item.currQty || 0;
     });
+  } else {
+    products.forEach(p => {
+      if (!p || !p.id) return;
+      const basePrev = Number(p.lastStock !== undefined ? p.lastStock : (p.prevStock !== undefined ? p.prevStock : p.stock)) || 0;
+      if (basePrev > 0) prevStockMap[p.id] = basePrev;
+    });
   }
 
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
@@ -11348,17 +11997,21 @@ function printInvCheckQrs() {
     tempScanMap[s.productId] = s;
   });
 
-  const listItems = products.map(prod => {
+  // 棚卸対象外（targetFlag === 0 または 7）はQR印刷不要のため最初から除外
+  const targetProducts = products.filter(prod => prod && !isInvNonTargetProduct(prod));
+  const excludedCount = products.length - targetProducts.length;
+
+  const listItems = targetProducts.map(prod => {
     const pid = prod.id;
-    const scan = tempScanMap[pid];
+    const scan = tempScanMap[pid] || (prod.identCode ? tempScanMap[prod.identCode] : null);
     const prevQty = prevStockMap[pid] || 0;
-    const currQty = scan ? scan.quantity : 0;
-    const isScanned = !!scan;
+    const isScanned = !!scan || isInvDeadOrFixedProduct(prod);
 
     return {
       productId: pid,
       price: prod.price || 0,
       isScanned: isScanned,
+      isFixed: isInvDeadOrFixedProduct(prod),
       hasPrevQty: prevQty > 0
     };
   });
@@ -11367,16 +12020,25 @@ function printInvCheckQrs() {
   const filterStatus = (statusFilter ? statusFilter.value : 'all') || 'all';
   let filteredItems = listItems;
   if (filterStatus === 'scanned') {
-    filteredItems = listItems.filter(item => item.isScanned);
+    filteredItems = listItems.filter(item => item.isScanned && !item.isFixed);
   } else if (filterStatus === 'missing') {
     filteredItems = listItems.filter(item => item.hasPrevQty && !item.isScanned);
   } else if (filterStatus === 'unpriced') {
     filteredItems = listItems.filter(item => item.price <= 0);
+  } else if (filterStatus === 'fixed') {
+    filteredItems = listItems.filter(item => item.isFixed);
+  } else if (filterStatus === 'nontarget') {
+    toast('棚卸対象外の資材はQR印刷不要です', 'warning');
+    return;
   }
 
   if (filteredItems.length === 0) {
-    toast('印刷対象の資材がありません', 'warning');
+    toast('印刷対象の資材がありません（棚卸対象外は除外されています）', 'warning');
     return;
+  }
+
+  if (excludedCount > 0) {
+    toast(`棚卸対象 ${filteredItems.length}件 のQRを発行します（棚卸対象外は自動除外）`, 'info', 4000);
   }
 
   const ids = filteredItems.map(item => item.productId);
@@ -11993,14 +12655,15 @@ window.submitInventoryCount = function() {
 
   const productId = product.id;
 
-  // スキャン画面からのマスタ単価更新（金額差異チェック）
+  // スキャン画面からのマスタ単価更新（金額差異チェック＆価格更新履歴記録）
   const newPriceInput = $('#inv-scan-unit-price');
   if (newPriceInput && newPriceInput.value !== '') {
     const newPrice = parseFloat(newPriceInput.value);
     if (!isNaN(newPrice) && product.price !== newPrice) {
+      recordProductPriceUpdate(product, newPrice, '棚卸スキャン時単価変更');
       product.price = newPrice;
       DB.save(DB.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(products)));
-      toast(`マスタの単価を ¥${newPrice} に上書き更新しました`, 'success');
+      toast(`マスタの単価を ¥${newPrice} に上書き更新し、更新日を記録しました`, 'success');
     }
   }
 
@@ -13061,16 +13724,33 @@ window.executeHtBatchImport = function() {
   let totalImportedQty = 0;
 
   items.forEach((item, idx) => {
-    let prodIdx = products.findIndex(p => p && String(p.id).toUpperCase() === String(item.productId).toUpperCase());
+    let prodIdx = products.findIndex(p => p && (String(p.id).toUpperCase() === String(item.productId).toUpperCase() || (p.identCode && String(p.identCode).toUpperCase() === String(item.productId).toUpperCase()) || (p.materialCode && String(p.materialCode).toUpperCase() === String(item.productId).toUpperCase())));
 
     if (prodIdx === -1) {
       if (!autoRegisterUnknown) return;
+      const issued = issueDuplicateFreeMasterCodes(item.category && item.category !== '99' ? item.category : '01', products);
+      const today = new Date().toISOString().split('T')[0];
+      const rawCode = String(item.productId || '').trim();
+      const finalMatCode = (rawCode.toUpperCase().startsWith('N') && rawCode.length >= 12) ? rawCode : issued.materialCode;
+      const finalIdentCode = (rawCode.includes('-') && !rawCode.toUpperCase().startsWith('N')) ? rawCode : issued.identCode;
       const newProd = {
-        id: item.productId,
+        id: finalMatCode,
+        identCode: finalIdentCode,
+        identClass: issued.identClass,
+        identOrder: issued.identOrder,
+        materialCode: finalMatCode,
+        materialType: '直接資材',
         name: item.name,
-        category: item.category || '99',
+        category: issued.category,
         price: parseFloat(item.price) || 0,
-        isFixed: false
+        targetFlag: 1,
+        discontinuedFlag: 0,
+        isDeadStock: false,
+        isFixed: false,
+        isTarget: true,
+        updatedAt: today,
+        priceUpdatedAt: today,
+        isCustomAdded: true
       };
       products.push(newProd);
       prodIdx = products.length - 1;
@@ -13081,9 +13761,10 @@ window.executeHtBatchImport = function() {
     const finalQty = item.quantity;
     const scanId = Date.now() + '_ht_' + idx + '_' + prod.id;
 
-    // 単価が変更・入力されていればマスタ単価も上書き更新（生産管理の通常棚卸スキャンに準拠）
+    // 単価が変更・入力されていればマスタ単価も上書き更新＆価格更新履歴を記録（生産管理の通常棚卸スキャンに準拠）
     const newPrice = parseFloat(item.price);
     if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== (parseFloat(prod.price) || 0)) {
+      recordProductPriceUpdate(prod, newPrice, 'HTバッチ取込時単価更新');
       prod.price = newPrice;
       priceUpdatedCount++;
     }
@@ -13148,21 +13829,34 @@ window.executeHtBatchImport = function() {
   }
 };
 
-// BT-W85用 商品マスタCSV (MASTER.CSV) を Shift-JIS で出力
+// BT-W85用 商品マスタCSV (MasterFile_1.csv / MASTER.CSV) を Shift-JIS で出力（識別コード・資材コード両対応）
 window.exportHtMasterCsv = function(targetFileName = "MasterFile_1.csv") {
-  const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+  if (products.length === 0 && typeof getGenboMasterProducts === "function") {
+    products = getGenboMasterProducts();
+  }
   if (products.length === 0) {
     toast("商品マスタが登録されていません", "warning");
     return;
   }
 
-  const lines = products
+  const lines = [];
+  const addedKeys = new Set();
+  products
     .filter(p => p && p.id && !String(p.id).startsWith("TEMP_"))
-    .map(p => {
-      const id = String(p.id || "").replace(/"/g, '""').trim();
+    .forEach(p => {
       const name = String(p.name || "").replace(/"/g, '""').replace(/[\r\n]/g, " ").trim();
-      const price = parseInt(p.price, 10) || 0;
-      return `"${id}","${name}","${price}"`;
+      const price = parseFloat(p.price) || 0;
+      const ident = String(p.identCode || "").replace(/"/g, '""').trim();
+      const matCode = String(p.materialCode || p.id || "").replace(/"/g, '""').trim();
+      if (ident && !addedKeys.has(ident.toUpperCase())) {
+        lines.push(`"${ident}","${name}","${price}"`);
+        addedKeys.add(ident.toUpperCase());
+      }
+      if (matCode && !addedKeys.has(matCode.toUpperCase())) {
+        lines.push(`"${matCode}","${name}","${price}"`);
+        addedKeys.add(matCode.toUpperCase());
+      }
     });
 
   const csvString = lines.join("\r\n") + "\r\n";

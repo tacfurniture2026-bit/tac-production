@@ -232,16 +232,48 @@
     <!-- ダミーの localStorage 読み込みと互換性確保のための data.js -->
     <script src="data.js"></script>
     <script>
-        // 分類コードのマッピング
+        // 分類コードのマッピング (資材コード一覧及び棚卸対象一覧.xlsx 完全準拠: 01〜27)
         const CATEGORY_NAMES = {
-            '01': '芯材・面材',
-            '02': '仕上げ材',
-            '03': 'アクリル材',
-            '04': 'エッジ材',
-            '05': '金物・部品',
-            '06': '梱包資材',
+            '01': '基材',
+            '02': '面材',
+            '03': 'シート',
+            '04': '木口ﾃｰﾌﾟ',
+            '05': '金具',
+            '06': 'ﾀﾞﾝﾎﾞｰﾙ',
+            '07': '接着剤',
+            '08': '仕入備品',
+            '09': 'PAO資材',
+            '10': '工場部材',
+            '11': '仕掛品芯組のみ',
+            '12': '仕掛品カット',
+            '13': '部材完成品',
+            '14': '製品在庫',
+            '15': 'シェルフ製品在庫',
+            '16': 'キャビネット製品在庫',
+            '17': 'ラミテック',
+            '18': '天野木工',
+            '19': 'いろは',
+            '20': 'Real',
+            '21': 'イイダアックス',
+            '22': '下請け預かり品',
+            '23': 'GRID不動品',
+            '24': '仕掛品フラッシュのみ',
+            '25': '仕掛品(Tpics)',
+            '26': '仕掛品(未完成品)',
+            '27': '入荷品',
             '99': 'その他'
         };
+
+        // 棚卸対象外判定 (0: 対象外, 7: 対象外(仕掛品) はQR印刷不要)
+        function isNonTargetProduct(prod) {
+            if (!prod) return false;
+            if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
+                const tf = Number(prod.targetFlag);
+                if (tf === 0 || tf === 7) return true;
+            }
+            if (prod.isTarget === false) return true;
+            return false;
+        }
 
         window.onload = function() {
             // sessionStorageから印刷対象の資材ID配列を取得
@@ -265,30 +297,45 @@
                 return;
             }
 
-            // DBから最新の商品マスタを取得
-            // DBはdata.jsで定義されているグローバルオブジェクト
-            const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+            // DBから最新の商品マスタを取得 (空の場合は棚卸原簿マスタから取得)
+            let products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
+            if (products.length === 0 && typeof getGenboMasterProducts === 'function') {
+                products = getGenboMasterProducts();
+            }
 
             const container = document.getElementById('qr-grid-container');
             container.innerHTML = '';
 
+            let printedCount = 0;
             targetIds.forEach(id => {
                 // 商品マスタから探す
-                const prod = products.find(p => p.id === id) || {
+                const prod = products.find(p => p && (p.id === id || p.identCode === id || p.materialCode === id)) || {
                     id: id,
+                    identCode: id,
+                    materialCode: id,
                     name: `不明な資材 (${id})`,
-                    category: '99'
+                    category: '99',
+                    targetFlag: 1
                 };
 
-                const catName = CATEGORY_NAMES[prod.category] || prod.category;
-                
-                // QRコードをローカルで生成 (BT-W85の2段テキスト枠で1行目に資材CD、2行目(別行)に品名が表示されるよう24文字幅パディングで格納)
+                // 棚卸対象外の場合はQR印刷不要のためスキップ
+                if (isNonTargetProduct(prod)) {
+                    return;
+                }
+
+                const catName = CATEGORY_NAMES[prod.category] || prod.categoryName || prod.category;
+                const shortCode = String(prod.identCode || prod.id || '').trim();
+                const fullMatCode = String(prod.materialCode || prod.id || '').trim();
+                const namePart = String(prod.name || '').trim();
+
+                // QRコードをローカルで生成
+                // ※BT-W85の1行テキスト枠(BtTextBox_ProcessNo)で右端に見切れて品名が消える不具合を完全に防ぐため、
+                // 空白24文字パディングを廃止し、短い識別コード(例: 01-023)＋半角スペース1個＋品名(例: 01-023 LVL 30X14X2430)で格納。
+                // これによりBT-W85画面内に「資材CD」と「品名」の両方が100%確実に同時表示されます。
                 let qrDataUrl = '';
                 try {
                     const qr = qrcode(0, 'L');
-                    const codePart = String(prod.id || '').trim();
-                    const namePart = String(prod.name || '').trim();
-                    const qrPayload = namePart ? `${codePart.padEnd(24, ' ')}${namePart}` : codePart;
+                    const qrPayload = namePart ? `${shortCode} ${namePart}` : shortCode;
                     qr.addData(unescape(encodeURIComponent(qrPayload)));
                     qr.make();
                     qrDataUrl = qr.createDataURL(4, 0);
@@ -296,22 +343,37 @@
                     console.error("QR生成エラー:", e);
                 }
 
+                const displayCodeHtml = (shortCode && fullMatCode && shortCode !== fullMatCode)
+                    ? `<div class="product-id" style="color:#0f172a; font-size:13px;">CD: ${shortCode}</div><div class="product-id" style="font-size:10px; color:#64748b;">${fullMatCode}</div>`
+                    : `<div class="product-id" style="color:#0f172a; font-size:13px;">CD: ${shortCode || fullMatCode}</div>`;
+
                 const cardHtml = `
                     <div class="qr-card">
                         <div class="qr-info">
                             <div>
-                                <div class="category-badge">${catName}</div>
-                                <div class="product-name" title="${prod.name}">${prod.name}</div>
+                                <div class="category-badge">${prod.category}: ${catName}</div>
+                                <div class="product-name" title="${namePart}">${namePart}</div>
                             </div>
-                            <div class="product-id">${prod.id}</div>
+                            <div>
+                                ${displayCodeHtml}
+                            </div>
                         </div>
                         <div class="qr-image-container">
-                            <img class="qr-image" src="${qrDataUrl}" alt="${prod.id}">
+                            <img class="qr-image" src="${qrDataUrl}" alt="${shortCode}">
                         </div>
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', cardHtml);
+                printedCount++;
             });
+
+            if (printedCount === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: span 3; text-align: center; padding: 40px; color: #f59e0b; font-weight: bold;">
+                        選択された資材はすべて「棚卸対象外」のため、印刷対象のQRコードはありません。
+                    </div>
+                `;
+            }
         };
     </script>
 </body>
