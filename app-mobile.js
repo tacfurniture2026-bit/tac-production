@@ -11560,7 +11560,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
 
   try {
     toast(`📦 ${label} を準備しています...`, 'info');
-    const res = await fetch(`${filePath}?v=6.86.0_${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${filePath}?v=6.87.0_${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const zipBlob = new Blob([blob], { type: 'application/zip' });
@@ -11576,7 +11576,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
   } catch (err) {
     console.warn('Fetch zip fallback to direct link:', err);
     const a = document.createElement('a');
-    a.href = `${filePath}?v=6.86.0`;
+    a.href = `${filePath}?v=6.87.0`;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
