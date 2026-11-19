@@ -838,16 +838,35 @@ const DB = {
         }
     },
 
-    // 棚卸原簿.xlsx & 資材コード一覧及び棚卸対象一覧.xlsx マスタ一括移行 ＆ 10月期(AK列)初期締め処理（v6.82.0）
+    // 棚卸原簿.xlsx & 資材コード一覧及び棚卸対象一覧.xlsx マスタ一括移行 ＆ 10月期(AK列)初期締め処理（v6.83.0）
     applyLatestGenboMaster(forceReplace = false) {
         if (typeof getGenboMasterProducts !== 'function') return;
-        if (typeof useFirebase !== 'undefined' && useFirebase && !this._loaded[this.KEYS.INV_PRODUCTS]) {
+        // Firebaseモードでは、INV_PRODUCTS / INV_MONTHLY / INV_LOGS / INV_SCAN_TEMP の全4キー読込完了を必ず待つ
+        if (typeof useFirebase !== 'undefined' && useFirebase && (
+            !this._loaded[this.KEYS.INV_PRODUCTS] ||
+            !this._loaded[this.KEYS.INV_MONTHLY] ||
+            !this._loaded[this.KEYS.INV_LOGS] ||
+            !this._loaded[this.KEYS.INV_SCAN_TEMP]
+        )) {
             setTimeout(() => this.applyLatestGenboMaster(forceReplace), 1000);
             return;
         }
         const currentProducts = this.get(this.KEYS.INV_PRODUCTS) || [];
-        const alreadyApplied = localStorage.getItem('pms_genbo_v682_oct_closed') === 'true';
-        if (alreadyApplied && !forceReplace && currentProducts.length >= 3000) {
+        const currentMonthly = this.get(this.KEYS.INV_MONTHLY) || [];
+        const octRecord = currentMonthly.find(m => m && m.month === '2026-10');
+        const fixedCount = currentProducts.filter(p => p && p.isFixed).length;
+        const alreadyApplied = localStorage.getItem('pms_genbo_v683_oct_closed') === 'true';
+
+        // 実際に10月期締めデータが存在し、かつ不動品数が正常(コード4のみ=74件付近)である場合のみスキップ
+        const isDataHealthy = (
+            currentProducts.length >= 3000 &&
+            fixedCount <= 120 &&
+            !!octRecord &&
+            octRecord.isInitialBaseline === true &&
+            Number(octRecord.total) > 0 &&
+            Number(octRecord.fixedTotal) < Number(octRecord.total) * 0.2
+        );
+        if (alreadyApplied && !forceReplace && isDataHealthy) {
             return;
         }
 
@@ -935,11 +954,24 @@ const DB = {
             }
         });
 
-        this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(mergedProducts)));
-        this.initializeOctoberGenboClosing(mergedProducts);
-        localStorage.setItem('pms_genbo_v681_applied', 'true');
-        localStorage.setItem('pms_genbo_v682_oct_closed', 'true');
-        console.log(`✅ 棚卸原簿マスタ移行＆10月期(2026-10)初期締め完了: 全 ${mergedProducts.length} 件`);
+        const pProd = this.save(this.KEYS.INV_PRODUCTS, JSON.parse(JSON.stringify(mergedProducts)));
+        const octRes = this.initializeOctoberGenboClosing(mergedProducts);
+        const allPromises = [pProd, ...(octRes && octRes.savePromises ? octRes.savePromises : [])];
+
+        Promise.all(allPromises).then((results) => {
+            if (results.includes(false)) {
+                console.warn('⚠️ 一部のデータ保存が未完了のため、1秒後にリトライします...');
+                setTimeout(() => this.applyLatestGenboMaster(true), 1000);
+                return;
+            }
+            localStorage.setItem('pms_genbo_v681_applied', 'true');
+            localStorage.setItem('pms_genbo_v682_oct_closed', 'true');
+            localStorage.setItem('pms_genbo_v683_oct_closed', 'true');
+            console.log(`✅ 棚卸原簿マスタ移行＆10月期(2026-10)初期締め保存完了: 全 ${mergedProducts.length} 件`);
+            if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+        }).catch(err => {
+            console.error('❌ 棚卸原簿マスタ移行エラー:', err);
+        });
     },
 
     // 棚卸原簿.xlsx のAK列（10月度棚卸数量）を活用した10月期(2026-10)の集計・締め処理（在庫管理の初期データ化＆11月期収集開始）
@@ -997,14 +1029,14 @@ const DB = {
                 isFixed: isFixed
             });
 
-            rawTotal += rawAmount;
+            rawTotal += amount;
 
             const catKey = isFixed ? 'fixed' : cat;
             if (!octSummary[catKey]) {
                 const catName = isFixed ? '不動品' : (GENBO_CAT_NAMES[cat] || p.categoryName || `分類${cat}`);
                 octSummary[catKey] = { name: catName, rawAmount: 0, rawPrevAmount: 0, amount: 0, diff: 0, prevAmount: 0 };
             }
-            octSummary[catKey].rawAmount += rawAmount;
+            octSummary[catKey].rawAmount += amount;
 
             if (octQty > 0) {
                 octLogs.push({
@@ -1058,19 +1090,19 @@ const DB = {
         const existingMonthly = this.get(this.KEYS.INV_MONTHLY) || [];
         const futureMonthly = existingMonthly.filter(m => m && m.month && m.month > targetMonth);
         const newMonthlyList = [octMonthlyData, ...futureMonthly].sort((a, b) => a.month.localeCompare(b.month));
-        this.save(this.KEYS.INV_MONTHLY, JSON.parse(JSON.stringify(newMonthlyList)));
+        const pMonthly = this.save(this.KEYS.INV_MONTHLY, JSON.parse(JSON.stringify(newMonthlyList)));
 
         // 2. INV_LOGS: 2026-10以前の旧ログをクリアし、10月期確定ログ＋2026-11以降のログのみを保持
         const existingLogs = this.get(this.KEYS.INV_LOGS) || [];
         const futureLogs = existingLogs.filter(l => l && l.timestamp && l.timestamp >= '2026-11');
-        this.save(this.KEYS.INV_LOGS, JSON.parse(JSON.stringify([...octLogs, ...futureLogs])));
+        const pLogs = this.save(this.KEYS.INV_LOGS, JSON.parse(JSON.stringify([...octLogs, ...futureLogs])));
 
         // 3. INV_SCAN_TEMP: 2026-10以前の仮スキャンをクリアし、2026-11(11月期)からの新規収集状態にする
         const existingTempScans = this.get(this.KEYS.INV_SCAN_TEMP) || [];
         const futureTempScans = existingTempScans.filter(s => s && s.month && s.month >= '2026-11');
-        this.save(this.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(futureTempScans)));
+        const pTemp = this.save(this.KEYS.INV_SCAN_TEMP, JSON.parse(JSON.stringify(futureTempScans)));
 
-        return octMonthlyData;
+        return { octMonthlyData, savePromises: [pMonthly, pLogs, pTemp] };
     }
 };
 
@@ -1097,6 +1129,10 @@ function refreshCurrentPage() {
                 case 'gantt': if (typeof renderGantt === 'function') renderGantt(); break;
                 case 'orders': if (typeof renderOrders === 'function') renderOrders(); break;
                 case 'bom': if (typeof renderBom === 'function') renderBom(); break;
+                case 'inv-monthly': if (typeof renderInvMonthlyPage === 'function') renderInvMonthlyPage(); break;
+                case 'inv-check': if (typeof renderInvCheckPage === 'function') renderInvCheckPage(); break;
+                case 'inv-products': if (typeof renderInvProductsTable === 'function') renderInvProductsTable(); break;
+                case 'inv-search': if (typeof executeInvSearch === 'function') executeInvSearch(); break;
             }
         }
     }

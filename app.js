@@ -6685,7 +6685,7 @@ function renderReport(argStart, argEnd) {
       const catName = INV_CATEGORIES[product.category] || product.category;
       if (!categoryStocks[catName]) categoryStocks[catName] = { normal: 0, fixed: 0, total: 0 };
       
-      if (product.isFixed) {
+      if (typeof isInvDeadOrFixedProduct === 'function' ? isInvDeadOrFixedProduct(product) : (Number(product.targetFlag) === 4)) {
         categoryStocks[catName].fixed += amount;
         totalFixedAmount += amount;
       } else {
@@ -9336,13 +9336,19 @@ function renderInvMonthlyPage() {
   // 最新の締め済み月（初期値: 2026-10 = 10月期）をデフォルト設定し、即座に集計結果を表示する
   const monthInput = $('#inv-closing-month');
   const monthlyList = DB.get(DB.KEYS.INV_MONTHLY) || [];
-  if (monthInput && !monthInput.value) {
-    if (monthlyList.length > 0) {
-      const sorted = [...monthlyList].sort((a, b) => b.month.localeCompare(a.month));
-      monthInput.value = sorted[0].month;
-    } else {
-      monthInput.value = '2026-10';
+  if (monthInput) {
+    if (!monthInput.value || (!window._userPickedMonthlyMonth && !monthlyList.some(m => m && m.month === monthInput.value))) {
+      if (monthlyList.length > 0) {
+        const sorted = [...monthlyList].sort((a, b) => b.month.localeCompare(a.month));
+        monthInput.value = sorted[0].month;
+      } else {
+        monthInput.value = '2026-10';
+      }
     }
+    monthInput.onchange = () => {
+      window._userPickedMonthlyMonth = true;
+      viewInvMonthlySummary();
+    };
   }
 
   // 年度チェック表の年度デフォルト設定
@@ -9491,18 +9497,11 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       }
     }
   }
-  // 究極のフォールバック：tempScansからも探す
+  // 究極のフォールバック：当月のtempScansからも探す（他月のMETA_F1_TOTALは混入させない）
   if (f1Total === null || isNaN(f1Total)) {
     const tScans = DB.getTempScans() || [];
     const f1Meta = tScans.find(s => s.month === month && s.productId === 'META_F1_TOTAL');
     if (f1Meta && f1Meta.amountWithTax !== undefined) { f1Total = f1Meta.amountWithTax; }
-  }
-  
-  // さらなる究極のフォールバック：直近のCSVのF1を探す (月が合わなくても最新のインポートのF1を使う)
-  if (f1Total === null || isNaN(f1Total)) {
-     const tScans = DB.getTempScans() || [];
-     const f1MetaAny = tScans.find(s => s.productId === 'META_F1_TOTAL');
-     if (f1MetaAny && f1MetaAny.amountWithTax !== undefined) { f1Total = f1MetaAny.amountWithTax; }
   }
   
 
@@ -9689,7 +9688,10 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     let hasCountLog = false;
     const productLogs = monthLogs.filter(l => l.productId === pid || (masterProduct && (l.productId === masterProduct.id || l.productId === masterProduct.identCode)));
 
-    if (!isClosed && monthLogs.length === 0 && !hasCsvImport) {
+    if (isInitialOctMonth && !isClosed && monthLogs.length === 0) {
+      // 10月期(2026-10)は棚卸原簿AK列(octStock)を当月在庫として採用
+      currQty = masterProduct ? safeNum(masterProduct.octStock) : 0;
+    } else if (!isClosed && monthLogs.length === 0 && !hasCsvImport) {
       currQty = isAutoCarryOver ? prevQty : 0;
     } else {
       const countLogs = productLogs.filter(l => l.type === 'count');
@@ -9710,11 +9712,14 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
             }
         });
         
-        if (!hasValidCsvAmount && hasCsvImport) {
+        if (!hasValidCsvAmount) {
             csvAmountWithTax = 0;
         }
+      } else if (isInitialOctMonth && masterProduct) {
+        // 10月期(2026-10)で個別ログが無い場合もAK列(octStock)を参照
+        currQty = safeNum(masterProduct.octStock);
       } else if (isAutoCarryOver) {
-        // 棚卸対象外(0,7)および死蔵品・廃盤・不動品は、実棚カウントが無い場合も在庫をそのまま翌月へ転記
+        // 棚卸対象外(0,7)および不動品(コード4)は、実棚カウントが無い場合も前月在庫をそのまま翌月へ転記
         currQty = prevQty;
       } else {
         currQty = 0;
@@ -9729,13 +9734,11 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
 
     const diff = currQty - prevQty;
 
-    // 当月金額 (amount) の算出
+    // 当月金額 (amount) の算出（csvAmountWithTaxが実際に指定されている場合のみ優先し、通常の棚卸ログは必ず 数量×単価×1.01 で算出）
     let amountRaw = 0;
-    if (hasCsvImport && hasCountLog) {
+    if (csvAmountWithTax > 0) {
       amountRaw = csvAmountWithTax;
-    } else if (csvAmountWithTax > 0) {
-      amountRaw = csvAmountWithTax;
-    } else if (isFixed && currQty === prevQty && prevAmountRaw > 0 && !hasCsvImport) {
+    } else if (isFixed && currQty === prevQty && prevAmountRaw > 0 && !isInitialOctMonth) {
       amountRaw = prevAmountRaw;
     } else {
       amountRaw = currQty * price * 1.01;
@@ -10320,8 +10323,15 @@ function renderInvCheckPage() {
     });
   }
 
-  // Scanned items for this month
-  
+  // Scanned items for this month (if the selected month is already closed, also load closed items so 2026-10 shows its actual AK quantities)
+  const closedForSelected = monthly.find(m => m.month === selectedMonth);
+  const closedQtyMap = {};
+  if (closedForSelected && Array.isArray(closedForSelected.items)) {
+    closedForSelected.items.forEach(ci => {
+      if (ci && ci.productId) closedQtyMap[ci.productId] = Number(ci.currQty) || 0;
+    });
+  }
+
   const currentTempScans = tempScans.filter(s => s.month === selectedMonth);
   
   const f1Meta = currentTempScans.find(s => s.productId === 'META_F1_TOTAL');
@@ -10346,21 +10356,24 @@ function renderInvCheckPage() {
   const listItems = Array.from(renderedProductIds).map(pid => {
     const prod = products.find(p => p.id === pid || p.identCode === pid || p.materialCode === pid) || { id: pid, name: `不明な資材 (${pid})`, category: '99', price: 0 };
     const scan = tempScanMap[pid] || (prod.identCode ? tempScanMap[prod.identCode] : null);
-    const prevQty = prevStockMap[pid] !== undefined ? prevStockMap[pid] : (prod.identCode && prevStockMap[prod.identCode] !== undefined ? prevStockMap[prod.identCode] : 0);
+    const prevQty = (selectedMonth === '2026-10')
+      ? 0
+      : (prevStockMap[pid] !== undefined ? prevStockMap[pid] : (prod.identCode && prevStockMap[prod.identCode] !== undefined ? prevStockMap[prod.identCode] : 0));
     const isFixed = isInvDeadOrFixedProduct(prod);
     const isNonTarget = isInvNonTargetProduct(prod);
     
+    const hasClosedData = !!(closedForSelected && closedQtyMap[pid] !== undefined);
     let isAutoFixed = false;
     let isAutoNonTarget = false;
-    if (!scan) {
+    if (!scan && !hasClosedData) {
       if (isFixed) isAutoFixed = true;
       else if (isNonTarget) isAutoNonTarget = true;
     }
 
     const isAutoCarried = isAutoFixed || isAutoNonTarget;
-    const currQty = scan ? scan.quantity : (isAutoCarried ? prevQty : 0);
+    const currQty = scan ? scan.quantity : (hasClosedData ? closedQtyMap[pid] : (isAutoCarried ? prevQty : 0));
     const diff = currQty - prevQty;
-    const isScanned = !!scan || isAutoCarried; // 不動品・死蔵品・棚卸対象外は自動的に在庫転記済扱い
+    const isScanned = !!scan || hasClosedData || isAutoCarried; // 締め済み・不動品(コード4)・棚卸対象外は自動的に計上済扱い
 
     return {
       productId: prod.id || pid,
@@ -10371,7 +10384,7 @@ function renderInvCheckPage() {
       quantity: currQty,
       prevQty: prevQty,
       diff: diff,
-      worker: scan ? (scan.workerName || scan.worker || '-') : (isAutoFixed ? '自動(不動/死蔵)' : (isAutoNonTarget ? '自動転記(対象外)' : '-')),
+      worker: scan ? (scan.workerName || scan.worker || '-') : (hasClosedData ? (selectedMonth === '2026-10' ? '10月期初期確定(AK列)' : '締め確定済') : (isAutoFixed ? '自動(不動品:4)' : (isAutoNonTarget ? '自動転記(対象外)' : '-'))),
       workerId: scan ? (scan.worker || '-') : (isAutoCarried ? 'SYSTEM' : '-'),
       isScanned: isScanned,
       isAutoFixed: isAutoFixed,
@@ -13082,7 +13095,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
 
   try {
     toast(`📦 ${label} を準備しています...`, 'info');
-    const res = await fetch(`${filePath}?v=6.82.0_${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${filePath}?v=6.83.0_${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const zipBlob = new Blob([blob], { type: 'application/zip' });
@@ -13098,7 +13111,7 @@ window.downloadHtProgramZip = async function(packageType = 'setup') {
   } catch (err) {
     console.warn('Fetch zip fallback to direct link:', err);
     const a = document.createElement('a');
-    a.href = `${filePath}?v=6.82.0`;
+    a.href = `${filePath}?v=6.83.0`;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();

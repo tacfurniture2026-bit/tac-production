@@ -1,6 +1,6 @@
 # 🚀 TAC 生産管理システム 引き継ぎドキュメント (Antigravity 移行用)
 
-* **最終更新バージョン**: `v6.82.0`
+* **最終更新バージョン**: `v6.83.0`
 * **作成日時**: 2026-11-13
 * **GitHub リポジトリ**: `https://github.com/tacfurniture2026-bit/tac-production.git` (`main` ブランチ)
 
