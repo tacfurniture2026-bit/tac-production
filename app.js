@@ -7284,36 +7284,53 @@ const INV_TARGET_TYPES = {
 // 資材区分一覧
 const INV_MATERIAL_DIVISIONS = ['直接資材', '間接資材', '仕掛品', '製品'];
 
-// 棚卸対象外判定ヘルパー（対象外=0, 対象外(仕掛品)=7 はQR印刷不要＆翌月へそのまま在庫転記）
+// 棚卸対象外判定ヘルパー（棚卸用QR発行は棚卸対象が0以外を発行するため、targetFlag === 0 のみ対象外・QR印刷不要・翌月へそのまま在庫転記）
 function isInvNonTargetProduct(prod) {
   if (!prod) return false;
   if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
-    const tf = Number(prod.targetFlag);
-    if (tf === 0 || tf === 7) return true;
+    return Number(prod.targetFlag) === 0;
   }
   if (prod.isTarget === false) return true;
   return false;
 }
 
-// 月締め・棚卸で表示（集計）する「不動品在庫」判定ヘルパー（棚卸対象コード4のみ集計）
-function isInvDeadOrFixedProduct(prod) {
-  if (!prod) return false;
-  if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
-    return Number(prod.targetFlag) === 4;
-  }
-  return !!prod.isFixed;
-}
-
-// 在庫金額の集計除外判定ヘルパー（棚卸対象コード0 および 廃盤フラグ1 は在庫金額を集計しない）
-function isInvAmountExcludedProduct(prod, item = null) {
+// 構成がイビケン（ｲﾋﾞｹﾝ / イビケン）かどうか判定するヘルパー
+function isInvIbikenComposition(prod, item = null) {
   if (prod) {
-    if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '' && Number(prod.targetFlag) === 0) return true;
-    if (prod.discontinuedFlag !== undefined && prod.discontinuedFlag !== null && prod.discontinuedFlag !== '' && Number(prod.discontinuedFlag) === 1) return true;
+    const comp = String(prod.composition || prod.material || '').trim();
+    if (comp.includes('イビケン') || comp.includes('ｲﾋﾞｹﾝ')) return true;
   }
   if (item) {
-    if (item.targetFlag !== undefined && item.targetFlag !== null && item.targetFlag !== '' && Number(item.targetFlag) === 0) return true;
-    if (item.discontinuedFlag !== undefined && item.discontinuedFlag !== null && item.discontinuedFlag !== '' && Number(item.discontinuedFlag) === 1) return true;
+    const comp = String(item.composition || item.material || '').trim();
+    if (comp.includes('イビケン') || comp.includes('ｲﾋﾞｹﾝ')) return true;
   }
+  return false;
+}
+
+// 月締め・棚卸で表示（集計・カウント）する「不動品」判定ヘルパー
+// （構成がイビケン と 廃盤フラグ1 は不動品としてカウントする）
+function isInvDeadOrFixedProduct(prod, item = null) {
+  if (prod) {
+    if (prod.discontinuedFlag !== undefined && prod.discontinuedFlag !== null && prod.discontinuedFlag !== '' && Number(prod.discontinuedFlag) === 1) return true;
+    if (isInvIbikenComposition(prod)) return true;
+    if ((prod.discontinuedFlag === undefined || prod.discontinuedFlag === null || prod.discontinuedFlag === '') &&
+        (prod.targetFlag === undefined || prod.targetFlag === null || prod.targetFlag === '')) {
+      if (prod.isFixed) return true;
+    }
+  }
+  if (item) {
+    if (item.discontinuedFlag !== undefined && item.discontinuedFlag !== null && item.discontinuedFlag !== '' && Number(item.discontinuedFlag) === 1) return true;
+    if (isInvIbikenComposition(null, item)) return true;
+    if ((item.discontinuedFlag === undefined || item.discontinuedFlag === null || item.discontinuedFlag === '') &&
+        (item.targetFlag === undefined || item.targetFlag === null || item.targetFlag === '')) {
+      if (item.isFixed) return true;
+    }
+  }
+  return false;
+}
+
+// 在庫金額の集計除外判定ヘルパー（廃盤フラグ1も不動品としてカウントし、全在庫を棚卸金額65,925,610円に計上するため除外なし）
+function isInvAmountExcludedProduct(prod, item = null) {
   return false;
 }
 
@@ -7630,16 +7647,32 @@ function setupInvExcelImport() {
           const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
           let parsedItems = [];
 
-          // デフォルト列インデックス（E:4, G:6, B:1, N:13, S:18, T:19, U:20）
+          // デフォルト列インデックス（提出書類シート: E:4, G:6, B:1, N:13, S:18, T:19, U:20）
           let colIndex = {
-            id: 4,        // E列
-            name: 6,      // G列
-            category: 1,  // B列
-            unitPrice: 13,// N列
-            quantity: 18, // S列
-            amount: 19,   // T列
-            amountWithTax: 20 // U列
+            id: 4,        // E列 (資材コード)
+            identCode: 0, // A列 (識別コード)
+            name: 6,      // G列 (品名)
+            category: 1,  // B列 (分類)
+            unitPrice: 13,// N列 (単価)
+            quantity: 18, // S列 (実棚数量)
+            amount: 19,   // T列 (税抜金額)
+            amountWithTax: 20 // U列 (1%増し金額)
           };
+
+          // 「棚卸原簿」シート形式（A:0=識別コード, B:1=分類, E:4=資材コード, I:8=品名, P:15=単価, AK:36=棚卸数量, AL:37=新金額）の自動判別
+          const isGenboFormat = targetSheetName.includes('原簿') || (rows[1] && String(rows[1][0] || '').includes('識別コード') && String(rows[1][4] || '').includes('資材コード'));
+          if (isGenboFormat) {
+            colIndex = {
+              id: 4,            // E列 (資材コード)
+              identCode: 0,     // A列 (識別コード)
+              name: 8,          // I列 (品名)
+              category: 1,      // B列 (分類)
+              unitPrice: 15,    // P列 (単価)
+              quantity: 36,     // AK列 (棚卸数量)
+              amount: -1,
+              amountWithTax: 37 // AL列 (新金額)
+            };
+          }
 
           // ヘッダー行を探索して列インデックスを動的検出（サマリー行Row 0「合計金額」との誤マッチ防止）
           for (let r = 0; r < Math.min(10, rows.length); r++) {
@@ -7647,13 +7680,14 @@ function setupInvExcelImport() {
             if ((rowStr.includes('数量') || rowStr.includes('実棚')) && (rowStr.includes('識別コード') || rowStr.includes('資材コード') || rowStr.includes('単価') || rowStr.includes('品名'))) {
               rows[r].forEach((cellVal, cIdx) => {
                 const val = String(cellVal || '').trim();
-                if (/^(資材ID|品番|識別コード|商品コード|コード|資材コード)$/i.test(val)) colIndex.id = cIdx;
+                if (/^(識別コード)$/i.test(val)) colIndex.identCode = cIdx;
+                else if (/^(資材ID|品番|商品コード|コード|資材コード)$/i.test(val)) colIndex.id = cIdx;
                 else if (/^(品名|資材名|商品名)$/i.test(val)) colIndex.name = cIdx;
                 else if (/^(資材分類|分類|カテゴリ)$/i.test(val)) colIndex.category = cIdx;
-                else if (/^(単価|購入単価)$/i.test(val)) colIndex.unitPrice = cIdx;
-                else if (/^(棚卸数量|実棚数量|実存数|数量|数量合計の合計|数量合計)$/i.test(val)) colIndex.quantity = cIdx;
+                else if (/^(単価|購入単価|新単価)$/i.test(val)) colIndex.unitPrice = cIdx;
+                else if (/^(棚卸数量|実棚数量|実存数|数量|数量合計の合計|数量合計|10月度棚卸数量|11月度棚卸数量|12月度棚卸数量|当月棚卸数量)$/i.test(val) || /棚卸数量/.test(val)) colIndex.quantity = cIdx;
                 else if (/^(金額|在庫金額|金額\(税抜\)|金額（税抜）|合計金額の合計|合計金額)$/i.test(val)) colIndex.amount = cIdx;
-                else if (/^(金額\(税込\)|金額（税込）|税込金額|合計金額\(1%増し\)|合計金額（1%増し）)$/i.test(val)) colIndex.amountWithTax = cIdx;
+                else if (/^(金額\(税込\)|金額（税込）|税込金額|合計金額\(1%増し\)|合計金額（1%増し）|新金額)$/i.test(val)) colIndex.amountWithTax = cIdx;
               });
               break;
             }
@@ -7705,11 +7739,13 @@ function setupInvExcelImport() {
             if (rowIndex < 1) return; // ヘッダー最上部スキップ
 
             let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            const identCodeVal = (colIndex.identCode !== undefined && row[colIndex.identCode]) ? String(row[colIndex.identCode]).trim() : '';
+            if (!productCode && identCodeVal) productCode = identCodeVal;
             const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
-            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim().padStart(2, '0') : '99';
 
-            // 品名やコードが集計行（「小計」「合計」「【分類別】」等）の場合は厳密に排除
-            if (summaryPattern.test(productName) || summaryPattern.test(productCode) || summaryPattern.test(category)) {
+            // 品名やコードが集計行・ヘッダー行（「小計」「合計」「識別コード」等）の場合は厳密に排除
+            if (summaryPattern.test(productName) || summaryPattern.test(productCode) || summaryPattern.test(category) || productCode === '資材コード' || productCode === '識別コード') {
               skippedSummaryCount++;
               return;
             }
@@ -7722,7 +7758,7 @@ function setupInvExcelImport() {
               return;
             }
 
-            const quantity = parseInt(String(sColValue).replace(/[^0-9.-]/g, ''), 10);
+            const quantity = parseFloat(String(sColValue).replace(/[^0-9.-]/g, ''));
             if (isNaN(quantity)) {
               skippedNoQtyCount++;
               return;
@@ -7734,8 +7770,8 @@ function setupInvExcelImport() {
               productCode = `TEMP_${rowIndex}`;
             }
 
-            const amountRaw = row[colIndex.amount];
-            const amountWithTaxRaw = row[colIndex.amountWithTax];
+            const amountRaw = colIndex.amount >= 0 ? row[colIndex.amount] : 0;
+            const amountWithTaxRaw = colIndex.amountWithTax >= 0 ? row[colIndex.amountWithTax] : 0;
             const amount = parseFloat(String(amountRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             const amountWithTax = parseFloat(String(amountWithTaxRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
@@ -7744,7 +7780,14 @@ function setupInvExcelImport() {
               unitPrice = (amount / quantity);
             }
 
-            let matchedProduct = products.find(p => p.id === productCode);
+            const codeUpper = productCode.toUpperCase();
+            const identUpper = identCodeVal.toUpperCase();
+            let matchedProduct = products.find(p => p && (
+              String(p.id || '').toUpperCase() === codeUpper ||
+              String(p.identCode || '').toUpperCase() === codeUpper ||
+              String(p.materialCode || '').toUpperCase() === codeUpper ||
+              (identUpper && (String(p.identCode || '').toUpperCase() === identUpper || String(p.id || '').toUpperCase() === identUpper))
+            ));
 
             const productInfo = matchedProduct || {
               id: productCode,
@@ -7967,14 +8010,27 @@ function setupInitialDataImport() {
               
               let colIndex = {
                 id: 4,        // E列
+                identCode: 0, // A列
                 category: 1,  // B列
                 name: 6,      // G列
                 unitPrice: 13,// N列
                 quantity: 18, // S列
                 amount: 20    // U列
               };
+              const isGenboInitFormat = targetSheetName.includes('原簿') || (rows[1] && String(rows[1][0] || '').includes('識別コード') && String(rows[1][4] || '').includes('資材コード'));
+              if (isGenboInitFormat) {
+                colIndex = {
+                  id: 4,
+                  identCode: 0,
+                  category: 1,
+                  name: 8,
+                  unitPrice: 15,
+                  quantity: 36,
+                  amount: 37
+                };
+              }
           
-          let qtyMap = {}; // productId -> { quantity, name, category, unitPrice }
+          let qtyMap = {}; // canonicalId -> { quantity, name, category, unitPrice }
 
           rows.forEach((row, rowIndex) => {
             if (rowIndex < 2) return; 
@@ -7982,18 +8038,29 @@ function setupInitialDataImport() {
             const sColValue = row[colIndex.quantity];
             if (sColValue === undefined || sColValue === null || sColValue === '') return;
             
-            const quantity = parseInt(sColValue, 10);
+            const quantity = parseFloat(String(sColValue).replace(/[^0-9.-]/g, ''));
             if (isNaN(quantity)) return;
 
             let productCode = row[colIndex.id] ? String(row[colIndex.id]).trim() : '';
+            const identCodeVal = (colIndex.identCode !== undefined && row[colIndex.identCode]) ? String(row[colIndex.identCode]).trim() : '';
+            if (!productCode && identCodeVal) productCode = identCodeVal;
             const productName = row[colIndex.name] ? String(row[colIndex.name]).trim() : '';
             
             if (!productCode && !productName) return;
+            if (productCode === '資材コード' || productCode === '識別コード') return;
             if (!productCode) {
               productCode = `TEMP_${rowIndex}`;
             }
 
-            const category = row[colIndex.category] ? String(row[colIndex.category]).trim() : '99';
+            const matchedP = products.find(p => p && (
+              String(p.id || '').toUpperCase() === productCode.toUpperCase() ||
+              String(p.identCode || '').toUpperCase() === productCode.toUpperCase() ||
+              String(p.materialCode || '').toUpperCase() === productCode.toUpperCase() ||
+              (identCodeVal && String(p.identCode || '').toUpperCase() === identCodeVal.toUpperCase())
+            ));
+            const canonicalCode = matchedP ? matchedP.id : productCode;
+
+            const category = row[colIndex.category] ? String(row[colIndex.category]).trim().padStart(2, '0') : '99';
             const amountRaw = row[colIndex.amount];
             const amount = parseFloat(String(amountRaw || '0').replace(/[^0-9.-]/g, '')) || 0;
             const unitPriceRaw = row[colIndex.unitPrice];
@@ -8002,7 +8069,7 @@ function setupInitialDataImport() {
               unitPrice = (amount / quantity);
             }
 
-            qtyMap[productCode] = { quantity, name: productName, category, unitPrice, amount };
+            qtyMap[canonicalCode] = { quantity, name: productName, category, unitPrice, amount };
           });
 
           // 商品マスタに存在しない商品があれば追加しておく
@@ -8660,14 +8727,16 @@ function renderInvProductsTable() {
 
     const targetBadges = [];
     if (isNonTarget) {
-      targetBadges.push(`<span style="display:inline-block; background:#e2e8f0; color:#475569; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold;" title="棚卸対象外: QR印刷不要・締め処理で在庫をそのまま翌月へ転記">⏭ ${tfInfo.name}</span>`);
+      targetBadges.push(`<span style="display:inline-block; background:#e2e8f0; color:#475569; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold;" title="棚卸対象0: QR印刷不要・締め処理で在庫をそのまま翌月へ転記">⏭ ${tfInfo.name}</span>`);
     } else {
       targetBadges.push(`<span style="display:inline-block; background:#dcfce7; color:#15803d; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold;">✓ ${tfInfo.name}</span>`);
     }
     if (Number(p.discontinuedFlag) === 1) {
-      targetBadges.push(`<span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">廃盤(死蔵品扱)</span>`);
+      targetBadges.push(`<span style="display:inline-block; background:#fee2e2; color:#b91c1c; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">不動品(廃盤1)</span>`);
+    } else if (isInvIbikenComposition(p)) {
+      targetBadges.push(`<span style="display:inline-block; background:#fef3c7; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">不動品(イビケン)</span>`);
     } else if (isDeadFixed) {
-      targetBadges.push(`<span style="display:inline-block; background:#fef3c7; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">死蔵/不動</span>`);
+      targetBadges.push(`<span style="display:inline-block; background:#fef3c7; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-top:2px;">不動品</span>`);
     }
 
     const safePrice = Number(p.price) || 0;
@@ -8843,12 +8912,13 @@ function saveNewInvProduct() {
   const price = parseFloat($('#inv-prod-price').value) || 0;
   const targetFlag = $('#inv-prod-fixed').checked ? 4 : parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
   const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
-  const isFixed = (targetFlag === 4);
-  const isDeadStock = (discontinuedFlag === 1) || isFixed;
-  const isTarget = !(targetFlag === 0 || targetFlag === 7);
   const materialType = ($('#inv-prod-material-type') || {}).value || '直接資材';
   const colorOther = ($('#inv-prod-color') || {}).value?.trim() || '';
   const composition = ($('#inv-prod-composition') || {}).value?.trim() || '';
+  const isIbiken = composition.includes('イビケン') || composition.includes('ｲﾋﾞｹﾝ');
+  const isFixed = $('#inv-prod-fixed').checked || isIbiken || (discontinuedFlag === 1);
+  const isDeadStock = isFixed;
+  const isTarget = (targetFlag !== 0);
   const width = ($('#inv-prod-width') || {}).value?.trim() || '';
   const length = ($('#inv-prod-length') || {}).value?.trim() || '';
   const thickness = ($('#inv-prod-thickness') || {}).value?.trim() || '';
@@ -9017,9 +9087,11 @@ function updateInvProduct(id) {
   const newPrice = parseFloat($('#inv-prod-price').value) || 0;
   const targetFlag = $('#inv-prod-fixed').checked ? 4 : parseInt(($('#inv-prod-target-flag') || {}).value || '1', 10);
   const discontinuedFlag = parseInt(($('#inv-prod-discontinued-flag') || {}).value || '0', 10);
-  const isFixed = (targetFlag === 4);
-  const isDeadStock = (discontinuedFlag === 1) || isFixed;
-  const isTarget = !(targetFlag === 0 || targetFlag === 7);
+  const compVal = ($('#inv-prod-composition') || {}).value?.trim() || '';
+  const isIbiken = compVal.includes('イビケン') || compVal.includes('ｲﾋﾞｹﾝ');
+  const isFixed = $('#inv-prod-fixed').checked || isIbiken || (discontinuedFlag === 1);
+  const isDeadStock = isFixed;
+  const isTarget = (targetFlag !== 0);
   const today = new Date().toISOString().split('T')[0];
 
   // 価格変更がある場合は価格更新履歴に記録
@@ -9038,7 +9110,6 @@ function updateInvProduct(id) {
   p.isTarget = isTarget;
   p.materialType = ($('#inv-prod-material-type') || {}).value || p.materialType || '直接資材';
   p.colorOther = ($('#inv-prod-color') || {}).value?.trim() || '';
-  const compVal = ($('#inv-prod-composition') || {}).value?.trim() || '';
   p.composition = compVal;
   p.material = compVal;
   p.width = ($('#inv-prod-width') || {}).value?.trim() || '';
@@ -9053,21 +9124,21 @@ function updateInvProduct(id) {
   renderInvProductsTable();
 }
 
-// 棚卸原簿.xlsx をブラウザから直接アップロードしてマスタ入れ替え＆10月期(AK列)初期締めを実行できるモーダル
+// 新単価棚卸原簿_20261124.xlsx をブラウザから直接アップロードしてマスタ入れ替え＆10月期(AK列)初期締めを実行できるモーダル
 window.openGenboExcelImportModal = function() {
   const products = DB.get(DB.KEYS.INV_PRODUCTS) || [];
   const body = `
     <div style="padding: 0.75rem;">
       <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; color: #14532d;">
-        <strong>📗 棚卸原簿.xlsx 基本マスタ一括入れ替え ＆ 10月期(AK列)初期締め処理（現在登録: ${products.length}件）：</strong><br>
-        ・<code>棚卸原簿.xlsx</code> の全データ（3,104件）を基本マスタとし、<strong>AK列（10月度棚卸数量）の集計結果を10月期（2026-10）の初期データとして集計・締め処理</strong>を行います（11月期から新規収集開始）。<br>
-        ・月締めで表示（集計）する<strong>不動品在庫は「棚卸対象コード4」のみを集計</strong>します。<br>
-        ・棚卸対象外（0, 7）は<strong>QR印刷不要＆締め処理で翌月へ自動転記</strong>されます。
+        <strong>📗 新単価棚卸原簿_20261124.xlsx 基本マスタ一括入れ替え ＆ 10月期(AK列)初期締め処理（現在登録: ${products.length}件）：</strong><br>
+        ・<code>新単価棚卸原簿_20261124.xlsx</code> の全データ（3,103件）を棚卸原簿マスタとして管理し、<strong>AK列（10月度棚卸数量）の集計結果を10月期（2026-10）のデータ（総額 ¥65,925,610）として集計・締め処理</strong>を行います。<br>
+        ・<strong>廃盤フラグ1（¥5,405,582）と構成がイビケン（ｲﾋﾞｹﾝ㈱：¥4,947,424）</strong>は不動品としてカウントします。<br>
+        ・<strong>棚卸用QR発行は棚卸対象が0以外</strong>を発行します。
       </div>
       <div class="form-group">
-        <label style="font-weight: bold;">方法①：標準同梱の最新『棚卸原簿.xlsx』(3,104件) でマスタ更新＆10月期(AK列)初期締めを実行</label>
+        <label style="font-weight: bold;">方法①：標準同梱の最新『新単価棚卸原簿_20261124.xlsx』(3,103件) でマスタ更新＆10月期(AK列)初期締めを実行</label>
         <button type="button" class="btn btn-primary btn-full" onclick="executeEmbeddedGenboMasterSync()" style="background: #16a34a; border-color: #16a34a; font-weight: bold; padding: 10px;">
-          🔄 標準搭載『棚卸原簿.xlsx』でマスタ同期 ＆ 10月期(AK列)初期締め処理を実行
+          🔄 標準搭載『新単価棚卸原簿_20261124.xlsx』でマスタ同期 ＆ 10月期(AK列)初期締め処理を実行
         </button>
       </div>
       <hr style="margin: 1.25rem 0; border: none; border-top: 1px dashed #cbd5e1;">
@@ -9081,7 +9152,7 @@ window.openGenboExcelImportModal = function() {
     </div>
   `;
   const footer = `<button type="button" class="btn btn-secondary" onclick="hideModal()">閉じる</button>`;
-  showModal('📗 棚卸原簿.xlsx マスタ入替 ＆ 10月期(AK列)初期締め処理', body, footer);
+  showModal('📗 新単価棚卸原簿_20261124.xlsx マスタ入替 ＆ 10月期(AK列)初期締め処理', body, footer);
 };
 
 window.executeEmbeddedGenboMasterSync = function() {
@@ -9090,7 +9161,7 @@ window.executeEmbeddedGenboMasterSync = function() {
     hideModal();
     renderInvProductsTable();
     if (typeof renderInvMonthlyPage === 'function') renderInvMonthlyPage();
-    toast('✅ 棚卸原簿.xlsx (3,104件) のマスタ入替＆10月期(AK列)初期締め処理が完了しました（11月期より新規収集開始）', 'success', 5000);
+    toast('✅ 新単価棚卸原簿_20261124.xlsx (3,103件) のマスタ入替＆10月期(AK列)初期締め処理が完了しました', 'success', 5000);
   }
 };
 
@@ -9150,6 +9221,7 @@ window.executeUploadedGenboExcelSync = function() {
         let ic = String(r[0] || '').trim();
         let mc = String(r[4] || '').trim();
         let name = String(r[8] || '').trim();
+        if (ic === '識別コード' || mc === '資材コード') continue;
         if (ic === '-' && !mc && !name) continue;
         if (!mc && !name) continue;
 
@@ -9169,10 +9241,13 @@ window.executeUploadedGenboExcelSync = function() {
 
         const targetFlag = r[16] !== '' && r[16] !== undefined ? (Number(r[16]) || 0) : 0;
         const discFlag = r[17] !== '' && r[17] !== undefined ? (Number(r[17]) || 0) : 0;
-        // 月締めで表示（集計）する不動品在庫は、棚卸対象コード4のみ
-        const isFixed = (targetFlag === 4);
-        const isDeadStock = (discFlag === 1) || isFixed;
-        const isTarget = !(targetFlag === 0 || targetFlag === 7);
+        const compStr = String(r[10] || '').trim();
+        const isIbiken = compStr.includes('イビケン') || compStr.includes('ｲﾋﾞｹﾝ');
+        // 構成がイビケン・廃盤フラグ1は不動品としてカウントする
+        const isFixed = isIbiken || (discFlag === 1);
+        const isDeadStock = isFixed;
+        // 棚卸用QR発行は棚卸対象が0以外を発行する
+        const isTarget = (targetFlag !== 0);
         const deadQty = Number(r[18]) || 0;
         const prevQty = Number(r[19]) || 0;
         const octQty = Number(r[36]) || 0;
@@ -9545,18 +9620,21 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       // 破損チェック（NaNが含まれているか）
       const isCorrupted = isNaN(Number(savedData.total)) || savedData.total === 100223895 || savedData.total === 100223877 || savedData.items.some(i => isNaN(Number(i.amount)) || isNaN(Number(i.price)));
       if (!isCorrupted) {
-        // 前月合計金額を取得（棚卸対象コード0は在庫金額集計から除外）
-        let calcPrevTotal = 0;
+        // 前月合計金額を取得（未四捨五入のrawAmount和を最後に四捨五入してExcel SUBTOTALと1円単位で完全一致）
+        let calcPrevRawTotal = 0;
         if (prevData && prevData.items) {
-          calcPrevTotal = prevData.items.reduce((sum, pi) => {
+          calcPrevRawTotal = prevData.items.reduce((sum, pi) => {
             const pmp = products.find(x => x && (x.id === pi.productId || x.identCode === pi.productId || x.materialCode === pi.productId));
             if (isInvAmountExcludedProduct(pmp, pi)) return sum;
-            return sum + (Number(pi.amount) || 0);
+            const rAmt = (pi.rawAmount !== undefined && pi.rawAmount !== null && !isNaN(Number(pi.rawAmount)))
+              ? Number(pi.rawAmount)
+              : ((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
+            return sum + (rAmt || Number(pi.amount) || 0);
           }, 0);
         }
-        savedData.prevTotal = calcPrevTotal;
+        savedData.prevTotal = Math.round(calcPrevRawTotal);
 
-        // 保存済みアイテムの金額(amount)を正規化（棚卸対象コード0は在庫金額0円＝集計除外）
+        // 保存済みアイテムの金額(amount/rawAmount)を正規化
         savedData.items.forEach(item => {
           const mp = products.find(x => x && (x.id === item.productId || x.identCode === item.productId || x.materialCode === item.productId));
           const isTargetZero = isInvAmountExcludedProduct(mp, item);
@@ -9570,32 +9648,38 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
             item.prevAmount = 0;
             item.rawPrevAmount = 0;
           } else {
-            // 保存済み金額が万が一欠損している場合のみ計算
-            if (item.amount === undefined || item.amount === null || isNaN(Number(item.amount))) {
-              if (item.csvAmountWithTax > 0) {
-                item.amount = Math.round(Number(item.csvAmountWithTax));
-              } else {
-                item.amount = Math.round((Number(item.currQty) || 0) * (Number(item.price) || 0) * 1.01);
-              }
+            const cQty = Number(item.currQty) || 0;
+            const cPrice = Number(item.price) || 0;
+            if (item.csvAmountWithTax > 0) {
+              item.rawAmount = Number(item.csvAmountWithTax);
+              item.amount = Math.round(item.rawAmount);
             } else {
-              item.amount = Math.round(Number(item.amount));
+              item.rawAmount = cQty * cPrice * 1.01;
+              item.amount = Math.round(item.rawAmount);
             }
 
-            // prevAmount は前月締めデータから取得（存在すれば前月の確定金額）
-            let pa = 0;
+            // prevAmount は前月締めデータから取得
+            let paRaw = 0;
             if (prevData && prevData.items) {
               const pi = prevData.items.find(p => p.productId === item.productId);
               if (pi) {
-                pa = Math.round(Number(pi.amount) || 0);
+                paRaw = (pi.rawAmount !== undefined && pi.rawAmount !== null && !isNaN(Number(pi.rawAmount)))
+                  ? Number(pi.rawAmount)
+                  : ((Number(pi.currQty) || 0) * (Number(pi.price) || 0) * 1.01);
               }
             }
-            item.prevAmount = pa;
+            item.rawPrevAmount = paRaw;
+            item.prevAmount = Math.round(paRaw);
           }
           item.diff = (Number(item.currQty) || 0) - (Number(item.prevQty) || 0);
         });
 
-        // total も保存済みアイテムの和として正確に算出（対象コード0は0円のため自然除外）
-        let calculatedTotal = savedData.items.reduce((sum, i) => { if (i.productId === 'META_F1_TOTAL' || i.isAmountExcluded) return sum; return sum + (Number(i.amount) || 0); }, 0);
+        // total は未四捨五入の rawAmount の総和を最後に四捨五入（Excelの AL1 = SUBTOTAL(9,AL3:AL3105) = 65,925,610円と1円単位で完全一致）
+        let calculatedRawTotal = savedData.items.reduce((sum, i) => {
+          if (i.productId === 'META_F1_TOTAL' || i.isAmountExcluded) return sum;
+          return sum + (i.rawAmount !== undefined ? Number(i.rawAmount) : (Number(i.amount) || 0));
+        }, 0);
+        let calculatedTotal = Math.round(calculatedRawTotal);
         
         let targetF1 = savedData.f1Total !== undefined ? savedData.f1Total : null;
         if (targetF1 === null || isNaN(targetF1)) {
@@ -9605,48 +9689,71 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
         }
 
         if (targetF1 !== null && !isNaN(targetF1) && targetF1 !== 100223895 && targetF1 !== 100223877) {
-            savedData.total = targetF1;
+            savedData.total = Math.round(Number(targetF1));
         } else {
             savedData.total = calculatedTotal;
         }
 
-        // summary の再構築（棚卸対象コード0は金額除外／不動品在庫は棚卸対象コード4のみ集計）
+        // summary の再構築（不動品は構成イビケン・廃盤フラグ1を集計し、内訳も算出）
         savedData.summary = {};
         let largestCatKey = null;
-        let maxCatAmt = -1;
+        let maxCatRawAmt = -1;
+        let rawDisc1Fixed = 0;
+        let rawIbikenFixed = 0;
 
         savedData.items.forEach(item => {
           const mp = products.find(x => x && (x.id === item.productId || x.identCode === item.productId || x.materialCode === item.productId));
+          if (mp && mp.composition !== undefined) item.composition = mp.composition;
+          const isFixedItem = isInvDeadOrFixedProduct(mp, item);
+          item.isFixed = isFixedItem;
           if (isInvAmountExcludedProduct(mp, item)) return;
-          const isTarget4Fixed = mp
-            ? (Number(mp.targetFlag) === 4)
-            : (item.targetFlag !== undefined ? Number(item.targetFlag) === 4 : !!item.isFixed);
-          item.isFixed = isTarget4Fixed;
-          const catKey = isTarget4Fixed ? 'fixed' : item.category;
+          const rAmt = item.rawAmount !== undefined ? Number(item.rawAmount) : (Number(item.amount) || 0);
+          const rPrevAmt = item.rawPrevAmount !== undefined ? Number(item.rawPrevAmount) : (Number(item.prevAmount) || 0);
+
+          if (Number(item.discontinuedFlag) === 1 || (mp && Number(mp.discontinuedFlag) === 1)) {
+            rawDisc1Fixed += rAmt;
+          } else if (isInvIbikenComposition(mp, item)) {
+            rawIbikenFixed += rAmt;
+          }
+
+          const catKey = isFixedItem ? 'fixed' : item.category;
           if (!savedData.summary[catKey]) {
             const catName = typeof INV_CATEGORIES !== 'undefined' ? (INV_CATEGORIES[item.category] || `分類${item.category}`) : `分類${item.category}`;
-            savedData.summary[catKey] = { name: isTarget4Fixed ? '不動品' : catName, amount: 0, diff: 0, prevAmount: 0 };
+            savedData.summary[catKey] = { name: isFixedItem ? '不動品' : catName, rawAmount: 0, rawPrevAmount: 0, amount: 0, diff: 0, prevAmount: 0 };
           }
-          savedData.summary[catKey].amount += (Number(item.amount) || 0);
-          savedData.summary[catKey].prevAmount += (Number(item.prevAmount) || 0);
+          savedData.summary[catKey].rawAmount += rAmt;
+          savedData.summary[catKey].rawPrevAmount += rPrevAmt;
         });
-
-        // 差分補正
-        const diff = savedData.total - calculatedTotal;
 
         Object.keys(savedData.summary).forEach(k => {
           const s = savedData.summary[k];
-          s.diff = (Number(s.amount) || 0) - (Number(s.prevAmount) || 0);
-          if (s.amount > maxCatAmt ) {
-              maxCatAmt = s.amount;
+          s.amount = Math.round(s.rawAmount || 0);
+          s.prevAmount = Math.round(s.rawPrevAmount || 0);
+          s.diff = s.amount - s.prevAmount;
+          if ((s.rawAmount || 0) > maxCatRawAmt) {
+              maxCatRawAmt = s.rawAmount || 0;
               largestCatKey = k;
           }
         });
+
+        if (savedData.summary['fixed']) {
+          savedData.summary['fixed'].disc1Amount = Math.round(rawDisc1Fixed);
+          savedData.summary['fixed'].ibikenAmount = Math.round(rawIbikenFixed);
+        }
+        savedData.fixedDisc1Amount = Math.round(rawDisc1Fixed);
+        savedData.fixedIbikenAmount = Math.round(rawIbikenFixed);
 
         const catSum = Object.values(savedData.summary).reduce((s, c) => s + c.amount, 0);
         const catDiff = savedData.total - catSum;
         if (catDiff !== 0 && largestCatKey && savedData.summary[largestCatKey]) {
           savedData.summary[largestCatKey].amount += catDiff;
+          savedData.summary[largestCatKey].diff = savedData.summary[largestCatKey].amount - savedData.summary[largestCatKey].prevAmount;
+        }
+
+        const prevCatSum = Object.values(savedData.summary).reduce((s, c) => s + c.prevAmount, 0);
+        const prevCatDiff = savedData.prevTotal - prevCatSum;
+        if (prevCatDiff !== 0 && largestCatKey && savedData.summary[largestCatKey]) {
+          savedData.summary[largestCatKey].prevAmount += prevCatDiff;
           savedData.summary[largestCatKey].diff = savedData.summary[largestCatKey].amount - savedData.summary[largestCatKey].prevAmount;
         }
 
@@ -9705,9 +9812,9 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
     let prevAmountRaw = 0;
     if (!isAmountExcluded) {
       if (prevItem) {
-        if (prevItem.csvAmountWithTax !== undefined && prevItem.csvAmountWithTax !== null) {
+        if (prevItem.csvAmountWithTax !== undefined && prevItem.csvAmountWithTax !== null && prevItem.csvAmountWithTax > 0) {
           prevAmountRaw = safeNum(prevItem.csvAmountWithTax);
-        } else if (prevItem.rawAmount !== undefined && prevItem.rawAmount !== null) {
+        } else if (prevItem.rawAmount !== undefined && prevItem.rawAmount !== null && !isNaN(Number(prevItem.rawAmount))) {
           prevAmountRaw = safeNum(prevItem.rawAmount);
         } else if (prevItem.amount !== undefined && prevItem.amount !== null && !isNaN(Number(prevItem.amount))) {
           prevAmountRaw = safeNum(prevItem.amount);
@@ -9789,6 +9896,7 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       productId: pid,
       name: name,
       category: category,
+      composition: masterProduct ? (masterProduct.composition || masterProduct.material || '') : (prevItem && prevItem.composition ? prevItem.composition : ''),
       targetFlag: masterProduct ? (Number(masterProduct.targetFlag) || 0) : (prevItem && prevItem.targetFlag !== undefined ? Number(prevItem.targetFlag) : 1),
       discontinuedFlag: masterProduct ? (Number(masterProduct.discontinuedFlag) || 0) : (prevItem && prevItem.discontinuedFlag !== undefined ? Number(prevItem.discontinuedFlag) : 0),
       isAmountExcluded: isAmountExcluded,
@@ -9812,19 +9920,25 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       }
       summary[catKey].rawAmount = (summary[catKey].rawAmount || 0) + amountRaw;
       summary[catKey].rawPrevAmount = (summary[catKey].rawPrevAmount || 0) + prevAmountRaw;
+      if (isFixed) {
+        const isDisc1 = (masterProduct && Number(masterProduct.discontinuedFlag) === 1) || (prevItem && Number(prevItem.discontinuedFlag) === 1);
+        if (isDisc1) {
+          summary['fixed'].rawDisc1Amount = (summary['fixed'].rawDisc1Amount || 0) + amountRaw;
+        } else if (isInvIbikenComposition(masterProduct, prevItem)) {
+          summary['fixed'].rawIbikenAmount = (summary['fixed'].rawIbikenAmount || 0) + amountRaw;
+        }
+      }
     }
   });
 
-  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
-  
-  // 端数誤差を吸収し、ExcelセルF1 / U列合計と1円単位で完全一致させるため総和を最後に四捨五入
+  // 端数誤差を吸収し、ExcelセルF1 / AL1合計と1円単位で完全一致させるため総和を最後に四捨五入
   const rawTotal = items.reduce((sum, i) => { if (i.productId === 'META_F1_TOTAL') return sum; return sum + (i.rawAmount !== undefined ? i.rawAmount : i.amount); }, 0);
   let total = Math.round(rawTotal);
   
   if (f1Total !== null && !isNaN(f1Total)) {
     const diff = f1Total - total;
     if (diff !== 0) {
-      total = f1Total;
+      total = Math.round(Number(f1Total));
     }
   }
 
@@ -9846,6 +9960,11 @@ function calculateInvMonthly(month, f1TotalOverride = null) {
       largestCatKey = k;
     }
   });
+
+  if (summary['fixed']) {
+    summary['fixed'].disc1Amount = Math.round(summary['fixed'].rawDisc1Amount || 0);
+    summary['fixed'].ibikenAmount = Math.round(summary['fixed'].rawIbikenAmount || 0);
+  }
 
   // 分類別合計の四捨五入端数を最大カテゴリで補正し、全体合計(total/prevTotal)と完全一致させる
   const catSum = Object.values(summary).reduce((s, c) => s + c.amount, 0);
@@ -9957,11 +10076,20 @@ function displayInvMonthlyResult(result) {
   });
 
   // 不動品
+  let fixedBreakdownText = '';
   if (result.summary['fixed']) {
     const s = result.summary['fixed'];
     const roundedAmount = Math.round(safeNum(s.amount));
     const roundedDiff = Math.round(safeNum(s.diff));
-    summaryRows += `<tr class="category-summary-row row-fixed-product" data-cat="fixed" onclick="filterInvMonthlyItems('fixed')" style="cursor:pointer; transition: background-color 0.2s;" title="クリックで不動品のみ表示"><td>不動品</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
+    const d1Amt = s.disc1Amount !== undefined ? Math.round(safeNum(s.disc1Amount)) : (result.fixedDisc1Amount !== undefined ? Math.round(safeNum(result.fixedDisc1Amount)) : null);
+    const ibAmt = s.ibikenAmount !== undefined ? Math.round(safeNum(s.ibikenAmount)) : (result.fixedIbikenAmount !== undefined ? Math.round(safeNum(result.fixedIbikenAmount)) : null);
+    if (d1Amt !== null && ibAmt !== null && (d1Amt > 0 || ibAmt > 0)) {
+      fixedBreakdownText = `廃盤フラグ1: ¥${d1Amt.toLocaleString()} ／ イビケン: ¥${ibAmt.toLocaleString()}`;
+    }
+    const fixedLabelHtml = fixedBreakdownText
+      ? `<div>不動品</div><div style="font-size: 0.72rem; color: #b45309; font-weight: 500;">(${fixedBreakdownText})</div>`
+      : '不動品';
+    summaryRows += `<tr class="category-summary-row row-fixed-product" data-cat="fixed" onclick="filterInvMonthlyItems('fixed')" style="cursor:pointer; transition: background-color 0.2s;" title="クリックで不動品のみ表示"><td>${fixedLabelHtml}</td><td style="text-align: right;">¥${roundedAmount.toLocaleString()}</td><td style="text-align: right; color: ${roundedDiff >= 0 ? 'green' : 'red'};">${roundedDiff >= 0 ? '+' : ''}¥${roundedDiff.toLocaleString()}</td></tr>`;
     summaryTotal += roundedAmount;
     summaryDiff += roundedDiff;
     fixedTotal = roundedAmount;
@@ -10012,7 +10140,7 @@ function displayInvMonthlyResult(result) {
       <div class="card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 1.25rem;">
         <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">⚠ 不動品在庫</div>
         <div style="font-size: 1.5rem; font-weight: bold;">¥${fixedTotal.toLocaleString()}</div>
-        <div style="font-size: 0.75rem; opacity: 0.8;">${fixedPercent}%</div>
+        <div style="font-size: 0.75rem; opacity: 0.92;">${fixedPercent}%${fixedBreakdownText ? ` （${fixedBreakdownText}）` : ''}</div>
       </div>
     </div>
 

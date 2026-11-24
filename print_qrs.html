@@ -264,12 +264,11 @@
             '99': 'その他'
         };
 
-        // 棚卸対象外判定 (0: 対象外, 7: 対象外(仕掛品) はQR印刷不要)
+        // 棚卸対象外判定 (棚卸用QR発行は棚卸対象が0以外を発行するため、0: 対象外 のみQR印刷不要)
         function isNonTargetProduct(prod) {
             if (!prod) return false;
             if (prod.targetFlag !== undefined && prod.targetFlag !== null && prod.targetFlag !== '') {
-                const tf = Number(prod.targetFlag);
-                if (tf === 0 || tf === 7) return true;
+                return Number(prod.targetFlag) === 0;
             }
             if (prod.isTarget === false) return true;
             return false;
