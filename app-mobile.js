@@ -87,9 +87,10 @@ if (!currentTerminalId) {
 
 let currentUser = null;
 let expandedOrders = new Set();
-let ganttFilter = 'all';
+let ganttFilter = 'pao_incomplete';
 let ganttViewMode = localStorage.getItem('pms_gantt_view_mode') || 'timeline'; // 'timeline' | 'matrix'
 let _ganttInitialScrolledToToday = false;
+let _ganttCurrentTodayIndex = -1;
 
 // カテゴリ別カラー定義
 const CATEGORY_COLORS = {
@@ -893,17 +894,41 @@ window.switchGanttViewMode = function(mode) {
 };
 
 window.scrollGanttToToday = function() {
+  if (ganttViewMode !== 'timeline') {
+    window.switchGanttViewMode('timeline');
+    return;
+  }
   const container = document.querySelector('.pms-gantt-scroll-container');
   const topScroll = document.querySelector('.pms-gantt-top-scroll');
-  const todayTh = document.querySelector('.pms-gantt-day-th.is-today');
-  if (container && todayTh) {
-    const stickyCol = container.querySelector('.pms-gantt-sticky-col');
-    const stickyW = stickyCol ? stickyCol.offsetWidth : 230;
-    const targetLeft = Math.max(0, todayTh.offsetLeft - stickyW - 76);
+  if (!container) return;
+
+  const DAY_WIDTH = 38;
+  let targetLeft = 0;
+
+  if (_ganttCurrentTodayIndex >= 0) {
+    targetLeft = Math.max(0, (_ganttCurrentTodayIndex - 2) * DAY_WIDTH);
+  } else {
+    const todayTh = container.querySelector('.pms-gantt-day-th.is-today');
+    if (todayTh) {
+      const allDayThs = Array.from(container.querySelectorAll('.pms-gantt-day-th'));
+      const idx = allDayThs.indexOf(todayTh);
+      if (idx >= 0) {
+        targetLeft = Math.max(0, (idx - 2) * DAY_WIDTH);
+      } else {
+        const stickyCol = container.querySelector('.pms-gantt-sticky-col');
+        const stickyW = stickyCol ? stickyCol.offsetWidth : 230;
+        targetLeft = Math.max(0, todayTh.offsetLeft - stickyW - 76);
+      }
+    }
+  }
+
+  container.scrollLeft = targetLeft;
+  if (topScroll) topScroll.scrollLeft = targetLeft;
+  if (typeof container.scrollTo === 'function') {
     container.scrollTo({ left: targetLeft, behavior: 'smooth' });
-    if (topScroll) topScroll.scrollTo({ left: targetLeft, behavior: 'smooth' });
-  } else if (ganttViewMode !== 'timeline') {
-    window.switchGanttViewMode('timeline');
+  }
+  if (topScroll && typeof topScroll.scrollTo === 'function') {
+    topScroll.scrollTo({ left: targetLeft, behavior: 'smooth' });
   }
 };
 
@@ -1135,12 +1160,9 @@ function renderGantt() {
   // ========================================
   let html = `
     <div class="pms-gantt-top-scroll-wrapper">
-      <span class="pms-gantt-top-scroll-label">↔ 上部横スクロール:</span>
-      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(-240)">◀ 左へ</button>
       <div class="pms-gantt-top-scroll">
         <div class="pms-gantt-top-scroll-inner"></div>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(240)">右へ ▶</button>
     </div>
     <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative; border-radius: 0 0 8px 8px;">
       <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
@@ -1356,21 +1378,14 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
     cur.setDate(cur.getDate() + 1);
   }
 
+  _ganttCurrentTodayIndex = todayIndex;
   const totalTimelineWidth = days.length * DAY_WIDTH;
-  const monthJumpOptionsHtml = monthGroups.map(mg => `<option value="${mg.ymKey}">${mg.label}</option>`).join('');
 
   let html = `
     <div class="pms-gantt-top-scroll-wrapper">
-      <span class="pms-gantt-top-scroll-label">↔ 上部横スクロール:</span>
-      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(-280)">◀ 前へ</button>
       <div class="pms-gantt-top-scroll">
         <div class="pms-gantt-top-scroll-inner" style="width:${totalTimelineWidth + 230}px;"></div>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(280)">次へ ▶</button>
-      <select class="form-input" style="width:auto; min-width:115px; padding:2px 6px; font-size:0.74rem; height:28px; font-weight:700;" onchange="scrollGanttToMonth(this.value)">
-        <option value="">📅 年月へ...</option>
-        ${monthJumpOptionsHtml}
-      </select>
     </div>
     <div class="pms-gantt-scroll-container">
       <table class="pms-gantt-table">
