@@ -752,17 +752,23 @@ function parseGanttDate(dateStr, fallbackYear) {
   if (!s || s === '-') return null;
   const parts = s.split(/[\/\-]/);
   if (parts.length === 3) {
-    const y = parseInt(parts[0], 10);
+    let y = parseInt(parts[0], 10);
     const m = parseInt(parts[1], 10);
     const d = parseInt(parts[2], 10);
     if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      if (y < 100) y += 2000;
       return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
   } else if (parts.length === 2) {
-    const y = fallbackYear || new Date().getFullYear();
+    let y = fallbackYear || new Date().getFullYear();
     const m = parseInt(parts[0], 10);
     const d = parseInt(parts[1], 10);
     if (!isNaN(m) && !isNaN(d)) {
+      // 年が省略された「MM/DD」形式で、現在が10〜12月かつ指定月が1〜4月の場合は翌年（2027年以降）として解釈
+      if (!fallbackYear) {
+        const nowM = new Date().getMonth() + 1;
+        if (nowM >= 10 && m <= 4) y += 1;
+      }
       return new Date(y, m - 1, d, 0, 0, 0, 0);
     }
   }
@@ -772,6 +778,66 @@ function parseGanttDate(dateStr, fallbackYear) {
   }
   return null;
 }
+
+// ガントチャート・工程マトリクス上部の横スクロールバーと下部のメインコンテナを双方向同期するヘルパー
+function setupGanttTopScrollbar(pageBody, mainSelector) {
+  if (!pageBody) return;
+  const topScroll = pageBody.querySelector('.pms-gantt-top-scroll');
+  const topInner = pageBody.querySelector('.pms-gantt-top-scroll-inner');
+  const mainContainer = pageBody.querySelector(mainSelector);
+  if (!topScroll || !topInner || !mainContainer) return;
+
+  const updateTopWidth = () => {
+    const tableEl = mainContainer.querySelector('table');
+    const scrollW = Math.max(mainContainer.scrollWidth, tableEl ? tableEl.offsetWidth : 0);
+    topInner.style.width = `${scrollW}px`;
+  };
+  updateTopWidth();
+  setTimeout(updateTopWidth, 50);
+
+  let isSyncingFromTop = false;
+  let isSyncingFromMain = false;
+
+  topScroll.onscroll = () => {
+    if (isSyncingFromMain) return;
+    isSyncingFromTop = true;
+    mainContainer.scrollLeft = topScroll.scrollLeft;
+    requestAnimationFrame(() => { isSyncingFromTop = false; });
+  };
+
+  mainContainer.onscroll = () => {
+    if (isSyncingFromTop) return;
+    isSyncingFromMain = true;
+    topScroll.scrollLeft = mainContainer.scrollLeft;
+    requestAnimationFrame(() => { isSyncingFromMain = false; });
+  };
+}
+
+// ガントチャートの指定年月（例: '2027-01'）または前後方向へ横スクロール移動する関数
+window.scrollGanttToMonth = function(yearMonthStr) {
+  if (!yearMonthStr) return;
+  const container = document.querySelector('.pms-gantt-scroll-container');
+  const topScroll = document.querySelector('.pms-gantt-top-scroll');
+  const targetTh = document.querySelector(`.pms-gantt-day-th[data-ym="${yearMonthStr}"]`) ||
+                   document.querySelector(`.pms-gantt-month-th[data-ym="${yearMonthStr}"]`);
+  if (container && targetTh) {
+    const stickyCol = container.querySelector('.pms-gantt-sticky-col');
+    const stickyW = stickyCol ? stickyCol.offsetWidth : 370;
+    const targetLeft = Math.max(0, targetTh.offsetLeft - stickyW);
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    if (topScroll) topScroll.scrollTo({ left: targetLeft, behavior: 'smooth' });
+  }
+};
+
+window.scrollGanttByOffset = function(deltaPx) {
+  const container = document.querySelector('.pms-gantt-scroll-container') || document.querySelector('.matrix-container');
+  const topScroll = document.querySelector('.pms-gantt-top-scroll');
+  if (container) {
+    const nextLeft = Math.max(0, container.scrollLeft + deltaPx);
+    container.scrollTo({ left: nextLeft, behavior: 'smooth' });
+    if (topScroll) topScroll.scrollTo({ left: nextLeft, behavior: 'smooth' });
+  }
+};
 
 function getOrderProcessStats(order, defects, allProcesses) {
   let totalCount = 0;
@@ -925,12 +991,14 @@ window.switchGanttViewMode = function(mode) {
 
 window.scrollGanttToToday = function() {
   const container = document.querySelector('.pms-gantt-scroll-container');
+  const topScroll = document.querySelector('.pms-gantt-top-scroll');
   const todayTh = document.querySelector('.pms-gantt-day-th.is-today');
   if (container && todayTh) {
     const stickyCol = container.querySelector('.pms-gantt-sticky-col');
     const stickyW = stickyCol ? stickyCol.offsetWidth : 300;
     const targetLeft = Math.max(0, todayTh.offsetLeft - stickyW - 76);
     container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    if (topScroll) topScroll.scrollTo({ left: targetLeft, behavior: 'smooth' });
   } else if (ganttViewMode !== 'timeline') {
     window.switchGanttViewMode('timeline');
   }
@@ -1164,7 +1232,15 @@ function renderGantt() {
   // 従来の工程マトリクス表示 (ganttViewMode === 'matrix')
   // ========================================
   let html = `
-    <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative;">
+    <div class="pms-gantt-top-scroll-wrapper">
+      <span class="pms-gantt-top-scroll-label">↔ 上部横スクロール:</span>
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(-320)">◀ 左へ</button>
+      <div class="pms-gantt-top-scroll">
+        <div class="pms-gantt-top-scroll-inner"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(320)">右へ ▶</button>
+    </div>
+    <div class="matrix-container" style="max-height: 75vh; overflow-y: auto; overflow-x: auto; position: relative; border-radius: 0 0 8px 8px;">
       <table class="matrix-table" style="border-collapse: separate; border-spacing: 0;">
         <thead>
           <tr>
@@ -1289,12 +1365,15 @@ function renderGantt() {
   }
 
   pageBody.innerHTML = html;
+  setupGanttTopScrollbar(pageBody, '.matrix-container');
 
   // スクロール位置の復元
   const newContainer = pageBody.querySelector('.matrix-container');
+  const topScroll = pageBody.querySelector('.pms-gantt-top-scroll');
   if (newContainer) {
     newContainer.scrollTop = savedScrollTop;
     newContainer.scrollLeft = savedScrollLeft;
+    if (topScroll) topScroll.scrollLeft = savedScrollLeft;
   }
 }
 
@@ -1325,20 +1404,22 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
     };
   });
 
-  // カレンダー表示期間を決定（今日を中心に、フィルタ案件の期間をカバー）
-  let minDate = new Date(today.getTime() - 5 * 86400000);
-  let maxDate = new Date(today.getTime() + 21 * 86400000);
+  // カレンダー表示期間を決定（2026年〜2027年以降も確実に表示されるように拡張）
+  let minDate = new Date(today.getTime() - 7 * 86400000);
+  const nextYearSpring = new Date(Math.max(today.getFullYear() + 1, 2027), 2, 31, 0, 0, 0, 0); // 最低でも2027年3月末まで標準カバー
+  const plus120Days = new Date(today.getTime() + 120 * 86400000);
+  let maxDate = new Date(Math.max(nextYearSpring.getTime(), plus120Days.getTime()));
 
-  // 未完了案件または表示対象案件の日付範囲を考慮（最大前後45日〜60日まで広げる）
-  const minClamp = new Date(today.getTime() - 35 * 86400000);
-  const maxClamp = new Date(today.getTime() + 50 * 86400000);
+  // 2027年後半以降の長期案件がある場合も最大400日先まで自動拡張
+  const minClamp = new Date(today.getTime() - 60 * 86400000);
+  const maxClamp = new Date(today.getTime() + 400 * 86400000);
 
   orderSchedules.forEach(s => {
     if (s.effectiveStart >= minClamp && s.effectiveStart < minDate) {
       minDate = new Date(s.effectiveStart.getTime() - 2 * 86400000);
     }
     if (s.effectiveEnd <= maxClamp && s.effectiveEnd > maxDate) {
-      maxDate = new Date(s.effectiveEnd.getTime() + 3 * 86400000);
+      maxDate = new Date(s.effectiveEnd.getTime() + 7 * 86400000);
     }
   });
 
@@ -1349,7 +1430,7 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
   let cur = new Date(minDate.getTime());
   let todayIndex = -1;
 
-  while (cur.getTime() <= maxDate.getTime() && days.length < 100) {
+  while (cur.getTime() <= maxDate.getTime() && days.length < 450) {
     const y = cur.getFullYear();
     const m = cur.getMonth() + 1;
     const d = cur.getDate();
@@ -1357,9 +1438,11 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
     const isToday = cur.getTime() === today.getTime();
     if (isToday) todayIndex = days.length;
 
+    const ymKey = `${y}-${String(m).padStart(2, '0')}`;
     const monthLabel = `${y}年${m}月`;
-    if (monthGroups.length === 0 || monthGroups[monthGroups.length - 1].label !== monthLabel) {
-      monthGroups.push({ label: monthLabel, count: 1 });
+    const isFirstDayOfGroup = (monthGroups.length === 0 || monthGroups[monthGroups.length - 1].label !== monthLabel);
+    if (isFirstDayOfGroup) {
+      monthGroups.push({ label: monthLabel, ymKey, count: 1 });
     } else {
       monthGroups[monthGroups.length - 1].count++;
     }
@@ -1369,6 +1452,8 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
       y,
       m,
       d,
+      ymKey,
+      isFirstOfMonthGroup: isFirstDayOfGroup,
       dow,
       dowStr: dowNames[dow],
       isToday,
@@ -1380,8 +1465,21 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
   }
 
   const totalTimelineWidth = days.length * DAY_WIDTH;
+  const monthJumpOptionsHtml = monthGroups.map(mg => `<option value="${mg.ymKey}">${mg.label}</option>`).join('');
 
   let html = `
+    <div class="pms-gantt-top-scroll-wrapper">
+      <span class="pms-gantt-top-scroll-label">↔ 上部横スクロール:</span>
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(-380)">◀ 前へ</button>
+      <div class="pms-gantt-top-scroll">
+        <div class="pms-gantt-top-scroll-inner" style="width:${totalTimelineWidth + 370}px;"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="scrollGanttByOffset(380)">次へ ▶</button>
+      <select class="form-input" style="width:auto; min-width:125px; padding:2px 8px; font-size:0.76rem; height:28px; font-weight:700;" onchange="scrollGanttToMonth(this.value)">
+        <option value="">📅 年月へジャンプ...</option>
+        ${monthJumpOptionsHtml}
+      </select>
+    </div>
     <div class="pms-gantt-scroll-container">
       <table class="pms-gantt-table">
         <thead>
@@ -1392,7 +1490,7 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
                 <span style="font-size:0.7rem; font-weight:500; color:#93c5fd;">行クリックで部材展開</span>
               </div>
             </th>
-            ${monthGroups.map(mg => `<th colspan="${mg.count}" class="pms-gantt-month-th">${mg.label}</th>`).join('')}
+            ${monthGroups.map(mg => `<th colspan="${mg.count}" class="pms-gantt-month-th" data-ym="${mg.ymKey}">${mg.label}</th>`).join('')}
           </tr>
           <tr>
             ${days.map(day => {
@@ -1402,7 +1500,8 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
                 day.isSat ? 'is-sat' : '',
                 day.isSun ? 'is-sun' : ''
               ].filter(Boolean).join(' ');
-              return `<th class="${cls}" style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; max-width:${DAY_WIDTH}px;">
+              const ymAttr = day.isFirstOfMonthGroup ? ` data-ym="${day.ymKey}"` : '';
+              return `<th class="${cls}"${ymAttr} style="width:${DAY_WIDTH}px; min-width:${DAY_WIDTH}px; max-width:${DAY_WIDTH}px;">
                 <div>${day.isToday ? '今日' : day.d}</div>
                 <div style="font-size:0.6rem; opacity:0.85;">${day.isToday ? `${day.m}/${day.d}` : day.dowStr}</div>
               </th>`;
@@ -1611,16 +1710,20 @@ function renderGanttTimelineView(filtered, boms, defects, allProcesses, priority
   }
 
   pageBody.innerHTML = html;
+  setupGanttTopScrollbar(pageBody, '.pms-gantt-scroll-container');
 
   const newContainer = pageBody.querySelector('.pms-gantt-scroll-container');
+  const topScroll = pageBody.querySelector('.pms-gantt-top-scroll');
   if (newContainer) {
     if (hadOldContainer && _ganttInitialScrolledToToday) {
       newContainer.scrollTop = savedScrollTop;
       newContainer.scrollLeft = savedScrollLeft;
+      if (topScroll) topScroll.scrollLeft = savedScrollLeft;
     } else if (todayIndex >= 0) {
       _ganttInitialScrolledToToday = true;
       const targetLeft = Math.max(0, (todayIndex - 3) * DAY_WIDTH);
       newContainer.scrollLeft = targetLeft;
+      if (topScroll) topScroll.scrollLeft = targetLeft;
     }
   }
 }
